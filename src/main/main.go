@@ -31,7 +31,7 @@ func initialize() {
 
 	appbase := utils.GetAppBaseDir()
 
-	lvtlog.InitLogger(appbase + logsDir)
+	lvtlog.InitLogger(filepath.Join(appbase, logsDir))
 	lvtlog.Info("server initialize.....")
 
 	cfgFile := filepath.Join(appbase, configFile)
@@ -40,5 +40,4 @@ func initialize() {
 	cfg := config.GetConfig()
 	// fmt.Println(configFile, cfg)
 	httpCfg.InitHTTPConfig(cfg.ServerAddr, cfg.ServerPort)
-
 }
