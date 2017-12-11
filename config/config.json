@@ -1,0 +1,13 @@
+{
+    "ServerAddr" : "localhost",
+    "ServerPort" : 8080,
+
+    "PrivKey" : "1234567890",
+
+    "DBHost" : "localhost",
+    "DBUser" : "user",
+    "DBUserPwd" : "password",
+    "DBDatabase" : "database"
+
+}
+
