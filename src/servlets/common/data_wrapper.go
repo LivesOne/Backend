@@ -1,7 +1,7 @@
 /**
  * common request & response data structure
  **/
-package httputils
+package common
 
 // HeaderParams contains all data in the http request
 type HeaderParams struct {

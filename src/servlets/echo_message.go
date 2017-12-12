@@ -1,10 +1,10 @@
-package httpHandlers
+package servlets
 
 import (
 	"fmt"
 	"net/http"
-	"servlets/httpcfg"
-	"servlets/httputils"
+	"servlets/common"
+	"servlets/constants"
 )
 
 // echoMsgHandler implements the "Echo message" interface
@@ -21,9 +21,9 @@ func (handler *echoMsgHandler) Handle(request *http.Request, writer http.Respons
 
 	fmt.Println("echoMsgHandler) Handle", msg)
 
-	response := &httputils.ResponseData{
-		Base: &httputils.BaseResp{
-			RC:  httpCfg.RC_OK,
+	response := &common.ResponseData{
+		Base: &common.BaseResp{
+			RC:  constants.RC_OK,
 			Msg: "Success",
 		},
 		Data: msg,
@@ -31,5 +31,5 @@ func (handler *echoMsgHandler) Handle(request *http.Request, writer http.Respons
 
 	// return response
 
-	httputils.FlushJSONData2Client(response, writer)
+	common.FlushJSONData2Client(response, writer)
 }

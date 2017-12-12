@@ -1,15 +1,15 @@
-package httpHandlers
+package servlets
 
 import (
 	"server"
 	"servlets/accounts"
-	"servlets/httpcfg"
+	"servlets/constants"
 )
 
 func RegisterHandlers() {
 
-	server.RegisterHandler(httpCfg.HELLO_WORLD, &helloWorldHandler{})
-	server.RegisterHandler(httpCfg.ECHO_MSG, &echoMsgHandler{})
+	server.RegisterHandler(constants.HelloWorld, &helloWorldHandler{})
+	server.RegisterHandler(constants.Echo, &echoMsgHandler{})
 
 	// register accounts handlers
 	accounts.RegisterHandlers()

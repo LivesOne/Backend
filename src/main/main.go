@@ -1,21 +1,20 @@
 package main
 
 import (
-	"config"
-	"lvtlog"
 	"path/filepath"
 	"server"
 	"servlets"
-	"servlets/httpcfg"
 	"utils"
+	"utils/config"
+	"utils/logger"
 )
 
 func main() {
 
 	initialize()
 
-	httpHandlers.RegisterHandlers()
-	server.StartServer()
+	servlets.RegisterHandlers()
+	server.Start(config.GetConfig().ServerAddr, config.GetConfig().ServerPort)
 
 }
 
@@ -31,13 +30,9 @@ func initialize() {
 
 	appbase := utils.GetAppBaseDir()
 
-	lvtlog.InitLogger(filepath.Join(appbase, logsDir))
-	lvtlog.Info("server initialize.....")
+	logger.InitLogger(filepath.Join(appbase, logsDir))
+	logger.Info("server initialize.....")
 
 	cfgFile := filepath.Join(appbase, configFile)
 	config.LoadConfig(cfgFile)
-
-	cfg := config.GetConfig()
-	// fmt.Println(configFile, cfg)
-	httpCfg.InitHTTPConfig(cfg.ServerAddr, cfg.ServerPort)
 }

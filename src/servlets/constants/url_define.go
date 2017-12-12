@@ -1,38 +1,28 @@
 // this file defines the http API URLS
 
-package httpCfg
+package constants
 
-import (
-	"strconv"
-)
-
-var (
-	// HTTP_DOMAIN = "api.livesone.com" // http api domain name
-	// HTTP_PORT   = ":9876"            // http port
-
-	// HTTP_DOMAIN = "openapi.lives.one:9876" // http api domain name & port
-	HTTP_DOMAIN string // http api domain name & port
-
+const (
 	// hello world
 	// http method : GET
-	HELLO_WORLD string
+	HelloWorld = "/helloworld"
 
 	// Echo message
 	// http method : POST
-	ECHO_MSG string
+	Echo = "/echo"
 )
 
 // InitHTTPConfig initialize the http configuration
-func InitHTTPConfig(domain string, port int) {
+// func InitHTTPConfig(domain string, port int) {
 
-	HTTP_DOMAIN = domain + ":" + strconv.Itoa(port)
+// 	HTTP_DOMAIN = domain + ":" + strconv.Itoa(port)
 
-	HELLO_WORLD = HTTP_DOMAIN + "/demo/v1/hello"
+// 	HELLO_WORLD = HTTP_DOMAIN + "/demo/v1/hello"
 
-	ECHO_MSG = HTTP_DOMAIN + "/demo/v1/echo"
+// 	ECHO_MSG = HTTP_DOMAIN + "/demo/v1/echo"
 
-	// fmt.Println(HELLO_WORLD, ECHO_MSG)
-}
+// 	// fmt.Println(HELLO_WORLD, ECHO_MSG)
+// }
 
 /*
 const (

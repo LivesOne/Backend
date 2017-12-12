@@ -3,8 +3,8 @@ package accounts
 import (
 	"fmt"
 	"net/http"
-	"servlets/httpcfg"
-	"servlets/httputils"
+	"servlets/common"
+	"servlets/constants"
 )
 
 // registerUserHandler implements the "Echo message" interface
@@ -30,9 +30,9 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 
 	fmt.Println("registerUserHandler) Handle", msg)
 
-	response := &httputils.ResponseData{
-		Base: &httputils.BaseResp{
-			RC:  httpCfg.RC_OK,
+	response := &common.ResponseData{
+		Base: &common.BaseResp{
+			RC:  constants.RC_OK,
 			Msg: "Success",
 		},
 		Data: msg,
@@ -40,5 +40,5 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 
 	// return response
 
-	httputils.FlushJSONData2Client(response, writer)
+	common.FlushJSONData2Client(response, writer)
 }

@@ -1,4 +1,4 @@
-package lvtlog
+package logger
 
 import (
 	"fmt"

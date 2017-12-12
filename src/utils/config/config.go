@@ -1,6 +1,8 @@
 package config
 
-import "utils"
+import (
+	"utils"
+)
 
 // Configuration holds all config data
 type Configuration struct {
@@ -38,6 +40,7 @@ var g_config Configuration
 func LoadConfig(cfgFilename string) error {
 
 	return utils.ReadJSONFile(cfgFilename, &g_config)
+
 }
 
 // GetConfig get the config data

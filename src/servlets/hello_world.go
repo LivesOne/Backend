@@ -1,10 +1,10 @@
-package httpHandlers
+package servlets
 
 import (
 	"fmt"
 	"net/http"
-	"servlets/httpcfg"
-	"servlets/httputils"
+	"servlets/common"
+	"servlets/constants"
 )
 
 // helloWorldHandler implements the "Echo message" interface
@@ -19,13 +19,13 @@ func (handler *helloWorldHandler) Handle(request *http.Request, writer http.Resp
 
 	msg := request.FormValue("param")
 
-	headerparam := httputils.ParseHttpHeaderParams(request)
+	headerparam := common.ParseHttpHeaderParams(request)
 
 	fmt.Println("helloWorldHandler, msg&HeaderParam:", headerparam, msg)
 
-	response := &httputils.ResponseData{
-		Base: &httputils.BaseResp{
-			RC:  httpCfg.RC_OK,
+	response := &common.ResponseData{
+		Base: &common.BaseResp{
+			RC:  constants.RC_OK,
 			Msg: "Success",
 		},
 		Data: headerparam,
@@ -33,5 +33,5 @@ func (handler *helloWorldHandler) Handle(request *http.Request, writer http.Resp
 
 	// return response
 
-	httputils.FlushJSONData2Client(response, writer)
+	common.FlushJSONData2Client(response, writer)
 }
