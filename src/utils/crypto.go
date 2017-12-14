@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"utils/logger"
 )
 
@@ -48,12 +49,12 @@ func Sha256(in string) string {
 }
 
 //convert binary to base64 encoded string as output
-func AesEncrypt(src, key, iv string) string {
+func AesEncrypt(src, key, iv string) (string, error) {
 
 	block, err := aes.NewCipher([]byte(key)) //选择加密算法
 	if err != nil {
 		logger.Info("AesEncrypt error", err)
-		return ""
+		return "", err
 	}
 
 	plaintText := pkcs7Padding(src, block.BlockSize())
@@ -61,16 +62,17 @@ func AesEncrypt(src, key, iv string) string {
 	ciphertext := make([]byte, len(plaintText))
 	blockModel.CryptBlocks(ciphertext, plaintText)
 
-	return Base64Encode(ciphertext)
+	return Base64Encode(ciphertext), nil
 }
 
 //convert base64 encoded string to binary as input
-func AesDecrypt(src /*base64 encoded string*/, key, iv string) string {
+// /*base64 encoded string*/
+func AesDecrypt(src, key, iv string) (string, error) {
 
 	keyBytes := Base64Decode(src)
 	block, err := aes.NewCipher(keyBytes) //选择加密算法
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	blockModel := cipher.NewCBCDecrypter(block, []byte(iv))
@@ -78,7 +80,7 @@ func AesDecrypt(src /*base64 encoded string*/, key, iv string) string {
 	blockModel.CryptBlocks(plaintText, keyBytes)
 	plaintText = pkcs7UnPadding(plaintText, block.BlockSize())
 
-	return string(plaintText)
+	return string(plaintText), nil
 }
 
 func pkcs7Padding(src string, blockSize int) []byte {
@@ -94,38 +96,39 @@ func pkcs7UnPadding(plantText []byte, blockSize int) []byte {
 }
 
 //convert base64 encoded string to binary as input
-func RsaDecrypt(src /*base64 encoded string*/ string, privateKey string) string {
+/*base64 encoded string*/
+func RsaDecrypt(src string, privateKey string) (string, error) {
 	block, _ := pem.Decode([]byte(privateKey))
 	if block == nil {
-		return ""
+		return "", errors.New("no pem data")
 	}
 
 	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	decoded, err := rsa.DecryptPKCS1v15(rand.Reader, priv, Base64Decode(src))
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return string(decoded)
+	return string(decoded), nil
 }
 
 //convert binary to base64 encoded string as output
-func RsaSign(src string, privateKey string) string {
+func RsaSign(src string, privateKey string) (string, error) {
 	block, _ := pem.Decode([]byte(privateKey))
 	if block == nil {
-		return ""
+		return "", errors.New("no pem data")
 	}
 	pubInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	pub := pubInterface.(*rsa.PublicKey)
 	encode, err := rsa.EncryptPKCS1v15(rand.Reader, pub, []byte(src))
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return Base64Encode(encode)
+	return Base64Encode(encode), nil
 }

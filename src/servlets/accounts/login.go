@@ -79,11 +79,23 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	uid := "123456789"
 	var expire int64 = 24 * 3600
 
-	newtoken, _ := token.New(uid, handler.aesKey, expire)
+	newtoken, errNewT := token.New(uid, handler.aesKey, expire)
+	if errNewT != constants.ERR_INT_OK {
+		response.Base.RC = constants.RC_SYSTEM_ERROR
+		response.Base.Msg = "system error"
+		return
+	}
+
+	newtoken, err := utils.RsaSign(newtoken, config.GetConfig().PrivKey)
+	if err != nil {
+		response.Base.RC = constants.RC_SYSTEM_ERROR
+		response.Base.Msg = "system error"
+		return
+	}
 
 	response.Data = &responseLogin{
 		UID:    uid,
-		Token:  utils.RsaSign(newtoken, config.GetConfig().PrivKey),
+		Token:  newtoken,
 		Expire: expire,
 	}
 }
@@ -119,7 +131,7 @@ func (handler *loginHandler) getAESKey(originalKey string) string {
 	// 	return ""
 	// }
 
-	aeskey := utils.RsaDecrypt(originalKey, config.GetConfig().PrivKey)
+	aeskey, _ := utils.RsaDecrypt(originalKey, config.GetConfig().PrivKey)
 	// if err != nil {
 	// 	// logger.Info("decode key error:", err, originalKey)
 	// 	logger.Info("decode key error, rsa:", err)
