@@ -1,7 +1,10 @@
 package common
 
 import (
+	"crypto/rand"
 	"encoding/json"
+	"hash/crc32"
+	"io"
 	"net/http"
 	"strconv"
 	"utils/logger"
@@ -62,4 +65,39 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 	}
 
 	return true
+}
+
+func GenerateUID(len int) string {
+	s := "0123456789"
+	box := []byte(s)
+
+	var uid string
+	i := 0
+	for {
+		if i > len-2 {
+			break
+		}
+
+		r := make([]byte, 16)
+		rand.Read(r)
+		index := int(r[0]) % 10
+
+		if i == 0 && index == 0 {
+			continue
+		}
+
+		uid += string(box[index])
+
+		i++
+	}
+
+	ieee := crc32.NewIEEE()
+	io.WriteString(ieee, uid)
+	sum := ieee.Sum32()
+
+	crc := int(sum) % 10
+
+	uid += string(box[crc])
+
+	return uid
 }
