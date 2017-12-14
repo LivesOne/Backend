@@ -12,7 +12,7 @@ import (
 func main() {
 
 	initialize()
-
+	servlets.Init()
 	servlets.RegisterHandlers()
 	server.Start(config.GetConfig().ServerAddr)
 
@@ -22,7 +22,7 @@ func initialize() {
 
 	const (
 		// configuration file name
-		configFile = "config/config.json"
+		configFile = "../config/config.json"
 		// logs directory
 		logsDir = "logs"
 		// logDir = ""

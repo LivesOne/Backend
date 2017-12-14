@@ -1,9 +1,9 @@
 {
-    "ServerAddr" : "localhost",
-    "ServerPort" : 8080,
+    "ServerAddr" : ":8080",    
 
     "PrivKey" : "1234567890",
 
+    "RedisAddr" : "10.16.32.139:6379",
     "DBHost" : "localhost",
     "DBUser" : "user",
     "DBUserPwd" : "password",

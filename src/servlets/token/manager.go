@@ -3,18 +3,20 @@ package token
 import (
 	"servlets/constants"
 	"utils/config"
+	"utils/logger"
 
 	"github.com/thanhpk/randstr"
 )
 
-var gDB Database
+var gDB RedisDB
 
 func Init() {
-	gDB := &RedisDB{}
+	//	gDB = RedisDB{}
+	logger.Debug(config.GetConfig().RedisAddr)
 	gDB.Open(config.GetConfig().RedisAddr)
 }
 
-func New(uid, key string, expire int) (newtoken string, err int) {
+func New(uid, key string, expire int64) (newtoken string, err int) {
 	ret := constants.ERR_INT_TK_DUPLICATE
 	token := ""
 	for ret == constants.ERR_INT_TK_DUPLICATE {
@@ -29,7 +31,7 @@ func New(uid, key string, expire int) (newtoken string, err int) {
 	}
 }
 
-func Update(hash, key string, expire int) (err int) {
+func Update(hash, key string, expire int64) (err int) {
 	return gDB.Update(hash, key, expire)
 }
 

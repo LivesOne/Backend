@@ -4,6 +4,8 @@ import (
 	"servlets/constants"
 	"time"
 
+	"utils/logger"
+
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -11,10 +13,9 @@ type RedisDB struct {
 	pool *redis.Pool
 }
 
-var gRedisDB *RedisDB
-
 func (r *RedisDB) Open(conf interface{}) {
-	gRedisDB.pool = &redis.Pool{
+	logger.Debug(conf)
+	r.pool = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
