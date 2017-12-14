@@ -44,7 +44,7 @@ func HexDecode(in string) []byte {
 
 func Sha256(in string) string {
 	encode := sha256.Sum256([]byte(in))
-	return string(encode[:])
+	return HexEncode(encode[:])
 }
 
 //convert binary to base64 encoded string as output

@@ -3,7 +3,9 @@
 
     "PrivKey" : "1234567890",
 
-    "RedisAddr" : "10.16.32.139:6379",
+    "RedisAddr" : "10.100.15.96:6379",
+    "RedisAuth" : "lvt_serv",
+    
     "DBHost" : "localhost",
     "DBUser" : "user",
     "DBUserPwd" : "password",

@@ -8,7 +8,7 @@ package token
 // )
 
 type Database interface {
-	Open(conf interface{})
+	Open(conf map[string]string)
 	Insert(hash, uid, key, token string, expire int) int
 	Update(hash, key string, expire int) int
 	Delete(hash string) int

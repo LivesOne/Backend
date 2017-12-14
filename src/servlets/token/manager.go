@@ -14,7 +14,10 @@ var gDB RedisDB
 func Init() {
 	//	gDB = RedisDB{}
 	logger.Debug(config.GetConfig().RedisAddr)
-	gDB.Open(config.GetConfig().RedisAddr)
+	gDB.Open(map[string]string{
+		"addr": config.GetConfig().RedisAddr,
+		"auth": config.GetConfig().RedisAuth,
+	})
 }
 
 func New(uid, key string, expire int64) (newtoken string, err int) {

@@ -18,7 +18,8 @@ type Configuration struct {
 	PrivKey string
 
 	// redis的参数
-	RedisAddr string //"[ip]:port"
+	RedisAddr  string //"[ip]:port"
+	RedisAuth  string
 
 	// 短信验证网关相关
 
@@ -42,5 +43,5 @@ func LoadConfig(cfgFilename string) error {
 // GetConfig get the config data
 func GetConfig() *Configuration {
 
-	return &gConfig
+gConfig	return &gConfig
 }
