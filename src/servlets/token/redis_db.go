@@ -1,7 +1,6 @@
 package token
 
 import (
-	"errors"
 	"servlets/constants"
 	"time"
 
@@ -20,24 +19,30 @@ func (r *RedisDB) Open(conf map[string]string) {
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", conf["addr"])
+			//c, err := redis.Dial("tcp", conf["addr"])
+			c, err := redis.Dial("tcp", conf["addr"],
+				redis.DialConnectTimeout(500*time.Millisecond),
+				redis.DialReadTimeout(500*time.Millisecond),
+				redis.DialWriteTimeout(500*time.Millisecond),
+				redis.DialKeepAlive(1*time.Second),
+				redis.DialPassword(conf["auth"]))
 			if err != nil {
 				logger.Info("token: can't connect to redis server")
 				return nil, err
 			}
 
-			if len(conf["auth"]) > 0 {
-				succ, err := redis.Bool(c.Do("AUTH", conf["auth"]))
-				if err != nil {
-					logger.Info("token: can't connect to redis server")
-					c.Close()
-					return nil, err
-				} else if !succ {
-					logger.Info("token: redis server password wrong")
-					c.Close()
-					return nil, errors.New("redis server password wrong")
-				}
-			}
+			// if len(conf["auth"]) > 0 {
+			// 	succ, err := redis.Bool(c.Do("AUTH", conf["auth"]))
+			// 	if err != nil {
+			// 		logger.Info("token: can't connect to redis server")
+			// 		c.Close()
+			// 		return nil, err
+			// 	} else if !succ {
+			// 		logger.Info("token: redis server password wrong")
+			// 		c.Close()
+			// 		return nil, errors.New("redis server password wrong")
+			// 	}
+			// }
 			return c, err
 		},
 
