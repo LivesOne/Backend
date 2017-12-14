@@ -10,6 +10,22 @@ const (
 	// Echo message
 	// http method : POST
 	Echo = "/echo"
+
+	// Account Register
+	// http method : POST
+	ACCOUNT_REGISTER = "/user/v1/account/register"
+
+	// Account login
+	// http method : POST
+	ACCOUNT_LOGIN = "/user/v1/account/login"
+
+	// Account auto login
+	// http method : POST
+	ACCOUNT_AUTOLOGIN = "/user/v1/account/autologin"
+
+	// Account logout
+	// http method : POST
+	ACCOUNT_LOGOUT = "/user/v1/account/logout"
 )
 
 // InitHTTPConfig initialize the http configuration

@@ -2,9 +2,9 @@ package common
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
+	"utils/logger"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -22,9 +22,9 @@ func FlushJSONData2Client(data interface{}, writer http.ResponseWriter) {
 	toClient, err := json.Marshal(data)
 	if err == nil {
 		writer.Write(toClient)
-		log.Println("FlushJsonData2Clinet data success:\n", string(toClient))
+		logger.Info("FlushJsonData2Clinet data success:\n", string(toClient))
 	} else {
-		log.Println("FlushJsonData2Clinet data error: ", err.Error())
+		logger.Info("FlushJsonData2Clinet data error: ", err.Error())
 	}
 }
 
@@ -43,8 +43,23 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 		if err != nil {
 			// if parse timestamp error, set it as -1
 			params.Timestamp = -1
+			logger.Info("ParseHttpHeaderParams, parse timestamp error: ", err)
 		}
 	}
 
 	return params
+}
+
+// ParseHttpBodyParams parse the http request body params
+func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
+
+	bodyparam := request.PostFormValue("param")
+	// var data loginRequest
+	err := json.Unmarshal([]byte(bodyparam), body)
+	if err != nil {
+		logger.Info("ParseHttpBodyParams, parse body param error: ", err)
+		return false
+	}
+
+	return true
 }
