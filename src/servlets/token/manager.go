@@ -2,6 +2,7 @@ package token
 
 import (
 	"servlets/constants"
+	"utils"
 	"utils/config"
 	"utils/logger"
 
@@ -21,7 +22,7 @@ func New(uid, key string, expire int64) (newtoken string, err int) {
 	token := ""
 	for ret == constants.ERR_INT_TK_DUPLICATE {
 		token = randstr.String(32)
-		hash := token //hash method should be sha256
+		hash := utils.Sha256(token)
 		ret = gDB.Insert(hash, uid, key, token, expire)
 	}
 	if ret != constants.ERR_INT_OK {
