@@ -14,7 +14,7 @@ func main() {
 	initialize()
 
 	servlets.RegisterHandlers()
-	server.Start(config.GetConfig().ServerAddr, config.GetConfig().ServerPort)
+	server.Start(config.GetConfig().ServerAddr)
 
 }
 

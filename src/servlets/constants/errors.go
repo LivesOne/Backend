@@ -9,7 +9,10 @@ const (
 )
 
 const (
-	ERR_INT_OK = 0 //internal errors
+	ERR_INT_OK           = 0 //internal errors
+	ERR_INT_TK_DB        = -1
+	ERR_INT_TK_DUPLICATE = -2
+	ERR_INT_TK_NOTEXISTS = -3
 )
 
 const (

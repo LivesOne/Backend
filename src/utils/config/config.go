@@ -6,12 +6,7 @@ import (
 
 // Configuration holds all config data
 type Configuration struct {
-
-	// 服务bind地址
-	ServerAddr string
-
-	// 服务listen端口
-	ServerPort int
+	ServerAddr string //"[ip]:port"
 
 	// mysql config
 	DBHost     string
@@ -23,6 +18,7 @@ type Configuration struct {
 	PrivKey string
 
 	// redis的参数
+	RedisAddr string //"[ip]:port"
 
 	// 短信验证网关相关
 
@@ -34,17 +30,17 @@ type Configuration struct {
 }
 
 // configuration data
-var g_config Configuration
+var gConfig Configuration
 
 // LoadConfig load the configuration from the configuration file
 func LoadConfig(cfgFilename string) error {
 
-	return utils.ReadJSONFile(cfgFilename, &g_config)
+	return utils.ReadJSONFile(cfgFilename, &gConfig)
 
 }
 
 // GetConfig get the config data
 func GetConfig() *Configuration {
 
-	return &g_config
+	return &gConfig
 }

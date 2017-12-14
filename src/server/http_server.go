@@ -34,7 +34,7 @@ func RegisterHandler(url string, handler HttpHandler) {
 }
 
 //Start http server to listen
-func Start(addr string, port int) {
+func Start(addr string) {
 	gServer = &http.Server{
 		Addr:           ":8080",
 		Handler:        gRouter,
