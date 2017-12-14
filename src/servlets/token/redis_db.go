@@ -16,7 +16,8 @@ type RedisDB struct {
 func (r *RedisDB) Open(conf map[string]string) {
 	logger.Debug(conf)
 	r.pool = &redis.Pool{
-		MaxIdle:     3,
+		MaxIdle:     8,
+		MaxActive：	16	
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			//c, err := redis.Dial("tcp", conf["addr"])
