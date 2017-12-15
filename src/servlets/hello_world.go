@@ -18,17 +18,16 @@ func (handler *helloWorldHandler) Method() string {
 func (handler *helloWorldHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
 	msg := request.FormValue("param")
-
 	headerparam := common.ParseHttpHeaderParams(request)
 
-	fmt.Println("helloWorldHandler, msg&HeaderParam:", headerparam, msg)
+	fmt.Println("helloWorldHandler, msg&HeaderParam:", msg, headerparam)
 
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK,
 			Msg: "Success",
 		},
-		Data: headerparam,
+		Data: msg,
 	}
 
 	// return response

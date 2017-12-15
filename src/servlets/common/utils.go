@@ -50,6 +50,8 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 		}
 	}
 
+	logger.Info("received http header: ", *params)
+
 	return params
 }
 
@@ -57,6 +59,8 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 
 	bodyparam := request.PostFormValue("param")
+	logger.Info("received http body: ", bodyparam)
+
 	// var data loginRequest
 	err := json.Unmarshal([]byte(bodyparam), body)
 	if err != nil {

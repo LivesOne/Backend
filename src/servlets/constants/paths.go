@@ -9,7 +9,7 @@ const (
 
 	// Echo message
 	// http method : POST
-	Echo = "/echo"
+	Echo = "/demo/v1/echo"
 
 	// Account Register
 	// http method : POST

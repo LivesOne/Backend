@@ -1,10 +1,10 @@
 package servlets
 
 import (
-	"fmt"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"utils/logger"
 )
 
 // echoMsgHandler implements the "Echo message" interface
@@ -19,7 +19,7 @@ func (handler *echoMsgHandler) Handle(request *http.Request, writer http.Respons
 
 	msg := request.PostFormValue("param")
 
-	fmt.Println("echoMsgHandler) Handle", msg)
+	logger.Info("received http body: ", msg)
 
 	response := &common.ResponseData{
 		Base: &common.BaseResp{

@@ -6,6 +6,7 @@ import (
 	"servlets/constants"
 	"strconv"
 	"time"
+	"utils/logger"
 )
 
 // registerParam holds the request "param" field
@@ -22,8 +23,8 @@ type registerParam struct {
 
 // registerRequest holds entire request data
 type registerRequest struct {
-	Base  common.BaseReq `json:"base"`
-	Param registerParam  `json:"param"`
+	Base  common.BaseInfo `json:"base"`
+	Param registerParam   `json:"param"`
 }
 
 // responseData holds response "data" field
@@ -34,8 +35,13 @@ type responseRegister struct {
 
 // registerUserHandler implements the "Echo message" interface
 type registerUserHandler struct {
-	header       *common.HeaderParams
+	// http request, header params
+	header *common.HeaderParams
+	// http request, body params
 	registerData *registerRequest
+
+	// http response data to client
+	response *common.ResponseData
 }
 
 func (handler *registerUserHandler) Method() string {
@@ -44,21 +50,24 @@ func (handler *registerUserHandler) Method() string {
 
 func (handler *registerUserHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	response := &common.ResponseData{
+	handler.response = &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK,
 			Msg: "ok",
 		},
 	}
-	defer common.FlushJSONData2Client(response, writer)
+	defer common.FlushJSONData2Client(handler.response, writer)
 
 	handler.header = common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &handler.registerData)
+	if handler.checkRequestParams() == false {
+		return
+	}
 
 	// fmt.Println("registerUserHandler) Handle", msg)
 	// hashPwd := utils.RsaDecrypt(handler.registerData.Param.PWD, config.GetConfig().PrivKey)
 
-	account := handler.GetAccount()
+	account := handler.getAccount()
 
 	// newtoken, err := token.New(uid, "key", 24*3600)
 
@@ -69,13 +78,52 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	case constants.LOGIN_TYPE_PHONE:
 	}
 
-	response.Data = &responseRegister{
+	handler.response.Data = &responseRegister{
 		UID:     account.UIDString,
 		Regtime: account.RegisterTime,
 	}
 }
 
-func (handler *registerUserHandler) GetAccount() common.Account {
+func (handler *registerUserHandler) checkRequestParams() bool {
+	// if handler.header.Timestamp < 1 {
+	// 	handler.response.Base.RC = constants.RC_READ_REQUEST_PARAM_ERROR
+	// 	handler.response.Base.Msg = "read http request params error"
+	// 	return false
+	// }
+
+	// if (handler.registerData.Base.App == nil) || (handler.registerData.Base.App.IsValid() == false) {
+	// 	handler.response.Base.RC = constants.RC_READ_REQUEST_PARAM_ERROR
+	// 	handler.response.Base.Msg = "read http request params error"
+	// 	return false
+	// }
+
+	// if (handler.registerData.Param.Type < constants.LOGIN_TYPE_UID) && (handler.registerData.Param.Type > constants.LOGIN_TYPE_PHONE) {
+	// 	handler.response.Base.RC = constants.RC_READ_REQUEST_PARAM_ERROR
+	// 	handler.response.Base.Msg = "read http request params error"
+	// 	return false
+	// }
+
+	// if (len(handler.registerData.Param.PWD) < 1) && (handler.registerData.Param.Spkv < 1) {
+	// 	handler.response.Base.RC = constants.RC_READ_REQUEST_PARAM_ERROR
+	// 	handler.response.Base.Msg = "read http request params error"
+	// 	return false
+	// }
+
+	if (handler.header.Timestamp < 1) ||
+		(handler.registerData.Base.App == nil) || (handler.registerData.Base.App.IsValid() == false) ||
+		(handler.registerData.Param.Type < constants.LOGIN_TYPE_UID) && (handler.registerData.Param.Type > constants.LOGIN_TYPE_PHONE) ||
+		(len(handler.registerData.Param.PWD) < 1) && (handler.registerData.Param.Spkv < 1) {
+
+		handler.response.Base.RC = constants.RC_READ_REQUEST_PARAM_ERROR
+		handler.response.Base.Msg = "request params error"
+		logger.Info("request params error")
+		return false
+	}
+
+	return true
+}
+
+func (handler *registerUserHandler) getAccount() common.Account {
 	var account common.Account
 
 	uid := common.GenerateUID(9)

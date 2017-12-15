@@ -22,8 +22,8 @@ type loginParam struct {
 }
 
 type loginRequest struct {
-	Base  common.BaseReq `json:"base"`
-	Param loginParam     `json:"param"`
+	Base  common.BaseInfo `json:"base"`
+	Param loginParam      `json:"param"`
 }
 
 type responseLogin struct {
