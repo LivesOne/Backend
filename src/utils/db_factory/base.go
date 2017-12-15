@@ -36,10 +36,10 @@ func convConfig2Str(config Config) string {
 }
 
 func initDb(config Config) DBPool {
-	conn_str := convConfig2Str(config)
-	db, err := sql.Open("mysql", conn_str)
+	connStr := convConfig2Str(config)
+	db, err := sql.Open("mysql", connStr)
 	if err != nil {
-		log.Error("openstr %s", conn_str)
+		log.Error("openstr %s", connStr)
 		log.Error("cannot conn db %s", err.Error())
 		return DBPool{
 			isConn: false,
