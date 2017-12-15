@@ -58,11 +58,30 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 // ParseHttpBodyParams parse the http request body params
 func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 
-	bodyparam := request.PostFormValue("param")
-	logger.Info("received http body: ", bodyparam)
+	logger.Info("request.ContentLength: ", request.ContentLength)
+	if request.ContentLength < 1 {
+		return true
+	}
+
+	var bodyparam []byte = make([]byte, request.ContentLength)
+	// logger.Info("bodyparam: ", len(bodyparam), cap(bodyparam))
+	count, err := request.Body.Read(bodyparam)
+	// request.Body.Read(bodyparam)
+	if (err != nil) && (err != io.EOF) {
+		logger.Info("ready body error 9999999999: ", err, count)
+		return false
+	}
+	// if (err != io.EOF) || (int64(count) != request.ContentLength) {
+	// 	logger.Info("ready body error 9999999999: ", err, count)
+	// 	return false
+	// }
+	logger.Info("ready body: ", string(bodyparam))
+
+	// bodyparam := request.PostFormValue("param")
+	// logger.Info("received http body: ", bodyparam)
 
 	// var data loginRequest
-	err := json.Unmarshal([]byte(bodyparam), body)
+	err = json.Unmarshal(bodyparam, body)
 	if err != nil {
 		logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 		return false
