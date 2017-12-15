@@ -1,7 +1,12 @@
 package servlets
 
-import "servlets/token"
+import (
+	"servlets/common"
+	"servlets/token"
+)
 
 func Init() {
 	token.Init()
+	common.DbInit()
+
 }

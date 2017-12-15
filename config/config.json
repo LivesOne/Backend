@@ -6,10 +6,9 @@
     "RedisAddr" : "10.100.15.96:6379",
     "RedisAuth" : "lvt_serv",
     
-    "DBHost" : "localhost",
-    "DBUser" : "user",
-    "DBUserPwd" : "password",
-    "DBDatabase" : "database"
+    "DBHost" : "10.100.15.96:3306",
+    "DBUser" : "lvt_serv",
+    "DBUserPwd" : "U9D$WHTo",
+    "DBDatabase" : "livesone_user"
 
 }
-

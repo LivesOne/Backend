@@ -22,8 +22,32 @@ func DbInit() error {
 		logger.Fatal(err)
 		return err
 	}
+
+	logger.Debug("connection database successful")
+	return nil
 }
 
-func InsertAccount() (int64, error) {
+func InsertAccount(account Account) (int64, error) {
+	if gDbUser == nil {
+		logger.Error("database not ready")
+		return 0, nil
+	}
 
+	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, email=?, country=?, phone=?, login_password=?, " +
+		"'language'=?, region=?, 'from'=?, register_time=?, update_time=?, register_type=?")
+	if err != nil {
+		logger.Fatal(err)
+		return 0, err
+	}
+
+	res, err := stmt.Exec(account.UID, account.Email, account.Country, account.Phone, account.LoginPassword,
+		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
+	if err != nil {
+		logger.Fatal(err)
+		return 0, err
+	}
+
+	id, _ := res.LastInsertId()
+
+	return id, nil
 }

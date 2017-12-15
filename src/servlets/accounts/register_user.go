@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"strconv"
 	"time"
 )
 
@@ -57,19 +58,39 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	// fmt.Println("registerUserHandler) Handle", msg)
 	// hashPwd := utils.RsaDecrypt(handler.registerData.Param.PWD, config.GetConfig().PrivKey)
 
-	// TODO: generate a new User ID
-	uid := "123456789"
+	account := handler.GetAccount()
 
 	// newtoken, err := token.New(uid, "key", 24*3600)
 
 	switch handler.registerData.Param.Type {
 	case constants.LOGIN_TYPE_UID:
+		common.InsertAccount(account)
 	case constants.LOGIN_TYPE_EMAIL:
 	case constants.LOGIN_TYPE_PHONE:
 	}
 
 	response.Data = &responseRegister{
-		UID:     uid,
-		Regtime: time.Now().Unix(),
+		UID:     account.UIDString,
+		Regtime: account.RegisterTime,
 	}
+}
+
+func (handler *registerUserHandler) GetAccount() common.Account {
+	var account common.Account
+
+	uid := common.GenerateUID(9)
+
+	account.UIDString = uid
+	account.UID, _ = strconv.ParseInt(uid, 10, 64)
+
+	account.Email = handler.registerData.Param.EMail
+	account.Country = handler.registerData.Param.Country
+	account.Phone = handler.registerData.Param.Phone
+
+	account.LoginPassword = handler.registerData.Param.PWD
+	account.RegisterTime = time.Now().Unix()
+	account.UpdateTime = account.RegisterTime
+	account.RegisterType = handler.registerData.Param.Type
+
+	return account
 }
