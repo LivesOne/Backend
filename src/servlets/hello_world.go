@@ -17,7 +17,7 @@ func (handler *helloWorldHandler) Method() string {
 
 func (handler *helloWorldHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	msg := request.FormValue("param")
+	msg := request.FormValue("param") // actually, this is URL param
 	headerparam := common.ParseHttpHeaderParams(request)
 
 	fmt.Println("helloWorldHandler, msg&HeaderParam:", msg, headerparam)
@@ -29,8 +29,6 @@ func (handler *helloWorldHandler) Handle(request *http.Request, writer http.Resp
 		},
 		Data: msg,
 	}
-
-	// return response
 
 	common.FlushJSONData2Client(response, writer)
 }
