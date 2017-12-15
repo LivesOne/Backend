@@ -36,8 +36,8 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
-			RC:  constants.RC_OK,
-			Msg: "ok",
+			RC:  constants.RC_OK.Rc,
+			Msg: constants.RC_OK.Msg,
 		},
 	}
 	defer common.FlushJSONData2Client(response, writer)

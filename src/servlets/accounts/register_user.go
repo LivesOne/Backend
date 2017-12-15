@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"utils/logger"
+	"utils"
 )
 
 // registerParam holds the request "param" field
@@ -52,8 +53,8 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 
 	handler.response = &common.ResponseData{
 		Base: &common.BaseResp{
-			RC:  constants.RC_OK,
-			Msg: "ok",
+			RC:  constants.RC_OK.Rc,
+			Msg: constants.RC_OK.Msg,
 		},
 	}
 	defer common.FlushJSONData2Client(handler.response, writer)
@@ -114,8 +115,8 @@ func (handler *registerUserHandler) checkRequestParams() bool {
 		(handler.registerData.Param.Type < constants.LOGIN_TYPE_UID) && (handler.registerData.Param.Type > constants.LOGIN_TYPE_PHONE) ||
 		(len(handler.registerData.Param.PWD) < 1) && (handler.registerData.Param.Spkv < 1) {
 
-		handler.response.Base.RC = constants.RC_READ_REQUEST_PARAM_ERROR
-		handler.response.Base.Msg = "request params error"
+		handler.response.Base.RC = constants.RC_PARAM_ERR.Rc
+		handler.response.Base.Msg = constants.RC_PARAM_ERR.Msg
 		logger.Info("request params error")
 		return false
 	}
@@ -131,11 +132,11 @@ func (handler *registerUserHandler) getAccount() common.Account {
 	account.UIDString = uid
 	account.UID, _ = strconv.ParseInt(uid, 10, 64)
 
-	account.Email = handler.registerData.Param.EMail
-	account.Country = handler.registerData.Param.Country
-	account.Phone = handler.registerData.Param.Phone
+	//account.Email = handler.registerData.Param.EMail
+	//account.Country = handler.registerData.Param.Country
+	//account.Phone = handler.registerData.Param.Phone
 
-	account.LoginPassword = handler.registerData.Param.PWD
+	account.LoginPassword = utils.Sha256(handler.registerData.Param.PWD + uid)
 	account.RegisterTime = time.Now().Unix()
 	account.UpdateTime = account.RegisterTime
 	account.RegisterType = handler.registerData.Param.Type

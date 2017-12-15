@@ -23,8 +23,8 @@ func (handler *echoMsgHandler) Handle(request *http.Request, writer http.Respons
 
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
-			RC:  constants.RC_OK,
-			Msg: "Success",
+			RC:  constants.RC_OK.Rc,
+			Msg: constants.RC_OK.Msg,
 		},
 		Data: msg,
 	}

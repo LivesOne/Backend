@@ -48,8 +48,8 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
-			RC:  constants.RC_OK,
-			Msg: "ok",
+			RC:  constants.RC_OK.Rc,
+			Msg: constants.RC_OK.Msg,
 		},
 	}
 	defer common.FlushJSONData2Client(response, writer)
@@ -81,15 +81,15 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 	newtoken, errNewT := token.New(uid, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {
-		response.Base.RC = constants.RC_SYSTEM_ERROR
-		response.Base.Msg = "system error"
+		response.Base.RC = constants.RC_SYSTEM_ERR.Rc
+		response.Base.Msg = constants.RC_SYSTEM_ERR.Msg
 		return
 	}
 
 	newtoken, err := utils.RsaSign(newtoken, config.GetConfig().PrivKey)
 	if err != nil {
-		response.Base.RC = constants.RC_SYSTEM_ERROR
-		response.Base.Msg = "system error"
+		response.Base.RC = constants.RC_SYSTEM_ERR.Rc
+		response.Base.Msg = constants.RC_SYSTEM_ERR.Msg
 		return
 	}
 

@@ -25,8 +25,8 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
-			RC:  constants.RC_OK,
-			Msg: "ok",
+			RC:  constants.RC_OK.Rc,
+			Msg: constants.RC_OK.Msg,
 		},
 	}
 	defer common.FlushJSONData2Client(response, writer)

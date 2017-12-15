@@ -2,7 +2,37 @@
 
 package constants
 
+type Error struct {
+	Rc int
+	Msg string
+}
+
+var (
+	RC_OK = Error{0, "ok"}
+	RC_SYSTEM_ERR = Error{1, "system error"}
+	RC_PROTOCOL_ERR = Error{2, "protocol error"}
+	RC_TOO_MANY_REQ = Error{3, "too many request"}
+	RC_IP_LIMITED = Error{4, "ip limited"}
+	RC_PARAM_ERR = Error{5, "param error"}
+
+	RC_INVALID_APPID = Error{10001, "invalid appid"}
+	RC_INVALID_PUB_KEY = Error{10002, "invalid public key"}
+	RC_INVALID_SIGN = Error{10003, "invalid signature"}
+	RC_INVALID_TOKEN = Error{10004, "invalid token"}
+	RC_INVALID_VCODE = Error{10005, "invalid verification code"}
+	RC_VCODE_EXPIRE = Error{10006, "verification code expire"}
+
+	RC_DUP_EMAIL = Error{20001, "duplicate email"}
+	RC_DUP_PHONE = Error{20002, "duplicate phone"}
+	RC_DUP_NICKNAME = Error{20003, "duplicate nickname"}
+	RC_INVALID_ACCOUNT = Error{20004, "invalid account"}
+	RC_INVALID_LOGIN_PWD = Error{20005, "invalid login password"}
+	RC_INVALID_PAYMENT_PWD = Error{20006, "invalid payment password"}
+
+)
+
 // HTTP return code constants
+/*
 const (
 	RC_OK                       = 0 // ok
 	RC_SYSTEM_ERROR             = 1 // system error
@@ -26,6 +56,7 @@ const (
 	RC_INVALID_PAYMENT_PWD = 20006 // invalid payment password
 
 )
+*/
 
 const (
 	ERR_INT_OK           = 0 //internal errors
