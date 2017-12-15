@@ -63,25 +63,34 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 		return true
 	}
 
-	var bodyparam []byte = make([]byte, request.ContentLength)
+	var bodyparam string
+	var bodyTmp []byte = make([]byte, request.ContentLength)
 	// logger.Info("bodyparam: ", len(bodyparam), cap(bodyparam))
-	count, err := request.Body.Read(bodyparam)
-	// request.Body.Read(bodyparam)
-	if (err != nil) && (err != io.EOF) {
-		logger.Info("ready body error 9999999999: ", err, count)
-		return false
+	for {
+		count, err := request.Body.Read(bodyTmp)
+		if count > 0 {
+			bodyparam += string(bodyTmp[:count])
+		}
+		if err == io.EOF {
+			break
+		}
+		// request.Body.Read(bodyparam)
+		if err != nil {
+			logger.Info("ready body error : ", err)
+			return false
+		}
 	}
 	// if (err != io.EOF) || (int64(count) != request.ContentLength) {
 	// 	logger.Info("ready body error 9999999999: ", err, count)
 	// 	return false
 	// }
-	logger.Info("ready body: ", string(bodyparam))
+	logger.Info("ready body: ", bodyparam)
 
 	// bodyparam := request.PostFormValue("param")
 	// logger.Info("received http body: ", bodyparam)
 
 	// var data loginRequest
-	err = json.Unmarshal(bodyparam, body)
+	err := json.Unmarshal([]byte(bodyparam), body)
 	if err != nil {
 		logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 		return false
