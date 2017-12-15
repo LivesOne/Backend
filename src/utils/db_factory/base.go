@@ -11,7 +11,7 @@ type Config struct {
 	Host        string
 	UserName    string
 	Password    string
-	Database     string
+	Database    string
 	MaxConn     int
 	MaxIdleConn int
 }
