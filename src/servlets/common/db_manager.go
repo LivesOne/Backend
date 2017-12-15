@@ -38,14 +38,16 @@ func InsertAccount(account Account) (int64, error) {
 		return 0, nil
 	}
 
-	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, email=?, country=?, phone=?, login_password=?, " +
+	//stmt, err := gDbUser.Prepare("INSERT account SET uid=?, email=?, country=?, phone=?, login_password=?, " +
+	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, login_password=?, " +
 		"`language`=?, region=?, `from`=?, register_time=?, update_time=?, register_type=?")
 	if err != nil {
 		logger.Fatal(err)
 		return 0, err
 	}
 
-	res, err := stmt.Exec(account.UID, account.Email, account.Country, account.Phone, account.LoginPassword,
+	//res, err := stmt.Exec(account.UID, account.Email, account.Country, account.Phone, account.LoginPassword,
+	res, err := stmt.Exec(account.UID, account.LoginPassword,
 		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
 	if err != nil {
 		logger.Fatal(err)
