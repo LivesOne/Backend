@@ -22,12 +22,12 @@ type DBPool struct {
 }
 
 func NewDataSource(config Config) DBPool {
-	singleDB := initDb(config)
-	err := singleDB.Ping()
+	dbPool := initDb(config)
+	err := dbPool.Ping()
 	if err != nil {
 		log.Error("cannot conn db %s", err.Error())
 	}
-	return singleDB
+	return dbPool
 }
 
 func convConfig2Str(config Config) string {
