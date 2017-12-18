@@ -10,4 +10,15 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_LOGIN, &loginHandler{})
 	server.RegisterHandler(constants.ACCOUNT_AUTOLOGIN, &autoLoginHandler{})
 	server.RegisterHandler(constants.ACCOUNT_LOGOUT, &logoutHandler{})
+	server.RegisterHandler(constants.ACCOUNT_GET_IMG_VCODE, &getImgVCodeHandler{})
+	server.RegisterHandler(constants.ACCOUNT_SEND_VCODE, &sendVCodeHandler{})
+	server.RegisterHandler(constants.ACCOUNT_CHECK_VCODE, &checkVCodeHandler{})
+	server.RegisterHandler(constants.ACCOUNT_MODIFY_PWD, &modifyPwdHandler{})
+	server.RegisterHandler(constants.ACCOUNT_RESET_PWD, &resetPwdHandler{})
+	server.RegisterHandler(constants.ACCOUNT_SET_TX_PWD, &setTxPwdHandler{})
+	server.RegisterHandler(constants.ACCOUNT_BIND_PHONE, &bindPhoneHandler{})
+	server.RegisterHandler(constants.ACCOUNT_BIND_EMAIL, &bindEMailHandler{})
+	server.RegisterHandler(constants.ACCOUNT_GET_PROFILE, &getProfileHandler{})
+	server.RegisterHandler(constants.ACCOUNT_MODIFY_PROFILE, &modifyUserProfileHandler{})
+
 }
