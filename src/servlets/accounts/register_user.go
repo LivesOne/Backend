@@ -119,7 +119,7 @@ func (handler *registerUserHandler) checkRequestParams() bool {
 		return false
 	}
 
-	if (handler.registerData.Param.Type < constants.LOGIN_TYPE_UID) && (handler.registerData.Param.Type > constants.LOGIN_TYPE_PHONE) {
+	if (handler.registerData.Param.Type < constants.LOGIN_TYPE_UID) || (handler.registerData.Param.Type > constants.LOGIN_TYPE_PHONE) {
 		return false
 	}
 
