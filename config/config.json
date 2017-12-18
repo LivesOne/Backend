@@ -11,7 +11,7 @@
     "DBUserPwd" : "U9D$WHTo",
     "DBDatabase" : "livesone_user",
 
-    "SmsSvrAddr":"10.100.13.6:8044",
-    "MailSvrAddr":"10.0.5.248:8080/VCode",
-    "ImgSvrAddr":"10.0.5.248:8080/VCode"
+    "SmsSvrAddr":"http://10.100.13.6:8044",
+    "MailSvrAddr":"http://10.0.5.248:8080/VCode",
+    "ImgSvrAddr":"http://10.0.5.248:8080/VCode"
 }
