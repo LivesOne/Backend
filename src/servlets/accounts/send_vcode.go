@@ -27,8 +27,8 @@ type sendVCodeParam struct {
 }
 
 type sendVCodeRequest struct {
-	Base  common.BaseInfo `json:"base"`
-	Param sendVCodeParam  `json:"param"`
+	Base  *common.BaseInfo `json:"base"`
+	Param *sendVCodeParam  `json:"param"`
 }
 
 // sendVCodeHandler
@@ -60,24 +60,24 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 
 	switch requestData.Param.Type {
 		case MESSAGE:
-			sendMessage(response)
+			sendMessage(requestData.Param,response)
 		case CALL:
-			sendCall(response)
+			sendCall(requestData.Param,response)
 		case EMAIL:
-			sendEmail(response)
+			sendEmail(requestData.Param,response)
 	}
 
 
 }
 
-func sendMessage(res *common.ResponseData){
+func sendMessage(param *sendVCodeParam,res *common.ResponseData){
 	//TODO send
 }
 
-func sendCall(res *common.ResponseData){
+func sendCall(param *sendVCodeParam,res *common.ResponseData){
 	//TODO send
 }
 
-func sendEmail(res *common.ResponseData){
+func sendEmail(param *sendVCodeParam,res *common.ResponseData){
 	//TODO send
 }
