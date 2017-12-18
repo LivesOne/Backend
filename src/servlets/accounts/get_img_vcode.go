@@ -58,6 +58,8 @@ type httpResParam struct {
 // loginHandler implements the "Echo message" interface
 type getImgVCodeHandler struct {
 
+	//header      *common.HeaderParams // request header param
+	//requestData *imgRequest    // request body
 
 }
 
