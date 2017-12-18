@@ -90,7 +90,7 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 	}
 	reqParam, _ := json.Marshal(typeData)
 	url := config.GetConfig().ImgSvrAddr + "/img/v1/getCode"
-	svrResStr, err := post(url, string(reqParam), "application/json")
+	svrResStr, err := common.Post(url, string(reqParam))
 	if err != nil {
 		log.Error("url ---> ", url," http send error " ,err.Error())
 		response.Base = &common.BaseResp{
@@ -119,19 +119,3 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 
 }
 
-//发起post请求
-func post(url string, params string, contentType string) (resBody string, e error) {
-	log.Info("SendPost ---> ", url)
-	resp, e1 := http.Post(url, contentType, strings.NewReader(params))
-	if e1 != nil {
-		log.Error("post error ---> ", e1.Error())
-		return "", e1
-	} else {
-		defer resp.Body.Close()
-		body, e2 := ioutil.ReadAll(resp.Body)
-		if e2 != nil {
-			log.Error("post error ---> ", e2.Error())
-		}
-		return string(body), e2
-	}
-}
