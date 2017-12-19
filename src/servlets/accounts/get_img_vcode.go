@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	log "utils/logger"
 	"utils/config"
+	log "utils/logger"
 )
 
 type imgParam struct {
@@ -26,7 +26,7 @@ type responseImg struct {
 	ImgId   string `json:"img_id,omitempty"`
 	ImgSize int    `json:"img_size,omitempty"`
 	ImgData string `json:"img_data,omitempty"`
-	Expire  int  `json:"expire,omitempty"`
+	Expire  int    `json:"expire,omitempty"`
 }
 
 type httpReqParam struct {
@@ -43,13 +43,13 @@ type httpReqVCode struct {
 }
 
 type httpReqVCodeData struct {
-	ImgBase string `json:"imgBase,omitempty"`
-	VCode *httpReqVCode	`json:"vCode,omitempty"`
+	ImgBase string        `json:"imgBase,omitempty"`
+	VCode   *httpReqVCode `json:"vCode,omitempty"`
 }
 
 type httpVCodeResParam struct {
-	Ret int `json:"ret,omitempty"`
-	Msg string `json:"msg,omitempty"`
+	Ret  int               `json:"ret,omitempty"`
+	Msg  string            `json:"msg,omitempty"`
 	Data *httpReqVCodeData `json:"data,omitempty"`
 }
 
@@ -90,7 +90,7 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 	url := config.GetConfig().ImgSvrAddr + "/img/v1/getCode"
 	svrResStr, err := common.Post(url, string(reqParam))
 	if err != nil {
-		log.Error("url ---> ", url," http send error " ,err.Error())
+		log.Error("url ---> ", url, " http send error ", err.Error())
 		response.Base = &common.BaseResp{
 			RC:  constants.RC_SYSTEM_ERR.Rc,
 			Msg: constants.RC_SYSTEM_ERR.Msg,
@@ -107,13 +107,12 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 		}
 		if svrRes.Ret == 0 {
 			response.Data = &responseImg{
-				ImgId:svrRes.Data.VCode.Id,
-				ImgSize:svrRes.Data.VCode.Size,
-				ImgData:svrRes.Data.ImgBase,
-				Expire:svrRes.Data.VCode.Expire,
+				ImgId:   svrRes.Data.VCode.Id,
+				ImgSize: svrRes.Data.VCode.Size,
+				ImgData: svrRes.Data.ImgBase,
+				Expire:  svrRes.Data.VCode.Expire,
 			}
 		}
 	}
 
 }
-

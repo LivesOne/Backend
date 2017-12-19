@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	MESSAGE         = 1
-	CALL            = 2
-	EMAIL           = 3
-	MESSAGE_VID     = 2
-	VOICE_CODE_SMS  = 0
-	VOICE_CODE_CALL = 1
+	MESSAGE          = 1
+	CALL             = 2
+	EMAIL            = 3
+	MESSAGE_VID      = 2
+	VOICE_CODE_SMS   = 0
+	VOICE_CODE_CALL  = 1
 	MAIL_TPL_MAXTHON = 1
-	MAIL_TOL_LVT= 2
+	MAIL_TOL_LVT     = 2
 )
 
 type sendVCodeParam struct {
@@ -36,7 +36,7 @@ type sendVCodeParam struct {
 
 type sendVCodeRes struct {
 	Vcode_id string `json:"vcode_id"`
-	Expire int `json:"expire"`
+	Expire   int    `json:"expire"`
 }
 
 type sendVCodeRequest struct {
@@ -70,10 +70,11 @@ type httpResSms struct {
 	Message string `json:"message"`
 }
 type httpMailVCodeResParam struct {
-	Ret int `json:"ret,omitempty"`
-	Msg string `json:"msg,omitempty"`
+	Ret  int           `json:"ret,omitempty"`
+	Msg  string        `json:"msg,omitempty"`
 	Data *httpReqVCode `json:"data,omitempty"`
 }
+
 // sendVCodeHandler
 type sendVCodeHandler struct {
 	//header      *common.HeaderParams // request header param
@@ -126,14 +127,14 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 			requestData.Param.Ln = "en-us"
 		}
 		if svrRes.Ret == 0 {
-			log.Error("Type",requestData.Param.Type)
+			log.Error("Type", requestData.Param.Type)
 			switch requestData.Param.Type {
-				case MESSAGE:
-					sendMessage(requestData.Param, response)
-				case CALL:
-					sendCall(requestData.Param, response)
-				case EMAIL:
-					sendEmail(requestData.Param, response)
+			case MESSAGE:
+				sendMessage(requestData.Param, response)
+			case CALL:
+				sendCall(requestData.Param, response)
+			case EMAIL:
+				sendEmail(requestData.Param, response)
 			}
 		} else {
 			response.Base = &common.BaseResp{
@@ -183,8 +184,8 @@ func sendEmail(param *sendVCodeParam, res *common.ResponseData) {
 			}
 			if svrRes.Ret == 0 {
 				res.Data = &sendVCodeRes{
-					Vcode_id:svrRes.Data.Id,
-					Expire:svrRes.Data.Expire,
+					Vcode_id: svrRes.Data.Id,
+					Expire:   svrRes.Data.Expire,
 				}
 			}
 
