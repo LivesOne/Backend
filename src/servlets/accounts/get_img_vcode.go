@@ -2,11 +2,9 @@ package accounts
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"strings"
 	log "utils/logger"
 	"utils/config"
 )
@@ -49,7 +47,7 @@ type httpReqVCodeData struct {
 	VCode *httpReqVCode	`json:"vCode,omitempty"`
 }
 
-type httpResParam struct {
+type httpVCodeResParam struct {
 	Ret int `json:"ret,omitempty"`
 	Msg string `json:"msg,omitempty"`
 	Data *httpReqVCodeData `json:"data,omitempty"`
@@ -98,7 +96,7 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 			Msg: constants.RC_SYSTEM_ERR.Msg,
 		}
 	} else {
-		svrRes := httpResParam{}
+		svrRes := httpVCodeResParam{}
 		err := json.Unmarshal([]byte(svrResStr), &svrRes)
 		if err != nil {
 			log.Info("ParseHttpBodyParams, parse body param error: ", err)
