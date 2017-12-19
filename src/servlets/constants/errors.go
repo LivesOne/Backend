@@ -22,7 +22,6 @@ var (
 	RC_INVALID_VCODE = Error{10005, "invalid verification code"}
 	RC_VCODE_EXPIRE = Error{10006, "verification code expire"}
 	RC_PUBLIC_EXPIRE = Error{10007, "server public key expire"}
-	RC_MISSING_PARAMS = Error{10008, "missing parameters"}
 
 	RC_DUP_EMAIL = Error{20001, "duplicate email"}
 	RC_DUP_PHONE = Error{20002, "duplicate phone"}
