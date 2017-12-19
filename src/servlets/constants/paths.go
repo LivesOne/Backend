@@ -49,15 +49,15 @@ const (
 
 	// Set transaction password
 	// http method : POST
-	ACCOUNT_SET_TX_PWD = "/user/v1/account/set_tx_pwd"
+	ACCOUNT_RESET_TX_PWD = "/user/v1/account/reset_tx_pwd"
 
 	// Bind mobile phone
 	// http method : POST
-	ACCOUNT_BIND_PHONE = "/user/v1/account/bindphone"
+	ACCOUNT_BIND_PHONE = "/user/v1/account/bind_phone"
 
 	// Bind email
 	// http method : POST
-	ACCOUNT_BIND_EMAIL = "/user/v1/account/bindemail"
+	ACCOUNT_BIND_EMAIL = "/user/v1/account/bind_email"
 
 	// Get profile
 	// http method : POST

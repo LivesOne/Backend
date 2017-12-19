@@ -14,7 +14,7 @@ var gDbUser *sql.DB
 
 func DbInit() error {
 
-		dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8",
+		dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?timeout=90s&charset=utf8",
 			config.GetConfig().DBUser,
 			config.GetConfig().DBUserPwd,
 			config.GetConfig().DBHost,
