@@ -6,6 +6,13 @@ import (
 	"servlets/constants"
 )
 
+
+const(
+	MESSAGE = 1
+	CALL = 2
+	EMAIL = 3
+)
+
 type sendVCodeParam struct {
 	IMG_id      string `json:"img_id"`
 	IMG_vcode   string `json:"img_vcode"`
@@ -15,19 +22,19 @@ type sendVCodeParam struct {
 	Phone       string `json:"phone"`
 	Check_phone int    `json:"check_phone"`
 	EMail       string `json:"email"`
-	In          string `json:"in"`
+	Ln          string `json:"ln"`
 	Expire      int64  `json:"expire"`
 }
 
 type sendVCodeRequest struct {
-	Base  common.BaseInfo `json:"base"`
-	Param sendVCodeParam  `json:"param"`
+	Base  *common.BaseInfo `json:"base"`
+	Param *sendVCodeParam  `json:"param"`
 }
 
 // sendVCodeHandler
 type sendVCodeHandler struct {
-	header      *common.HeaderParams // request header param
-	requestData *sendVCodeRequest    // request body
+	//header      *common.HeaderParams // request header param
+	//requestData *sendVCodeRequest    // request body
 }
 
 func (handler *sendVCodeHandler) Method() string {
@@ -45,6 +52,32 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.requestData)
+
+	requestData := sendVCodeRequest{}    // request body
+	//header := common.ParseHttpHeaderParams(request)
+	common.ParseHttpBodyParams(request, &requestData)
+	//TODO validate img vcode
+
+	switch requestData.Param.Type {
+		case MESSAGE:
+			sendMessage(requestData.Param,response)
+		case CALL:
+			sendCall(requestData.Param,response)
+		case EMAIL:
+			sendEmail(requestData.Param,response)
+	}
+
+
+}
+
+func sendMessage(param *sendVCodeParam,res *common.ResponseData){
+	//TODO send
+}
+
+func sendCall(param *sendVCodeParam,res *common.ResponseData){
+	//TODO send
+}
+
+func sendEmail(param *sendVCodeParam,res *common.ResponseData){
+	//TODO send
 }

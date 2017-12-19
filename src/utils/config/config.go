@@ -22,11 +22,11 @@ type Configuration struct {
 	RedisAuth string
 
 	// 短信验证网关相关
-
+	SmsSvrAddr string
 	// 邮件验证网关相关
-
+	MailSvrAddr string
 	// 图像验证网关相关
-
+	ImgSvrAddr string
 	// log相关
 }
 

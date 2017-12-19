@@ -1,10 +1,8 @@
 package randstr
 
 import (
-	"time"
 	"crypto/rand"
 	"encoding/hex"
-	mathrand "math/rand"
 )
 
 func Byte(n int) []byte {
@@ -39,17 +37,28 @@ func RandomHex(s int) string {
 }
 
 func String(s int, letters ...string) string {
-	randomFactor := RandomBytes(1)
-	mathrand.Seed(time.Now().UnixNano() * int64(randomFactor[0]))
+	rb := RandomBytes(s)
 	var letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	if len(letters) > 0 {
 		letterRunes = []rune(letters[0])
 	}
 	b := make([]rune, s)
 	for i := range b {
-		b[i] = letterRunes[mathrand.Intn(len(letterRunes))]
+		b[i] = letterRunes[int(rb[i])%len(letterRunes)]
 	}
 	return string(b)
+
+	// randomFactor := RandomBytes(1)
+	// mathrand.Seed(time.Now().UnixNano() * int64(randomFactor[0]))
+	// var letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	// if len(letters) > 0 {
+	// 	letterRunes = []rune(letters[0])
+	// }
+	// b := make([]rune, s)
+	// for i := range b {
+	// 	b[i] = letterRunes[mathrand.Intn(len(letterRunes))]
+	// }
+	// return string(b)
 }
 
 func RandomString(s int, letters ...string) string { // s number of character
