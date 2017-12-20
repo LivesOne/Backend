@@ -1,8 +1,6 @@
 package common
 
 import (
-	"database/sql"
-	"fmt"
 	_ "fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -51,21 +49,18 @@ func DbInit() error {
 }
 
 func ExistsUID(uid int64) bool {
-	row := gDbUser.QueryRow("select count(1) as c from account where uid = ? limit 1", uid)
-	i, _ := strconv.Atoi(row["c"])
-	return i > 0
+	row,_ := gDbUser.QueryRow("select count(1) as c from account where uid = ? limit 1", uid)
+	return str2Int(row["c"]) > 0
 }
 
 func ExistsEmail(email string) bool {
-	row := gDbUser.QueryRow("select count(1) as c from account where email = ? limit 1", email)
-	i, _ := strconv.Atoi(row["c"])
-	return i > 0
+	row,_ := gDbUser.QueryRow("select count(1) as c from account where email = ? limit 1", email)
+	return str2Int(row["c"]) > 0
 }
 
 func ExistsPhone(country int, phone string) bool {
-	row := gDbUser.QueryRow("select count(1) as c from account where country = ? and phone = ? limit 1", country, phone)
-	i, _ := strconv.Atoi(row["c"])
-	return i > 0
+	row,_ := gDbUser.QueryRow("select count(1) as c from account where country = ? and phone = ? limit 1", country, phone)
+	return str2Int(row["c"]) > 0
 }
 
 func InsertAccount(account Account) (int64, error) {
@@ -143,38 +138,73 @@ func InsertAccountWithPhone(account Account) (int64, error) {
 }
 
 func GetAccountByUID(uid string) (Account, error) {
-	var account Account
-
-	return account, nil
+	row,err := gDbUser.QueryRow("select * from account where uid = ?",uid)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	return convRowMap2Account(row), err
 }
 
 func GetAccountByEmail(email string) (Account, error) {
-	var account Account
-
-	return account, nil
+	row,err := gDbUser.QueryRow("select * from account where email = ?",email)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	return convRowMap2Account(row), err
 }
 
 func GetAccountByPhone(country int, phone string) (Account, error) {
-	var account Account
-
-	return account, nil
+	row,err := gDbUser.QueryRow("select * from account where country = ? and phone = ? limit 1", country, phone)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	return convRowMap2Account(row), err
 }
 
 func SetEmail(uid int64, email string) error {
-	_,err := gDbUser.Exec("update account set email = ? where uid = ?",email,uid)
+	_, err := gDbUser.Exec("update account set email = ? where uid = ?", email, uid)
 	return err
 }
 
 func SetPhone(uid int64, country int, phone string) error {
-	_,err := gDbUser.Exec("update account set country = ?,phone = ? where uid = ?",country,phone,uid)
+	_, err := gDbUser.Exec("update account set country = ?,phone = ? where uid = ?", country, phone, uid)
 	return err
 }
 func SetLoginPassword(uid int64, password string) error {
-	_,err := gDbUser.Exec("update account set login_password = ? where uid = ?",password,uid)
+	_, err := gDbUser.Exec("update account set login_password = ? where uid = ?", password, uid)
 	return err
 }
 
 func SetPaymentPassword(uid int64, password string) error {
-	_,err := gDbUser.Exec("update account set payment_password = ? where uid = ?",password,uid)
+	_, err := gDbUser.Exec("update account set payment_password = ? where uid = ?", password, uid)
 	return err
+}
+
+func str2Int(str string)int{
+	tmp, _ := strconv.Atoi(str)
+	return tmp
+}
+
+func str2Int64(str string)int64{
+	tmp, _ := strconv.ParseInt(str, 10, 64)
+	return tmp
+}
+
+
+func convRowMap2Account(row map[string]string) Account {
+	var account Account = Account{}
+	account.ID = str2Int64(row["id"])
+	account.UID = str2Int64(row["uid"])
+	account.UIDString = row["uid"]
+	account.Nickname = row["nick_name"]
+	account.Email = row["email"]
+	account.Country = str2Int(row["country"])
+	account.Phone = row["phone"]
+	account.Language = row["language"]
+	account.Region = row["region"]
+	account.From = row["from"]
+	account.RegisterTime = str2Int64(row["register_time"])
+	account.UpdateTime = str2Int64(row["update_time"])
+	account.RegisterType = str2Int(row["register_type"])
+	return account
 }

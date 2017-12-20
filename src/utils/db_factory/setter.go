@@ -20,18 +20,17 @@ func (m DBPool) Query(query string, args ...interface{}) []map[string]string {
 	return res
 }
 
-func (m DBPool) QueryRow(query string, args ...interface{}) map[string]string {
+func (m DBPool) QueryRow(query string, args ...interface{}) (map[string]string,error) {
 	log.Debug("Query Row sql :(%s)", query)
 	rows, err := m.currDB.Query(query, args...)
 	defer rows.Close()
 	if err != nil {
 		log.Error("query error %s", err.Error())
-		return nil
 	}
 	if rows.Next() {
-		return parseRow(rows)
+		return parseRow(rows),nil
 	}
-	return nil
+	return nil,err
 }
 
 func (m DBPool) Exec(sql string, args ...interface{}) (sql.Result,error) {
