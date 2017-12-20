@@ -99,36 +99,43 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 	requestData := sendVCodeRequest{} // request body
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
-	//validate img vcode
-	url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
-	typeData := httpVImgReqParam{
-		Id:   requestData.Param.IMG_id,
-		Code: requestData.Param.IMG_vcode,
-	}
-	reqParam, _ := json.Marshal(typeData)
-	svrResStr, err := common.Post(url, string(reqParam))
-	if err != nil {
-		log.Error("url ---> ", url, " http send error ", err.Error())
+	//validate add exists
+	if !validateAction(requestData.Param){
 		response.Base = &common.BaseResp{
-			RC:  constants.RC_SYSTEM_ERR.Rc,
-			Msg: constants.RC_SYSTEM_ERR.Msg,
+			RC:  constants.RC_PARAM_ERR.Rc,
+			Msg: "action add params exists",
 		}
 	} else {
-		svrRes := httpVCodeResParam{}
-		err := json.Unmarshal([]byte(svrResStr), &svrRes)
+		//validate img vcode
+		url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
+		typeData := httpVImgReqParam{
+			Id:   requestData.Param.IMG_id,
+			Code: requestData.Param.IMG_vcode,
+		}
+		reqParam, _ := json.Marshal(typeData)
+		svrResStr, err := common.Post(url, string(reqParam))
 		if err != nil {
-			log.Info("ParseHttpBodyParams, parse body param error: ", err)
+			log.Error("url ---> ", url, " http send error ", err.Error())
 			response.Base = &common.BaseResp{
 				RC:  constants.RC_SYSTEM_ERR.Rc,
 				Msg: constants.RC_SYSTEM_ERR.Msg,
 			}
-		}
-		if !isNotNull(requestData.Param.Ln) {
-			requestData.Param.Ln = "en-us"
-		}
-		if svrRes.Ret == 0 {
-			log.Error("Type", requestData.Param.Type)
-			switch requestData.Param.Type {
+		} else {
+			svrRes := httpVCodeResParam{}
+			err := json.Unmarshal([]byte(svrResStr), &svrRes)
+			if err != nil {
+				log.Info("ParseHttpBodyParams, parse body param error: ", err)
+				response.Base = &common.BaseResp{
+					RC:  constants.RC_SYSTEM_ERR.Rc,
+					Msg: constants.RC_SYSTEM_ERR.Msg,
+				}
+			}
+			if !isNotNull(requestData.Param.Ln) {
+				requestData.Param.Ln = "en-us"
+			}
+			if svrRes.Ret == 0 {
+				log.Error("Type", requestData.Param.Type)
+				switch requestData.Param.Type {
 				case MESSAGE:
 					sendMessage(requestData.Param, response)
 				case CALL:
@@ -140,14 +147,19 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 						RC:  constants.RC_PARAM_ERR.Rc,
 						Msg: constants.RC_PARAM_ERR.Msg,
 					}
-			}
-		} else {
-			response.Base = &common.BaseResp{
-				RC:  constants.RC_INVALID_VCODE.Rc,
-				Msg: constants.RC_INVALID_VCODE.Msg,
+				}
+			} else {
+				response.Base = &common.BaseResp{
+					RC:  constants.RC_INVALID_VCODE.Rc,
+					Msg: constants.RC_INVALID_VCODE.Msg,
+				}
 			}
 		}
 	}
+
+
+
+
 }
 
 func sendMessage(param *sendVCodeParam, res *common.ResponseData) {
@@ -251,4 +263,21 @@ func convSmsLn(ln string) string {
 	} else {
 		return "en"
 	}
+}
+func validateAction(param *sendVCodeParam)bool{
+	if param.Action == "add" {
+		switch param.Type {
+		case MESSAGE,CALL:
+			if common.ExistsPhone(param.Country,param.Phone) {
+				return false
+			}
+		case EMAIL:
+			if common.ExistsEmail(param.EMail) {
+				return false
+			}
+		default:
+			return false;
+		}
+	}
+	return true;
 }
