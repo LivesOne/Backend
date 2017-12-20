@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"strconv"
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -44,3 +45,13 @@ func GetAppBaseDir() string {
 // 		log.SetFlags(log.Flags() | log.Lshortfile)
 // 	}
 // }
+
+func Str2Int(str string)int{
+	tmp, _ := strconv.Atoi(str)
+	return tmp
+}
+
+func Str2Int64(str string)int64{
+	tmp, _ := strconv.ParseInt(str, 10, 64)
+	return tmp
+}

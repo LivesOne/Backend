@@ -3,6 +3,11 @@
  **/
 package common
 
+import (
+	"servlets/constants"
+	"utils/logger"
+)
+
 // HeaderParams contains all data in the http request
 type HeaderParams struct {
 	TokenHash string // header: Token-Hash
@@ -65,4 +70,21 @@ type (
 // IsValid check is it a valid App Info
 func (app *AppInfo) IsValid() bool {
 	return (len(app.Name) > 0) && (len(app.AppID) > 0) && (len(app.Plat) > 0) && (len(app.Ver) > 0)
+}
+
+func NewResponseData() (*ResponseData) {
+	return &ResponseData{
+		Base: &BaseResp{
+			RC:  constants.RC_OK.Rc,
+			Msg: constants.RC_OK.Msg,
+		},
+	}
+}
+
+func (responseData *ResponseData) SetResponseBase(error constants.Error) {
+	responseData.Base.RC = error.Rc
+	responseData.Base.Msg = error.Msg
+	if error != constants.RC_OK {
+		logger.Info(error.Msg)
+	}
 }
