@@ -34,14 +34,13 @@ func (m DBPool) QueryRow(query string, args ...interface{}) map[string]string {
 	return nil
 }
 
-func (m DBPool) Exec(query string, args ...interface{}) sql.Result {
-	log.Debug("Exec sql :(%s)", query)
-	res, err := m.currDB.Exec(query, args...)
+func (m DBPool) Exec(sql string, args ...interface{}) (sql.Result,error) {
+	log.Debug("Exec sql :(%s)", sql)
+	res, err := m.currDB.Exec(sql, args...)
 	if err != nil {
 		log.Error("exec error %s", err.Error())
-		return nil
 	}
-	return res
+	return res,err
 }
 
 func (m DBPool) Prepare(query string) (*sql.Stmt, error) {
@@ -62,4 +61,8 @@ func (m DBPool) Ping() error {
 
 func (m DBPool) IsConn() bool {
 	return m.isConn
+}
+
+func (m DBPool) Err() error {
+	return m.err
 }

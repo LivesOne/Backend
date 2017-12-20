@@ -19,6 +19,7 @@ type Config struct {
 type DBPool struct {
 	currDB *sql.DB
 	isConn bool
+	err error
 }
 
 func NewDataSource(config Config) DBPool {
@@ -26,6 +27,7 @@ func NewDataSource(config Config) DBPool {
 	err := dbPool.Ping()
 	if err != nil {
 		log.Error("cannot conn db %s", err.Error())
+		dbPool.err = err
 	}
 	return dbPool
 }
