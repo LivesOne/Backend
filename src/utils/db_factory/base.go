@@ -76,3 +76,8 @@ func parseRow(r *sql.Rows) map[string]string {
 	}
 	return item
 }
+
+func parseErrCode(err error) int{
+	//TODO parse err to err CODE
+	return ER_ABORTING_CONNECTION
+}

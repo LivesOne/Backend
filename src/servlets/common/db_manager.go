@@ -9,6 +9,7 @@ import (
 	"utils/logger"
 
 	_ "github.com/go-sql-driver/mysql"
+	"utils"
 )
 
 //var gDbUser *sql.DB
@@ -51,17 +52,17 @@ func DbInit() error {
 
 func ExistsUID(uid int64) bool {
 	row, _ := gDbUser.QueryRow("select count(1) as c from account where uid = ? limit 1", uid)
-	return str2Int(row["c"]) > 0
+	return utils.Str2Int(row["c"]) > 0
 }
 
 func ExistsEmail(email string) bool {
 	row, _ := gDbUser.QueryRow("select count(1) as c from account where email = ? limit 1", email)
-	return str2Int(row["c"]) > 0
+	return utils.Str2Int(row["c"]) > 0
 }
 
 func ExistsPhone(country int, phone string) bool {
 	row, _ := gDbUser.QueryRow("select count(1) as c from account where country = ? and phone = ? limit 1", country, phone)
-	return str2Int(row["c"]) > 0
+	return utils.Str2Int(row["c"]) > 0
 }
 
 func InsertAccount(account *Account) (int64, error) {
@@ -181,30 +182,20 @@ func SetPaymentPassword(uid int64, password string) error {
 	return err
 }
 
-func str2Int(str string) int {
-	tmp, _ := strconv.Atoi(str)
-	return tmp
-}
-
-func str2Int64(str string) int64 {
-	tmp, _ := strconv.ParseInt(str, 10, 64)
-	return tmp
-}
-
 func convRowMap2Account(row map[string]string) Account {
 	var account Account = Account{}
-	account.ID = str2Int64(row["id"])
-	account.UID = str2Int64(row["uid"])
+	account.ID = utils.Str2Int64(row["id"])
+	account.UID = utils.Str2Int64(row["uid"])
 	account.UIDString = row["uid"]
 	account.Nickname = row["nick_name"]
 	account.Email = row["email"]
-	account.Country = str2Int(row["country"])
+	account.Country = utils.Str2Int(row["country"])
 	account.Phone = row["phone"]
 	account.Language = row["language"]
 	account.Region = row["region"]
 	account.From = row["from"]
-	account.RegisterTime = str2Int64(row["register_time"])
-	account.UpdateTime = str2Int64(row["update_time"])
-	account.RegisterType = str2Int(row["register_type"])
+	account.RegisterTime = utils.Str2Int64(row["register_time"])
+	account.UpdateTime = utils.Str2Int64(row["update_time"])
+	account.RegisterType = utils.Str2Int(row["register_type"])
 	return account
 }
