@@ -1,7 +1,10 @@
 package config
 
 import (
+	"io/ioutil"
+	"path/filepath"
 	"utils"
+	"utils/logger"
 )
 
 // Configuration holds all config data
@@ -14,7 +17,7 @@ type Configuration struct {
 	DBUserPwd  string
 	DBDatabase string
 
-	// server side private key
+	// server side private key file name
 	PrivKey string
 
 	// redis的参数
@@ -44,4 +47,23 @@ func LoadConfig(cfgFilename string) error {
 func GetConfig() *Configuration {
 
 	return &gConfig
+}
+
+// GetPrivateKey reads the private key from the key file
+func GetPrivateKey() []byte {
+	filename := GetPrivateKeyFilename()
+	// fmt.Println("private key file:", filename, "ddd:", gConfig.PrivKey)
+	data, err := ioutil.ReadFile(filename)
+	if err == nil {
+		return data
+	}
+
+	logger.Info("load private key failed:", filename, err)
+
+	return nil
+}
+
+// GetPrivateKeyFilename returns the rsa private key file name
+func GetPrivateKeyFilename() string {
+	return filepath.Join(utils.GetAppBaseDir(), "config", gConfig.PrivKey)
 }

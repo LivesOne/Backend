@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"hash/crc32"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strconv"
-	"utils/logger"
 	"strings"
-	"io/ioutil"
+	"utils/logger"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -39,15 +39,15 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 	params := &HeaderParams{
 		TokenHash: request.Header.Get("Token-Hash"),
 		Signature: request.Header.Get("Signature"),
+		Timestamp: -1, // if parse timestamp error, keep it as default: -1
 	}
 
 	time := request.Header.Get("Timestamp")
 	if len(time) > 0 {
-		var err error
-		params.Timestamp, err = strconv.ParseInt(time, 10, 64)
-		if err != nil {
-			// if parse timestamp error, set it as -1
-			params.Timestamp = -1
+		ts, err := strconv.ParseInt(time, 10, 64)
+		if err == nil {
+			params.Timestamp = ts
+		} else {
 			logger.Info("ParseHttpHeaderParams, parse timestamp error: ", err)
 		}
 	}
@@ -135,7 +135,6 @@ func GenerateUID(len int) string {
 
 	return uid
 }
-
 
 //发起post请求
 func Post(url string, params string) (resBody string, e error) {

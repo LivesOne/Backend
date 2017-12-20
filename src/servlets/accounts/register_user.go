@@ -1,12 +1,14 @@
 package accounts
 
 import (
+	"errors"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"strconv"
 	"time"
 	"utils"
+	"utils/config"
 	"utils/logger"
 )
 
@@ -70,9 +72,13 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	// fmt.Println("registerUserHandler) Handle", msg)
 	// hashPwd := utils.RsaDecrypt(handler.registerData.Param.PWD, config.GetConfig().PrivKey)
 
-	account := handler.getAccount()
-
-	var err error
+	account, err := handler.getAccount()
+	if err != nil {
+		// logger.Info("------------- get account error\n")
+		handler.setResponseBase(constants.RC_INVALID_PUB_KEY)
+		return
+	}
+	logger.Info("------------- get account success\n")
 
 	switch handler.registerData.Param.Type {
 	case constants.LOGIN_TYPE_UID:
@@ -128,7 +134,7 @@ func (handler *registerUserHandler) checkRequestParams() bool {
 	}
 
 	if handler.registerData.Param.Type == constants.LOGIN_TYPE_PHONE && (handler.registerData.Param.Country == 0 || len(handler.registerData.Param.Phone) < 1) {
-		return  false
+		return false
 	}
 
 	if (len(handler.registerData.Param.PWD) < 1) || (handler.registerData.Param.Spkv < 1) {
@@ -138,7 +144,7 @@ func (handler *registerUserHandler) checkRequestParams() bool {
 	return true
 }
 
-func (handler *registerUserHandler) getAccount() common.Account {
+func (handler *registerUserHandler) getAccount() (*common.Account, error) {
 	var account common.Account
 	var uid string
 	var uid_num int64
@@ -154,6 +160,11 @@ func (handler *registerUserHandler) getAccount() common.Account {
 		}
 	}
 
+	recoverPWD, err := handler.recoverPwd(handler.registerData.Param.PWD)
+	if err != nil {
+		return nil, err
+	}
+
 	account.UIDString = uid
 	account.UID = uid_num
 
@@ -161,10 +172,32 @@ func (handler *registerUserHandler) getAccount() common.Account {
 	account.Country = handler.registerData.Param.Country
 	account.Phone = handler.registerData.Param.Phone
 
-	account.LoginPassword = utils.Sha256(handler.registerData.Param.PWD + uid)
+	account.LoginPassword = utils.Sha256(recoverPWD + uid)
 	account.RegisterTime = time.Now().Unix()
 	account.UpdateTime = account.RegisterTime
 	account.RegisterType = handler.registerData.Param.Type
 
-	return account
+	return &account, nil
+}
+
+// recoverPwd recovery the upload PWD to hash form
+func (handler *registerUserHandler) recoverPwd(pwd string) (string, error) {
+
+	privKey := config.GetPrivateKey()
+	if privKey == nil {
+		// fmt.Println("11111111111111:")
+		return "", errors.New("load private key failed")
+	}
+
+	// fmt.Println("2222222222222222:ggggggggggggggg")
+	// hashPwd, err := utils.RsaDecrypt(string(base64Decode), privKey)
+	hashPwd, err := utils.RsaDecrypt(handler.registerData.Param.PWD, privKey)
+	if err != nil {
+		// fmt.Println("2222222222222222:", err)
+		logger.Info("decrypt pwd error:", err)
+		return "", err
+	}
+
+	logger.Info("----------hash pwd:", hashPwd)
+	return string(hashPwd), nil
 }

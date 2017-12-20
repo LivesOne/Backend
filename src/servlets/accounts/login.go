@@ -131,7 +131,7 @@ func (handler *loginHandler) getAESKey(originalKey string) string {
 	// 	return ""
 	// }
 
-	aeskey, _ := utils.RsaDecrypt(originalKey, config.GetConfig().PrivKey)
+	aeskey, _ := utils.RsaDecrypt(originalKey, config.GetPrivateKey())
 	// if err != nil {
 	// 	// logger.Info("decode key error:", err, originalKey)
 	// 	logger.Info("decode key error, rsa:", err)

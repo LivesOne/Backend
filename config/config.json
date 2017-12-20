@@ -1,7 +1,7 @@
 {
     "ServerAddr" : ":8080",    
 
-    "PrivKey" : "1234567890",
+    "PrivKey" : "rsa_private_key.pem",
 
     "RedisAddr" : "10.100.15.96:6379",
     "RedisAuth" : "lvt_serv",

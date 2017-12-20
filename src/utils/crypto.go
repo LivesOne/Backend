@@ -13,6 +13,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"utils/logger"
+	"utils/lvtrsa"
 )
 
 func Base64Encode(in []byte) string {
@@ -97,9 +98,15 @@ func pkcs7UnPadding(plantText []byte, blockSize int) []byte {
 
 //convert base64 encoded string to binary as input
 /*base64 encoded string*/
-func RsaDecrypt(src string, privateKey string) (string, error) {
-	block, _ := pem.Decode([]byte(privateKey))
+// func RsaDecrypt(src string, privateKey string) (string, error) {
+// block, _ := pem.Decode([]byte(privateKey))
+func RsaDecrypt(src string, privateKey []byte) (string, error) {
+
+	// RsaSign("slic客户端和Xebo服务器之间通信过程中加密敏感 信息.", privateKey)
+
+	block, _ := pem.Decode(privateKey)
 	if block == nil {
+		// fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAA no pem data")
 		return "", errors.New("no pem data")
 	}
 
@@ -108,6 +115,9 @@ func RsaDecrypt(src string, privateKey string) (string, error) {
 		return "", err
 	}
 
+	// base64Origin := Base64Decode(src)
+	// fmt.Println("bbbbbbbbbbbbbbbb, base64Origin:", src, string(base64Origin))
+	// decoded, err := rsa.DecryptPKCS1v15(rand.Reader, priv, base64Origin)
 	decoded, err := rsa.DecryptPKCS1v15(rand.Reader, priv, Base64Decode(src))
 	if err != nil {
 		return "", err
@@ -115,20 +125,36 @@ func RsaDecrypt(src string, privateKey string) (string, error) {
 	return string(decoded), nil
 }
 
-//convert binary to base64 encoded string as output
-func RsaSign(src string, privateKey string) (string, error) {
-	block, _ := pem.Decode([]byte(privateKey))
-	if block == nil {
-		return "", errors.New("no pem data")
-	}
-	pubInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
+// RsaSign sign the src with private key
+func RsaSign(src string, privateKeyFilename string) (string, error) {
+	brsa, err := lvtrsa.PrivateEncrypt([]byte(src), privateKeyFilename, lvtrsa.RSA_PKCS1_PADDING)
 	if err != nil {
+		logger.Info("RsaSign error %s\n", err)
 		return "", err
 	}
-	pub := pubInterface.(*rsa.PublicKey)
-	encode, err := rsa.EncryptPKCS1v15(rand.Reader, pub, []byte(src))
-	if err != nil {
-		return "", err
-	}
-	return Base64Encode(encode), nil
+
+	base64encoded := Base64Encode(brsa)
+	logger.Info("-----------base64:", base64encoded)
+	return base64encoded, nil
 }
+
+// func RsaSignOld(src string, privateKey []byte) (string, error) {
+// 	block, _ := pem.Decode(privateKey)
+// 	if block == nil {
+// 		fmt.Println("AAAAAAAAAAAAAAAAAAAAAAAAAA no pem data")
+// 		return "", errors.New("no pem data")
+// 	}
+// 	pubInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
+// 	// priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+// 	if err != nil {
+// 		fmt.Println("bbbbbbbbbbbbbbbbb ")
+// 		return "", err
+// 	}
+// 	pub := pubInterface.(*rsa.PublicKey)
+// 	encode, err := rsa.EncryptPKCS1v15(rand.Reader, pub, []byte(src))
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	logger.Info("=============, aaaaaaaaaaaaaaa", Base64Encode(encode))
+// 	return Base64Encode(encode), nil
+// }
