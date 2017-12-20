@@ -101,14 +101,17 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 	return true
 }
 
-func GenerateUID(len int) string {
+func GenerateUID() string {
+
 	s := "0123456789"
 	box := []byte(s)
 
-	var uid string
+	len := 9
+	uid := "1"
+
 	i := 0
 	for {
-		if i > len-2 {
+		if i > len-3 {
 			break
 		}
 
@@ -116,9 +119,11 @@ func GenerateUID(len int) string {
 		rand.Read(r)
 		index := int(r[0]) % 10
 
+		/*
 		if i == 0 && index == 0 {
 			continue
 		}
+		*/
 
 		uid += string(box[index])
 
