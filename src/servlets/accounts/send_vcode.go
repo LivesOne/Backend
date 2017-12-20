@@ -99,7 +99,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 	requestData := sendVCodeRequest{} // request body
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
-	//TODO validate img vcode
+	//validate img vcode
 	url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
 	typeData := httpVImgReqParam{
 		Id:   requestData.Param.IMG_id,
@@ -129,12 +129,17 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 		if svrRes.Ret == 0 {
 			log.Error("Type", requestData.Param.Type)
 			switch requestData.Param.Type {
-			case MESSAGE:
-				sendMessage(requestData.Param, response)
-			case CALL:
-				sendCall(requestData.Param, response)
-			case EMAIL:
-				sendEmail(requestData.Param, response)
+				case MESSAGE:
+					sendMessage(requestData.Param, response)
+				case CALL:
+					sendCall(requestData.Param, response)
+				case EMAIL:
+					sendEmail(requestData.Param, response)
+				default:
+					response.Base = &common.BaseResp{
+						RC:  constants.RC_PARAM_ERR.Rc,
+						Msg: constants.RC_PARAM_ERR.Msg,
+					}
 			}
 		} else {
 			response.Base = &common.BaseResp{
