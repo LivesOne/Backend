@@ -27,8 +27,9 @@ func NewDataSource(config Config) *DBPool {
 }
 
 func convConfig2Str(config Config) string {
-	dsn := "%s:%s@tcp(%s)/%s?charset=utf8"
-	return fmt.Sprintf(dsn, config.UserName, config.Password, config.Host, config.Database)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8", config.UserName, config.Password, config.Host, config.Database)
+	log.Info("init db conn pool --->",dsn)
+	return dsn
 }
 
 func initDb(config Config) *DBPool {
@@ -42,7 +43,6 @@ func initDb(config Config) *DBPool {
 			err:err,
 		}
 	} else {
-		log.Info("init db conn pool --->",connStr)
 		db.SetMaxOpenConns(config.MaxConn)
 		db.SetMaxIdleConns(config.MaxIdleConn)
 		return &DBPool{
