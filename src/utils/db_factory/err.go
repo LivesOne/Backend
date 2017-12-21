@@ -1,5 +1,10 @@
 package db_factory
 
+import (
+	"regexp"
+	"fmt"
+	"utils"
+)
 
 const (
 	ER_HASHCHK                                                                       = 1000
@@ -1079,3 +1084,57 @@ const (
 	ER_KEYRING_UDF_KEYRING_SERVICE_ERROR                                             = 3188
 	ER_USER_COLUMN_OLD_LENGTH                                                        = 3189
 )
+
+type MySqlError struct {
+	Code       int
+	Key        string
+	Value      string
+	Descrption string
+}
+
+func (me *MySqlError) build(err error) {
+	me.Descrption = err.Error()
+	//构建错误体
+	//Error 1062: Duplicate entry 'dongliang@maxthon.net' for key 'email'
+	//errRegexp := regexp.MustCompile(`Error (\d+)\w*\'(\w+)\'\w*'(\w+)\'`)
+	//mcs := errRegexp.FindStringSubmatch(me.Descrption)
+	me.Code = matchErrCode(me.Descrption)
+	me.Value,me.Key = matchErrEntity(me.Descrption)
+}
+
+func parseErrCode(err error) *MySqlError {
+	me := &MySqlError{}
+	me.build(err)
+	return me
+}
+
+func matchErrCode(errStr string)int {
+	errRegexp := regexp.MustCompile(`Error (\d+):.*`)
+	mcs := errRegexp.FindStringSubmatch(errStr)
+	if len(mcs) == 2{
+		return utils.Str2Int(mcs[1])
+	}else{
+		return 0;
+	}
+
+}
+
+func matchErrEntity(errStr string)(string,string) {
+	errRegexp := regexp.MustCompile(`.*\'(.+)\'.*\'(.+)\'$`)
+	mcs := errRegexp.FindStringSubmatch(errStr)
+	if len(mcs) == 3{
+		return mcs[1],mcs[2]
+	}else{
+		return "","";
+	}
+
+}
+
+func CheckDuplicate(err error) (bool, *MySqlError) {
+	me := parseErrCode(err)
+	if me.Code == ER_DUP_ENTRY {
+		return true, me
+	} else {
+		return false, nil
+	}
+}
