@@ -23,13 +23,7 @@ type DBPool struct {
 }
 
 func NewDataSource(config Config) DBPool {
-	dbPool := initDb(config)
-	err := dbPool.Ping()
-	if err != nil {
-		log.Error("cannot conn db %s", err.Error())
-		dbPool.err = err
-	}
-	return dbPool
+	return initDb(config)
 }
 
 func convConfig2Str(config Config) string {
@@ -45,6 +39,7 @@ func initDb(config Config) DBPool {
 		log.Error("cannot conn db %s", err.Error())
 		return DBPool{
 			isConn: false,
+			err:err,
 		}
 	} else {
 		db.SetMaxOpenConns(config.MaxConn)
