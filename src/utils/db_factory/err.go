@@ -1137,3 +1137,12 @@ func CheckDuplicate(err error) (bool, *MySqlError) {
 		return false, nil
 	}
 }
+
+func CheckDuplicateByColumn(err error,column string) (bool) {
+	me := parseErrCode(err)
+	if me.Code == ER_DUP_ENTRY && me.Key == column {
+		return true
+	}else {
+		return false
+	}
+}
