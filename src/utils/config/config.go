@@ -65,5 +65,5 @@ func GetPrivateKey() []byte {
 
 // GetPrivateKeyFilename returns the rsa private key file name
 func GetPrivateKeyFilename() string {
-	return filepath.Join(utils.GetAppBaseDir(), "config", gConfig.PrivKey)
+	return filepath.Join(utils.GetAppBaseDir(), "../config", gConfig.PrivKey)
 }
