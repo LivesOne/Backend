@@ -6,11 +6,11 @@ import (
 )
 
 func (m DBPool) Query(query string, args ...interface{}) []map[string]string {
-	log.Debug("Query sql :(%s)", query)
+	log.Debug("Query sql :(", query,")")
 	rows, err := m.currDB.Query(query, args...)
 	defer rows.Close()
 	if err != nil {
-		log.Error("query error %s", err.Error())
+		log.Error("query error ", err.Error())
 		return nil
 	}
 	res := make([]map[string]string, 0)
@@ -21,11 +21,11 @@ func (m DBPool) Query(query string, args ...interface{}) []map[string]string {
 }
 
 func (m DBPool) QueryRow(query string, args ...interface{}) (map[string]string,error) {
-	log.Debug("Query Row sql :(%s)", query)
+	log.Debug("Query Row sql :(", query,")")
 	rows, err := m.currDB.Query(query, args...)
 	defer rows.Close()
 	if err != nil {
-		log.Error("query error %s", err.Error())
+		log.Error("query error ", err.Error())
 	}
 	if rows.Next() {
 		return parseRow(rows),nil
@@ -34,10 +34,10 @@ func (m DBPool) QueryRow(query string, args ...interface{}) (map[string]string,e
 }
 
 func (m DBPool) Exec(sql string, args ...interface{}) (sql.Result,error) {
-	log.Debug("Exec sql :(%s)", sql)
+	log.Debug("Exec sql :(", sql,")")
 	res, err := m.currDB.Exec(sql, args...)
 	if err != nil {
-		log.Error("exec error %s", err.Error())
+		log.Error("exec error ", err.Error())
 	}
 	return res,err
 }

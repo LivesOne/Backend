@@ -12,7 +12,7 @@ import (
 )
 
 //var gDbUser *sql.DB
-var gDbUser db_factory.DBPool
+var gDbUser *db_factory.DBPool
 
 func DbInit() error {
 

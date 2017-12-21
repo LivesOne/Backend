@@ -22,7 +22,7 @@ type DBPool struct {
 	err error
 }
 
-func NewDataSource(config Config) DBPool {
+func NewDataSource(config Config) *DBPool {
 	return initDb(config)
 }
 
@@ -31,20 +31,21 @@ func convConfig2Str(config Config) string {
 	return fmt.Sprintf(dsn, config.UserName, config.Password, config.Host, config.Database)
 }
 
-func initDb(config Config) DBPool {
+func initDb(config Config) *DBPool {
 	connStr := convConfig2Str(config)
 	db, err := sql.Open("mysql", connStr)
 	if err != nil {
-		log.Error("openstr %s", connStr)
-		log.Error("cannot conn db %s", err.Error())
-		return DBPool{
+		log.Error("openstr", connStr)
+		log.Error("cannot conn db", err.Error())
+		return &DBPool{
 			isConn: false,
 			err:err,
 		}
 	} else {
+		log.Info("init db conn pool --->",connStr)
 		db.SetMaxOpenConns(config.MaxConn)
 		db.SetMaxIdleConns(config.MaxIdleConn)
-		return DBPool{
+		return &DBPool{
 			currDB: db,
 			isConn: true,
 		}
