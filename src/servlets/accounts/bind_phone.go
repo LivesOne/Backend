@@ -42,16 +42,18 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.requestData)
+	httpHeader := common.ParseHttpHeaderParams(request)
+	requestData := new(bindPhoneRequest)
+	common.ParseHttpBodyParams(request, &requestData)
 
-	if handler.header.Timestamp < 1 {
+
+	if httpHeader.Timestamp < 1 {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	// 判断用户身份
-	tokenHash := handler.header.TokenHash
+	tokenHash := httpHeader.TokenHash
 	uidString, tokenErr := token.GetUID(tokenHash)
 	switch tokenErr {
 		case constants.ERR_INT_OK:

@@ -41,16 +41,17 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.requestData)
+	httpHeader := common.ParseHttpHeaderParams(request)
+	requestData := new(bindEMailRequest)
+	common.ParseHttpBodyParams(request, &requestData)
 
-	if handler.header.Timestamp < 1 {
+	if httpHeader.Timestamp < 1 {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	// 判断用户身份
-	tokenHash := handler.header.TokenHash
+	tokenHash := httpHeader.TokenHash
 	uidString, tokenErr := token.GetUID(tokenHash)
 	switch tokenErr {
 		case constants.ERR_INT_OK:
@@ -75,7 +76,7 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	// 解码 secret 参数
 	key := ""
 	iv := ""
-	secret := handler.requestData.Param.Secret
+	secret := requestData.Param.Secret
 	dataStr, err := utils.AesDecrypt(secret, key, iv)
 	if err != nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
