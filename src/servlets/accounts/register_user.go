@@ -150,7 +150,7 @@ func (handler *registerUserHandler) getAccount() (*common.Account, error) {
 	var uid_num int64
 
 	for {
-		uid = common.GenerateUID(9)
+		uid = common.GenerateUID()
 		uid_num, _ = strconv.ParseInt(uid, 10, 64)
 
 		if common.ExistsUID(uid_num) {
