@@ -2,7 +2,6 @@ package db_factory
 
 import (
 	"regexp"
-	"fmt"
 	"utils"
 )
 
