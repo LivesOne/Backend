@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"utils/config"
 )
 
 var gRouter *gin.Engine
@@ -36,7 +37,7 @@ func RegisterHandler(url string, handler HttpHandler) {
 //Start http server to listen
 func Start(addr string) {
 	gServer = &http.Server{
-		Addr:           ":8080",
+		Addr:           config.GetConfig().ServerAddr,
 		Handler:        gRouter,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
