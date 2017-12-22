@@ -196,5 +196,7 @@ func convRowMap2Account(row map[string]string) Account {
 	account.RegisterTime = utils.Str2Int64(row["register_time"])
 	account.UpdateTime = utils.Str2Int64(row["update_time"])
 	account.RegisterType = utils.Str2Int(row["register_type"])
+	account.LoginPassword = row["login_password"]
+	account.PaymentPassword = row["payment_password"]
 	return account
 }
