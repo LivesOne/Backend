@@ -78,7 +78,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		handler.setResponseBase(constants.RC_INVALID_PUB_KEY)
 		return
 	}
-	logger.Info("------------- get account success\n")
+	logger.Info("------------- get account success\n", utils.ToJSONIndent(account))
 
 	switch handler.registerData.Param.Type {
 	case constants.LOGIN_TYPE_UID:

@@ -130,5 +130,5 @@ const (
 )
 
 func PrivateEncrypt(from []byte, pem string, padding int) ([]byte, error) {
-	return []byte(""), nil
+	return from, nil
 }

@@ -75,9 +75,9 @@ func AesDecrypt(src, key, iv string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	plaintText := make([]byte, len(keyBytes))
 
 	blockModel := cipher.NewCBCDecrypter(block, []byte(iv))
-	plaintText := make([]byte, len(keyBytes))
 	blockModel.CryptBlocks(plaintText, keyBytes)
 	plaintText = pkcs7UnPadding(plaintText, block.BlockSize())
 
@@ -98,11 +98,7 @@ func pkcs7UnPadding(plantText []byte, blockSize int) []byte {
 
 //convert base64 encoded string to binary as input
 /*base64 encoded string*/
-// func RsaDecrypt(src string, privateKey string) (string, error) {
-// block, _ := pem.Decode([]byte(privateKey))
 func RsaDecrypt(src string, privateKey []byte) (string, error) {
-
-	// RsaSign("slic客户端和Xebo服务器之间通信过程中加密敏感 信息.", privateKey)
 
 	block, _ := pem.Decode(privateKey)
 	if block == nil {

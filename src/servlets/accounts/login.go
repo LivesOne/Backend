@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"utils"
 	"utils/config"
+	"utils/logger"
 )
 
 type loginParam struct {
@@ -26,10 +27,17 @@ type loginRequest struct {
 	Param loginParam      `json:"param"`
 }
 
+type responseLoginSPK struct {
+	Ver  int    `json:"ver"`
+	Key  string `json:"key"`
+	sign string `json:"sign"`
+}
+
 type responseLogin struct {
-	UID    string `json:"uid"`
-	Token  string `json:"token"`
-	Expire int64  `json:"expire"`
+	UID    string           `json:"uid"`
+	Token  string           `json:"token"`
+	Expire int64            `json:"expire"`
+	SPK    responseLoginSPK `json:"spk"`
 }
 
 // loginHandler implements the "Echo message" interface
@@ -37,7 +45,11 @@ type loginHandler struct {
 	header    *common.HeaderParams // request header param
 	loginData *loginRequest        // request login data
 
-	aesKey string // aes key uploaded by Client
+	aesKey string // aes key (after parsing) uploaded by Client
+	pwd    string // hashed user password
+
+	// http response data to client
+	response *common.ResponseData
 }
 
 func (handler *loginHandler) Method() string {
@@ -46,47 +58,55 @@ func (handler *loginHandler) Method() string {
 
 func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	response := &common.ResponseData{
-		Base: &common.BaseResp{
-			RC:  constants.RC_OK.Rc,
-			Msg: constants.RC_OK.Msg,
-		},
-	}
+	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
 	handler.header = common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &handler.loginData)
-	// if handler.readParams(request) == false {
-	// 	// response.Base.RC = constants.RC_READ_REQUEST_PARAM_ERROR
-	// 	response.Base.Msg = "read http request params error"
-	// 	return
-	// }
 
-	handler.aesKey = handler.getAESKey(handler.loginData.Param.Key)
-	if handler.verifySignature(handler.header.Signature, handler.aesKey, handler.header.Timestamp) == false {
-		// response.Base.RC = constants.RC_INVALID_SIGNATURE
-		response.Base.Msg = "invalid signature"
+	if handler.checkRequestParams() == false {
+		handler.response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
+	var err error
+	handler.aesKey, err = handler.parseAESKey(handler.loginData.Param.Key)
+	if err != nil || handler.isHeaderValid() == false {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
+	var account *common.Account
 	switch handler.loginData.Param.Type {
 	case constants.LOGIN_TYPE_UID:
+		// right now, length of UID is 9
+		if len(handler.loginData.Param.UID) != 9 {
+			handler.response.SetResponseBase(constants.RC_ACCOUNT_NOT_EXIST)
+			return
+		}
+		account, err = common.GetAccountByUID(handler.loginData.Param.UID)
 	case constants.LOGIN_TYPE_EMAIL:
 	case constants.LOGIN_TYPE_PHONE:
 	}
 
+	if err != nil {
+		handler.response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+		return
+	}
+	logger.Info("read account form DB success:\n", utils.ToJSONIndent(account))
+
 	// TODO:  get uid from the database
-	uid := "123456789"
+	// uid := strconv.FormatInt(account.UID, 10)
 	var expire int64 = 24 * 3600
 
-	newtoken, errNewT := token.New(uid, handler.aesKey, expire)
+	newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {
 		response.Base.RC = constants.RC_SYSTEM_ERR.Rc
 		response.Base.Msg = constants.RC_SYSTEM_ERR.Msg
 		return
 	}
 
-	newtoken, err := utils.RsaSign(newtoken, config.GetConfig().PrivKey)
+	newtoken, err = utils.RsaSign(newtoken, config.GetConfig().PrivKey)
 	if err != nil {
 		response.Base.RC = constants.RC_SYSTEM_ERR.Rc
 		response.Base.Msg = constants.RC_SYSTEM_ERR.Msg
@@ -94,49 +114,103 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 
 	response.Data = &responseLogin{
-		UID:    uid,
+		UID:    handler.loginData.Param.UID,
 		Token:  newtoken,
 		Expire: expire,
 	}
 }
 
-// func (handler *loginHandler) readParams(request *http.Request) bool {
+func (handler *loginHandler) checkRequestParams() bool {
+	if handler.header == nil || (handler.loginData == nil) {
+		return false
+	}
 
-// 	handler.header = common.ParseHttpHeaderParams(request)
-// 	if (handler.header.Timestamp < 0) || (len(handler.header.Signature) < 1) {
-// 		return false
-// 	}
+	// const signLen = 64
+	// const tokenHashLen = 64
+	// if (handler.header.Timestamp < 1) || (len(handler.header.Signature) != signLen) || (len(handler.header.TokenHash) != tokenHashLen) {
+	if handler.header.Timestamp < 1 || len(handler.header.Signature) < 1 || len(handler.header.TokenHash) < 1 {
+		return false
+	}
 
-// 	common.ParseHttpBodyParams(request, &handler.loginData)
+	if (handler.loginData.Base.App == nil) || (handler.loginData.Base.App.IsValid() == false) {
+		return false
+	}
 
-// 	return true
-// }
+	if (handler.loginData.Param.Type < constants.LOGIN_TYPE_UID) || (handler.loginData.Param.Type > constants.LOGIN_TYPE_PHONE) {
+		return false
+	}
 
-func (handler *loginHandler) verifySignature(signature, aeskey string, timestamp int64) bool {
+	if handler.loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && len(handler.loginData.Param.EMail) < 1 {
+		return false
+	}
+
+	if handler.loginData.Param.Type == constants.LOGIN_TYPE_PHONE && (handler.loginData.Param.Country == 0 || len(handler.loginData.Param.Phone) < 1) {
+		return false
+	}
+
+	if (len(handler.loginData.Param.PWD) < 1) || (len(handler.loginData.Param.Key) < 1) {
+		return false
+	}
+
+	if (len(handler.loginData.Param.PWD) < 1) || (handler.loginData.Param.Spkv < 1) {
+		return false
+	}
+
+	return true
+}
+
+func (handler *loginHandler) isHeaderValid() bool {
+
+	signature := handler.header.Signature
+
 	if len(signature) < 1 {
 		return false
 	}
-	tmp := aeskey + strconv.FormatInt(timestamp, 10)
-	// hash := sha256.Sum256([]byte(tmp))
+
+	tmp := handler.aesKey + strconv.FormatInt(handler.header.Timestamp, 10)
 	hash := utils.Sha256(tmp)
+
+	if signature == string(hash[:]) {
+		logger.Info("verify header signature successful", signature, string(hash[:]))
+	} else {
+		logger.Info("verify header signature failed:", signature, string(hash[:]))
+	}
+
 	return signature == string(hash[:])
 }
 
-func (handler *loginHandler) getAESKey(originalKey string) string {
+// func (handler *loginHandler) verifySignature(signature, aeskey string, timestamp int64) bool {
+// 	if len(signature) < 1 {
+// 		return false
+// 	}
+// 	tmp := aeskey + strconv.FormatInt(timestamp, 10)
+// 	// hash := sha256.Sum256([]byte(tmp))
+// 	hash := utils.Sha256(tmp)
+// 	return signature == string(hash[:])
+// }
 
-	// decodedBase64, err := base64.StdEncoding.DecodeString(originalKey)
-	// if err != nil {
-	// 	// logger.Info("decode key error:", err, originalKey)
-	// 	logger.Info("decode key error, base64:", err)
-	// 	return ""
-	// }
+func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
 
-	aeskey, _ := utils.RsaDecrypt(originalKey, config.GetPrivateKey())
-	// if err != nil {
-	// 	// logger.Info("decode key error:", err, originalKey)
-	// 	logger.Info("decode key error, rsa:", err)
-	// 	return ""
-	// }
+	aeskey, err := utils.RsaDecrypt(originalKey, config.GetPrivateKey())
+	if err != nil {
+		logger.Info("decrypt pwd error:", err)
+		return "", err
+	}
 
-	return string(aeskey)
+	logger.Info("----------aes key:", aeskey)
+
+	return string(aeskey), nil
+}
+
+func (handler *loginHandler) parsePWD(original string) (string, error) {
+
+	aeskey, err := utils.RsaDecrypt(original, config.GetPrivateKey())
+	if err != nil {
+		logger.Info("decrypt pwd error:", err)
+		return "", err
+	}
+
+	logger.Info("----------hash pwd:", aeskey)
+
+	return string(aeskey), nil
 }
