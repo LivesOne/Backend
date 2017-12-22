@@ -1,24 +1,16 @@
 package accounts
 
 import (
-	"encoding/json"
-	"github.com/donnie4w/go-logger/logger"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils/config"
-	log "utils/logger"
+	"utils/vcode"
 )
 
 const (
-	MESSAGE          = 1
-	CALL             = 2
-	EMAIL            = 3
-	MESSAGE_VID      = 2
-	VOICE_CODE_SMS   = 0
-	VOICE_CODE_CALL  = 1
-	MAIL_TPL_MAXTHON = 1
-	MAIL_TOL_LVT     = 2
+	MESSAGE = 1
+	CALL    = 2
+	EMAIL   = 3
 )
 
 type sendVCodeParam struct {
@@ -42,37 +34,6 @@ type sendVCodeRes struct {
 type sendVCodeRequest struct {
 	Base  *common.BaseInfo `json:"base"`
 	Param *sendVCodeParam  `json:"param"`
-}
-
-type httpVImgReqParam struct {
-	Id   string `json:"id"`
-	Code string `json:"code"`
-}
-
-type httpReqMessageParam struct {
-	AreaCode  int    `json:"area_code"`
-	Lan       string `json:"lan"`
-	PhoneNo   string `json:"phone_no"`
-	Vid       int    `json:"vid"`
-	Expire    int    `json:"expire"`
-	VoiceCode int    `json:"voice_code"`
-}
-
-type httpReqMailParam struct {
-	Mail   string `json:"mail"`
-	Tpl    int    `json:"tpl"`
-	Ln     string `json:"ln"`
-	Expire int    `json:"expire"`
-}
-
-type httpResSms struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-type httpMailVCodeResParam struct {
-	Ret  int           `json:"ret,omitempty"`
-	Msg  string        `json:"msg,omitempty"`
-	Data *httpReqVCode `json:"data,omitempty"`
 }
 
 // sendVCodeHandler
@@ -100,175 +61,57 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
 	//validate add exists
-	if !validateAction(requestData.Param){
+	if !validateAction(requestData.Param) {
 		response.Base = &common.BaseResp{
 			RC:  constants.RC_PARAM_ERR.Rc,
 			Msg: "action add params exists",
 		}
 	} else {
 		//validate img vcode
-		url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
-		typeData := httpVImgReqParam{
-			Id:   requestData.Param.IMG_id,
-			Code: requestData.Param.IMG_vcode,
-		}
-		reqParam, _ := json.Marshal(typeData)
-		svrResStr, err := common.Post(url, string(reqParam))
-		if err != nil {
-			log.Error("url ---> ", url, " http send error ", err.Error())
-			response.Base = &common.BaseResp{
-				RC:  constants.RC_SYSTEM_ERR.Rc,
-				Msg: constants.RC_SYSTEM_ERR.Msg,
-			}
-		} else {
-			svrRes := httpVCodeResParam{}
-			err := json.Unmarshal([]byte(svrResStr), &svrRes)
-			if err != nil {
-				log.Info("ParseHttpBodyParams, parse body param error: ", err)
-				response.Base = &common.BaseResp{
-					RC:  constants.RC_SYSTEM_ERR.Rc,
-					Msg: constants.RC_SYSTEM_ERR.Msg,
-				}
-			}
-			if !isNotNull(requestData.Param.Ln) {
-				requestData.Param.Ln = "en-us"
-			}
-			if svrRes.Ret == 0 {
-				log.Error("Type", requestData.Param.Type)
-				switch requestData.Param.Type {
-				case MESSAGE:
-					sendMessage(requestData.Param, response)
-				case CALL:
-					sendCall(requestData.Param, response)
-				case EMAIL:
-					sendEmail(requestData.Param, response)
-				default:
+
+		succFlag, code := vcode.ValidateImgVCode(requestData.Param.IMG_id, requestData.Param.IMG_vcode)
+		if succFlag {
+			switch requestData.Param.Type {
+			case MESSAGE:
+				vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+			case CALL:
+				vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+			case EMAIL:
+				svrRes := vcode.SendMailVCode(requestData.Param.EMail, requestData.Param.Ln, requestData.Param.Expire)
+				if svrRes != nil {
+					response.Data = &sendVCodeRes{
+						Vcode_id: svrRes.Id,
+						Expire:   svrRes.Expire,
+					}
+				} else {
 					response.Base = &common.BaseResp{
 						RC:  constants.RC_PARAM_ERR.Rc,
 						Msg: constants.RC_PARAM_ERR.Msg,
 					}
 				}
-			} else {
+			}
+		} else {
+			switch code {
+			case vcode.CODE_EXPIRED_ERR:
+				response.SetResponseBase(constants.RC_VCODE_EXPIRE)
+			case vcode.VALIDATE_CODE_FAILD:
+				response.SetResponseBase(constants.RC_INVALID_VCODE)
+			default:
 				response.Base = &common.BaseResp{
-					RC:  constants.RC_INVALID_VCODE.Rc,
-					Msg: constants.RC_INVALID_VCODE.Msg,
-				}
-			}
-		}
-	}
-
-
-
-
-}
-
-func sendMessage(param *sendVCodeParam, res *common.ResponseData) {
-	messageServerReq(param, res, VOICE_CODE_SMS)
-}
-
-func sendCall(param *sendVCodeParam, res *common.ResponseData) {
-	messageServerReq(param, res, VOICE_CODE_CALL)
-}
-
-func sendEmail(param *sendVCodeParam, res *common.ResponseData) {
-	//TODO send
-
-	if isNotNull(param.EMail) {
-		req := httpReqMailParam{
-			Mail:   param.EMail,
-			Tpl:    MAIL_TOL_LVT,
-			Ln:     param.Ln,
-			Expire: param.Expire,
-		}
-		url := config.GetConfig().MailSvrAddr + "/mail/v1/getCode"
-		reqStr, _ := json.Marshal(req)
-		jsonRes, err := common.Post(url, string(reqStr))
-		if err != nil {
-			logger.Error("post error ---> ", err.Error())
-			res.Base = &common.BaseResp{
-				RC:  constants.RC_SYSTEM_ERR.Rc,
-				Msg: constants.RC_SYSTEM_ERR.Msg,
-			}
-		} else {
-			svrRes := httpMailVCodeResParam{}
-			err := json.Unmarshal([]byte(jsonRes), &svrRes)
-			if err != nil {
-				log.Info("ParseHttpBodyParams, parse body param error: ", err)
-				res.Base = &common.BaseResp{
-					RC:  constants.RC_SYSTEM_ERR.Rc,
-					Msg: constants.RC_SYSTEM_ERR.Msg,
-				}
-			}
-			if svrRes.Ret == 0 {
-				res.Data = &sendVCodeRes{
-					Vcode_id: svrRes.Data.Id,
-					Expire:   svrRes.Data.Expire,
-				}
-			}
-
-		}
-	} else {
-		res.Base = &common.BaseResp{
-			RC:  constants.RC_PARAM_ERR.Rc,
-			Msg: constants.RC_PARAM_ERR.Msg,
-		}
-	}
-
-}
-
-func messageServerReq(param *sendVCodeParam, res *common.ResponseData, voiceCode int) {
-	if isNotNull(param.Phone) && param.Country > 0 {
-		//{"area_code":86,"lan":"cn","phone_no":"13901008888","vid":2,"expired":3600,"voice_code":0}
-
-		req := httpReqMessageParam{
-			AreaCode:  param.Country,
-			Lan:       convSmsLn(param.Ln),
-			PhoneNo:   param.Phone,
-			Vid:       MESSAGE_VID,
-			Expire:    param.Expire,
-			VoiceCode: voiceCode,
-		}
-		url := config.GetConfig().SmsSvrAddr + "/get"
-		reqStr, _ := json.Marshal(req)
-		jsonRes, err := common.Post(url, string(reqStr))
-		if err != nil {
-			logger.Error("post error ---> ", err.Error())
-			res.Base = &common.BaseResp{
-				RC:  constants.RC_SYSTEM_ERR.Rc,
-				Msg: constants.RC_SYSTEM_ERR.Msg,
-			}
-		} else {
-			httpRes := httpResSms{}
-			json.Unmarshal([]byte(jsonRes), &httpRes)
-			if httpRes.Code != 1 {
-				res.Base = &common.BaseResp{
 					RC:  constants.RC_PARAM_ERR.Rc,
 					Msg: constants.RC_PARAM_ERR.Msg,
 				}
 			}
 		}
-	} else {
-		res.Base = &common.BaseResp{
-			RC:  constants.RC_PARAM_ERR.Rc,
-			Msg: constants.RC_PARAM_ERR.Msg,
-		}
 	}
+
 }
-func isNotNull(s string) bool {
-	return len(s) > 0
-}
-func convSmsLn(ln string) string {
-	if ln == "zh-cn" {
-		return "cn"
-	} else {
-		return "en"
-	}
-}
-func validateAction(param *sendVCodeParam)bool{
+
+func validateAction(param *sendVCodeParam) bool {
 	if param.Action == "add" {
 		switch param.Type {
-		case MESSAGE,CALL:
-			if common.ExistsPhone(param.Country,param.Phone) {
+		case MESSAGE, CALL:
+			if common.ExistsPhone(param.Country, param.Phone) {
 				return false
 			}
 		case EMAIL:
@@ -276,8 +119,8 @@ func validateAction(param *sendVCodeParam)bool{
 				return false
 			}
 		default:
-			return false;
+			return false
 		}
 	}
-	return true;
+	return true
 }
