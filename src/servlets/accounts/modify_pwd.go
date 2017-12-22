@@ -4,10 +4,23 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/token"
+	"utils"
+)
+
+const (
+	LOGIN_PASSWORD = 1
+	PAYMENT_PASSWORD = 2
 )
 
 type modifyPwdParam struct {
+	Type int `json:"type"`
 	Secret string `json:"secret"`
+}
+
+type modifySecret struct {
+	Pwd string `json:"pwd"`
+	NewPwd string `json:"new_pwd"`
 }
 
 type modifyPwdRequest struct {
@@ -27,14 +40,105 @@ func (handler *modifyPwdHandler) Method() string {
 
 func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	response := &common.ResponseData{
-		Base: &common.BaseResp{
-			RC:  constants.RC_OK.Rc,
-			Msg: constants.RC_OK.Msg,
-		},
-	}
+	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.requestData)
+	httpHeader := common.ParseHttpHeaderParams(request)
+	requestData := new(modifyPwdRequest)
+	common.ParseHttpBodyParams(request, &requestData)
+
+	if httpHeader.Timestamp < 1 {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	// 判断用户身份
+	uidString, key, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+		response.SetResponseBase(err)
+	}
+	uid := utils.Str2Int64(uidString)
+
+	// 解码 secret 参数
+	secretString := requestData.Param.Secret
+	secret := new(modifySecret)
+	if err := DecryptSecret(secretString, key[12:48], key[0:12], &secret); err != constants.RC_OK {
+		response.SetResponseBase(err)
+	}
+
+	if secret.NewPwd == "" {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	modifyType := requestData.Param.Type
+	if modifyType == LOGIN_PASSWORD {
+		// 检查密码为空
+		if secret.Pwd == "" {
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+		// 检查新旧密码是否重复
+		if secret.Pwd == secret.NewPwd {
+			response.SetResponseBase(constants.RC_DUP_LOGIN_PWD)
+			return
+		}
+		// check old password
+		account, err := common.GetAccountByUID(uidString)
+		if err != nil {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+		if account.LoginPassword != secret.Pwd {
+			response.SetResponseBase(constants.RC_DUP_LOGIN_PWD)
+			return
+		}
+		// save to db
+		if err := common.SetLoginPassword(uid, secret.NewPwd); err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		}
+		// send response
+		response.SetResponseBase(constants.RC_OK)
+		return
+
+	} else if modifyType == PAYMENT_PASSWORD {
+		if secret.Pwd == "" {
+			// 检查交易密码是否被设置过
+			account, err := common.GetAccountByUID(uidString)
+			if err != nil {
+				response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+				return
+			}
+			if account.PaymentPassword != "" {
+				response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+				return
+			}
+		} else {
+			// check old password
+			if secret.NewPwd != secret.Pwd {
+				response.SetResponseBase(constants.RC_DUP_PAYMENT_PWD)
+				return
+			}
+			account, err := common.GetAccountByUID(uidString)
+			if err != nil {
+				response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+				return
+			}
+			if account.PaymentPassword != secret.Pwd {
+				response.SetResponseBase(constants.RC_DUP_PAYMENT_PWD)
+				return
+			}
+		}
+		// save to db
+		if err := common.SetPaymentPassword(uid, secret.NewPwd); err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		}
+		// send response
+		response.SetResponseBase(constants.RC_OK)
+		return
+
+	} else {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 }
