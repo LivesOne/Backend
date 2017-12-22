@@ -72,7 +72,7 @@ func (app *AppInfo) IsValid() bool {
 	return (len(app.Name) > 0) && (len(app.AppID) > 0) && (len(app.Plat) > 0) && (len(app.Ver) > 0)
 }
 
-func NewResponseData() (*ResponseData) {
+func NewResponseData() *ResponseData {
 	return &ResponseData{
 		Base: &BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -82,8 +82,10 @@ func NewResponseData() (*ResponseData) {
 }
 
 func (responseData *ResponseData) SetResponseBase(error constants.Error) {
-	responseData.Base.RC = error.Rc
-	responseData.Base.Msg = error.Msg
+	if responseData.Base != nil {
+		responseData.Base.RC = error.Rc
+		responseData.Base.Msg = error.Msg
+	}
 	if error != constants.RC_OK {
 		logger.Info(error.Msg)
 	}
