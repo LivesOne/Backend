@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/donnie4w/go-logger/logger"
 	"servlets/common"
-	"servlets/constants"
 	"utils/config"
 	log "utils/logger"
 )

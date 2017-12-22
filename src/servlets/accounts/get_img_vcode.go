@@ -1,12 +1,9 @@
 package accounts
 
 import (
-	"encoding/json"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils/config"
-	log "utils/logger"
 	"utils/vcode"
 )
 
