@@ -15,10 +15,10 @@ import (
 // registerParam holds the request "param" field
 type registerParam struct {
 	Type    int    `json:"type"`
-	Action  string `json:"action"`
 	Country int    `json:"country"`
 	Phone   string `json:"phone"`
 	EMail   string `json:"email"`
+	VCodeID string `json:"vcode_id"`
 	VCode   string `json:"vcode"`
 	PWD     string `json:"pwd"`
 	Spkv    int    `json:"spkv"`
