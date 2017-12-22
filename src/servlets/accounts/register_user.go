@@ -53,12 +53,7 @@ func (handler *registerUserHandler) Method() string {
 
 func (handler *registerUserHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	handler.response = &common.ResponseData{
-		Base: &common.BaseResp{
-			RC:  constants.RC_OK.Rc,
-			Msg: constants.RC_OK.Msg,
-		},
-	}
+	handler.response = common.NewResponseData()
 	defer common.FlushJSONData2Client(handler.response, writer)
 
 	handler.header = common.ParseHttpHeaderParams(request)

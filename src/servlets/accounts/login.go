@@ -47,9 +47,6 @@ type loginHandler struct {
 
 	aesKey string // aes key (after parsing) uploaded by Client
 	pwd    string // hashed user password
-
-	// http response data to client
-	response *common.ResponseData
 }
 
 func (handler *loginHandler) Method() string {
@@ -65,7 +62,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	common.ParseHttpBodyParams(request, &handler.loginData)
 
 	if handler.checkRequestParams() == false {
-		handler.response.SetResponseBase(constants.RC_PARAM_ERR)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
@@ -81,7 +78,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	case constants.LOGIN_TYPE_UID:
 		// right now, length of UID is 9
 		if len(handler.loginData.Param.UID) != 9 {
-			handler.response.SetResponseBase(constants.RC_ACCOUNT_NOT_EXIST)
+			response.SetResponseBase(constants.RC_ACCOUNT_NOT_EXIST)
 			return
 		}
 		account, err = common.GetAccountByUID(handler.loginData.Param.UID)
@@ -90,10 +87,15 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 
 	if err != nil {
-		handler.response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 		return
 	}
 	logger.Info("read account form DB success:\n", utils.ToJSONIndent(account))
+
+	if handler.checkUserPassword(account.LoginPassword, handler.aesKey, handler.loginData.Param.PWD) == false {
+		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+		return
+	}
 
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)
@@ -101,15 +103,13 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 	newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {
-		response.Base.RC = constants.RC_SYSTEM_ERR.Rc
-		response.Base.Msg = constants.RC_SYSTEM_ERR.Msg
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
-	newtoken, err = utils.RsaSign(newtoken, config.GetConfig().PrivKey)
+	newtoken, err = utils.RsaSign(newtoken, config.GetPrivateKeyFilename())
 	if err != nil {
-		response.Base.RC = constants.RC_SYSTEM_ERR.Rc
-		response.Base.Msg = constants.RC_SYSTEM_ERR.Msg
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
@@ -213,4 +213,30 @@ func (handler *loginHandler) parsePWD(original string) (string, error) {
 	logger.Info("----------hash pwd:", aeskey)
 
 	return string(aeskey), nil
+}
+
+func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string) bool {
+
+	const ivLen = 16
+	const keyLen = 32
+	// len(iv) == 16
+	// len(key) == 32
+	// 16 + 32 == 48
+	if len(aesKey) != (ivLen + keyLen) {
+		logger.Info("invalide aes key")
+		return false
+	}
+
+	iv := aesKey[:ivLen]
+	key := aesKey[ivLen:]
+	pwdUploadDecodeBase64 := utils.Base64Decode(pwdUpload)
+	hashPwd, err := utils.AesEncrypt(string(pwdUploadDecodeBase64), string(key), string(iv))
+	if err != nil {
+		logger.Info("invalide password")
+		return false
+	}
+
+	pwd := utils.Sha256(string(hashPwd) + handler.loginData.Param.UID)
+
+	return (pwdInDB == pwd)
 }
