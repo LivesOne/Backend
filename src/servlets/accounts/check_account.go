@@ -60,12 +60,16 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 			resData.Uid = data.Param.Uid
 		}
 	case CHECK_TYPE_EMAIL:
-		if common.ExistsEmail(data.Param.EMail) {
+		uid := common.GetUidByEmail(data.Param.EMail)
+		if uid != 0 {
 			resData.Exists = 1
+			resData.Uid = uid
 		}
 	case CHECK_TYPE_PHONE:
-		if common.ExistsPhone(data.Param.Country,data.Param.Phone) {
+		uid := common.GetUidByPhone(data.Param.Country,data.Param.Phone)
+		if uid != 0 {
 			resData.Exists = 1
+			resData.Uid = uid
 		}
 	default:
 		resData.Exists = 2

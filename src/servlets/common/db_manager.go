@@ -65,6 +65,22 @@ func ExistsPhone(country int, phone string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
+func GetUidByEmail(email string) int64 {
+	row, _ := gDbUser.QueryRow("select uid from account where email = ? limit 1", email)
+	if row == nil {
+		return 0
+	}
+	return utils.Str2Int64(row["uid"])
+}
+
+func GetUidByPhone(country int, phone string)  int64 {
+	row, _ := gDbUser.QueryRow("select uid from account where country = ? and phone = ? limit 1", country, phone)
+	if row == nil {
+		return 0
+	}
+	return utils.Str2Int64(row["uid"])
+}
+
 func InsertAccount(account *Account) (int64, error) {
 	if !gDbUser.IsConn() {
 		logger.Error("database not ready")
