@@ -13,9 +13,24 @@ type HeaderParams struct {
 	TokenHash string // header: Token-Hash
 	Timestamp int64  // header: Timestamp
 	Signature string // header: Signature
-	// Data      string // body: params in http body
-	// Request *http.Request
-	// Writer  http.ResponseWriter
+}
+
+func (header *HeaderParams) IsValidTimestamp() bool {
+	return header.Timestamp > 1
+}
+
+func (header *HeaderParams) IsValidTokenhash() bool {
+	return len(header.TokenHash) == constants.LEN_HEADER_TOKEN_HASH
+}
+
+func (header *HeaderParams) IsValidSign() bool {
+	return len(header.Signature) == constants.LEN_HEADER_SIGNATURE
+}
+
+func (header *HeaderParams) IsValid() bool {
+	return (header.Timestamp > 1) &&
+		(len(header.TokenHash) == constants.LEN_HEADER_TOKEN_HASH) &&
+		(len(header.Signature) == constants.LEN_HEADER_SIGNATURE)
 }
 
 // HTTP Request format definitions
