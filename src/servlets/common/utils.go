@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"utils"
 	"utils/logger"
 )
 
@@ -97,6 +98,7 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 		logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 		return false
 	}
+	logger.Info("read http request body success:\n", utils.ToJSONIndent(body))
 
 	return true
 }
@@ -120,9 +122,9 @@ func GenerateUID() string {
 		index := int(r[0]) % 10
 
 		/*
-		if i == 0 && index == 0 {
-			continue
-		}
+			if i == 0 && index == 0 {
+				continue
+			}
 		*/
 
 		uid += string(box[index])

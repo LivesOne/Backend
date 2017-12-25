@@ -53,12 +53,7 @@ func (handler *registerUserHandler) Method() string {
 
 func (handler *registerUserHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	handler.response = &common.ResponseData{
-		Base: &common.BaseResp{
-			RC:  constants.RC_OK.Rc,
-			Msg: constants.RC_OK.Msg,
-		},
-	}
+	handler.response = common.NewResponseData()
 	defer common.FlushJSONData2Client(handler.response, writer)
 
 	handler.header = common.ParseHttpHeaderParams(request)
@@ -78,7 +73,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		handler.setResponseBase(constants.RC_INVALID_PUB_KEY)
 		return
 	}
-	logger.Info("------------- get account success\n")
+	logger.Info("------------- get account success\n", utils.ToJSONIndent(account))
 
 	switch handler.registerData.Param.Type {
 	case constants.LOGIN_TYPE_UID:

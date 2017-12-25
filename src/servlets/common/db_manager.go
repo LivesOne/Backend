@@ -7,8 +7,9 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 
-	_ "github.com/go-sql-driver/mysql"
 	"utils"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 //var gDbUser *sql.DB
@@ -138,7 +139,7 @@ func InsertAccountWithPhone(account *Account) (int64, error) {
 	return id, nil
 }
 
-func GetAccountByUID(uid string) (Account, error) {
+func GetAccountByUID(uid string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where uid = ?", uid)
 	if err != nil {
 		logger.Fatal(err)
@@ -146,7 +147,7 @@ func GetAccountByUID(uid string) (Account, error) {
 	return convRowMap2Account(row), err
 }
 
-func GetAccountByEmail(email string) (Account, error) {
+func GetAccountByEmail(email string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where email = ?", email)
 	if err != nil {
 		logger.Fatal(err)
@@ -154,7 +155,7 @@ func GetAccountByEmail(email string) (Account, error) {
 	return convRowMap2Account(row), err
 }
 
-func GetAccountByPhone(country int, phone string) (Account, error) {
+func GetAccountByPhone(country int, phone string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where country = ? and phone = ? limit 1", country, phone)
 	if err != nil {
 		logger.Fatal(err)
@@ -181,8 +182,8 @@ func SetPaymentPassword(uid int64, password string) error {
 	return err
 }
 
-func convRowMap2Account(row map[string]string) Account {
-	var account Account = Account{}
+func convRowMap2Account(row map[string]string) *Account {
+	var account *Account = &Account{}
 	account.ID = utils.Str2Int64(row["id"])
 	account.UID = utils.Str2Int64(row["uid"])
 	account.UIDString = row["uid"]

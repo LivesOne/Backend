@@ -49,60 +49,70 @@ func Sha256(in string) string {
 	return HexEncode(encode[:])
 }
 
-//convert binary to base64 encoded string as output
-func AesEncrypt(src, key, iv string) (string, error) {
-
-	block, err := aes.NewCipher([]byte(key)) //选择加密算法
-	if err != nil {
-		logger.Info("AesEncrypt error", err)
-		return "", err
-	}
-
-	plaintText := pkcs7Padding(src, block.BlockSize())
-	blockModel := cipher.NewCBCEncrypter(block, []byte(iv))
-	ciphertext := make([]byte, len(plaintText))
-	blockModel.CryptBlocks(ciphertext, plaintText)
-
-	return Base64Encode(ciphertext), nil
+func AesEncrypt(src, key, iv string) ([]byte, error) {
+	return aesEncrypt([]byte(src), []byte(key), []byte(iv))
 }
 
-//convert base64 encoded string to binary as input
-// /*base64 encoded string*/
-func AesDecrypt(src, key, iv string) (string, error) {
-
-	keyBytes := Base64Decode(src)
-	block, err := aes.NewCipher(keyBytes) //选择加密算法
+func aesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
-		return "", err
+		logger.Info("invalid decrypt key")
+		return nil, errors.New("invalid decrypt key")
 	}
+	blockSize := block.BlockSize()
+	plaintext = PKCS5Padding(plaintext, blockSize)
+	blockMode := cipher.NewCBCEncrypter(block, iv)
+	ciphertext := make([]byte, len(plaintext))
+	blockMode.CryptBlocks(ciphertext, plaintext)
 
-	blockModel := cipher.NewCBCDecrypter(block, []byte(iv))
-	plaintText := make([]byte, len(keyBytes))
-	blockModel.CryptBlocks(plaintText, keyBytes)
-	plaintText = pkcs7UnPadding(plaintText, block.BlockSize())
-
-	return string(plaintText), nil
+	return ciphertext, nil
 }
 
-func pkcs7Padding(src string, blockSize int) []byte {
+func AesDecrypt(src, key, iv string) ([]byte, error) {
+	return aesDecrypt([]byte(src), []byte(key), []byte(iv))
+}
+
+func aesDecrypt(src []byte, key []byte, iv []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		logger.Info("invalid decrypt key")
+		return nil, errors.New("invalid decrypt key")
+	}
+
+	blockSize := block.BlockSize()
+	if len(src) < blockSize {
+		logger.Info("ciphertext too short")
+		return nil, errors.New("ciphertext too short")
+	}
+
+	if len(src)%blockSize != 0 {
+		logger.Info("ciphertext is not a multiple of the block size")
+		return nil, errors.New("ciphertext is not a multiple of the block size")
+	}
+
+	blockModel := cipher.NewCBCDecrypter(block, iv)
+	plaintext := make([]byte, len(src))
+	blockModel.CryptBlocks(plaintext, src)
+	plaintext = PKCS5UnPadding(plaintext)
+
+	return plaintext, nil
+}
+
+func PKCS5Padding(src []byte, blockSize int) []byte {
 	padding := blockSize - len(src)%blockSize
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
-	return append([]byte(src), padtext...)
+	return append(src, padtext...)
 }
 
-func pkcs7UnPadding(plantText []byte, blockSize int) []byte {
-	length := len(plantText)
-	unpadding := int(plantText[length-1])
-	return plantText[:(length - unpadding)]
+func PKCS5UnPadding(src []byte) []byte {
+	length := len(src)
+	unpadding := int(src[length-1])
+	return src[:(length - unpadding)]
 }
 
 //convert base64 encoded string to binary as input
 /*base64 encoded string*/
-// func RsaDecrypt(src string, privateKey string) (string, error) {
-// block, _ := pem.Decode([]byte(privateKey))
 func RsaDecrypt(src string, privateKey []byte) (string, error) {
-
-	// RsaSign("slic客户端和Xebo服务器之间通信过程中加密敏感 信息.", privateKey)
 
 	block, _ := pem.Decode(privateKey)
 	if block == nil {

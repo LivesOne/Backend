@@ -2,12 +2,11 @@ package accounts
 
 import (
 	"net/http"
-	"encoding/json"
-
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/vcode"
 )
 
 type bindEMailParam struct {
@@ -51,46 +50,29 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// 判断用户身份
-	tokenHash := httpHeader.TokenHash
-	uidString, tokenErr := token.GetUID(tokenHash)
-	switch tokenErr {
-		case constants.ERR_INT_OK:
-			break
-		case constants.ERR_INT_TK_DB:
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		case constants.ERR_INT_TK_DUPLICATE:
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
-		case constants.ERR_INT_TK_NOTEXISTS:
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
-		default:
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
+	uidString, key, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+		response.SetResponseBase(err)
 	}
 	uid := utils.Str2Int64(uidString)
 
-	// 判断验证码正确
-
 	// 解码 secret 参数
-	key := ""
-	iv := ""
-	secret := requestData.Param.Secret
-	dataStr, err := utils.AesDecrypt(secret, key, iv)
-	if err != nil {
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+	secretString := requestData.Param.Secret
+	secret := new(mailSecret)
+	if err := DecryptSecret(secretString, key[12:48], key[0:12], &secret); err != constants.RC_OK {
+		response.SetResponseBase(err)
+	}
+
+	// 判断邮箱验证码正确
+	ok, err := vcode.ValidateMailVCode(
+		requestData.Param.VCodeId, requestData.Param.VCode, secret.email)
+	if ok == false {
+		response.SetResponseBase(ValidateMailVCodeErr2RcErr(err))
 		return
 	}
-	var secretData mailSecret
-	if err := json.Unmarshal([]byte(dataStr), &secretData); err != nil {
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
-	email := secretData.email
 
 	// save data to db
-	if err := common.SetEmail(uid, email); err != nil {
+	if err := common.SetEmail(uid, secret.email); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}

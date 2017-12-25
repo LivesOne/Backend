@@ -2,12 +2,11 @@ package accounts
 
 import (
 	"net/http"
-	"encoding/json"
-
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/vcode"
 )
 
 type bindPhoneParam struct {
@@ -46,53 +45,35 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	requestData := new(bindPhoneRequest)
 	common.ParseHttpBodyParams(request, &requestData)
 
-
 	if httpHeader.Timestamp < 1 {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	// 判断用户身份
-	tokenHash := httpHeader.TokenHash
-	uidString, tokenErr := token.GetUID(tokenHash)
-	switch tokenErr {
-		case constants.ERR_INT_OK:
-			break
-		case constants.ERR_INT_TK_DB:
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		case constants.ERR_INT_TK_DUPLICATE:
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
-		case constants.ERR_INT_TK_NOTEXISTS:
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
-		default:
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
+	uidString, key, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+		response.SetResponseBase(err)
 	}
 	uid := utils.Str2Int64(uidString)
-	// 判断验证码正确
 
 	// 解码 secret 参数
-	key := ""
-	iv := ""
-	secret := handler.requestData.Param.Secret
-	dataStr, err := utils.AesDecrypt(secret, key, iv)
-	if err != nil {
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+	secretString := requestData.Param.Secret
+	secret := new(phoneSecret)
+	if err := DecryptSecret(secretString, key[12:48], key[0:12], &secret); err != constants.RC_OK {
+		response.SetResponseBase(err)
+	}
+
+	// 判断手机验证码正确
+	ok, _ := vcode.ValidateSmsAndCallVCode(
+		secret.phone, secret.country, requestData.Param.VCode,0, 0)
+	if ok == false {
+		response.SetResponseBase(constants.RC_INVALID_VCODE)
 		return
 	}
-	var secretData phoneSecret
-	if err := json.Unmarshal([]byte(dataStr), &secretData); err != nil {
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
-	country := secretData.country
-	phone := secretData.phone
 
 	// save data to db
-	if err := common.SetPhone(uid, country, phone); err != nil {
+	if err := common.SetPhone(uid, secret.country, secret.phone); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
