@@ -3,6 +3,7 @@ package db_factory
 import (
 	"regexp"
 	"utils"
+	"utils/logger"
 )
 
 const (
@@ -1099,6 +1100,7 @@ func (me *MySqlError) build(err error) {
 	//mcs := errRegexp.FindStringSubmatch(me.Descrption)
 	me.Code = matchErrCode(me.Descrption)
 	me.Value,me.Key = matchErrEntity(me.Descrption)
+	logger.Error("catch mysql error code :",me.Code," key :",me.Key," value : ",me.Value)
 }
 
 func parseErrCode(err error) *MySqlError {

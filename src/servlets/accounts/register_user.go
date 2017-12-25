@@ -10,6 +10,7 @@ import (
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"utils/db_factory"
 )
 
 // registerParam holds the request "param" field
@@ -39,12 +40,12 @@ type responseRegister struct {
 // registerUserHandler implements the "Echo message" interface
 type registerUserHandler struct {
 	// http request, header params
-	header *common.HeaderParams
+	//header *common.HeaderParams
 	// http request, body params
-	registerData *registerRequest
+	//registerData *registerRequest
 
 	// http response data to client
-	response *common.ResponseData
+	//response *common.ResponseData
 }
 
 func (handler *registerUserHandler) Method() string {
@@ -53,130 +54,155 @@ func (handler *registerUserHandler) Method() string {
 
 func (handler *registerUserHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	handler.response = common.NewResponseData()
-	defer common.FlushJSONData2Client(handler.response, writer)
+	response := common.NewResponseData()
+	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.registerData)
+	header := common.ParseHttpHeaderParams(request)
+	data := registerRequest{}
+	common.ParseHttpBodyParams(request, &data)
 
-	if handler.checkRequestParams() == false {
-		handler.setResponseBase(constants.RC_PARAM_ERR)
+	if checkRequestParams(header,&data) == false {
+		setResponseBase(response,constants.RC_PARAM_ERR)
 		return
 	}
 
 	// fmt.Println("registerUserHandler) Handle", msg)
 	// hashPwd := utils.RsaDecrypt(handler.registerData.Param.PWD, config.GetConfig().PrivKey)
 
-	account, err := handler.getAccount()
+	account, err := getAccount(&data)
 	if err != nil {
 		// logger.Info("------------- get account error\n")
-		handler.setResponseBase(constants.RC_INVALID_PUB_KEY)
+		setResponseBase(response,constants.RC_INVALID_PUB_KEY)
 		return
 	}
 	logger.Info("------------- get account success\n", utils.ToJSONIndent(account))
 
-	switch handler.registerData.Param.Type {
+	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
-		_, err = common.InsertAccount(account)
+		for {
+			_, err = common.InsertAccount(account)
+			if err == nil {
+				break
+			}else{
+				if db_factory.CheckDuplicateByColumn(err,"uid"){
+					account.UIDString,account.UID = getUid()
+				}else{
+					setResponseBase(response,constants.RC_SYSTEM_ERR)
+					break
+				}
+			}
+		}
+
 	case constants.LOGIN_TYPE_EMAIL:
-		if common.ExistsEmail(account.Email) {
-			handler.setResponseBase(constants.RC_DUP_EMAIL)
+		_, err = common.InsertAccountWithEmail(account)
+		if err!=nil{
+			if  db_factory.CheckDuplicateByColumn(err,"email"){
+				setResponseBase(response,constants.RC_DUP_EMAIL)
+			}else{
+				setResponseBase(response,constants.RC_SYSTEM_ERR)
+			}
 			return
-		} else {
-			_, err = common.InsertAccountWithEmail(account)
 		}
 	case constants.LOGIN_TYPE_PHONE:
-		if common.ExistsPhone(account.Country, account.Phone) {
-			handler.setResponseBase(constants.RC_DUP_PHONE)
+		_, err = common.InsertAccountWithPhone(account)
+		if err!=nil{
+			if  db_factory.CheckDuplicateByColumn(err,"phone"){
+				setResponseBase(response,constants.RC_DUP_PHONE)
+			}else{
+				setResponseBase(response,constants.RC_SYSTEM_ERR)
+			}
 			return
-		} else {
-			_, err = common.InsertAccountWithPhone(account)
 		}
 	}
 
 	if err != nil {
-		handler.setResponseBase(constants.RC_SYSTEM_ERR)
+		setResponseBase(response,constants.RC_SYSTEM_ERR)
 		return
 	}
 
-	handler.response.Data = &responseRegister{
+	response.Data = &responseRegister{
 		UID:     account.UIDString,
 		Regtime: account.RegisterTime,
 	}
 }
 
-func (handler *registerUserHandler) setResponseBase(error constants.Error) {
-	handler.response.Base.RC = error.Rc
-	handler.response.Base.Msg = error.Msg
+func  setResponseBase(resData *common.ResponseData,error constants.Error) {
+	resData.Base.RC = error.Rc
+	resData.Base.Msg = error.Msg
 	logger.Info(error.Msg)
 }
 
-func (handler *registerUserHandler) checkRequestParams() bool {
-	if handler.header.Timestamp < 1 {
+func checkRequestParams(header *common.HeaderParams ,data *registerRequest) bool {
+	if header.Timestamp < 1 {
 		return false
 	}
 
-	if (handler.registerData.Base.App == nil) || (handler.registerData.Base.App.IsValid() == false) {
+	if (data.Base.App == nil) || (data.Base.App.IsValid() == false) {
 		return false
 	}
 
-	if (handler.registerData.Param.Type < constants.LOGIN_TYPE_UID) || (handler.registerData.Param.Type > constants.LOGIN_TYPE_PHONE) {
+	if (data.Param.Type < constants.LOGIN_TYPE_UID) || (data.Param.Type > constants.LOGIN_TYPE_PHONE) {
 		return false
 	}
 
-	if handler.registerData.Param.Type == constants.LOGIN_TYPE_EMAIL && len(handler.registerData.Param.EMail) < 1 {
+	if data.Param.Type == constants.LOGIN_TYPE_EMAIL && len(data.Param.EMail) < 1 {
 		return false
 	}
 
-	if handler.registerData.Param.Type == constants.LOGIN_TYPE_PHONE && (handler.registerData.Param.Country == 0 || len(handler.registerData.Param.Phone) < 1) {
+	if data.Param.Type == constants.LOGIN_TYPE_PHONE && (data.Param.Country == 0 || len(data.Param.Phone) < 1) {
 		return false
 	}
 
-	if (len(handler.registerData.Param.PWD) < 1) || (handler.registerData.Param.Spkv < 1) {
+	if (len(data.Param.PWD) < 1) || (data.Param.Spkv < 1) {
 		return false
 	}
 
 	return true
 }
 
-func (handler *registerUserHandler) getAccount() (*common.Account, error) {
-	var account common.Account
+func getUid()(string,int64){
 	var uid string
 	var uid_num int64
 
-	for {
-		uid = common.GenerateUID()
-		uid_num, _ = strconv.ParseInt(uid, 10, 64)
+	//for {
+	//	uid = common.GenerateUID()
+	//	uid_num, _ = strconv.ParseInt(uid, 10, 64)
+	//
+	//	if common.ExistsUID(uid_num) {
+	//		continue
+	//	} else {
+	//		break
+	//	}
+	//}
+	uid = common.GenerateUID()
+	uid_num, _ = strconv.ParseInt(uid, 10, 64)
+	return uid,uid_num
+}
 
-		if common.ExistsUID(uid_num) {
-			continue
-		} else {
-			break
-		}
-	}
+func getAccount(data *registerRequest) (*common.Account, error) {
+	var account common.Account
 
-	recoverPWD, err := handler.recoverPwd(handler.registerData.Param.PWD)
+	recoverPWD, err := recoverPwd(data)
 	if err != nil {
 		return nil, err
 	}
 
-	account.UIDString = uid
-	account.UID = uid_num
+	account.UIDString,account.UID = getUid()
 
-	account.Email = handler.registerData.Param.EMail
-	account.Country = handler.registerData.Param.Country
-	account.Phone = handler.registerData.Param.Phone
+	account.Email = data.Param.EMail
+	account.Country = data.Param.Country
+	account.Phone = data.Param.Phone
 
-	account.LoginPassword = utils.Sha256(recoverPWD + uid)
+	account.LoginPassword = utils.Sha256(recoverPWD + account.UIDString)
 	account.RegisterTime = time.Now().Unix()
 	account.UpdateTime = account.RegisterTime
-	account.RegisterType = handler.registerData.Param.Type
+	account.RegisterType = data.Param.Type
 
 	return &account, nil
 }
 
 // recoverPwd recovery the upload PWD to hash form
-func (handler *registerUserHandler) recoverPwd(pwd string) (string, error) {
+func recoverPwd(data *registerRequest) (string, error) {
 
 	privKey := config.GetPrivateKey()
 	if privKey == nil {
@@ -186,7 +212,7 @@ func (handler *registerUserHandler) recoverPwd(pwd string) (string, error) {
 
 	// fmt.Println("2222222222222222:ggggggggggggggg")
 	// hashPwd, err := utils.RsaDecrypt(string(base64Decode), privKey)
-	hashPwd, err := utils.RsaDecrypt(handler.registerData.Param.PWD, privKey)
+	hashPwd, err := utils.RsaDecrypt(data.Param.PWD, privKey)
 	if err != nil {
 		// fmt.Println("2222222222222222:", err)
 		logger.Info("decrypt pwd error:", err)
