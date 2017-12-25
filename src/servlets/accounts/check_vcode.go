@@ -14,6 +14,7 @@ type checkVCodeParam struct {
 	Phone   string `json:"phone"`
 	EMail   string `json:"email"`
 	VCode   string `json:"vcode"`
+	VCodeId string `json:"vcode_id"`
 	Keep    int    `json:"keep"`
 }
 
@@ -24,8 +25,8 @@ type checkVCodeRequest struct {
 
 // checkVCodeHandler
 type checkVCodeHandler struct {
-	header      *common.HeaderParams // request header param
-	requestData *checkVCodeRequest   // request body
+	//header      *common.HeaderParams // request header param
+	//requestData *checkVCodeRequest   // request body
 }
 
 func (handler *checkVCodeHandler) Method() string {
@@ -42,17 +43,21 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 	}
 	defer common.FlushJSONData2Client(response, writer)
 	data := checkVCodeRequest{}
-	handler.header = common.ParseHttpHeaderParams(request)
+	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
 
 
 	switch data.Param.Type {
 	case MESSAGE,CALL:
-
-
-
+		f,_ :=vcode.ValidateSmsAndCallVCode(data.Param.Phone,data.Param.Country,data.Param.VCode,3600,vcode.FLAG_DEF)
+		if !f {
+			response.SetResponseBase(constants.RC_INVALID_VCODE)
+		}
 	case EMAIL:
-
+		f,_ := vcode.ValidateMailVCode(data.Param.VCodeId,data.Param.VCode,data.Param.EMail)
+		if !f {
+			response.SetResponseBase(constants.RC_INVALID_VCODE)
+		}
 	}
 
 
