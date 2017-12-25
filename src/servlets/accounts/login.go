@@ -30,7 +30,7 @@ type loginRequest struct {
 type responseLoginSPK struct {
 	Ver  int    `json:"ver"`
 	Key  string `json:"key"`
-	sign string `json:"sign"`
+	Sign string `json:"sign"`
 }
 
 type responseLogin struct {
@@ -193,7 +193,7 @@ func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
 
 	aeskey, err := utils.RsaDecrypt(originalKey, config.GetPrivateKey())
 	if err != nil {
-		logger.Info("decrypt pwd error:", err)
+		logger.Info("decrypt aes key error:", err)
 		return "", err
 	}
 
@@ -230,7 +230,7 @@ func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string
 	iv := aesKey[:ivLen]
 	key := aesKey[ivLen:]
 	pwdUploadDecodeBase64 := utils.Base64Decode(pwdUpload)
-	hashPwd, err := utils.AesEncrypt(string(pwdUploadDecodeBase64), string(key), string(iv))
+	hashPwd, err := utils.AesDecrypt(string(pwdUploadDecodeBase64), string(key), string(iv))
 	if err != nil {
 		logger.Info("invalide password")
 		return false
