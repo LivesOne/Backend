@@ -53,7 +53,7 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 		}
 	}
 
-	logger.Info("received http header: ", *params)
+	logger.Info("received http header: ", utils.ToJSONIndent(params))
 
 	return params
 }
@@ -79,7 +79,7 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 		}
 		// request.Body.Read(bodyparam)
 		if err != nil {
-			logger.Info("ready body error : ", err)
+			logger.Info("read http body error : ", err)
 			return false
 		}
 	}
@@ -87,7 +87,7 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 	// 	logger.Info("ready body error 9999999999: ", err, count)
 	// 	return false
 	// }
-	logger.Info("ready body: ", bodyparam)
+	logger.Info("read http body: ", bodyparam)
 
 	// bodyparam := request.PostFormValue("param")
 	// logger.Info("received http body: ", bodyparam)

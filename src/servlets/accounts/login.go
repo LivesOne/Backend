@@ -68,7 +68,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 	var err error
 	handler.aesKey, err = handler.parseAESKey(handler.loginData.Param.Key)
-	if err != nil || handler.isHeaderValid() == false {
+	if err != nil || handler.isSignValid() == false {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
@@ -77,7 +77,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	switch handler.loginData.Param.Type {
 	case constants.LOGIN_TYPE_UID:
 		// right now, length of UID is 9
-		if len(handler.loginData.Param.UID) != 9 {
+		if len(handler.loginData.Param.UID) != constants.LEN_uid {
 			response.SetResponseBase(constants.RC_ACCOUNT_NOT_EXIST)
 			return
 		}
@@ -105,8 +105,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)
-	var expire int64 = 24 * 3600
-
+	const expire int64 = 24 * 3600
 	newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -140,7 +139,7 @@ func (handler *loginHandler) checkRequestParams() bool {
 	// const signLen = 64
 	// const tokenHashLen = 64
 	// if (handler.header.Timestamp < 1) || (len(handler.header.Signature) != signLen) || (len(handler.header.TokenHash) != tokenHashLen) {
-	if handler.header.Timestamp < 1 || len(handler.header.Signature) < 1 || len(handler.header.TokenHash) < 1 {
+	if handler.header.IsValid() == false {
 		return false
 	}
 
@@ -171,7 +170,7 @@ func (handler *loginHandler) checkRequestParams() bool {
 	return true
 }
 
-func (handler *loginHandler) isHeaderValid() bool {
+func (handler *loginHandler) isSignValid() bool {
 
 	signature := handler.header.Signature
 
@@ -182,13 +181,13 @@ func (handler *loginHandler) isHeaderValid() bool {
 	tmp := handler.aesKey + strconv.FormatInt(handler.header.Timestamp, 10)
 	hash := utils.Sha256(tmp)
 
-	if signature == string(hash[:]) {
-		logger.Info("verify header signature successful", signature, string(hash[:]))
+	if signature == hash {
+		logger.Info("login: verify header signature successful", signature, string(hash[:]))
 	} else {
-		logger.Info("verify header signature failed:", signature, string(hash[:]))
+		logger.Info("login: verify header signature failed:", signature, string(hash[:]))
 	}
 
-	return signature == string(hash[:])
+	return signature == hash
 }
 
 // func (handler *loginHandler) verifySignature(signature, aeskey string, timestamp int64) bool {
@@ -205,11 +204,11 @@ func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
 
 	aeskey, err := utils.RsaDecrypt(originalKey, config.GetPrivateKey())
 	if err != nil {
-		logger.Info("decrypt aes key error:", err)
+		logger.Info("login: decrypt aes key error:", err)
 		return "", err
 	}
 
-	logger.Info("----------aes key:", aeskey)
+	logger.Info("login: ----------aes key:", aeskey)
 
 	return string(aeskey), nil
 }
@@ -218,33 +217,33 @@ func (handler *loginHandler) parsePWD(original string) (string, error) {
 
 	aeskey, err := utils.RsaDecrypt(original, config.GetPrivateKey())
 	if err != nil {
-		logger.Info("decrypt pwd error:", err)
+		logger.Info("login: decrypt pwd error:", err)
 		return "", err
 	}
 
-	logger.Info("----------hash pwd:", aeskey)
+	logger.Info("login: ----------hash pwd:", aeskey)
 
 	return string(aeskey), nil
 }
 
 func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string) bool {
 
-	const ivLen = 16
-	const keyLen = 32
+	// const ivLen = 16
+	// const keyLen = 32
 	// len(iv) == 16
 	// len(key) == 32
 	// 16 + 32 == 48
-	if len(aesKey) != (ivLen + keyLen) {
-		logger.Info("invalide aes key")
+	if len(aesKey) != constants.AES_totalLen {
+		logger.Info("login: invalide aes key", len(aesKey), aesKey)
 		return false
 	}
 
-	iv := aesKey[:ivLen]
-	key := aesKey[ivLen:]
+	iv := aesKey[:constants.AES_ivLen]
+	key := aesKey[constants.AES_ivLen:]
 	pwdUploadDecodeBase64 := utils.Base64Decode(pwdUpload)
 	hashPwd, err := utils.AesDecrypt(string(pwdUploadDecodeBase64), string(key), string(iv))
 	if err != nil {
-		logger.Info("invalide password")
+		logger.Info("login: invalid password")
 		return false
 	}
 
