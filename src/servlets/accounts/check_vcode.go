@@ -7,6 +7,7 @@ import (
 	"utils/vcode"
 )
 
+
 type checkVCodeParam struct {
 	Type    int    `json:"type"`
 	Action  string `json:"action"`
