@@ -6,13 +6,14 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/db_factory"
 	"utils/vcode"
 )
 
 type bindPhoneParam struct {
 	VCodeId string `json:"vcode_id"`
-	VCode  string `json:"vcode"`
-	Secret string `json:"secret"`
+	VCode   string `json:"vcode"`
+	Secret  string `json:"secret"`
 }
 
 type bindPhoneRequest struct {
@@ -27,9 +28,9 @@ type bindPhoneHandler struct {
 }
 
 type phoneSecret struct {
-	pwd string
+	pwd     string
 	country int
-	phone string
+	phone   string
 }
 
 func (handler *bindPhoneHandler) Method() string {
@@ -66,16 +67,23 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 
 	// 判断手机验证码正确
 	ok, _ := vcode.ValidateSmsAndCallVCode(
-		secret.phone, secret.country, requestData.Param.VCode,0, 0)
+		secret.phone, secret.country, requestData.Param.VCode, 0, 0)
 	if ok == false {
 		response.SetResponseBase(constants.RC_INVALID_VCODE)
 		return
 	}
 
 	// save data to db
-	if err := common.SetPhone(uid, secret.country, secret.phone); err != nil {
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
+	dbErr := common.SetPhone(uid, secret.country, secret.phone)
+	if dbErr != nil {
+		if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
+			db_factory.CheckDuplicateByColumn(dbErr, "phone") {
+			response.SetResponseBase(constants.RC_DUP_PHONE)
+			return
+		} else {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
 	}
 
 	// send response

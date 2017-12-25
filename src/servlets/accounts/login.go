@@ -34,10 +34,10 @@ type responseLoginSPK struct {
 }
 
 type responseLogin struct {
-	UID    string           `json:"uid"`
-	Token  string           `json:"token"`
-	Expire int64            `json:"expire"`
-	SPK    responseLoginSPK `json:"spk"`
+	UID    string            `json:"uid"`
+	Token  string            `json:"token"`
+	Expire int64             `json:"expire"`
+	SPK    *responseLoginSPK `json:"spk"`
 }
 
 // loginHandler implements the "Echo message" interface
@@ -83,7 +83,13 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		}
 		account, err = common.GetAccountByUID(handler.loginData.Param.UID)
 	case constants.LOGIN_TYPE_EMAIL:
+		if utils.IsValidEmailAddr(handler.loginData.Param.EMail) == false {
+			response.SetResponseBase(constants.RC_INVALIDE_EMAIL_ADDRESS)
+			return
+		}
+		account, err = common.GetAccountByEmail(handler.loginData.Param.EMail)
 	case constants.LOGIN_TYPE_PHONE:
+		account, err = common.GetAccountByPhone(handler.loginData.Param.Country, handler.loginData.Param.Phone)
 	}
 
 	if err != nil {
@@ -117,6 +123,12 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		UID:    handler.loginData.Param.UID,
 		Token:  newtoken,
 		Expire: expire,
+		// SPK: improve it later
+		// SPK: &responseLoginSPK{
+		// 	Ver:  1,
+		// 	Key:  "",
+		// 	Sign: "",
+		// },
 	}
 }
 

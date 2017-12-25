@@ -6,8 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -46,12 +47,17 @@ func GetAppBaseDir() string {
 // 	}
 // }
 
-func Str2Int(str string)int{
+func Str2Int(str string) int {
 	tmp, _ := strconv.Atoi(str)
 	return tmp
 }
 
-func Str2Int64(str string)int64{
+func Str2Int64(str string) int64 {
 	tmp, _ := strconv.ParseInt(str, 10, 64)
 	return tmp
+}
+
+func IsValidEmailAddr(email string) bool {
+	ret, _ := regexp.MatchString("^([a-z0-9_\\.-]+)@([\\da-z\\.-]+)\\.([a-z\\.]{2,6})$", email)
+	return ret
 }

@@ -48,6 +48,7 @@ var (
 	RC_MAIL_VCODE_HTTP_ERR             = Error{20116, "mail vcode http err"}
 	RC_MAIL_VCODE_UNKOWN_ERR           = Error{20117, "mail vcode unkown err"}
 	RC_ACCOUNT_NOT_EXIST               = Error{20118, "account not exist"}
+	RC_INVALIDE_EMAIL_ADDRESS          = Error{20119, "invalid email address"}
 )
 
 // HTTP return code constants
