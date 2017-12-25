@@ -3,8 +3,11 @@ package accounts
 import (
 	"encoding/json"
 	"servlets/constants"
-	"utils/vcode"
+	"servlets/token"
+	"strconv"
+	"time"
 	"utils"
+	"utils/vcode"
 )
 
 func DecryptSecret(secret string, key string, iv string, instance interface{}) constants.Error {
@@ -60,3 +63,31 @@ func ValidateMailVCodeErr2RcErr(validateErr int) constants.Error {
 	}
 }
 
+// 生成 request 所需的 signature
+func GenerateSig(hash string) (string, constants.Error) {
+	_, key, _, err := token.GetAll(hash)
+	switch err {
+	case constants.ERR_INT_OK:
+		break
+	case constants.ERR_INT_TK_DB:
+		return "", constants.RC_TOKEN_DB
+	case constants.ERR_INT_TK_DUPLICATE:
+		return "", constants.RC_TOKEN_DUPLICATE
+	case constants.ERR_INT_TK_NOTEXISTS:
+		return "", constants.RC_TOKEN_NOTEXISTS
+	default:
+		return "", constants.RC_SYSTEM_ERR
+	}
+	timestamp := GetTimestamp()
+	in := key + timestamp
+	sig := utils.Sha256(in)
+	return sig, constants.RC_OK
+}
+
+// 获取13位时间戳
+func GetTimestamp() string {
+	now := time.Now()
+	timestamp := now.UnixNano() / 1000000
+	timestampString := strconv.FormatInt(timestamp, 10)
+	return timestampString
+}

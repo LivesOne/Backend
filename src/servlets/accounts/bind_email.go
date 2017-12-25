@@ -6,14 +6,14 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/vcode"
 	"utils/db_factory"
+	"utils/vcode"
 )
 
 type bindEMailParam struct {
 	VCodeId string `json:"vcode_id"`
-	VCode  string `json:"vcode"`
-	Secret string `json:"secret"`
+	VCode   string `json:"vcode"`
+	Secret  string `json:"secret"`
 }
 
 type bindEMailRequest struct {
@@ -28,7 +28,7 @@ type bindEMailHandler struct {
 }
 
 type mailSecret struct {
-	pwd string
+	pwd   string
 	email string
 }
 
@@ -62,6 +62,11 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	secret := new(mailSecret)
 	if err := DecryptSecret(secretString, key[12:48], key[0:12], &secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
+	}
+
+	if utils.IsValidEmailAddr(secret.email) {
+		response.SetResponseBase(constants.RC_INVALIDE_EMAIL_ADDRESS)
+		return
 	}
 
 	// 判断邮箱验证码正确
