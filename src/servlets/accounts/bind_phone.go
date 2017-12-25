@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/vcode"
+	"utils/db_factory"
 )
 
 type bindPhoneParam struct {
@@ -73,9 +74,16 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// save data to db
-	if err := common.SetPhone(uid, secret.country, secret.phone); err != nil {
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
+	dbErr := common.SetPhone(uid, secret.country, secret.phone)
+	if dbErr != nil {
+		if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
+			db_factory.CheckDuplicateByColumn(dbErr, "phone") {
+			response.SetResponseBase(constants.RC_DUP_PHONE)
+			return
+		} else {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
 	}
 
 	// send response

@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/vcode"
+	"utils/db_factory"
 )
 
 type bindEMailParam struct {
@@ -72,9 +73,15 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// save data to db
-	if err := common.SetEmail(uid, secret.email); err != nil {
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
+	dbErr := common.SetEmail(uid, secret.email)
+	if dbErr != nil {
+		if db_factory.CheckDuplicateByColumn(dbErr, "email") {
+			response.SetResponseBase(constants.RC_DUP_EMAIL)
+			return
+		} else {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
 	}
 
 	// send response
