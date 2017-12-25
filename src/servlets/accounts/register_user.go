@@ -80,19 +80,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
-		for {
-			_, err = common.InsertAccount(account)
-			if err == nil {
-				break
-			}else{
-				if db_factory.CheckDuplicateByColumn(err,"uid"){
-					account.UIDString,account.UID = getUid()
-				}else{
-					break
-				}
-			}
-		}
-
+		insertAndCheckUid(account)
 	case constants.LOGIN_TYPE_EMAIL:
 		f,_ := vcode.ValidateMailVCode(data.Param.VCodeID,data.Param.VCode,data.Param.EMail)
 		if f {
@@ -100,8 +88,16 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			if err!=nil{
 				if  db_factory.CheckDuplicateByColumn(err,"email"){
 					setResponseBase(response,constants.RC_DUP_EMAIL)
-				}else{
-					setResponseBase(response,constants.RC_SYSTEM_ERR)
+				}else if  db_factory.CheckDuplicateByColumn(err,"uid"){
+					account.UIDString,account.UID = getUid()
+					e := insertAndCheckUid(account)
+					if e != nil {
+						if db_factory.CheckDuplicateByColumn(err,"email"){
+							setResponseBase(response,constants.RC_DUP_EMAIL)
+						}else{
+							setResponseBase(response,constants.RC_SYSTEM_ERR)
+						}
+					}
 				}
 				return
 			}
@@ -116,8 +112,16 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			if err!=nil{
 				if  db_factory.CheckDuplicateByColumn(err,"phone"){
 					setResponseBase(response,constants.RC_DUP_PHONE)
-				}else{
-					setResponseBase(response,constants.RC_SYSTEM_ERR)
+				}else if  db_factory.CheckDuplicateByColumn(err,"uid"){
+					account.UIDString,account.UID = getUid()
+					e := insertAndCheckUid(account)
+					if e != nil {
+						if db_factory.CheckDuplicateByColumn(err,"phone"){
+							setResponseBase(response,constants.RC_DUP_PHONE)
+						}else{
+							setResponseBase(response,constants.RC_SYSTEM_ERR)
+						}
+					}
 				}
 				return
 			}
@@ -189,6 +193,23 @@ func getUid()(string,int64){
 	uid = common.GenerateUID()
 	uid_num, _ = strconv.ParseInt(uid, 10, 64)
 	return uid,uid_num
+}
+
+func insertAndCheckUid(account *common.Account)error{
+	var err error
+	for {
+		_, err = common.InsertAccount(account)
+		if err == nil {
+			break
+		}else{
+			if db_factory.CheckDuplicateByColumn(err,"uid"){
+				account.UIDString,account.UID = getUid()
+			}else{
+				break
+			}
+		}
+	}
+	return err
 }
 
 func getAccount(data *registerRequest) (*common.Account, error) {

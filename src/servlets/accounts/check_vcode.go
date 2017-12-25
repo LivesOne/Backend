@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"utils/vcode"
 )
 
 type checkVCodeParam struct {
@@ -40,7 +41,20 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 		},
 	}
 	defer common.FlushJSONData2Client(response, writer)
-
+	data := checkVCodeRequest{}
 	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.requestData)
+	common.ParseHttpBodyParams(request, &data)
+
+
+	switch data.Param.Type {
+	case MESSAGE,CALL:
+
+
+
+	case EMAIL:
+
+	}
+
+
+
 }

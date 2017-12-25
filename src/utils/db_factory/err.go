@@ -1100,6 +1100,7 @@ func (me *MySqlError) build(err error) {
 	//mcs := errRegexp.FindStringSubmatch(me.Descrption)
 	me.Code = matchErrCode(me.Descrption)
 	me.Value,me.Key = matchErrEntity(me.Descrption)
+	logger.Error("error msg :",me.Descrption)
 	logger.Error("catch mysql error code :",me.Code," key :",me.Key," value : ",me.Value)
 }
 
@@ -1115,7 +1116,7 @@ func matchErrCode(errStr string)int {
 	if len(mcs) == 2{
 		return utils.Str2Int(mcs[1])
 	}else{
-		return 0;
+		return 0
 	}
 
 }
@@ -1126,7 +1127,7 @@ func matchErrEntity(errStr string)(string,string) {
 	if len(mcs) == 3{
 		return mcs[1],mcs[2]
 	}else{
-		return "","";
+		return "",""
 	}
 
 }

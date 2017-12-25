@@ -76,7 +76,7 @@ func InsertAccount(account *Account) (int64, error) {
 		logger.Fatal(err)
 		return 0, err
 	}
-
+	defer stmt.Close()
 	ret, err := stmt.Exec(account.UID, account.LoginPassword,
 		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
 	if err != nil {
@@ -101,7 +101,7 @@ func InsertAccountWithEmail(account *Account) (int64, error) {
 		logger.Fatal(err)
 		return 0, err
 	}
-
+	defer stmt.Close()
 	ret, err := stmt.Exec(account.UID, account.Email, account.LoginPassword,
 		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
 	if err != nil {
@@ -126,7 +126,7 @@ func InsertAccountWithPhone(account *Account) (int64, error) {
 		logger.Fatal(err)
 		return 0, err
 	}
-
+	defer stmt.Close()
 	ret, err := stmt.Exec(account.UID, account.Country, account.Phone, account.LoginPassword,
 		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
 	if err != nil {
