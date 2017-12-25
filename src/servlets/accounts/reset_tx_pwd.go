@@ -46,7 +46,7 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	// 判断用户身份
-	uidString, tokenErr := token.GetUID(httpHeader.TokenHash)
+	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 	}
@@ -80,8 +80,16 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
+	// 解析出密码哈希
+	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
+	pwd, err := utils.AesDecrypt(requestData.Param.PWD, key, iv)
+	if err != nil {
+		response.SetResponseBase(constants.RC_AES_DECRYPT)
+		return
+	}
+
 	// save to db
-	if err := common.SetPaymentPassword(uid, requestData.Param.PWD); err != nil {
+	if err := common.SetPaymentPassword(uid, string(pwd)); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	}
 

@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/vcode"
+	"utils/config"
 )
 
 type resetPwdParam struct {
@@ -84,9 +85,17 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
+	// 解析出密码哈希
+	pwd, err := utils.RsaDecrypt(requestData.Param.PWD, config.GetPrivateKey())
+	if err != nil {
+		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+		return
+	}
+
 	// save to db
-	if err := common.SetLoginPassword(uid, requestData.Param.PWD); err != nil {
+	if err := common.SetLoginPassword(uid, pwd); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
 	}
 
 	// send response

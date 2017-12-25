@@ -53,7 +53,7 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// 判断用户身份
-	uidString, key, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 	}
@@ -62,7 +62,8 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 	// 解码 secret 参数
 	secretString := requestData.Param.Secret
 	secret := new(modifySecret)
-	if err := DecryptSecret(secretString, key[12:48], key[0:12], &secret); err != constants.RC_OK {
+	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
+	if err := DecryptSecret(secretString, key, iv, &secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
 	}
 
