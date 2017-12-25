@@ -11,6 +11,7 @@ import (
 	"utils/config"
 	"utils/logger"
 	"utils/db_factory"
+	"utils/vcode"
 )
 
 // registerParam holds the request "param" field
@@ -87,30 +88,41 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				if db_factory.CheckDuplicateByColumn(err,"uid"){
 					account.UIDString,account.UID = getUid()
 				}else{
-					setResponseBase(response,constants.RC_SYSTEM_ERR)
 					break
 				}
 			}
 		}
 
 	case constants.LOGIN_TYPE_EMAIL:
-		_, err = common.InsertAccountWithEmail(account)
-		if err!=nil{
-			if  db_factory.CheckDuplicateByColumn(err,"email"){
-				setResponseBase(response,constants.RC_DUP_EMAIL)
-			}else{
-				setResponseBase(response,constants.RC_SYSTEM_ERR)
+		f,_ := vcode.ValidateMailVCode(data.Param.VCodeID,data.Param.VCode,data.Param.EMail)
+		if f {
+			_, err = common.InsertAccountWithEmail(account)
+			if err!=nil{
+				if  db_factory.CheckDuplicateByColumn(err,"email"){
+					setResponseBase(response,constants.RC_DUP_EMAIL)
+				}else{
+					setResponseBase(response,constants.RC_SYSTEM_ERR)
+				}
+				return
 			}
+		}else{
+			setResponseBase(response,constants.RC_INVALID_VCODE)
 			return
 		}
 	case constants.LOGIN_TYPE_PHONE:
-		_, err = common.InsertAccountWithPhone(account)
-		if err!=nil{
-			if  db_factory.CheckDuplicateByColumn(err,"phone"){
-				setResponseBase(response,constants.RC_DUP_PHONE)
-			}else{
-				setResponseBase(response,constants.RC_SYSTEM_ERR)
+		f,_ := vcode.ValidateSmsAndCallVCode(data.Param.Phone,data.Param.Country,data.Param.VCode,3600,vcode.FLAG_DEF)
+		if f {
+			_, err = common.InsertAccountWithPhone(account)
+			if err!=nil{
+				if  db_factory.CheckDuplicateByColumn(err,"phone"){
+					setResponseBase(response,constants.RC_DUP_PHONE)
+				}else{
+					setResponseBase(response,constants.RC_SYSTEM_ERR)
+				}
+				return
 			}
+		}else{
+			setResponseBase(response,constants.RC_INVALID_VCODE)
 			return
 		}
 	}
