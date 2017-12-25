@@ -49,8 +49,15 @@ func Sha256(in string) string {
 	return HexEncode(encode[:])
 }
 
-func AesEncrypt(src, key, iv string) ([]byte, error) {
-	return aesEncrypt([]byte(src), []byte(key), []byte(iv))
+// AesEncrypt
+// [in] src : original data
+// [out] encryped data with base64 encode
+func AesEncrypt(src, key, iv string) (string, error) {
+	encrypt, err := aesEncrypt([]byte(src), []byte(key), []byte(iv))
+	if err != nil {
+		return "", err
+	}
+	return Base64Encode(encrypt), nil
 }
 
 func aesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
@@ -68,8 +75,16 @@ func aesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func AesDecrypt(src, key, iv string) ([]byte, error) {
-	return aesDecrypt([]byte(src), []byte(key), []byte(iv))
+// AesDecrypt
+// [in] src : encryped data with base64 encode
+// [out] original data
+func AesDecrypt(src, key, iv string) (string, error) {
+	srcDecode := Base64Decode(src)
+	orig, err := aesDecrypt(srcDecode, []byte(key), []byte(iv))
+	if err != nil {
+		return "", err
+	}
+	return string(orig), nil
 }
 
 func aesDecrypt(src []byte, key []byte, iv []byte) ([]byte, error) {

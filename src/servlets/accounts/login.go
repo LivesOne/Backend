@@ -112,7 +112,10 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		return
 	}
 
-	newtoken, err = utils.RsaSign(newtoken, config.GetPrivateKeyFilename())
+	// newtoken, err = utils.RsaSign(newtoken, config.GetPrivateKeyFilename())
+	iv := handler.aesKey[:constants.AES_ivLen]
+	key := handler.aesKey[constants.AES_ivLen:]
+	newtoken, err = utils.AesEncrypt(newtoken, string(key), string(iv))
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
@@ -203,7 +206,7 @@ func (handler *loginHandler) isSignValid() bool {
 func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
 
 	aeskey, err := utils.RsaDecrypt(originalKey, config.GetPrivateKey())
-	if err != nil {
+	if (err != nil) || (len(aeskey) != constants.AES_totalLen) {
 		logger.Info("login: decrypt aes key error:", err)
 		return "", err
 	}
@@ -213,25 +216,23 @@ func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
 	return string(aeskey), nil
 }
 
-func (handler *loginHandler) parsePWD(original string) (string, error) {
+// func (handler *loginHandler) parsePWD(original string) (string, error) {
 
-	aeskey, err := utils.RsaDecrypt(original, config.GetPrivateKey())
-	if err != nil {
-		logger.Info("login: decrypt pwd error:", err)
-		return "", err
-	}
+// 	aeskey, err := utils.RsaDecrypt(original, config.GetPrivateKey())
+// 	if err != nil {
+// 		logger.Info("login: decrypt pwd error:", err)
+// 		return "", err
+// 	}
 
-	logger.Info("login: ----------hash pwd:", aeskey)
+// 	logger.Info("login: ----------hash pwd:", aeskey)
 
-	return string(aeskey), nil
-}
+// 	return string(aeskey), nil
+// }
 
 func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string) bool {
 
 	// const ivLen = 16
 	// const keyLen = 32
-	// len(iv) == 16
-	// len(key) == 32
 	// 16 + 32 == 48
 	if len(aesKey) != constants.AES_totalLen {
 		logger.Info("login: invalide aes key", len(aesKey), aesKey)
@@ -240,14 +241,13 @@ func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string
 
 	iv := aesKey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
-	pwdUploadDecodeBase64 := utils.Base64Decode(pwdUpload)
-	hashPwd, err := utils.AesDecrypt(string(pwdUploadDecodeBase64), string(key), string(iv))
+	hashPwd, err := utils.AesDecrypt(pwdUpload, string(key), string(iv))
 	if err != nil {
 		logger.Info("login: invalid password")
 		return false
 	}
 
-	pwd := utils.Sha256(string(hashPwd) + handler.loginData.Param.UID)
+	pwd := utils.Sha256(hashPwd + handler.loginData.Param.UID)
 
 	return (pwdInDB == pwd)
 }

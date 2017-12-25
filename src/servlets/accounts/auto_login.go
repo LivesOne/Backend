@@ -61,7 +61,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	var err error
 	handler.aesKey, err = utils.RsaDecrypt(handler.loginData.Param.Key, config.GetPrivateKey())
 	if (err != nil) || (len(handler.aesKey) != constants.AES_totalLen) {
-		logger.Info("decrypt aes key error:", err)
+		logger.Info("autologin: decrypt aes key error:", err)
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
@@ -70,7 +70,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	uid, tokenHash := handler.getUID(handler.loginData.Param.Token)
+	uid := handler.getUID()
 	// right now, length of UID is 9
 	if len(uid) != constants.LEN_uid {
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
@@ -78,7 +78,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	const expire int64 = 24 * 3600
-	errT := token.Update(tokenHash, handler.aesKey, expire)
+	errT := token.Update(handler.header.TokenHash, handler.aesKey, expire)
 	if errT != constants.ERR_INT_OK {
 		logger.Info("autologin: update token hash failed")
 		response.SetResponseBase(constants.RC_TOKEN_NOTEXISTS)
@@ -133,22 +133,47 @@ func (handler *autoLoginHandler) isSignValid() bool {
 	return signature == hash
 }
 
-func (handler *autoLoginHandler) getUID(tokenUpload string) (string, string) {
+// func (handler *autoLoginHandler) getUID(tokenUpload string) (string, string) {
+
+// 	iv := handler.aesKey[:constants.AES_ivLen]
+// 	key := handler.aesKey[constants.AES_ivLen:]
+// 	tokenTmp := utils.Base64Decode(tokenUpload)
+// 	tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
+// 	if err != nil {
+// 		logger.Info("autologin: parse token failed", tokenUpload)
+// 		return "", ""
+// 	}
+
+// 	uid, errT := token.GetUID(string(tokenDecrypt))
+// 	if errT != constants.ERR_INT_OK {
+// 		logger.Info("autologin: get uid from token cache failed", string(tokenDecrypt))
+// 		return "", ""
+// 	}
+
+// 	return uid, utils.Sha256(string(tokenDecrypt))
+// }
+
+func (handler *autoLoginHandler) getUID() string {
+
+	// retrive the original token from cache
+	uid, _, tokenCache, errT := token.GetAll(handler.header.TokenHash)
+	if (errT != constants.ERR_INT_OK) || (len(uid) != constants.LEN_uid) {
+		logger.Info("autologin: get uid from token cache failed")
+		return ""
+	}
 
 	iv := handler.aesKey[:constants.AES_ivLen]
 	key := handler.aesKey[constants.AES_ivLen:]
-	tokenTmp := utils.Base64Decode(tokenUpload)
-	tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
+	tokenOriginal, err := utils.AesDecrypt(handler.loginData.Param.Token, string(key), string(iv))
 	if err != nil {
-		logger.Info("autologin: parse token failed", tokenUpload)
-		return "", ""
+		logger.Info("autologin: parse token failed", handler.loginData.Param.Token)
+		return ""
 	}
 
-	uid, errT := token.GetUID(string(tokenDecrypt))
-	if errT != constants.ERR_INT_OK {
-		logger.Info("autologin: get uid from token cache failed", string(tokenDecrypt))
-		return "", ""
+	if tokenOriginal != tokenCache {
+		logger.Info("autologin: token invalid")
+		return ""
 	}
 
-	return uid, utils.Sha256(string(tokenDecrypt))
+	return uid
 }

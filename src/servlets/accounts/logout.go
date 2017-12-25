@@ -5,6 +5,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
+	"utils"
 	"utils/logger"
 )
 
@@ -36,9 +37,14 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
+	if handler.checkToken() == false {
+		response.SetResponseBase(constants.RC_INVALID_TOKEN)
+		return
+	}
+
 	errT := token.Del(handler.header.TokenHash)
 	if errT != constants.ERR_INT_OK {
-		logger.Info("logout: delete token failed")
+		logger.Info("logout: remove token failed")
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 	}
 }
@@ -59,22 +65,24 @@ func (handler *logoutHandler) checkRequestParams() bool {
 	return true
 }
 
-// func (handler *logoutHandler) getHashedToken(tokenUpload string) string {
+func (handler *logoutHandler) checkToken() bool {
 
-// 	aesKey, errT := token.GetKey(handler.header.TokenHash)
-// 	if errT != constants.ERR_INT_OK {
-// 		logger.Info("autologin: get uid from token cache failed")
-// 		return ""
-// 	}
+	// retrive the original token from cache
+	_, aesKey, tokenCache, errT := token.GetAll(handler.header.TokenHash)
+	if (errT != constants.ERR_INT_OK) || (len(aesKey) != constants.AES_totalLen) {
+		logger.Info("logout: get token from cache failed")
+		return false
+	}
 
-// 	iv := aesKey[:constants.AES_ivLen]
-// 	key := aesKey[constants.AES_ivLen:]
-// 	tokenTmp := utils.Base64Decode(tokenUpload)
-// 	tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
-// 	if err != nil {
-// 		logger.Info("autologin: parse token failed", tokenUpload)
-// 		return ""
-// 	}
+	iv := aesKey[:constants.AES_ivLen]
+	key := aesKey[constants.AES_ivLen:]
+	tokenOriginal, err := utils.AesDecrypt(handler.logoutData.Param, string(key), string(iv))
+	// tokenTmp := utils.Base64Decode(tokenUpload)
+	// tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
+	if (err != nil) || (tokenOriginal != tokenCache) {
+		logger.Info("logout: parse token failed")
+		return false
+	}
 
-// 	return utils.Sha256(string(tokenDecrypt))
-// }
+	return true
+}
