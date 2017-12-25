@@ -20,5 +20,6 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_BIND_EMAIL, &bindEMailHandler{})
 	server.RegisterHandler(constants.ACCOUNT_GET_PROFILE, &getProfileHandler{})
 	server.RegisterHandler(constants.ACCOUNT_MODIFY_PROFILE, &modifyUserProfileHandler{})
+	server.RegisterHandler(constants.ACCOUNT_CHECK_ACCOUNT, &checkAccountHandler{})
 
 }

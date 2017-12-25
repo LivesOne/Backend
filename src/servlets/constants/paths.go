@@ -67,5 +67,7 @@ const (
 	// http method : POST
 	ACCOUNT_MODIFY_PROFILE = "/user/v1/profile/modify"
 
+	ACCOUNT_CHECK_ACCOUNT = "/user/v1/account/check"
+
 	// Contacts Sync APIs
 )
