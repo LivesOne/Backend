@@ -73,6 +73,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	uid := handler.getUID()
 	// right now, length of UID is 9
 	if len(uid) != constants.LEN_uid {
+		logger.Info("autologin: uid error")
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 		return
 	}
@@ -97,16 +98,19 @@ func (handler *autoLoginHandler) checkRequestParams() bool {
 	}
 
 	if handler.header.IsValid() == false {
+		logger.Info("audologin: some header param missed")
 		return false
 	}
 
 	if (handler.loginData.Base.App == nil) || (handler.loginData.Base.App.IsValid() == false) {
+		logger.Info("autologin: app info invalid")
 		return false
 	}
 
 	if (len(handler.loginData.Param.Token) < 1) ||
 		(len(handler.loginData.Param.Key) < 1) ||
 		(handler.loginData.Param.Spkv < 1) {
+		logger.Info("augologin: no token or key or spkv info")
 		return false
 	}
 
@@ -118,6 +122,7 @@ func (handler *autoLoginHandler) isSignValid() bool {
 	signature := handler.header.Signature
 
 	if len(signature) < 1 {
+		logger.Info("augologin: no signature info")
 		return false
 	}
 
@@ -125,9 +130,9 @@ func (handler *autoLoginHandler) isSignValid() bool {
 	hash := utils.Sha256(tmp)
 
 	if signature == hash {
-		logger.Info("verify header signature successful", signature, string(hash[:]))
+		logger.Info("augologin: verify header signature successful", signature, string(hash[:]))
 	} else {
-		logger.Info("verify header signature failed:", signature, string(hash[:]))
+		logger.Info("augologin: verify header signature failed:", signature, string(hash[:]))
 	}
 
 	return signature == hash
