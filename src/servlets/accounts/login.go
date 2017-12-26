@@ -143,30 +143,37 @@ func (handler *loginHandler) checkRequestParams() bool {
 	// const tokenHashLen = 64
 	// if (handler.header.Timestamp < 1) || (len(handler.header.Signature) != signLen) || (len(handler.header.TokenHash) != tokenHashLen) {
 	if handler.header.IsValid() == false {
+		logger.Info("login: some header param missed")
 		return false
 	}
 
 	if (handler.loginData.Base.App == nil) || (handler.loginData.Base.App.IsValid() == false) {
+		logger.Info("login: app info invalid")
 		return false
 	}
 
 	if (handler.loginData.Param.Type < constants.LOGIN_TYPE_UID) || (handler.loginData.Param.Type > constants.LOGIN_TYPE_PHONE) {
+		logger.Info("login: login type invalid")
 		return false
 	}
 
-	if handler.loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && len(handler.loginData.Param.EMail) < 1 {
+	if handler.loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && (utils.IsValidEmailAddr(handler.loginData.Param.EMail) == false) {
+		logger.Info("login: email info invalid")
 		return false
 	}
 
 	if handler.loginData.Param.Type == constants.LOGIN_TYPE_PHONE && (handler.loginData.Param.Country == 0 || len(handler.loginData.Param.Phone) < 1) {
+		logger.Info("login: phone info invalid")
 		return false
 	}
 
 	if (len(handler.loginData.Param.PWD) < 1) || (len(handler.loginData.Param.Key) < 1) {
+		logger.Info("login: no pwd or key info")
 		return false
 	}
 
 	if (len(handler.loginData.Param.PWD) < 1) || (handler.loginData.Param.Spkv < 1) {
+		logger.Info("login: no pwd or spkv info")
 		return false
 	}
 
@@ -211,7 +218,7 @@ func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
 		return "", err
 	}
 
-	logger.Info("login: ----------aes key:", aeskey)
+	logger.Info("login: aes key:", aeskey)
 
 	return string(aeskey), nil
 }
@@ -235,7 +242,7 @@ func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string
 	// const keyLen = 32
 	// 16 + 32 == 48
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("login: invalide aes key", len(aesKey), aesKey)
+		logger.Info("login: invalid aes key", len(aesKey), aesKey)
 		return false
 	}
 
