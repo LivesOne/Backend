@@ -51,7 +51,7 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 	data := checkAccountRequest{}
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
-	resData := checkAccountResponse{}
+	resData := checkAccountResponse{Exists:2}
 
 	switch data.Param.Type {
 	case CHECK_TYPE_UID:
@@ -71,8 +71,6 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 			resData.Exists = 1
 			resData.Uid = uid
 		}
-	default:
-		resData.Exists = 2
 	}
 	response.Data = resData
 }

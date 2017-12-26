@@ -59,6 +59,8 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 		if !f {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
 
 
