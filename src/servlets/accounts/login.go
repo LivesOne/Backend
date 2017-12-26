@@ -78,6 +78,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	case constants.LOGIN_TYPE_UID:
 		// right now, length of UID is 9
 		if len(handler.loginData.Param.UID) != constants.LEN_uid {
+			logger.Info("login: uid info invalid")
 			response.SetResponseBase(constants.RC_ACCOUNT_NOT_EXIST)
 			return
 		}
@@ -93,6 +94,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 
 	if err != nil {
+		logger.Info("login: read account from DB error:", err)
 		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 		return
 	}
@@ -108,6 +110,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	const expire int64 = 24 * 3600
 	newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {
+		logger.Info("login: create token in cache error:", errNewT)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -117,6 +120,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	key := handler.aesKey[constants.AES_ivLen:]
 	newtoken, err = utils.AesEncrypt(newtoken, string(key), string(iv))
 	if err != nil {
+		logger.Info("login: aes encrypt token error", err)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
