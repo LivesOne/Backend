@@ -14,8 +14,7 @@ type logoutParam struct {
 }
 
 type logoutRequest struct {
-	Base  *common.BaseInfo `json:"base"`
-	Param *logoutParam     `json:"param"`
+	Param logoutParam `json:"param"`
 }
 
 // logoutHandler implements the "Echo message" interface
@@ -60,11 +59,6 @@ func (handler *logoutHandler) checkRequestParams() bool {
 
 	if handler.header.IsValid() == false {
 		logger.Info("logout: some header param missed")
-		return false
-	}
-
-	if (handler.logoutData.Base.App == nil) || (handler.logoutData.Base.App.IsValid() == false) {
-		logger.Info("logout: app info invalid")
 		return false
 	}
 
