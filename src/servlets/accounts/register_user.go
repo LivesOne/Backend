@@ -9,8 +9,8 @@ import (
 	"time"
 	"utils"
 	"utils/config"
-	"utils/logger"
 	"utils/db_factory"
+	"utils/logger"
 	"utils/vcode"
 )
 
@@ -62,8 +62,8 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	data := registerRequest{}
 	common.ParseHttpBodyParams(request, &data)
 
-	if checkRequestParams(header,&data) == false {
-		setResponseBase(response,constants.RC_PARAM_ERR)
+	if checkRequestParams(header, &data) == false {
+		setResponseBase(response, constants.RC_PARAM_ERR)
 		return
 	}
 
@@ -73,66 +73,66 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	account, err := getAccount(&data)
 	if err != nil {
 		// logger.Info("------------- get account error\n")
-		setResponseBase(response,constants.RC_INVALID_PUB_KEY)
+		setResponseBase(response, constants.RC_INVALID_PUB_KEY)
 		return
 	}
-	logger.Info("------------- get account success\n", utils.ToJSONIndent(account))
+	logger.Info("register user:  get account success\n", utils.ToJSONIndent(account))
 
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
 		insertAndCheckUid(account)
 	case constants.LOGIN_TYPE_EMAIL:
-		f,_ := vcode.ValidateMailVCode(data.Param.VCodeID,data.Param.VCode,data.Param.EMail)
+		f, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
 		if f {
 			_, err = common.InsertAccountWithEmail(account)
-			if err!=nil{
-				if  db_factory.CheckDuplicateByColumn(err,"email"){
-					setResponseBase(response,constants.RC_DUP_EMAIL)
-				}else if  db_factory.CheckDuplicateByColumn(err,"uid"){
-					account.UIDString,account.UID = getUid()
+			if err != nil {
+				if db_factory.CheckDuplicateByColumn(err, "email") {
+					setResponseBase(response, constants.RC_DUP_EMAIL)
+				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
+					account.UIDString, account.UID = getUid()
 					e := insertAndCheckUid(account)
 					if e != nil {
-						if db_factory.CheckDuplicateByColumn(err,"email"){
-							setResponseBase(response,constants.RC_DUP_EMAIL)
-						}else{
-							setResponseBase(response,constants.RC_SYSTEM_ERR)
+						if db_factory.CheckDuplicateByColumn(err, "email") {
+							setResponseBase(response, constants.RC_DUP_EMAIL)
+						} else {
+							setResponseBase(response, constants.RC_SYSTEM_ERR)
 						}
 					}
 				}
 				return
 			}
-		}else{
-			setResponseBase(response,constants.RC_INVALID_VCODE)
+		} else {
+			setResponseBase(response, constants.RC_INVALID_VCODE)
 			return
 		}
 	case constants.LOGIN_TYPE_PHONE:
-		f,_ := vcode.ValidateSmsAndCallVCode(data.Param.Phone,data.Param.Country,data.Param.VCode,3600,vcode.FLAG_DEF)
+		f, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
 		if f {
 			_, err = common.InsertAccountWithPhone(account)
-			if err!=nil{
-				if  db_factory.CheckDuplicateByColumn(err,"phone"){
-					setResponseBase(response,constants.RC_DUP_PHONE)
-				}else if  db_factory.CheckDuplicateByColumn(err,"uid"){
-					account.UIDString,account.UID = getUid()
+			if err != nil {
+				if db_factory.CheckDuplicateByColumn(err, "phone") {
+					setResponseBase(response, constants.RC_DUP_PHONE)
+				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
+					account.UIDString, account.UID = getUid()
 					e := insertAndCheckUid(account)
 					if e != nil {
-						if db_factory.CheckDuplicateByColumn(err,"phone"){
-							setResponseBase(response,constants.RC_DUP_PHONE)
-						}else{
-							setResponseBase(response,constants.RC_SYSTEM_ERR)
+						if db_factory.CheckDuplicateByColumn(err, "phone") {
+							setResponseBase(response, constants.RC_DUP_PHONE)
+						} else {
+							setResponseBase(response, constants.RC_SYSTEM_ERR)
 						}
 					}
 				}
 				return
 			}
-		}else{
-			setResponseBase(response,constants.RC_INVALID_VCODE)
+		} else {
+			setResponseBase(response, constants.RC_INVALID_VCODE)
 			return
 		}
 	}
 
 	if err != nil {
-		setResponseBase(response,constants.RC_SYSTEM_ERR)
+		setResponseBase(response, constants.RC_SYSTEM_ERR)
 		return
 	}
 
@@ -142,41 +142,47 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	}
 }
 
-func  setResponseBase(resData *common.ResponseData,error constants.Error) {
+func setResponseBase(resData *common.ResponseData, error constants.Error) {
 	resData.Base.RC = error.Rc
 	resData.Base.Msg = error.Msg
 	logger.Info(error.Msg)
 }
 
-func checkRequestParams(header *common.HeaderParams ,data *registerRequest) bool {
+func checkRequestParams(header *common.HeaderParams, data *registerRequest) bool {
 	if header.Timestamp < 1 {
+		logger.Info("register user: no timestamp")
 		return false
 	}
 
 	if (data.Base.App == nil) || (data.Base.App.IsValid() == false) {
+		logger.Info("register user: app info is invalid")
 		return false
 	}
 
 	if (data.Param.Type < constants.LOGIN_TYPE_UID) || (data.Param.Type > constants.LOGIN_TYPE_PHONE) {
+		logger.Info("register user: register type invalid")
 		return false
 	}
 
-	if data.Param.Type == constants.LOGIN_TYPE_EMAIL && len(data.Param.EMail) < 1 {
+	if data.Param.Type == constants.LOGIN_TYPE_EMAIL && (utils.IsValidEmailAddr(data.Param.EMail) == false) {
+		logger.Info("register user: email info invalid")
 		return false
 	}
 
 	if data.Param.Type == constants.LOGIN_TYPE_PHONE && (data.Param.Country == 0 || len(data.Param.Phone) < 1) {
+		logger.Info("register user: phone info invalid")
 		return false
 	}
 
 	if (len(data.Param.PWD) < 1) || (data.Param.Spkv < 1) {
+		logger.Info("register user: no password or spkv info")
 		return false
 	}
 
 	return true
 }
 
-func getUid()(string,int64){
+func getUid() (string, int64) {
 	var uid string
 	var uid_num int64
 
@@ -192,19 +198,19 @@ func getUid()(string,int64){
 	//}
 	uid = common.GenerateUID()
 	uid_num, _ = strconv.ParseInt(uid, 10, 64)
-	return uid,uid_num
+	return uid, uid_num
 }
 
-func insertAndCheckUid(account *common.Account)error{
+func insertAndCheckUid(account *common.Account) error {
 	var err error
 	for {
 		_, err = common.InsertAccount(account)
 		if err == nil {
 			break
-		}else{
-			if db_factory.CheckDuplicateByColumn(err,"uid"){
-				account.UIDString,account.UID = getUid()
-			}else{
+		} else {
+			if db_factory.CheckDuplicateByColumn(err, "uid") {
+				account.UIDString, account.UID = getUid()
+			} else {
 				break
 			}
 		}
@@ -220,7 +226,7 @@ func getAccount(data *registerRequest) (*common.Account, error) {
 		return nil, err
 	}
 
-	account.UIDString,account.UID = getUid()
+	account.UIDString, account.UID = getUid()
 
 	account.Email = data.Param.EMail
 	account.Country = data.Param.Country
@@ -240,7 +246,7 @@ func recoverPwd(data *registerRequest) (string, error) {
 	privKey := config.GetPrivateKey()
 	if privKey == nil {
 		// fmt.Println("11111111111111:")
-		return "", errors.New("load private key failed")
+		return "", errors.New("register user: load private key failed")
 	}
 
 	// fmt.Println("2222222222222222:ggggggggggggggg")
@@ -248,10 +254,10 @@ func recoverPwd(data *registerRequest) (string, error) {
 	hashPwd, err := utils.RsaDecrypt(data.Param.PWD, privKey)
 	if err != nil {
 		// fmt.Println("2222222222222222:", err)
-		logger.Info("decrypt pwd error:", err)
+		logger.Info("register user: decrypt pwd error:", err)
 		return "", err
 	}
 
-	logger.Info("----------hash pwd:", hashPwd)
+	logger.Info("register user: hash pwd:", hashPwd)
 	return string(hashPwd), nil
 }

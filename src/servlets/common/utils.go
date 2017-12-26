@@ -16,14 +16,13 @@ import (
 // FlushJSONData2Client flush json data to http Client
 func FlushJSONData2Client(data interface{}, writer http.ResponseWriter) {
 
-	writer.Header().Set("Content-Type", "application/json;charset=utf-8")
-	writer.WriteHeader(http.StatusOK)
-
 	if (data == nil) || (writer == nil) {
+		logger.Info("FlushJSONData2Client: internel error, data or writer is nil pointer")
 		return
 	}
 
-	// log.Println(" FlushJsonData2Clinet data : ", data)
+	writer.Header().Set("Content-Type", "application/json;charset=utf-8")
+	writer.WriteHeader(http.StatusOK)
 
 	toClient, err := json.Marshal(data)
 	if err == nil {
@@ -34,7 +33,6 @@ func FlushJSONData2Client(data interface{}, writer http.ResponseWriter) {
 	}
 }
 
-// ParseHttpHeaderParams parse the http request header params
 func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 
 	params := &HeaderParams{
@@ -49,11 +47,11 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 		if err == nil {
 			params.Timestamp = ts
 		} else {
-			logger.Info("ParseHttpHeaderParams, parse timestamp error: ", err)
+			logger.Info("ParseHttpHeaderParams: parse timestamp error: ", err)
 		}
 	}
 
-	logger.Info("received http header: ", utils.ToJSONIndent(params))
+	logger.Info("ParseHttpHeaderParams: received http header: ", utils.ToJSONIndent(params))
 
 	return params
 }
@@ -61,7 +59,7 @@ func ParseHttpHeaderParams(request *http.Request) *HeaderParams {
 // ParseHttpBodyParams parse the http request body params
 func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 
-	logger.Info("request.ContentLength: ", request.ContentLength)
+	logger.Info("ParseHttpBodyParams: request.ContentLength: ", request.ContentLength)
 	if request.ContentLength < 1 {
 		return true
 	}
@@ -79,26 +77,19 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 		}
 		// request.Body.Read(bodyparam)
 		if err != nil {
-			logger.Info("read http body error : ", err)
+			logger.Info("ParseHttpBodyParams: read http body error : ", err)
 			return false
 		}
 	}
-	// if (err != io.EOF) || (int64(count) != request.ContentLength) {
-	// 	logger.Info("ready body error 9999999999: ", err, count)
-	// 	return false
-	// }
-	logger.Info("read http body: ", bodyparam)
 
-	// bodyparam := request.PostFormValue("param")
-	// logger.Info("received http body: ", bodyparam)
+	logger.Info("ParseHttpBodyParams: read http body: ", bodyparam)
 
-	// var data loginRequest
 	err := json.Unmarshal([]byte(bodyparam), body)
 	if err != nil {
-		logger.Info("ParseHttpBodyParams, parse body param error: ", err)
+		logger.Info("ParseHttpBodyParams: parse body param error: ", err)
 		return false
 	}
-	logger.Info("read http request body success:\n", utils.ToJSONIndent(body))
+	logger.Info("ParseHttpBodyParams: read http request body success:\n", utils.ToJSONIndent(body))
 
 	return true
 }
