@@ -145,8 +145,7 @@ func (handler *loginHandler) checkRequestParams() bool {
 
 	// const signLen = 64
 	// const tokenHashLen = 64
-	// if (handler.header.Timestamp < 1) || (len(handler.header.Signature) != signLen) || (len(handler.header.TokenHash) != tokenHashLen) {
-	if handler.header.IsValid() == false {
+	if (handler.header.IsValidTimestamp() == false) || (handler.header.IsValidSign() == false) {
 		logger.Info("login: some header param missed")
 		return false
 	}
