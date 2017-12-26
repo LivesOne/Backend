@@ -9,9 +9,13 @@ import (
 	"utils/logger"
 )
 
+type logoutParam struct {
+	Token string `json:"token"`
+}
+
 type logoutRequest struct {
 	Base  *common.BaseInfo `json:"base"`
-	Param string           `json:"param"`
+	Param *logoutParam     `json:"param"`
 }
 
 // logoutHandler implements the "Echo message" interface
@@ -64,8 +68,8 @@ func (handler *logoutHandler) checkRequestParams() bool {
 		return false
 	}
 
-	if len(handler.logoutData.Param) < 1 {
-		logger.Info("logout: app info invalid")
+	if len(handler.logoutData.Param.Token) < 1 {
+		logger.Info("logout: token info invalid")
 		return false
 	}
 
@@ -83,7 +87,7 @@ func (handler *logoutHandler) checkToken() bool {
 
 	iv := aesKey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
-	tokenOriginal, err := utils.AesDecrypt(handler.logoutData.Param, string(key), string(iv))
+	tokenOriginal, err := utils.AesDecrypt(handler.logoutData.Param.Token, string(key), string(iv))
 	// tokenTmp := utils.Base64Decode(tokenUpload)
 	// tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
 	if (err != nil) || (tokenOriginal != tokenCache) {
