@@ -67,6 +67,12 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(err)
 	}
 
+	// 解析出“sha256(密码)”
+	// 数据库实际保存的密码格式为“sha256(sha256(密码) + uid)”
+	pwdDb := utils.Sha256(secret.Pwd + uidString)
+	newPwdDb := utils.Sha256(secret.NewPwd + uidString)
+
+	// 判断各种参数不合法的情况
 	if secret.NewPwd == "" {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -90,12 +96,12 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
-		if account.LoginPassword != secret.Pwd {
+		if account.LoginPassword != pwdDb {
 			response.SetResponseBase(constants.RC_DUP_LOGIN_PWD)
 			return
 		}
 		// save to db
-		if err := common.SetLoginPassword(uid, secret.NewPwd); err != nil {
+		if err := common.SetLoginPassword(uid, newPwdDb); err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 		// send response
@@ -125,13 +131,13 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 				response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 				return
 			}
-			if account.PaymentPassword != secret.Pwd {
+			if account.PaymentPassword != pwdDb {
 				response.SetResponseBase(constants.RC_DUP_PAYMENT_PWD)
 				return
 			}
 		}
 		// save to db
-		if err := common.SetPaymentPassword(uid, secret.NewPwd); err != nil {
+		if err := common.SetPaymentPassword(uid, newPwdDb); err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 		// send response

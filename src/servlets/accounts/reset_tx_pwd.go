@@ -80,16 +80,19 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
-	// 解析出密码哈希
+	// 解析出“sha256(密码)”
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
-	pwd, err := utils.AesDecrypt(requestData.Param.PWD, key, iv)
+	pwdSha256, err := utils.AesDecrypt(requestData.Param.PWD, key, iv)
 	if err != nil {
 		response.SetResponseBase(constants.RC_AES_DECRYPT)
 		return
 	}
 
+	// 数据库实际保存的密码格式为“sha256(sha256(密码) + uid)”
+	pwdDb := utils.Sha256(pwdSha256 + uidString)
+
 	// save to db
-	if err := common.SetPaymentPassword(uid, string(pwd)); err != nil {
+	if err := common.SetPaymentPassword(uid, pwdDb); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	}
 

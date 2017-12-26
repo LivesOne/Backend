@@ -85,15 +85,18 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
-	// 解析出密码哈希
-	pwd, err := utils.RsaDecrypt(requestData.Param.PWD, config.GetPrivateKey())
+	// 解析出“sha256(密码)”
+	pwdSha256, err := utils.RsaDecrypt(requestData.Param.PWD, config.GetPrivateKey())
 	if err != nil {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
 
+	// 数据库实际保存的密码格式为“sha256(sha256(密码) + uid)”
+	pwdDb := utils.Sha256(pwdSha256 + uidString)
+
 	// save to db
-	if err := common.SetLoginPassword(uid, pwd); err != nil {
+	if err := common.SetLoginPassword(uid, pwdDb); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
