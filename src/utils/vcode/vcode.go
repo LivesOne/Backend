@@ -85,7 +85,7 @@ type httpReqMessageParam struct {
 
 type httpReqValidateMessageParam struct {
 	AreaCode     int    `json:"area_code"`
-	ValidateCode string `json:"validate_code"`
+	ValidateCode string `json:"validation_code"`
 	PhoneNo      string `json:"phone_no"`
 	Vid          int    `json:"vid"`
 	Expire       int    `json:"expire"`
