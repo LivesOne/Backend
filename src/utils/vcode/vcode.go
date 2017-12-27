@@ -3,9 +3,9 @@ package vcode
 import (
 	"encoding/json"
 	"github.com/donnie4w/go-logger/logger"
+	"utils"
 	"utils/config"
 	log "utils/logger"
-	"utils"
 )
 
 const (
@@ -89,7 +89,7 @@ type httpReqValidateMessageParam struct {
 	PhoneNo      string `json:"phone_no"`
 	Vid          int    `json:"vid"`
 	Expire       int    `json:"expire"`
-	Flag         int    `json:"flag"`
+	Flag         string `json:"flag"`
 }
 
 type httpReqMailParam struct {
@@ -239,7 +239,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 			PhoneNo:      phone,
 			Vid:          MESSAGE_VID,
 			Expire:       expire,
-			Flag:         flag,
+			Flag:         string(flag),
 		}
 		url := config.GetConfig().SmsSvrAddr + "/validate"
 		reqStr, _ := json.Marshal(req)
