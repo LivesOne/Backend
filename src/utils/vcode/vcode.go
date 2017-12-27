@@ -258,23 +258,28 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 }
 
 func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
-	url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
-	typeData := httpVReqParam{
-		Id:    id,
-		Code:  vcode,
-		Email: email,
+	if len(id) >0 && len(vcode) >0 && len(email) >0 {
+		url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
+		typeData := httpVReqParam{
+			Id:    id,
+			Code:  vcode,
+			Email: email,
+		}
+		reqParam, _ := json.Marshal(typeData)
+		svrResStr, err := utils.Post(url, string(reqParam))
+		if err != nil {
+			log.Error("url ---> ", url, " http send error ", err.Error())
+			return false, HTTP_ERR
+		}
+		svrRes := httpResParam{}
+		err1 := json.Unmarshal([]byte(svrResStr), &svrRes)
+		if err1 != nil {
+			log.Info("ParseHttpBodyParams, parse body param error: ", err)
+			return false, JSON_PARSE_ERR
+		}
+		return svrRes.Ret == SUCCESS, svrRes.Ret
+	}else{
+		log.Error("vcode_id||vcode||email can not be empty")
+		return false,0
 	}
-	reqParam, _ := json.Marshal(typeData)
-	svrResStr, err := utils.Post(url, string(reqParam))
-	if err != nil {
-		log.Error("url ---> ", url, " http send error ", err.Error())
-		return false, HTTP_ERR
-	}
-	svrRes := httpResParam{}
-	err1 := json.Unmarshal([]byte(svrResStr), &svrRes)
-	if err1 != nil {
-		log.Info("ParseHttpBodyParams, parse body param error: ", err)
-		return false, JSON_PARSE_ERR
-	}
-	return svrRes.Ret == SUCCESS, svrRes.Ret
 }
