@@ -73,16 +73,30 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 		if succFlag {
 			switch requestData.Param.Type {
 			case MESSAGE:
-				vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
-				response.Data = &sendVCodeRes{
-					Vcode_id: "maxthonVCodeId",
-					Expire:   requestData.Param.Expire,
+				f,_ := vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				if f {
+					response.Data = &sendVCodeRes{
+						Vcode_id: "maxthonVCodeId",
+						Expire:   requestData.Param.Expire,
+					}
+				} else {
+					response.Base = &common.BaseResp{
+						RC:  constants.RC_PARAM_ERR.Rc,
+						Msg: constants.RC_PARAM_ERR.Msg,
+					}
 				}
 			case CALL:
-				vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
-				response.Data = &sendVCodeRes{
-					Vcode_id: "maxthonVCodeId",
-					Expire:   requestData.Param.Expire,
+				f,_ := vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				if f {
+					response.Data = &sendVCodeRes{
+						Vcode_id: "maxthonVCodeId",
+						Expire:   requestData.Param.Expire,
+					}
+				} else {
+					response.Base = &common.BaseResp{
+						RC:  constants.RC_PARAM_ERR.Rc,
+						Msg: constants.RC_PARAM_ERR.Msg,
+					}
 				}
 			case EMAIL:
 				svrRes := vcode.SendMailVCode(requestData.Param.EMail, requestData.Param.Ln, requestData.Param.Expire)
