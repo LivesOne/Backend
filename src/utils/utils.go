@@ -79,6 +79,8 @@ func Post(url string, params string) (resBody string, e error) {
 		if e2 != nil {
 			logger.Error("post error ---> ", e2.Error())
 		}
-		return string(body), e2
+		res := string(body)
+		logger.Info("SendPost res ---> ", res)
+		return res, e2
 	}
 }
