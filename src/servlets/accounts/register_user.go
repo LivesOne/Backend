@@ -47,6 +47,9 @@ type registerUserHandler struct {
 
 	// http response data to client
 	//response *common.ResponseData
+
+	// hashedPWD upload by client
+	hashedPWD string
 }
 
 func (handler *registerUserHandler) Method() string {
@@ -63,76 +66,87 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	common.ParseHttpBodyParams(request, &data)
 
 	if checkRequestParams(header, &data) == false {
-		setResponseBase(response, constants.RC_PARAM_ERR)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
+	err := handler.recoverHashedPwd(data.Param.PWD)
+	if err != nil {
+		logger.Info("register user: decrypt hash pwd error:", err)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 	// fmt.Println("registerUserHandler) Handle", msg)
 	// hashPwd := utils.RsaDecrypt(handler.registerData.Param.PWD, config.GetConfig().PrivKey)
 
 	account, err := getAccount(&data)
 	if err != nil {
 		// logger.Info("------------- get account error\n")
-		setResponseBase(response, constants.RC_INVALID_PUB_KEY)
+		response.SetResponseBase(constants.RC_INVALID_PUB_KEY)
 		return
 	}
 	logger.Info("register user:  get account success\n", utils.ToJSONIndent(account))
 
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
+		account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
 		insertAndCheckUid(account)
 	case constants.LOGIN_TYPE_EMAIL:
 		f, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
 		if f {
+			account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithEmail(account)
 			if err != nil {
 				if db_factory.CheckDuplicateByColumn(err, "email") {
-					setResponseBase(response, constants.RC_DUP_EMAIL)
+					response.SetResponseBase(constants.RC_DUP_EMAIL)
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
 					account.UIDString, account.UID = getUid()
+					account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
 					e := insertAndCheckUid(account)
 					if e != nil {
 						if db_factory.CheckDuplicateByColumn(err, "email") {
-							setResponseBase(response, constants.RC_DUP_EMAIL)
+							response.SetResponseBase(constants.RC_DUP_EMAIL)
 						} else {
-							setResponseBase(response, constants.RC_SYSTEM_ERR)
+							response.SetResponseBase(constants.RC_SYSTEM_ERR)
 						}
 					}
 				}
 				return
 			}
 		} else {
-			setResponseBase(response, constants.RC_INVALID_VCODE)
+			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
 	case constants.LOGIN_TYPE_PHONE:
 		f, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
 		if f {
+			account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithPhone(account)
 			if err != nil {
 				if db_factory.CheckDuplicateByColumn(err, "phone") {
-					setResponseBase(response, constants.RC_DUP_PHONE)
+					response.SetResponseBase(constants.RC_DUP_PHONE)
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
 					account.UIDString, account.UID = getUid()
+					account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
 					e := insertAndCheckUid(account)
 					if e != nil {
 						if db_factory.CheckDuplicateByColumn(err, "phone") {
-							setResponseBase(response, constants.RC_DUP_PHONE)
+							response.SetResponseBase(constants.RC_DUP_PHONE)
 						} else {
-							setResponseBase(response, constants.RC_SYSTEM_ERR)
+							response.SetResponseBase(constants.RC_SYSTEM_ERR)
 						}
 					}
 				}
 				return
 			}
 		} else {
-			setResponseBase(response, constants.RC_INVALID_VCODE)
+			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
 	}
 
 	if err != nil {
-		setResponseBase(response, constants.RC_SYSTEM_ERR)
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
@@ -142,11 +156,11 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	}
 }
 
-func setResponseBase(resData *common.ResponseData, error constants.Error) {
-	resData.Base.RC = error.Rc
-	resData.Base.Msg = error.Msg
-	logger.Info(error.Msg)
-}
+// func setResponseBase(resData *common.ResponseData, error constants.Error) {
+// 	resData.Base.RC = error.Rc
+// 	resData.Base.Msg = error.Msg
+// 	logger.Info(error.Msg)
+// }
 
 func checkRequestParams(header *common.HeaderParams, data *registerRequest) bool {
 	if header.Timestamp < 1 {
@@ -221,10 +235,10 @@ func insertAndCheckUid(account *common.Account) error {
 func getAccount(data *registerRequest) (*common.Account, error) {
 	var account common.Account
 
-	recoverPWD, err := recoverPwd(data)
-	if err != nil {
-		return nil, err
-	}
+	// recoverPWD, err := recoverPwd(data)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	account.UIDString, account.UID = getUid()
 
@@ -232,7 +246,7 @@ func getAccount(data *registerRequest) (*common.Account, error) {
 	account.Country = data.Param.Country
 	account.Phone = data.Param.Phone
 
-	account.LoginPassword = utils.Sha256(recoverPWD + account.UIDString)
+	// account.LoginPassword = utils.Sha256(recoverPWD + account.UIDString)
 	account.RegisterTime = time.Now().Unix()
 	account.UpdateTime = account.RegisterTime
 	account.RegisterType = data.Param.Type
@@ -241,23 +255,27 @@ func getAccount(data *registerRequest) (*common.Account, error) {
 }
 
 // recoverPwd recovery the upload PWD to hash form
-func recoverPwd(data *registerRequest) (string, error) {
+// @param: pwdUpload  original upload pwd in http request
+func (handler *registerUserHandler) recoverHashedPwd(pwdUpload string) error {
 
 	privKey := config.GetPrivateKey()
 	if privKey == nil {
-		// fmt.Println("11111111111111:")
-		return "", errors.New("register user: load private key failed")
+		// logger.Info("register user: load private key failed")
+		return errors.New("register user: load private key failed")
 	}
 
 	// fmt.Println("2222222222222222:ggggggggggggggg")
 	// hashPwd, err := utils.RsaDecrypt(string(base64Decode), privKey)
-	hashPwd, err := utils.RsaDecrypt(data.Param.PWD, privKey)
+	hashPwd, err := utils.RsaDecrypt(pwdUpload, privKey)
 	if err != nil {
 		// fmt.Println("2222222222222222:", err)
-		logger.Info("register user: decrypt pwd error:", err)
-		return "", err
+		// logger.Info("register user: decrypt pwd error:", err)
+		return err
 	}
 
 	logger.Info("register user: hash pwd:", hashPwd)
-	return string(hashPwd), nil
+
+	handler.hashedPWD = hashPwd
+
+	return nil
 }
