@@ -239,7 +239,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 			PhoneNo:      phone,
 			Vid:          MESSAGE_VID,
 			Expire:       expire,
-			Flag:         string(flag),
+			Flag:         utils.Int2Str(flag),
 		}
 		url := config.GetConfig().SmsSvrAddr + "/validate"
 		reqStr, _ := json.Marshal(req)
