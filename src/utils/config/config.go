@@ -36,6 +36,9 @@ type Configuration struct {
 // configuration data
 var gConfig Configuration
 
+// RSA private key content read from the private key file
+var gPrivKeyContent []byte
+
 // LoadConfig load the configuration from the configuration file
 func LoadConfig(cfgFilename string) error {
 
@@ -51,16 +54,19 @@ func GetConfig() *Configuration {
 
 // GetPrivateKey reads the private key from the key file
 func GetPrivateKey() []byte {
-	filename := GetPrivateKeyFilename()
-	// fmt.Println("private key file:", filename, "ddd:", gConfig.PrivKey)
-	data, err := ioutil.ReadFile(filename)
-	if err == nil {
-		return data
+	if (gPrivKeyContent == nil) || (len(gPrivKeyContent) < 1) {
+
+		filename := GetPrivateKeyFilename()
+		// fmt.Println("private key file:", filename, "ddd:", gConfig.PrivKey)
+		var err error
+		gPrivKeyContent, err = ioutil.ReadFile(filename)
+		if err != nil {
+			logger.Info("load private key failed:", filename, err)
+			gPrivKeyContent = nil
+		}
 	}
 
-	logger.Info("load private key failed:", filename, err)
-
-	return nil
+	return gPrivKeyContent
 }
 
 // GetPrivateKeyFilename returns the rsa private key file name
