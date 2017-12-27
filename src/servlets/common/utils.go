@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"hash/crc32"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 	"utils"
 	"utils/logger"
 )
@@ -134,19 +132,3 @@ func GenerateUID() string {
 	return uid
 }
 
-//发起post请求
-func Post(url string, params string) (resBody string, e error) {
-	logger.Info("SendPost ---> ", url)
-	resp, e1 := http.Post(url, "application/json", strings.NewReader(params))
-	if e1 != nil {
-		logger.Error("post error ---> ", e1.Error())
-		return "", e1
-	} else {
-		defer resp.Body.Close()
-		body, e2 := ioutil.ReadAll(resp.Body)
-		if e2 != nil {
-			logger.Error("post error ---> ", e2.Error())
-		}
-		return string(body), e2
-	}
-}

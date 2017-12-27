@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"net/http"
+	"utils/logger"
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -60,4 +62,23 @@ func Str2Int64(str string) int64 {
 func IsValidEmailAddr(email string) bool {
 	ret, _ := regexp.MatchString("^([a-z0-9_\\.-]+)@([\\da-z\\.-]+)\\.([a-z\\.]{2,6})$", email)
 	return ret
+}
+
+
+//发起post请求
+func Post(url string, params string) (resBody string, e error) {
+	logger.Info("SendPost ---> ", url)
+	logger.Info("SendPost param ---> ", params)
+	resp, e1 := http.Post(url, "application/json", strings.NewReader(params))
+	if e1 != nil {
+		logger.Error("post error ---> ", e1.Error())
+		return "", e1
+	} else {
+		defer resp.Body.Close()
+		body, e2 := ioutil.ReadAll(resp.Body)
+		if e2 != nil {
+			logger.Error("post error ---> ", e2.Error())
+		}
+		return string(body), e2
+	}
 }

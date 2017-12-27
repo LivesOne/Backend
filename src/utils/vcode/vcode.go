@@ -3,9 +3,9 @@ package vcode
 import (
 	"encoding/json"
 	"github.com/donnie4w/go-logger/logger"
-	"servlets/common"
 	"utils/config"
 	log "utils/logger"
+	"utils"
 )
 
 const (
@@ -129,7 +129,7 @@ func GetImgVCode(w, h, len, expire int) *httpImgVCodeResParam {
 	}
 	reqParam, _ := json.Marshal(typeData)
 	url := config.GetConfig().ImgSvrAddr + "/img/v1/getCode"
-	svrResStr, err := common.Post(url, string(reqParam))
+	svrResStr, err := utils.Post(url, string(reqParam))
 	if err != nil {
 		log.Error("url ---> ", url, " http send error ", err.Error())
 	} else {
@@ -157,7 +157,7 @@ func messageServerReq(phone string, country int, ln string, expire int, voiceCod
 		}
 		url := config.GetConfig().SmsSvrAddr + "/get"
 		reqStr, _ := json.Marshal(req)
-		jsonRes, err := common.Post(url, string(reqStr))
+		jsonRes, err := utils.Post(url, string(reqStr))
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
 			return false, err
@@ -190,7 +190,7 @@ func SendMailVCode(email string, ln string, expire int) *httpReqVCode {
 		}
 		url := config.GetConfig().MailSvrAddr + "/mail/v1/getCode"
 		reqStr, _ := json.Marshal(req)
-		jsonRes, err := common.Post(url, string(reqStr))
+		jsonRes, err := utils.Post(url, string(reqStr))
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
 		} else {
@@ -215,7 +215,7 @@ func ValidateImgVCode(id string, vcode string) (bool, int) {
 		Code: vcode,
 	}
 	reqParam, _ := json.Marshal(typeData)
-	svrResStr, err := common.Post(url, string(reqParam))
+	svrResStr, err := utils.Post(url, string(reqParam))
 	if err != nil {
 		log.Error("url ---> ", url, " http send error ", err.Error())
 		return false, HTTP_ERR
@@ -243,7 +243,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 		}
 		url := config.GetConfig().SmsSvrAddr + "/validate"
 		reqStr, _ := json.Marshal(req)
-		jsonRes, err := common.Post(url, string(reqStr))
+		jsonRes, err := utils.Post(url, string(reqStr))
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
 			return false, err
@@ -265,7 +265,7 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 		Email: email,
 	}
 	reqParam, _ := json.Marshal(typeData)
-	svrResStr, err := common.Post(url, string(reqParam))
+	svrResStr, err := utils.Post(url, string(reqParam))
 	if err != nil {
 		log.Error("url ---> ", url, " http send error ", err.Error())
 		return false, HTTP_ERR
