@@ -49,6 +49,7 @@ var (
 	RC_MAIL_VCODE_UNKOWN_ERR           = Error{20117, "mail vcode unkown err"}
 	RC_ACCOUNT_NOT_EXIST               = Error{20118, "account not exist"}
 	RC_INVALIDE_EMAIL_ADDRESS          = Error{20119, "invalid email address"}
+	RC_INVALIDE_PHONE_NUM              = Error{20120, "invalid phone number"}
 )
 
 // HTTP return code constants

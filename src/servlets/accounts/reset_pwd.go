@@ -6,8 +6,9 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/vcode"
 	"utils/config"
+	"utils/logger"
+	"utils/vcode"
 )
 
 type resetPwdParam struct {
@@ -15,7 +16,7 @@ type resetPwdParam struct {
 	Country int    `json:"country"`
 	Phone   string `json:"phone"`
 	EMail   string `json:"email"`
-	VCodeId string `json:"vcode_id"`
+	VCodeID string `json:"vcode_id"`
 	VCode   string `json:"vcode"`
 	PWD     string `json:"pwd"`
 	Spkv    int    `json:"spkv"`
@@ -41,17 +42,16 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	httpHeader := common.ParseHttpHeaderParams(request)
-	requestData := new(resetPwdRequest)
-	common.ParseHttpBodyParams(request, &requestData)
+	handler.header = common.ParseHttpHeaderParams(request)
+	common.ParseHttpBodyParams(request, &handler.requestData)
 
-	if httpHeader.Timestamp < 1 {
+	if handler.checkRequestParams() == false {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	// 判断用户身份
-	uidString, _, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	uidString, _, _, tokenErr := token.GetAll(handler.header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 	}
@@ -63,18 +63,30 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	// 检查验证码
-	checkType := requestData.Param.Type
+	checkType := handler.requestData.Param.Type
 	if checkType == 1 {
+		if (utils.IsValidEmailAddr(handler.requestData.Param.EMail) == false) ||
+			(handler.requestData.Param.EMail != account.Email) {
+			response.SetResponseBase(constants.RC_INVALIDE_EMAIL_ADDRESS)
+			return
+		}
 		ok, err := vcode.ValidateMailVCode(
-			requestData.Param.VCodeId, requestData.Param.VCode, account.Email)
+			handler.requestData.Param.VCodeID, handler.requestData.Param.VCode, account.Email)
 		if ok == false {
 			response.SetResponseBase(ValidateMailVCodeErr2RcErr(err))
 			return
 		}
 
 	} else if checkType == 2 {
+		if (len(handler.requestData.Param.Phone) < 1) ||
+			(handler.requestData.Param.Country < 1) ||
+			(handler.requestData.Param.Country != account.Country) ||
+			(handler.requestData.Param.Phone != account.Phone) {
+			response.SetResponseBase(constants.RC_INVALIDE_PHONE_NUM)
+			return
+		}
 		ok, err := vcode.ValidateSmsAndCallVCode(
-			account.Phone, account.Country, requestData.Param.VCode,0, 0)
+			account.Phone, account.Country, handler.requestData.Param.VCode, 0, 0)
 		if err != nil || ok == false {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
@@ -86,7 +98,7 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	// 解析出“sha256(密码)”
-	pwdSha256, err := utils.RsaDecrypt(requestData.Param.PWD, config.GetPrivateKey())
+	pwdSha256, err := utils.RsaDecrypt(handler.requestData.Param.PWD, config.GetPrivateKey())
 	if err != nil {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
@@ -104,4 +116,18 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	// send response
 	response.SetResponseBase(constants.RC_OK)
 	return
+}
+
+func (handler *resetPwdHandler) checkRequestParams() bool {
+
+	if (handler.header == nil) || (handler.requestData == nil) {
+		return false
+	}
+
+	if (handler.header.IsValidTimestamp() == false) || (handler.header.IsValidTokenhash() == false) {
+		logger.Info("reset password: some header param missed")
+		return false
+	}
+
+	return true
 }
