@@ -7,18 +7,25 @@ import (
 	"utils/logger"
 )
 
-// Configuration holds all config data
-type Configuration struct {
-	ServerAddr string //"[ip]:port"
-
+type DBConfig struct {
 	// mysql config
 	DBHost     string
 	DBUser     string
 	DBUserPwd  string
 	DBDatabase string
+}
+
+// Configuration holds all config data
+type Configuration struct {
+	ServerAddr string //"[ip]:port"
 
 	// server side private key file name
 	PrivKey string
+
+	// account db config
+	User DBConfig
+	// asset db config
+	Asset DBConfig
 
 	// redis的参数
 	RedisAddr string //"[ip]:port"

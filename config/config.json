@@ -1,15 +1,26 @@
 {
-    "ServerAddr" : ":8080",    
+    "ServerAddr" : ":8080",
 
     "PrivKey" : "rsa_private_key.pem",
 
     "RedisAddr" : "10.100.15.96:6379",
     "RedisAuth" : "lvt_serv",
-    
-    "DBHost" : "10.100.15.96:3306",
-    "DBUser" : "lvt_serv",
-    "DBUserPwd" : "U9D$WHTo",
-    "DBDatabase" : "livesone_user",
+ 
+    "User" : 
+    {
+        "DBHost" : "10.100.15.96:3306",
+        "DBUser" : "lvt_serv",
+        "DBUserPwd" : "U9D$WHTo",
+        "DBDatabase" : "livesone_user"
+    },
+ 
+    "Asset" : 
+    {
+        "DBHost" : "10.100.15.96:3306",
+        "DBUser" : "lvt_serv",
+        "DBUserPwd" : "U9D$WHTo",
+        "DBDatabase" : "livesone_user"
+    },
 
     "SmsSvrAddr":"http://10.100.13.6:8045",
     "MailSvrAddr":"http://10.0.5.248:8080/VCode",

@@ -31,7 +31,7 @@ func DbInit() error {
 	//	logger.Fatal(err)
 	//	return err
 	//}
-	db_config := config.GetConfig()
+	db_config := config.GetConfig().User
 	facConfig := db_factory.Config{
 		Host:        db_config.DBHost,
 		UserName:    db_config.DBUser,
@@ -73,7 +73,7 @@ func GetUidByEmail(email string) int64 {
 	return utils.Str2Int64(row["uid"])
 }
 
-func GetUidByPhone(country int, phone string)  int64 {
+func GetUidByPhone(country int, phone string) int64 {
 	row, _ := gDbUser.QueryRow("select uid from account where country = ? and phone = ? limit 1", country, phone)
 	if row == nil {
 		return 0
