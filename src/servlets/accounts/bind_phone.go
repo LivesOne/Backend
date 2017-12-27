@@ -28,9 +28,9 @@ type bindPhoneHandler struct {
 }
 
 type phoneSecret struct {
-	pwd     string
-	country int
-	phone   string
+	Pwd     string
+	Country int
+	Phone   string
 }
 
 func (handler *bindPhoneHandler) Method() string {
@@ -69,14 +69,14 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 
 	// 判断手机验证码正确
 	ok, _ := vcode.ValidateSmsAndCallVCode(
-		secret.phone, secret.country, requestData.Param.VCode, 0, 0)
+		secret.Phone, secret.Country, requestData.Param.VCode, 0, 0)
 	if ok == false {
 		response.SetResponseBase(constants.RC_INVALID_VCODE)
 		return
 	}
 
 	// save data to db
-	dbErr := common.SetPhone(uid, secret.country, secret.phone)
+	dbErr := common.SetPhone(uid, secret.Country, secret.Phone)
 	if dbErr != nil {
 		if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
 			db_factory.CheckDuplicateByColumn(dbErr, "phone") {

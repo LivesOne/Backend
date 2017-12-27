@@ -28,8 +28,8 @@ type bindEMailHandler struct {
 }
 
 type mailSecret struct {
-	pwd   string
-	email string
+	Pwd   string
+	Email string
 }
 
 func (handler *bindEMailHandler) Method() string {
@@ -66,21 +66,21 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(err)
 	}
 
-	if utils.IsValidEmailAddr(secret.email) {
+	if utils.IsValidEmailAddr(secret.Email) {
 		response.SetResponseBase(constants.RC_INVALIDE_EMAIL_ADDRESS)
 		return
 	}
 
 	// 判断邮箱验证码正确
 	ok, err := vcode.ValidateMailVCode(
-		requestData.Param.VCodeId, requestData.Param.VCode, secret.email)
+		requestData.Param.VCodeId, requestData.Param.VCode, secret.Email)
 	if ok == false {
 		response.SetResponseBase(ValidateMailVCodeErr2RcErr(err))
 		return
 	}
 
 	// save data to db
-	dbErr := common.SetEmail(uid, secret.email)
+	dbErr := common.SetEmail(uid, secret.Email)
 	if dbErr != nil {
 		if db_factory.CheckDuplicateByColumn(dbErr, "email") {
 			response.SetResponseBase(constants.RC_DUP_EMAIL)
