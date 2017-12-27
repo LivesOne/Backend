@@ -66,7 +66,7 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(err)
 	}
 
-	if utils.IsValidEmailAddr(secret.Email) {
+	if !utils.IsValidEmailAddr(secret.Email) {
 		response.SetResponseBase(constants.RC_INVALIDE_EMAIL_ADDRESS)
 		return
 	}
