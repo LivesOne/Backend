@@ -74,8 +74,16 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 			switch requestData.Param.Type {
 			case MESSAGE:
 				vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				response.Data = &sendVCodeRes{
+					Vcode_id: "maxthonVCodeId",
+					Expire:   requestData.Param.Expire,
+				}
 			case CALL:
 				vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				response.Data = &sendVCodeRes{
+					Vcode_id: "maxthonVCodeId",
+					Expire:   requestData.Param.Expire,
+				}
 			case EMAIL:
 				svrRes := vcode.SendMailVCode(requestData.Param.EMail, requestData.Param.Ln, requestData.Param.Expire)
 				if svrRes != nil {
