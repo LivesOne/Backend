@@ -280,6 +280,6 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 		return svrRes.Ret == SUCCESS, svrRes.Ret
 	}else{
 		log.Error("vcode_id||vcode||email can not be empty")
-		return false,0
+		return false,PARAMS_ERR
 	}
 }
