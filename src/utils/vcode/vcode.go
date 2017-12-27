@@ -79,7 +79,7 @@ type httpReqMessageParam struct {
 	Lan       string `json:"lan"`
 	PhoneNo   string `json:"phone_no"`
 	Vid       int    `json:"vid"`
-	Expire    int    `json:"expire"`
+	Expire    int    `json:"expired"`
 	VoiceCode int    `json:"voice_code"`
 }
 
