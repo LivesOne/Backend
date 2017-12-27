@@ -58,6 +58,10 @@ func Int2Str(i int)string  {
 	return strconv.Itoa(i)
 }
 
+func Int642Str(i int64)string  {
+	return strconv.FormatInt(i,10)
+}
+
 func Str2Int64(str string) int64 {
 	tmp, _ := strconv.ParseInt(str, 10, 64)
 	return tmp

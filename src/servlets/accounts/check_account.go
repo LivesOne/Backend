@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"utils"
 )
 
 const (
@@ -22,12 +23,12 @@ type checkAccountParam struct {
 	Country int    `json:"country"`
 	Phone   string `json:"phone"`
 	EMail   string `json:"email"`
-	Uid     int64    `json:"uid"`
+	Uid     string    `json:"uid"`
 }
 
 type checkAccountResponse struct {
 	Exists int `json:"exists"`
-	Uid int64 `json:"uid"`
+	Uid string `json:"uid"`
 }
 // checkVCodeHandler
 type checkAccountHandler struct {
@@ -55,7 +56,7 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 
 	switch data.Param.Type {
 	case CHECK_TYPE_UID:
-		if common.ExistsUID(data.Param.Uid) {
+		if common.ExistsUID(utils.Str2Int64(data.Param.Uid)) {
 			resData.Exists = 1
 			resData.Uid = data.Param.Uid
 		}
@@ -63,13 +64,13 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 		uid := common.GetUidByEmail(data.Param.EMail)
 		if uid != 0 {
 			resData.Exists = 1
-			resData.Uid = uid
+			resData.Uid = utils.Int642Str(uid)
 		}
 	case CHECK_TYPE_PHONE:
 		uid := common.GetUidByPhone(data.Param.Country,data.Param.Phone)
 		if uid != 0 {
 			resData.Exists = 1
-			resData.Uid = uid
+			resData.Uid = utils.Int642Str(uid)
 		}
 	}
 	response.Data = resData
