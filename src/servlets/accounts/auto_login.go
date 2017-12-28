@@ -90,7 +90,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	errT := token.Update(handler.header.TokenHash, handler.aesKey, expire)
 	if errT != constants.ERR_INT_OK {
 		logger.Info("autologin: update token hash failed")
-		response.SetResponseBase(constants.RC_TOKEN_NOTEXISTS)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 

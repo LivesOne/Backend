@@ -67,7 +67,7 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	if checkType == 1 {
 		if (utils.IsValidEmailAddr(handler.requestData.Param.EMail) == false) ||
 			(handler.requestData.Param.EMail != account.Email) {
-			response.SetResponseBase(constants.RC_INVALIDE_EMAIL_ADDRESS)
+			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
 		ok, err := vcode.ValidateMailVCode(
@@ -82,7 +82,7 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			(handler.requestData.Param.Country < 1) ||
 			(handler.requestData.Param.Country != account.Country) ||
 			(handler.requestData.Param.Phone != account.Phone) {
-			response.SetResponseBase(constants.RC_INVALIDE_PHONE_NUM)
+			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
 		ok, err := vcode.ValidateSmsAndCallVCode(

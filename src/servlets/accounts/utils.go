@@ -13,10 +13,10 @@ import (
 func DecryptSecret(secret string, key string, iv string, instance interface{}) constants.Error {
 	dataStr, err := utils.AesDecrypt(secret, key, iv)
 	if err != nil {
-		return constants.RC_AES_DECRYPT
+		return constants.RC_PARAM_ERR
 	}
 	if err := json.Unmarshal([]byte(dataStr), instance); err != nil {
-		return constants.RC_JSON_UNMARSHAL
+		return constants.RC_PARAM_ERR
 	}
 	return constants.RC_OK
 }
@@ -26,11 +26,11 @@ func TokenErr2RcErr(tokenErr int) constants.Error {
 	case constants.ERR_INT_OK:
 		return constants.RC_OK
 	case constants.ERR_INT_TK_DB:
-		return constants.RC_TOKEN_DB
+		return constants.RC_PARAM_ERR
 	case constants.ERR_INT_TK_DUPLICATE:
-		return constants.RC_TOKEN_DUPLICATE
+		return constants.RC_PARAM_ERR
 	case constants.ERR_INT_TK_NOTEXISTS:
-		return constants.RC_TOKEN_NOTEXISTS
+		return constants.RC_PARAM_ERR
 	default:
 		return constants.RC_SYSTEM_ERR
 	}
@@ -41,25 +41,25 @@ func ValidateMailVCodeErr2RcErr(validateErr int) constants.Error {
 	case vcode.SUCCESS:
 		return constants.RC_OK
 	case vcode.NOT_FOUND_ERR:
-		return constants.RC_MAIL_VCODE_NOT_FOUND_ERR
+		return constants.RC_PARAM_ERR
 	case vcode.SERVER_ERR:
-		return constants.RC_MAIL_VCODE_SERVER_ERR
+		return constants.RC_PARAM_ERR
 	case vcode.NO_PARAMS_ERR:
-		return constants.RC_MAIL_VCODE_NO_PARAMS_ERR
+		return constants.RC_PARAM_ERR
 	case vcode.PARAMS_ERR:
-		return constants.RC_MAIL_VCODE_PARAMS_ERR
+		return constants.RC_PARAM_ERR
 	case vcode.JSON_PARSE_ERR:
-		return constants.RC_MAIL_VCODE_JSON_PARSE_ERR
+		return constants.RC_PARAM_ERR
 	case vcode.CODE_EXPIRED_ERR:
-		return constants.RC_MAIL_VCODE_CODE_EXPIRED_ERR
+		return constants.RC_PARAM_ERR
 	case vcode.VALIDATE_CODE_FAILD:
-		return constants.RC_MAIL_VCODE_VALIDATE_CODE_FAILD
+		return constants.RC_PARAM_ERR
 	case vcode.EMAIL_VALIDATE_FAILD:
-		return constants.RC_MAIL_VCODE_EMAIL_VALIDATE_FAILD
+		return constants.RC_PARAM_ERR
 	case vcode.HTTP_ERR:
-		return constants.RC_MAIL_VCODE_HTTP_ERR
+		return constants.RC_PARAM_ERR
 	default:
-		return constants.RC_MAIL_VCODE_UNKOWN_ERR
+		return constants.RC_PARAM_ERR
 	}
 }
 
@@ -70,11 +70,11 @@ func GenerateSig(hash string) (string, constants.Error) {
 	case constants.ERR_INT_OK:
 		break
 	case constants.ERR_INT_TK_DB:
-		return "", constants.RC_TOKEN_DB
+		return "", constants.RC_PARAM_ERR
 	case constants.ERR_INT_TK_DUPLICATE:
-		return "", constants.RC_TOKEN_DUPLICATE
+		return "", constants.RC_PARAM_ERR
 	case constants.ERR_INT_TK_NOTEXISTS:
-		return "", constants.RC_TOKEN_NOTEXISTS
+		return "", constants.RC_PARAM_ERR
 	default:
 		return "", constants.RC_SYSTEM_ERR
 	}

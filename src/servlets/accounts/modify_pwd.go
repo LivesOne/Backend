@@ -9,17 +9,17 @@ import (
 )
 
 const (
-	LOGIN_PASSWORD = 1
+	LOGIN_PASSWORD   = 1
 	PAYMENT_PASSWORD = 2
 )
 
 type modifyPwdParam struct {
-	Type int `json:"type"`
+	Type   int    `json:"type"`
 	Secret string `json:"secret"`
 }
 
 type modifySecret struct {
-	Pwd string `json:"pwd"`
+	Pwd    string `json:"pwd"`
 	NewPwd string `json:"new_pwd"`
 }
 
@@ -87,7 +87,7 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 		}
 		// 检查新旧密码是否重复
 		if secret.Pwd == secret.NewPwd {
-			response.SetResponseBase(constants.RC_DUP_LOGIN_PWD)
+			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
 		// check old password
@@ -97,7 +97,7 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 			return
 		}
 		if account.LoginPassword != pwdDb {
-			response.SetResponseBase(constants.RC_DUP_LOGIN_PWD)
+			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 		// save to db
@@ -123,7 +123,7 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 		} else {
 			// check old password
 			if secret.NewPwd != secret.Pwd {
-				response.SetResponseBase(constants.RC_DUP_PAYMENT_PWD)
+				response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 				return
 			}
 			account, err := common.GetAccountByUID(uidString)
@@ -132,7 +132,7 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 				return
 			}
 			if account.PaymentPassword != pwdDb {
-				response.SetResponseBase(constants.RC_DUP_PAYMENT_PWD)
+				response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 				return
 			}
 		}

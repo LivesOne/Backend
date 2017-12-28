@@ -10,10 +10,10 @@ import (
 )
 
 type setTxPwdParam struct {
-	Type   int    `json:"type"`
-	VCodeId  string `json:"vcode_id"`
-	VCode  string `json:"vcode"`
-	PWD    string `json:"pwd"`
+	Type    int    `json:"type"`
+	VCodeId string `json:"vcode_id"`
+	VCode   string `json:"vcode"`
+	PWD     string `json:"pwd"`
 }
 
 type setTxPwdRequest struct {
@@ -69,7 +69,7 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 
 	} else if checkType == 2 {
 		ok, err := vcode.ValidateSmsAndCallVCode(
-			account.Phone, account.Country, requestData.Param.VCode,0, 0)
+			account.Phone, account.Country, requestData.Param.VCode, 0, 0)
 		if err != nil || ok == false {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
@@ -84,7 +84,7 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	pwdSha256, err := utils.AesDecrypt(requestData.Param.PWD, key, iv)
 	if err != nil {
-		response.SetResponseBase(constants.RC_AES_DECRYPT)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 

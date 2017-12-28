@@ -88,13 +88,13 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		// right now, length of UID is 9
 		if len(handler.loginData.Param.UID) != constants.LEN_uid {
 			logger.Info("login: uid info invalid")
-			response.SetResponseBase(constants.RC_ACCOUNT_NOT_EXIST)
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
 		account, err = common.GetAccountByUID(handler.loginData.Param.UID)
 	case constants.LOGIN_TYPE_EMAIL:
 		if utils.IsValidEmailAddr(handler.loginData.Param.EMail) == false {
-			response.SetResponseBase(constants.RC_INVALIDE_EMAIL_ADDRESS)
+			response.SetResponseBase(constants.RC_EMAIL_NOT_MATCH)
 			return
 		}
 		account, err = common.GetAccountByEmail(handler.loginData.Param.EMail)

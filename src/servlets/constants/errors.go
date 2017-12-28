@@ -29,27 +29,29 @@ var (
 	RC_INVALID_ACCOUNT     = Error{20004, "invalid account"}
 	RC_INVALID_LOGIN_PWD   = Error{20005, "invalid login password"}
 	RC_INVALID_PAYMENT_PWD = Error{20006, "invalid payment password"}
+	RC_EMAIL_NOT_MATCH     = Error{20007, "email not match"}
+	RC_PHONE_NOT_MATCH     = Error{20008, "phone not match"}
 
-	RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
-	RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
-	RC_TOKEN_DB                        = Error{20103, "token db not connect"}
-	RC_TOKEN_DUPLICATE                 = Error{20104, "token duplicate"}
-	RC_TOKEN_NOTEXISTS                 = Error{20105, "token not exists"}
-	RC_DUP_LOGIN_PWD                   = Error{20106, "duplicate login password"}
-	RC_DUP_PAYMENT_PWD                 = Error{20107, "duplicate payment password"}
-	RC_MAIL_VCODE_NOT_FOUND_ERR        = Error{20108, "mail vcode not found err"}
-	RC_MAIL_VCODE_SERVER_ERR           = Error{20109, "mail vcode server err"}
-	RC_MAIL_VCODE_NO_PARAMS_ERR        = Error{20110, "mail vcode no params err"}
-	RC_MAIL_VCODE_PARAMS_ERR           = Error{20111, "mail vcode params err"}
-	RC_MAIL_VCODE_JSON_PARSE_ERR       = Error{20112, "mail vcode json parse err"}
-	RC_MAIL_VCODE_CODE_EXPIRED_ERR     = Error{20113, "mail vcode code expired err"}
-	RC_MAIL_VCODE_VALIDATE_CODE_FAILD  = Error{20114, "mail vcode validate code failed"}
-	RC_MAIL_VCODE_EMAIL_VALIDATE_FAILD = Error{20115, "mail vcode email validate failed"}
-	RC_MAIL_VCODE_HTTP_ERR             = Error{20116, "mail vcode http err"}
-	RC_MAIL_VCODE_UNKOWN_ERR           = Error{20117, "mail vcode unkown err"}
-	RC_ACCOUNT_NOT_EXIST               = Error{20118, "account not exist"}
-	RC_INVALIDE_EMAIL_ADDRESS          = Error{20119, "invalid email address"}
-	RC_INVALIDE_PHONE_NUM              = Error{20120, "invalid phone number"}
+	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
+	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
+	// RC_TOKEN_DB                        = Error{20103, "token db not connect"}
+	// RC_TOKEN_DUPLICATE                 = Error{20104, "token duplicate"}
+	// RC_TOKEN_NOTEXISTS                 = Error{20105, "token not exists"}
+	// RC_DUP_LOGIN_PWD                   = Error{20106, "duplicate login password"}
+	// RC_DUP_PAYMENT_PWD                 = Error{20107, "duplicate payment password"}
+	// RC_MAIL_VCODE_NOT_FOUND_ERR        = Error{20108, "mail vcode not found err"}
+	// RC_MAIL_VCODE_SERVER_ERR           = Error{20109, "mail vcode server err"}
+	// RC_MAIL_VCODE_NO_PARAMS_ERR        = Error{20110, "mail vcode no params err"}
+	// RC_MAIL_VCODE_PARAMS_ERR           = Error{20111, "mail vcode params err"}
+	// RC_MAIL_VCODE_JSON_PARSE_ERR       = Error{20112, "mail vcode json parse err"}
+	// RC_MAIL_VCODE_CODE_EXPIRED_ERR     = Error{20113, "mail vcode code expired err"}
+	// RC_MAIL_VCODE_VALIDATE_CODE_FAILD  = Error{20114, "mail vcode validate code failed"}
+	// RC_MAIL_VCODE_EMAIL_VALIDATE_FAILD = Error{20115, "mail vcode email validate failed"}
+	// RC_MAIL_VCODE_HTTP_ERR             = Error{20116, "mail vcode http err"}
+	// RC_MAIL_VCODE_UNKOWN_ERR           = Error{20117, "mail vcode unkown err"}
+	// RC_ACCOUNT_NOT_EXIST               = Error{20118, "account not exist"}
+	// RC_INVALIDE_EMAIL_ADDRESS          = Error{20119, "invalid email address"}
+	// RC_INVALIDE_PHONE_NUM              = Error{20120, "invalid phone number"}
 )
 
 // HTTP return code constants
