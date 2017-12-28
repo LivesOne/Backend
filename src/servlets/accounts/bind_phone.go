@@ -43,9 +43,9 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	httpHeader := common.ParseHttpHeaderParams(request)
+	handler.header = common.ParseHttpHeaderParams(request)
 	// requestData := new(bindPhoneRequest)
-	common.ParseHttpBodyParams(request, handler.requestData)
+	common.ParseHttpBodyParams(request, &handler.requestData)
 
 	if handler.checkRequestParams() == false {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -53,7 +53,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	uidString, aesKey, _, tokenErr := token.GetAll(handler.header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 		logger.Info("bind phone: read user info error:", err)
@@ -92,28 +92,22 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
 			db_factory.CheckDuplicateByColumn(dbErr, "phone") {
 			response.SetResponseBase(constants.RC_DUP_PHONE)
-			// return
 		} else {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			// return
 		}
 	}
-
-	// send response
-	// response.SetResponseBase(constants.RC_OK)
-	// return
 }
 
 func (handler *bindPhoneHandler) checkRequestParams() bool {
-	header := handler.header
-	data := handler.requestData.Param
 
-	if header.IsValid() == false {
+	if handler.header.IsValid() == false {
 		logger.Info("bind phone: invalid header info")
 		return false
 	}
 
-	if (len(data.Secret) < 1) || (len(data.VCodeId) < 1) || (len(data.VCode) < 1) {
+	if (len(handler.requestData.Param.Secret) < 1) ||
+		(len(handler.requestData.Param.VCodeId) < 1) ||
+		(len(handler.requestData.Param.VCode) < 1) {
 		logger.Info("bind phone: no enough paramter")
 		return false
 	}
