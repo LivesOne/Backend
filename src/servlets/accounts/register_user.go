@@ -58,6 +58,8 @@ func (handler *registerUserHandler) Method() string {
 
 func (handler *registerUserHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
+	handler.hashedPWD = ""
+
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 

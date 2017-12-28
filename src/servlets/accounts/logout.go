@@ -29,6 +29,8 @@ func (handler *logoutHandler) Method() string {
 
 func (handler *logoutHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
+	handler.header = nil
+	handler.logoutData = nil
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 

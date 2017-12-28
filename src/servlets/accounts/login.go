@@ -49,11 +49,20 @@ type loginHandler struct {
 	pwd    string // hashed user password
 }
 
+func (handler *loginHandler) reset() {
+	handler.header = nil
+	handler.loginData = nil
+	handler.aesKey = ""
+	handler.pwd = ""
+}
+
 func (handler *loginHandler) Method() string {
 	return http.MethodPost
 }
 
 func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+
+	handler.reset()
 
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)

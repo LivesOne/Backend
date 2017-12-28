@@ -41,11 +41,19 @@ type autoLoginHandler struct {
 	aesKey string // aes key (after parsing) uploaded by Client
 }
 
+func (handler *autoLoginHandler) reset() {
+	handler.header = nil
+	handler.loginData = nil
+	handler.aesKey = ""
+}
+
 func (handler *autoLoginHandler) Method() string {
 	return http.MethodPost
 }
 
 func (handler *autoLoginHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+
+	handler.reset()
 
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
