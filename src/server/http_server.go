@@ -37,7 +37,7 @@ func RegisterHandler(url string, handler HttpHandler) {
 //Start http server to listen
 func Start(addr string) {
 	gServer = &http.Server{
-		Addr:           config.GetConfig().ServerAddr,
+		Addr:           addr,
 		Handler:        gRouter,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
