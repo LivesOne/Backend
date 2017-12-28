@@ -49,7 +49,7 @@ type registerUserHandler struct {
 	//response *common.ResponseData
 
 	// hashedPWD upload by client
-	hashedPWD string
+	// hashedPWD string
 }
 
 func (handler *registerUserHandler) Method() string {
@@ -57,8 +57,6 @@ func (handler *registerUserHandler) Method() string {
 }
 
 func (handler *registerUserHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
-	handler.hashedPWD = ""
 
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
@@ -72,7 +70,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	err := handler.recoverHashedPwd(data.Param.PWD)
+	hashedPWD, err := handler.recoverHashedPwd(data.Param.PWD)
 	if err != nil {
 		logger.Info("register user: decrypt hash pwd error:", err)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -91,19 +89,19 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
-		account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
+		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 		insertAndCheckUid(account)
 	case constants.LOGIN_TYPE_EMAIL:
 		f, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
 		if f {
-			account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
+			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithEmail(account)
 			if err != nil {
 				if db_factory.CheckDuplicateByColumn(err, "email") {
 					response.SetResponseBase(constants.RC_DUP_EMAIL)
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
 					account.UIDString, account.UID = getUid()
-					account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
+					account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 					e := insertAndCheckUid(account)
 					if e != nil {
 						if db_factory.CheckDuplicateByColumn(err, "email") {
@@ -122,14 +120,14 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	case constants.LOGIN_TYPE_PHONE:
 		f, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
 		if f {
-			account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
+			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithPhone(account)
 			if err != nil {
 				if db_factory.CheckDuplicateByColumn(err, "phone") {
 					response.SetResponseBase(constants.RC_DUP_PHONE)
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
 					account.UIDString, account.UID = getUid()
-					account.LoginPassword = utils.Sha256(handler.hashedPWD + account.UIDString)
+					account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 					e := insertAndCheckUid(account)
 					if e != nil {
 						if db_factory.CheckDuplicateByColumn(err, "phone") {
@@ -258,12 +256,12 @@ func getAccount(data *registerRequest) (*common.Account, error) {
 
 // recoverPwd recovery the upload PWD to hash form
 // @param: pwdUpload  original upload pwd in http request
-func (handler *registerUserHandler) recoverHashedPwd(pwdUpload string) error {
+func (handler *registerUserHandler) recoverHashedPwd(pwdUpload string) (string, error) {
 
 	privKey := config.GetPrivateKey()
 	if privKey == nil {
 		// logger.Info("register user: load private key failed")
-		return errors.New("register user: load private key failed")
+		return "", errors.New("register user: load private key failed")
 	}
 
 	// fmt.Println("2222222222222222:ggggggggggggggg")
@@ -272,12 +270,10 @@ func (handler *registerUserHandler) recoverHashedPwd(pwdUpload string) error {
 	if err != nil {
 		// fmt.Println("2222222222222222:", err)
 		// logger.Info("register user: decrypt pwd error:", err)
-		return err
+		return "", err
 	}
 
 	logger.Info("register user: hash pwd:", hashPwd)
 
-	handler.hashedPWD = hashPwd
-
-	return nil
+	return hashPwd, nil
 }

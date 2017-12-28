@@ -8,7 +8,7 @@ import (
 
 // modifyUserProfileHandler
 type modifyUserProfileHandler struct {
-	header *common.HeaderParams // request header param
+	// header *common.HeaderParams // request header param
 	// requestData *logoutRequest       // request body
 }
 
@@ -26,6 +26,6 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
+	// handler.header = common.ParseHttpHeaderParams(request)
 	// common.ParseHttpBodyParams(request, &handler.requestData)
 }

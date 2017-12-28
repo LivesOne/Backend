@@ -30,8 +30,8 @@ type modifyPwdRequest struct {
 
 // modifyPwdHandler
 type modifyPwdHandler struct {
-	header      *common.HeaderParams // request header param
-	requestData *modifyPwdRequest    // request body
+	// header      *common.HeaderParams // request header param
+	// requestData *modifyPwdRequest    // request body
 }
 
 func (handler *modifyPwdHandler) Method() string {

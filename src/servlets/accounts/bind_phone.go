@@ -24,8 +24,8 @@ type bindPhoneRequest struct {
 
 // bindPhoneHandler
 type bindPhoneHandler struct {
-	header      *common.HeaderParams // request header param
-	requestData *bindPhoneRequest    // request body
+	// header      *common.HeaderParams // request header param
+	// requestData *bindPhoneRequest // request body
 }
 
 type phoneSecret struct {
@@ -43,17 +43,17 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	// requestData := new(bindPhoneRequest)
-	common.ParseHttpBodyParams(request, &handler.requestData)
+	header := common.ParseHttpHeaderParams(request)
+	requestData := new(bindPhoneRequest)
+	common.ParseHttpBodyParams(request, requestData)
 
-	if handler.checkRequestParams() == false {
+	if handler.checkRequestParams(header, requestData) == false {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(handler.header.TokenHash)
+	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 		logger.Info("bind phone: read user info error:", err)
@@ -68,7 +68,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// 解码 secret 参数
-	secretString := handler.requestData.Param.Secret
+	secretString := requestData.Param.Secret
 	secret := new(phoneSecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	if err := DecryptSecret(secretString, key, iv, &secret); err != constants.RC_OK {
@@ -79,7 +79,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 
 	// 判断手机验证码正确
 	ok, _ := vcode.ValidateSmsAndCallVCode(
-		secret.Phone, secret.Country, handler.requestData.Param.VCode, 0, 0)
+		secret.Phone, secret.Country, requestData.Param.VCode, 0, 0)
 	if ok == false {
 		logger.Info("bind phone: validate sms and call vcode failed")
 		response.SetResponseBase(constants.RC_DUP_PHONE)
@@ -98,16 +98,17 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 }
 
-func (handler *bindPhoneHandler) checkRequestParams() bool {
+func (handler *bindPhoneHandler) checkRequestParams(header *common.HeaderParams, requestData *bindPhoneRequest) bool {
 
-	if handler.header.IsValid() == false {
+	if (header == nil) || (header.IsValid() == false) {
 		logger.Info("bind phone: invalid header info")
 		return false
 	}
 
-	if (len(handler.requestData.Param.Secret) < 1) ||
-		(len(handler.requestData.Param.VCodeId) < 1) ||
-		(len(handler.requestData.Param.VCode) < 1) {
+	if (requestData == nil) ||
+		(len(requestData.Param.Secret) < 1) ||
+		(len(requestData.Param.VCodeId) < 1) ||
+		(len(requestData.Param.VCode) < 1) {
 		logger.Info("bind phone: no enough paramter")
 		return false
 	}

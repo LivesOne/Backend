@@ -23,8 +23,8 @@ type bindEMailRequest struct {
 
 // bindEMailHandler
 type bindEMailHandler struct {
-	header      *common.HeaderParams // request header param
-	requestData *bindEMailRequest    // request body
+	// header      *common.HeaderParams // request header param
+	// requestData *bindEMailRequest // request body
 }
 
 type mailSecret struct {

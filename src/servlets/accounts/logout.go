@@ -19,8 +19,8 @@ type logoutRequest struct {
 
 // logoutHandler implements the "Echo message" interface
 type logoutHandler struct {
-	header     *common.HeaderParams // request header param
-	logoutData *logoutRequest       // request login data
+	// header     *common.HeaderParams // request header param
+	// logoutData *logoutRequest       // request login data
 }
 
 func (handler *logoutHandler) Method() string {
@@ -29,53 +29,51 @@ func (handler *logoutHandler) Method() string {
 
 func (handler *logoutHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	handler.header = nil
-	handler.logoutData = nil
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.logoutData)
+	header := common.ParseHttpHeaderParams(request)
+	logoutData := logoutRequest{}
+	common.ParseHttpBodyParams(request, &logoutData)
 
-	if handler.checkRequestParams() == false {
+	// if handler.checkRequestParams() == false {
+	if (header.IsValid() == false) || (len(logoutData.Param.Token) < 1) {
+		logger.Info("logout: header param missed or token info invalid")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	if handler.checkToken() == false {
+	if handler.checkToken(header.TokenHash, logoutData.Param.Token) == false {
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 		return
 	}
 
-	errT := token.Del(handler.header.TokenHash)
+	errT := token.Del(header.TokenHash)
 	if errT != constants.ERR_INT_OK {
 		logger.Info("logout: remove token failed:", errT)
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 	}
 }
 
-func (handler *logoutHandler) checkRequestParams() bool {
-	if (handler.header == nil) || (handler.logoutData == nil) {
-		return false
-	}
+// func (handler *logoutHandler) checkRequestParams() bool {
 
-	if handler.header.IsValid() == false {
-		logger.Info("logout: some header param missed")
-		return false
-	}
+// 	if handler.header.IsValid() == false {
+// 		logger.Info("logout: some header param missed")
+// 		return false
+// 	}
 
-	if len(handler.logoutData.Param.Token) < 1 {
-		logger.Info("logout: token info invalid")
-		return false
-	}
+// 	if len(handler.logoutData.Param.Token) < 1 {
+// 		logger.Info("logout: token info invalid")
+// 		return false
+// 	}
 
-	return true
-}
+// 	return true
+// }
 
-func (handler *logoutHandler) checkToken() bool {
+func (handler *logoutHandler) checkToken(headerTokenHash, paramToken string) bool {
 
 	// retrive the original token from cache
-	_, aesKey, tokenCache, errT := token.GetAll(handler.header.TokenHash)
+	_, aesKey, tokenCache, errT := token.GetAll(headerTokenHash)
 	if (errT != constants.ERR_INT_OK) || (len(aesKey) != constants.AES_totalLen) {
 		logger.Info("logout: get token from cache failed: ", errT, len(aesKey))
 		return false
@@ -83,7 +81,7 @@ func (handler *logoutHandler) checkToken() bool {
 
 	iv := aesKey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
-	tokenOriginal, err := utils.AesDecrypt(handler.logoutData.Param.Token, string(key), string(iv))
+	tokenOriginal, err := utils.AesDecrypt(paramToken, string(key), string(iv))
 	// tokenTmp := utils.Base64Decode(tokenUpload)
 	// tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
 	if (err != nil) || (tokenOriginal != tokenCache) {

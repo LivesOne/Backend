@@ -42,18 +42,6 @@ type responseLogin struct {
 
 // loginHandler implements the "Echo message" interface
 type loginHandler struct {
-	header    *common.HeaderParams // request header param
-	loginData *loginRequest        // request login data
-
-	aesKey string // aes key (after parsing) uploaded by Client
-	pwd    string // hashed user password
-}
-
-func (handler *loginHandler) reset() {
-	handler.header = nil
-	handler.loginData = nil
-	handler.aesKey = ""
-	handler.pwd = ""
 }
 
 func (handler *loginHandler) Method() string {
@@ -62,44 +50,43 @@ func (handler *loginHandler) Method() string {
 
 func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	handler.reset()
-
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.loginData)
+	header := common.ParseHttpHeaderParams(request)
+	loginData := loginRequest{}
+	common.ParseHttpBodyParams(request, &loginData)
 
-	if handler.checkRequestParams() == false {
+	if handler.checkRequestParams(header, &loginData) == false {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	var err error
-	handler.aesKey, err = handler.parseAESKey(handler.loginData.Param.Key)
-	if err != nil || handler.isSignValid() == false {
+	// var err error
+	aesKey, err := handler.parseAESKey(loginData.Param.Key)
+	if err != nil || handler.isSignValid(aesKey, header.Signature, header.Timestamp) == false {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 
 	var account *common.Account
-	switch handler.loginData.Param.Type {
+	switch loginData.Param.Type {
 	case constants.LOGIN_TYPE_UID:
 		// right now, length of UID is 9
-		if len(handler.loginData.Param.UID) != constants.LEN_uid {
+		if len(loginData.Param.UID) != constants.LEN_uid {
 			logger.Info("login: uid info invalid")
 			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
-		account, err = common.GetAccountByUID(handler.loginData.Param.UID)
+		account, err = common.GetAccountByUID(loginData.Param.UID)
 	case constants.LOGIN_TYPE_EMAIL:
-		if utils.IsValidEmailAddr(handler.loginData.Param.EMail) == false {
+		if utils.IsValidEmailAddr(loginData.Param.EMail) == false {
 			response.SetResponseBase(constants.RC_EMAIL_NOT_MATCH)
 			return
 		}
-		account, err = common.GetAccountByEmail(handler.loginData.Param.EMail)
+		account, err = common.GetAccountByEmail(loginData.Param.EMail)
 	case constants.LOGIN_TYPE_PHONE:
-		account, err = common.GetAccountByPhone(handler.loginData.Param.Country, handler.loginData.Param.Phone)
+		account, err = common.GetAccountByPhone(loginData.Param.Country, loginData.Param.Phone)
 	}
 
 	if err != nil {
@@ -109,7 +96,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 	logger.Info("read account form DB success:\n", utils.ToJSONIndent(account))
 
-	if handler.checkUserPassword(account.LoginPassword, handler.aesKey, handler.loginData.Param.PWD, account.UIDString) == false {
+	if handler.checkUserPassword(account.LoginPassword, aesKey, loginData.Param.PWD, account.UIDString) == false {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
@@ -117,7 +104,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)
 	const expire int64 = 24 * 3600
-	newtoken, errNewT := token.New(account.UIDString, handler.aesKey, expire)
+	newtoken, errNewT := token.New(account.UIDString, aesKey, expire)
 	// newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {
 		logger.Info("login: create token in cache error:", errNewT)
@@ -126,8 +113,8 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 
 	// newtoken, err = utils.RsaSign(newtoken, config.GetPrivateKeyFilename())
-	iv := handler.aesKey[:constants.AES_ivLen]
-	key := handler.aesKey[constants.AES_ivLen:]
+	iv := aesKey[:constants.AES_ivLen]
+	key := aesKey[constants.AES_ivLen:]
 	newtoken, err = utils.AesEncrypt(newtoken, string(key), string(iv))
 	if err != nil {
 		logger.Info("login: aes encrypt token error", err)
@@ -148,44 +135,44 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 }
 
-func (handler *loginHandler) checkRequestParams() bool {
-	if handler.header == nil || (handler.loginData == nil) {
+func (handler *loginHandler) checkRequestParams(header *common.HeaderParams, loginData *loginRequest) bool {
+	if header == nil || (loginData == nil) {
 		return false
 	}
 
 	// const signLen = 64
 	// const tokenHashLen = 64
-	if (handler.header.IsValidTimestamp() == false) || (handler.header.IsValidSign() == false) {
+	if (header.IsValidTimestamp() == false) || (header.IsValidSign() == false) {
 		logger.Info("login: some header param missed")
 		return false
 	}
 
-	if (handler.loginData.Base.App == nil) || (handler.loginData.Base.App.IsValid() == false) {
+	if (loginData.Base.App == nil) || (loginData.Base.App.IsValid() == false) {
 		logger.Info("login: app info invalid")
 		return false
 	}
 
-	if (handler.loginData.Param.Type < constants.LOGIN_TYPE_UID) || (handler.loginData.Param.Type > constants.LOGIN_TYPE_PHONE) {
+	if (loginData.Param.Type < constants.LOGIN_TYPE_UID) || (loginData.Param.Type > constants.LOGIN_TYPE_PHONE) {
 		logger.Info("login: login type invalid")
 		return false
 	}
 
-	if handler.loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && (utils.IsValidEmailAddr(handler.loginData.Param.EMail) == false) {
+	if loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && (utils.IsValidEmailAddr(loginData.Param.EMail) == false) {
 		logger.Info("login: email info invalid")
 		return false
 	}
 
-	if handler.loginData.Param.Type == constants.LOGIN_TYPE_PHONE && (handler.loginData.Param.Country == 0 || len(handler.loginData.Param.Phone) < 1) {
+	if loginData.Param.Type == constants.LOGIN_TYPE_PHONE && (loginData.Param.Country == 0 || len(loginData.Param.Phone) < 1) {
 		logger.Info("login: phone info invalid")
 		return false
 	}
 
-	if (len(handler.loginData.Param.PWD) < 1) || (len(handler.loginData.Param.Key) < 1) {
+	if (len(loginData.Param.PWD) < 1) || (len(loginData.Param.Key) < 1) {
 		logger.Info("login: no pwd or key info")
 		return false
 	}
 
-	if (len(handler.loginData.Param.PWD) < 1) || (handler.loginData.Param.Spkv < 1) {
+	if (len(loginData.Param.PWD) < 1) || (loginData.Param.Spkv < 1) {
 		logger.Info("login: no pwd or spkv info")
 		return false
 	}
@@ -193,15 +180,15 @@ func (handler *loginHandler) checkRequestParams() bool {
 	return true
 }
 
-func (handler *loginHandler) isSignValid() bool {
+func (handler *loginHandler) isSignValid(aeskey, signature string, timestamp int64) bool {
 
-	signature := handler.header.Signature
+	// signature := handler.header.Signature
 
 	if len(signature) < 1 {
 		return false
 	}
 
-	tmp := handler.aesKey + strconv.FormatInt(handler.header.Timestamp, 10)
+	tmp := aeskey + strconv.FormatInt(timestamp, 10)
 	hash := utils.Sha256(tmp)
 
 	if signature == hash {
