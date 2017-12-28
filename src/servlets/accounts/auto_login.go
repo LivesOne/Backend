@@ -35,16 +35,6 @@ type responseAutoLogin struct {
 
 // autoLoginHandler implements the "Echo message" interface
 type autoLoginHandler struct {
-	header    *common.HeaderParams // request header param
-	loginData *autologinRequest    // request login data
-
-	aesKey string // aes key (after parsing) uploaded by Client
-}
-
-func (handler *autoLoginHandler) reset() {
-	handler.header = nil
-	handler.loginData = nil
-	handler.aesKey = ""
 }
 
 func (handler *autoLoginHandler) Method() string {
@@ -53,32 +43,30 @@ func (handler *autoLoginHandler) Method() string {
 
 func (handler *autoLoginHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-	handler.reset()
-
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-	handler.header = common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &handler.loginData)
+	loginData := new(autologinRequest)
+	header := common.ParseHttpHeaderParams(request)
+	common.ParseHttpBodyParams(request, loginData)
 
-	if handler.checkRequestParams() == false {
+	if handler.checkRequestParams(header, loginData) == false {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	var err error
-	handler.aesKey, err = utils.RsaDecrypt(handler.loginData.Param.Key, config.GetPrivateKey())
-	if (err != nil) || (len(handler.aesKey) != constants.AES_totalLen) {
+	aesKey, err := utils.RsaDecrypt(loginData.Param.Key, config.GetPrivateKey())
+	if (err != nil) || (len(aesKey) != constants.AES_totalLen) {
 		logger.Info("autologin: decrypt aes key error:", err)
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
-	if handler.isSignValid() == false {
+	if handler.isSignValid(aesKey, header.Signature, header.Timestamp) == false {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 
-	uid := handler.getUID()
+	uid := handler.getUID(aesKey, header.TokenHash, loginData.Param.Token)
 	// right now, length of UID is 9
 	if len(uid) != constants.LEN_uid {
 		logger.Info("autologin: uid error")
@@ -87,7 +75,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	const expire int64 = 24 * 3600
-	errT := token.Update(handler.header.TokenHash, handler.aesKey, expire)
+	errT := token.Update(header.TokenHash, aesKey, expire)
 	if errT != constants.ERR_INT_OK {
 		logger.Info("autologin: update token hash failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -100,41 +88,38 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	}
 }
 
-func (handler *autoLoginHandler) checkRequestParams() bool {
-	if (handler.header == nil) || (handler.loginData == nil) {
+func (handler *autoLoginHandler) checkRequestParams(header *common.HeaderParams, loginData *autologinRequest) bool {
+
+	if (header == nil) || (header.IsValid() == false) {
+		logger.Info("autologin: some header param missed")
 		return false
 	}
 
-	if handler.header.IsValid() == false {
-		logger.Info("audologin: some header param missed")
-		return false
-	}
-
-	if (handler.loginData.Base.App == nil) || (handler.loginData.Base.App.IsValid() == false) {
+	if (loginData == nil) ||
+		(loginData.Base.App == nil) ||
+		(loginData.Base.App.IsValid() == false) {
 		logger.Info("autologin: app info invalid")
 		return false
 	}
 
-	if (len(handler.loginData.Param.Token) < 1) ||
-		(len(handler.loginData.Param.Key) < 1) ||
-		(handler.loginData.Param.Spkv < 1) {
-		logger.Info("augologin: no token or key or spkv info")
+	if (len(loginData.Param.Token) < 1) ||
+		(len(loginData.Param.Key) < 1) ||
+		(loginData.Param.Spkv < 1) {
+		logger.Info("autologin: no token or key or spkv info")
 		return false
 	}
 
 	return true
 }
 
-func (handler *autoLoginHandler) isSignValid() bool {
-
-	signature := handler.header.Signature
+func (handler *autoLoginHandler) isSignValid(aeskey, signature string, timestamp int64) bool {
 
 	if len(signature) < 1 {
 		logger.Info("augologin: no signature info")
 		return false
 	}
 
-	tmp := handler.aesKey + strconv.FormatInt(handler.header.Timestamp, 10)
+	tmp := aeskey + strconv.FormatInt(timestamp, 10)
 	hash := utils.Sha256(tmp)
 
 	if signature == hash {
@@ -166,20 +151,20 @@ func (handler *autoLoginHandler) isSignValid() bool {
 // 	return uid, utils.Sha256(string(tokenDecrypt))
 // }
 
-func (handler *autoLoginHandler) getUID() string {
+func (handler *autoLoginHandler) getUID(aeskey, tokenHash, paramToken string) string {
 
 	// retrive the original token from cache
-	uid, _, tokenCache, errT := token.GetAll(handler.header.TokenHash)
+	uid, _, tokenCache, errT := token.GetAll(tokenHash)
 	if (errT != constants.ERR_INT_OK) || (len(uid) != constants.LEN_uid) {
 		logger.Info("autologin: get uid from token cache failed")
 		return ""
 	}
 
-	iv := handler.aesKey[:constants.AES_ivLen]
-	key := handler.aesKey[constants.AES_ivLen:]
-	tokenOriginal, err := utils.AesDecrypt(handler.loginData.Param.Token, string(key), string(iv))
+	iv := aeskey[:constants.AES_ivLen]
+	key := aeskey[constants.AES_ivLen:]
+	tokenOriginal, err := utils.AesDecrypt(paramToken, string(key), string(iv))
 	if err != nil {
-		logger.Info("autologin: parse token failed", handler.loginData.Param.Token)
+		logger.Info("autologin: parse token failed", paramToken)
 		return ""
 	}
 
