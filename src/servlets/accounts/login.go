@@ -100,7 +100,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 	logger.Info("read account form DB success:\n", utils.ToJSONIndent(account))
 
-	if handler.checkUserPassword(account.LoginPassword, handler.aesKey, handler.loginData.Param.PWD) == false {
+	if handler.checkUserPassword(account.LoginPassword, handler.aesKey, handler.loginData.Param.PWD, account.UIDString) == false {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
@@ -108,7 +108,8 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)
 	const expire int64 = 24 * 3600
-	newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
+	newtoken, errNewT := token.New(account.UIDString, handler.aesKey, expire)
+	// newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {
 		logger.Info("login: create token in cache error:", errNewT)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -126,7 +127,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 
 	response.Data = &responseLogin{
-		UID:    handler.loginData.Param.UID,
+		UID:    account.UIDString,
 		Token:  newtoken,
 		Expire: expire,
 		// SPK: improve it later
@@ -239,7 +240,7 @@ func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
 // 	return string(aeskey), nil
 // }
 
-func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string) bool {
+func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload, uid string) bool {
 
 	// const ivLen = 16
 	// const keyLen = 32
@@ -257,7 +258,7 @@ func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload string
 		return false
 	}
 
-	pwd := utils.Sha256(hashPwd + handler.loginData.Param.UID)
+	pwd := utils.Sha256(hashPwd + uid)
 
 	return (pwdInDB == pwd)
 }
