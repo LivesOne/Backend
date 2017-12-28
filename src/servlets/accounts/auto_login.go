@@ -115,7 +115,7 @@ func (handler *autoLoginHandler) checkRequestParams(header *common.HeaderParams,
 func (handler *autoLoginHandler) isSignValid(aeskey, signature string, timestamp int64) bool {
 
 	if len(signature) < 1 {
-		logger.Info("augologin: no signature info")
+		logger.Info("autologin: no signature info")
 		return false
 	}
 
@@ -123,9 +123,9 @@ func (handler *autoLoginHandler) isSignValid(aeskey, signature string, timestamp
 	hash := utils.Sha256(tmp)
 
 	if signature == hash {
-		logger.Info("augologin: verify header signature successful", signature, string(hash[:]))
+		logger.Info("autologin: verify header signature successful", signature, string(hash[:]))
 	} else {
-		logger.Info("augologin: verify header signature failed:", signature, string(hash[:]))
+		logger.Info("autologin: verify header signature failed:", signature, string(hash[:]))
 	}
 
 	return signature == hash
@@ -155,6 +155,7 @@ func (handler *autoLoginHandler) getUID(aeskey, tokenHash, paramToken string) st
 
 	// retrive the original token from cache
 	uid, _, tokenCache, errT := token.GetAll(tokenHash)
+	// logger.Info("autologin:====================", uid, tokenHash, paramToken)
 	if (errT != constants.ERR_INT_OK) || (len(uid) != constants.LEN_uid) {
 		logger.Info("autologin: get uid from token cache failed")
 		return ""

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -44,50 +43,64 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	requestData := resetPwdRequest{}
 	common.ParseHttpBodyParams(request, &requestData)
 
-	if (header.IsValidTimestamp() == false) || (header.IsValidTokenhash() == false) {
-		logger.Info("reset password: some header param missed")
+	if header.IsValidTimestamp() == false {
+		logger.Info("reset password: invalid timestamp")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	// 判断用户身份
-	uidString, _, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		response.SetResponseBase(err)
-	}
-	uid := utils.Str2Int64(uidString)
-	account, err := common.GetAccountByUID(uidString)
-	if err != nil {
-		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-		return
-	}
+	// uidString, _, _, tokenErr := token.GetAll(header.TokenHash)
+	// if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	// 	response.SetResponseBase(err)
+	// }
+	// uid := utils.Str2Int64(uidString)
+	// account, err := common.GetAccountByUID(uidString)
+	// if err != nil {
+	// 	response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+	// 	return
+	// }
 
+	var account *common.Account
+	var err error
 	// 检查验证码
 	checkType := requestData.Param.Type
 	if checkType == 1 {
-		if (utils.IsValidEmailAddr(requestData.Param.EMail) == false) ||
-			(requestData.Param.EMail != account.Email) {
+		if utils.IsValidEmailAddr(requestData.Param.EMail) == false {
+			logger.Info("reset password: invalid email address")
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
-		ok, err := vcode.ValidateMailVCode(
+		account, err = common.GetAccountByEmail(requestData.Param.EMail)
+		if (err != nil) || (account == nil) {
+			logger.Info("reset password: get account info by email failed:", requestData.Param.EMail)
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+		ok, errT := vcode.ValidateMailVCode(
 			requestData.Param.VCodeID, requestData.Param.VCode, account.Email)
 		if ok == false {
-			response.SetResponseBase(ValidateMailVCodeErr2RcErr(err))
+			logger.Info("reset password: verify email vcode failed", errT)
+			response.SetResponseBase(ValidateMailVCodeErr2RcErr(errT))
 			return
 		}
 
 	} else if checkType == 2 {
-		if (len(requestData.Param.Phone) < 1) ||
-			(requestData.Param.Country < 1) ||
-			(requestData.Param.Country != account.Country) ||
-			(requestData.Param.Phone != account.Phone) {
+		if (len(requestData.Param.Phone) < 1) || (requestData.Param.Country < 1) {
+			logger.Info("reset password: invalid phone or country", requestData.Param.Country, requestData.Param.Phone)
 			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+		account, err = common.GetAccountByPhone(requestData.Param.Country, requestData.Param.Phone)
+		if (err != nil) || (account == nil) {
+			logger.Info("reset password: get account info by phone failed:", requestData.Param.Country, requestData.Param.Phone)
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
 		ok, err := vcode.ValidateSmsAndCallVCode(
 			account.Phone, account.Country, requestData.Param.VCode, 0, 0)
 		if err != nil || ok == false {
+			logger.Info("reset password: verify sms vcode failed", err)
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
@@ -105,10 +118,10 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	// 数据库实际保存的密码格式为“sha256(sha256(密码) + uid)”
-	pwdDb := utils.Sha256(pwdSha256 + uidString)
+	pwdDb := utils.Sha256(pwdSha256 + account.UIDString)
 
 	// save to db
-	if err := common.SetLoginPassword(uid, pwdDb); err != nil {
+	if err := common.SetLoginPassword(account.UID, pwdDb); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -117,13 +130,3 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	response.SetResponseBase(constants.RC_OK)
 	return
 }
-
-// func (handler *resetPwdHandler) checkRequestParams() bool {
-
-// 	if (header.IsValidTimestamp() == false) || (header.IsValidTokenhash() == false) {
-// 		logger.Info("reset password: some header param missed")
-// 		return false
-// 	}
-
-// 	return true
-// }
