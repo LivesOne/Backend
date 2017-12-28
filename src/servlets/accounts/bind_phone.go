@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/db_factory"
+	"utils/logger"
 	"utils/vcode"
 )
 
@@ -43,10 +44,10 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	defer common.FlushJSONData2Client(response, writer)
 
 	httpHeader := common.ParseHttpHeaderParams(request)
-	requestData := new(bindPhoneRequest)
-	common.ParseHttpBodyParams(request, &requestData)
+	// requestData := new(bindPhoneRequest)
+	common.ParseHttpBodyParams(request, handler.requestData)
 
-	if httpHeader.Timestamp < 1 {
+	if handler.checkRequestParams() == false {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -55,23 +56,33 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
+		logger.Info("bind phone: read user info error:", err)
+		return
 	}
 	uid := utils.Str2Int64(uidString)
 
+	if len(aesKey) != constants.AES_totalLen {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		logger.Info("bind phone: read aes key from db error, length of aes key is:", len(aesKey))
+		return
+	}
+
 	// 解码 secret 参数
-	secretString := requestData.Param.Secret
+	secretString := handler.requestData.Param.Secret
 	secret := new(phoneSecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	if err := DecryptSecret(secretString, key, iv, &secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
+		logger.Info("bind phone: Decrypt Secret error:", err)
 		return
 	}
 
 	// 判断手机验证码正确
 	ok, _ := vcode.ValidateSmsAndCallVCode(
-		secret.Phone, secret.Country, requestData.Param.VCode, 0, 0)
+		secret.Phone, secret.Country, handler.requestData.Param.VCode, 0, 0)
 	if ok == false {
-		response.SetResponseBase(constants.RC_INVALID_VCODE)
+		logger.Info("bind phone: validate sms and call vcode failed")
+		response.SetResponseBase(constants.RC_DUP_PHONE)
 		return
 	}
 
@@ -81,14 +92,31 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
 			db_factory.CheckDuplicateByColumn(dbErr, "phone") {
 			response.SetResponseBase(constants.RC_DUP_PHONE)
-			return
+			// return
 		} else {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
+			// return
 		}
 	}
 
 	// send response
-	response.SetResponseBase(constants.RC_OK)
-	return
+	// response.SetResponseBase(constants.RC_OK)
+	// return
+}
+
+func (handler *bindPhoneHandler) checkRequestParams() bool {
+	header := handler.header
+	data := handler.requestData.Param
+
+	if header.IsValid() == false {
+		logger.Info("bind phone: invalid header info")
+		return false
+	}
+
+	if (len(data.Secret) < 1) || (len(data.VCodeId) < 1) || (len(data.VCode) < 1) {
+		logger.Info("bind phone: no enough paramter")
+		return false
+	}
+
+	return true
 }
