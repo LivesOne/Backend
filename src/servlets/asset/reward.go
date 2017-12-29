@@ -6,10 +6,13 @@ import (
 	"servlets/constants"
 	"utils"
 	"strconv"
+	"time"
+	"servlets/accounts"
 )
 
 const  (
 	CONV_LVT = 10000*10000
+	DAY_1 = 24*60*60*1000
 )
 
 type rewardParam struct {
@@ -60,9 +63,20 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 
 	re := common.QueryReward(intUid)
 
+	yesterday := formatLVT(re.Yesterday)
+
+
+
+	t := re.Lastmodify
+	nt := utils.GetTimestamp13()
+
+	if t < (nt - DAY_1){
+		yesterday = "0.00"
+	}
+	//TODO 如果时间戳不是昨天，返回0
 	response.Data = rewardResData{
 		Total:     formatLVT(re.Total),
-		Yesterday: formatLVT(re.Yesterday),
+		Yesterday: yesterday,
 	}
 
 }

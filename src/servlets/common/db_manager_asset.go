@@ -2,16 +2,17 @@ package common
 
 import (
 	_ "fmt"
+	_ "github.com/go-sql-driver/mysql"
+	"utils"
 	"utils/config"
 	_ "utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	_ "github.com/go-sql-driver/mysql"
-	"utils"
 )
 
 //var gDbUser *sql.DB
 var gDBAsset *db_factory.DBPool
+
 func AssetDbInit() error {
 
 	db_config_asset := config.GetConfig().User
@@ -34,13 +35,14 @@ func AssetDbInit() error {
 }
 
 func QueryReward(uid int64) Reward {
-	row,err := gDBAsset.QueryRow("select total,yesterday from user_reward where uid = ?",uid)
+	row, err := gDBAsset.QueryRow("select total,yesterday,lastmodify from user_reward where uid = ?", uid)
 	if err != nil {
-		logger.Error("query db error ",err.Error())
+		logger.Error("query db error ", err.Error())
 	}
 	return Reward{
-		Total:     utils.Str2Int64(row["total"]),
-		Yesterday: utils.Str2Int64(row["yesterday"]),
-		Uid:       uid,
+		Total:      utils.Str2Int64(row["total"]),
+		Yesterday:  utils.Str2Int64(row["yesterday"]),
+		Lastmodify: utils.Str2Int64(row["lastmodify"]),
+		Uid:        uid,
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"net/http"
 	"utils/logger"
+	"time"
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -91,4 +92,8 @@ func Post(url string, params string) (resBody string, e error) {
 		logger.Info("SendPost res ---> ", res)
 		return res, e2
 	}
+}
+func GetTimestamp13() int64 {
+	now := time.Now()
+	return now.UnixNano() / 1000000
 }
