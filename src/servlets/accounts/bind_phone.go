@@ -48,6 +48,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	common.ParseHttpBodyParams(request, requestData)
 
 	if handler.checkRequestParams(header, requestData) == false {
+		logger.Info("bind phone: check param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -89,10 +90,13 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	// save data to db
 	dbErr := common.SetPhone(uid, secret.Country, secret.Phone)
 	if dbErr != nil {
-		if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
-			db_factory.CheckDuplicateByColumn(dbErr, "phone") {
+		// if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
+		// 	db_factory.CheckDuplicateByColumn(dbErr, "phone") {
+		if db_factory.CheckDuplicateByColumn(dbErr, "mobile") {
+			logger.Info("bind phone: check phone duplicate error, dupped", dbErr)
 			response.SetResponseBase(constants.RC_DUP_PHONE)
 		} else {
+			logger.Info("bind phone: check phone duplicate error, other error", dbErr)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 	}
