@@ -55,7 +55,12 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	aesKey, err := utils.RsaDecrypt(loginData.Param.Key, config.GetPrivateKey())
+	privKey, err := config.GetPrivateKey(loginData.Param.Spkv)
+	if (err != nil) || (privKey == nil) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	aesKey, err := utils.RsaDecrypt(loginData.Param.Key, privKey)
 	if (err != nil) || (len(aesKey) != constants.AES_totalLen) {
 		logger.Info("autologin: decrypt aes key error:", err)
 		response.SetResponseBase(constants.RC_INVALID_SIGN)

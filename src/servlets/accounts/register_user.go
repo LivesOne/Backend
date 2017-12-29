@@ -70,7 +70,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	hashedPWD, err := handler.recoverHashedPwd(data.Param.PWD)
+	hashedPWD, err := handler.recoverHashedPwd(data.Param.PWD, data.Param.Spkv)
 	if err != nil {
 		logger.Info("register user: decrypt hash pwd error:", err)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -256,10 +256,11 @@ func getAccount(data *registerRequest) (*common.Account, error) {
 
 // recoverPwd recovery the upload PWD to hash form
 // @param: pwdUpload  original upload pwd in http request
-func (handler *registerUserHandler) recoverHashedPwd(pwdUpload string) (string, error) {
+func (handler *registerUserHandler) recoverHashedPwd(pwdUpload string, spkv int) (string, error) {
 
-	privKey := config.GetPrivateKey()
-	if privKey == nil {
+	privKey, err := config.GetPrivateKey(spkv)
+	if (err != nil) || (privKey == nil) {
+		// response.SetResponseBase(constants.RC_PARAM_ERR)
 		// logger.Info("register user: load private key failed")
 		return "", errors.New("register user: load private key failed")
 	}

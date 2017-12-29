@@ -111,7 +111,12 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	// 解析出“sha256(密码)”
-	pwdSha256, err := utils.RsaDecrypt(requestData.Param.PWD, config.GetPrivateKey())
+	privKey, err := config.GetPrivateKey(requestData.Param.Spkv)
+	if (err != nil) || (privKey == nil) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	pwdSha256, err := utils.RsaDecrypt(requestData.Param.PWD, privKey)
 	if err != nil {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
