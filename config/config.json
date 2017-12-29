@@ -19,7 +19,7 @@
         "DBHost" : "10.100.15.96:3306",
         "DBUser" : "lvt_serv",
         "DBUserPwd" : "U9D$WHTo",
-        "DBDatabase" : "livesone_user"
+        "DBDatabase" : "livesone_asset"
     },
 
     "SmsSvrAddr":"http://10.100.13.6:8045",
