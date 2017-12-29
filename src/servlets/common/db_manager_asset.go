@@ -34,12 +34,12 @@ func AssetDbInit() error {
 	return nil
 }
 
-func QueryReward(uid int64) Reward {
+func QueryReward(uid int64) *Reward {
 	row, err := gDBAsset.QueryRow("select total,yesterday,lastmodify from user_reward where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
-	return Reward{
+	return &Reward{
 		Total:      utils.Str2Int64(row["total"]),
 		Yesterday:  utils.Str2Int64(row["yesterday"]),
 		Lastmodify: utils.Str2Int64(row["lastmodify"]),
