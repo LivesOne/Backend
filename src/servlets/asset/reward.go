@@ -4,15 +4,26 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"utils"
+	"strconv"
+)
+
+const  (
+	CONV_LVT = 10000*10000
 )
 
 type rewardParam struct {
-
+	Uid string `json:"uid"`
 }
 
 type rewardRequest struct {
 	Base  *common.BaseInfo `json:"base"`
-	Param *rewardParam  `json:"param"`
+	Param *rewardParam     `json:"param"`
+}
+
+type rewardResData struct {
+	Total     string `json:"total"`
+	Yesterday string `json:"yesterday"`
 }
 
 // sendVCodeHandler
@@ -40,5 +51,22 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
 
+	intUid := utils.Str2Int64(requestData.Param.Uid)
 
+	if !common.ExistsUID(intUid) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	re := common.QueryReward(intUid)
+
+	response.Data = rewardResData{
+		Total:     formatLVT(re.Total),
+		Yesterday: formatLVT(re.Yesterday),
+	}
+
+}
+
+func formatLVT(lvt int64)string{
+	return strconv.FormatFloat((float64(lvt) / CONV_LVT),'f',8,64)
 }

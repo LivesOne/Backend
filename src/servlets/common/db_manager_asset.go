@@ -6,8 +6,6 @@ import (
 	_ "utils/config"
 	"utils/db_factory"
 	"utils/logger"
-
-
 	_ "github.com/go-sql-driver/mysql"
 	"utils"
 )
@@ -36,7 +34,7 @@ func AssetDbInit() error {
 }
 
 func QueryReward(uid int64) Reward {
-	row,err := gDBAsset.QueryRow("",uid)
+	row,err := gDBAsset.QueryRow("select total,yesterday from user_reward where uid = ?",uid)
 	if err != nil {
 		logger.Error("query db error ",err.Error())
 	}
