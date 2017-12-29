@@ -63,8 +63,12 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 
 	// var err error
-	aesKey, err := handler.parseAESKey(loginData.Param.Key)
-	if err != nil || handler.isSignValid(aesKey, header.Signature, header.Timestamp) == false {
+	aesKey, err := handler.parseAESKey(loginData.Param.Key, loginData.Param.Spkv)
+	if err != nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	if handler.isSignValid(aesKey, header.Signature, header.Timestamp) == false {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
@@ -112,7 +116,6 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		return
 	}
 
-	// newtoken, err = utils.RsaSign(newtoken, config.GetPrivateKeyFilename())
 	iv := aesKey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
 	newtoken, err = utils.AesEncrypt(newtoken, string(key), string(iv))
@@ -210,9 +213,13 @@ func (handler *loginHandler) isSignValid(aeskey, signature string, timestamp int
 // 	return signature == string(hash[:])
 // }
 
-func (handler *loginHandler) parseAESKey(originalKey string) (string, error) {
+func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, error) {
 
-	aeskey, err := utils.RsaDecrypt(originalKey, config.GetPrivateKey())
+	privKey, err := config.GetPrivateKey(spkv)
+	if (err != nil) || (privKey == nil) {
+		return "", err
+	}
+	aeskey, err := utils.RsaDecrypt(originalKey, privKey)
 	if (err != nil) || (len(aeskey) != constants.AES_totalLen) {
 		logger.Info("login: decrypt aes key error:", err)
 		return "", err

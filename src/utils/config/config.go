@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"io/ioutil"
 	"path/filepath"
 	"utils"
@@ -60,7 +61,14 @@ func GetConfig() *Configuration {
 }
 
 // GetPrivateKey reads the private key from the key file
-func GetPrivateKey() []byte {
+// @param ver:  version of server public key
+func GetPrivateKey(ver int) ([]byte, error) {
+	// right now, we ONLY have the pri/pub key pair of version 1
+	if ver != 1 {
+		logger.Info("GetPrivateKey by public key version: no corresponding private key, version#", ver)
+		return nil, errors.New("param error")
+	}
+
 	if (gPrivKeyContent == nil) || (len(gPrivKeyContent) < 1) {
 
 		filename := GetPrivateKeyFilename()
@@ -73,7 +81,7 @@ func GetPrivateKey() []byte {
 		}
 	}
 
-	return gPrivKeyContent
+	return gPrivKeyContent, nil
 }
 
 // GetPrivateKeyFilename returns the rsa private key file name
