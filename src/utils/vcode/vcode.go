@@ -84,12 +84,12 @@ type httpReqMessageParam struct {
 }
 
 type httpReqValidateMessageParam struct {
-	AreaCode     int    `json:"area_code"`
-	ValidateCode string `json:"validation_code"`
-	PhoneNo      string `json:"phone_no"`
-	Vid          int    `json:"vid"`
-	Expire       int    `json:"expire"`
-	Flag         string `json:"flag"`
+	AreaCode       int    `json:"area_code"`
+	ValidationCode string `json:"validation_code"`
+	PhoneNo        string `json:"phone_no"`
+	Vid            int    `json:"vid"`
+	Expired        int    `json:"expired"`
+	Flag           string `json:"flag"`
 }
 
 type httpReqMailParam struct {
@@ -234,12 +234,12 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 		//{"area_code":86,"lan":"cn","phone_no":"13901008888","vid":2,"expired":3600,"voice_code":0}
 
 		req := httpReqValidateMessageParam{
-			AreaCode:     country,
-			ValidateCode: code,
-			PhoneNo:      phone,
-			Vid:          MESSAGE_VID,
-			Expire:       expire,
-			Flag:         utils.Int2Str(flag),
+			AreaCode:       country,
+			ValidationCode: code,
+			PhoneNo:        phone,
+			Vid:            MESSAGE_VID,
+			Expired:        expire,
+			Flag:           utils.Int2Str(flag),
 		}
 		url := config.GetConfig().SmsSvrAddr + "/validate"
 		reqStr, _ := json.Marshal(req)
@@ -258,7 +258,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 }
 
 func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
-	if len(id) >0 && len(vcode) >0 && len(email) >0 {
+	if len(id) > 0 && len(vcode) > 0 && len(email) > 0 {
 		url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
 		typeData := httpVReqParam{
 			Id:    id,
@@ -278,8 +278,8 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 			return false, JSON_PARSE_ERR
 		}
 		return svrRes.Ret == SUCCESS, svrRes.Ret
-	}else{
+	} else {
 		log.Error("vcode_id||vcode||email can not be empty")
-		return false,PARAMS_ERR
+		return false, PARAMS_ERR
 	}
 }
