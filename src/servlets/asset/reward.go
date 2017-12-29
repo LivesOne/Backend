@@ -6,8 +6,6 @@ import (
 	"servlets/constants"
 	"utils"
 	"strconv"
-	"time"
-	"servlets/accounts"
 )
 
 const  (
@@ -73,7 +71,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	if t < (nt - DAY_1){
 		yesterday = "0.00"
 	}
-	//TODO 如果时间戳不是昨天，返回0
+	//如果时间戳不是昨天，返回0
 	response.Data = rewardResData{
 		Total:     formatLVT(re.Total),
 		Yesterday: yesterday,
