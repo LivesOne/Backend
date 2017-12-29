@@ -70,4 +70,10 @@ const (
 	ACCOUNT_CHECK_ACCOUNT = "/user/v1/account/check"
 
 	// Contacts Sync APIs
+
+
+	//Assets Management APIs
+
+
+	ASSET_REWARD = "/asset/v1/reward"
 )

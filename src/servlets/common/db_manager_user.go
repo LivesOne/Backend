@@ -14,8 +14,7 @@ import (
 
 //var gDbUser *sql.DB
 var gDbUser *db_factory.DBPool
-
-func DbInit() error {
+func UserDbInit() error {
 
 	//dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?timeout=90s&charset=utf8",
 	//	config.GetConfig().DBUser,
@@ -31,21 +30,24 @@ func DbInit() error {
 	//	logger.Fatal(err)
 	//	return err
 	//}
-	db_config := config.GetConfig().User
-	facConfig := db_factory.Config{
-		Host:        db_config.DBHost,
-		UserName:    db_config.DBUser,
-		Password:    db_config.DBUserPwd,
-		Database:    db_config.DBDatabase,
+	db_config_user := config.GetConfig().User
+	facConfig_user := db_factory.Config{
+		Host:        db_config_user.DBHost,
+		UserName:    db_config_user.DBUser,
+		Password:    db_config_user.DBUserPwd,
+		Database:    db_config_user.DBDatabase,
 		MaxConn:     10,
 		MaxIdleConn: 1,
 	}
-	gDbUser = db_factory.NewDataSource(facConfig)
+	gDbUser = db_factory.NewDataSource(facConfig_user)
 	if gDbUser.IsConn() {
 		logger.Debug("connection database successful")
 	} else {
 		logger.Fatal(gDbUser.Err())
 	}
+
+
+
 
 	return nil
 }
@@ -217,3 +219,5 @@ func convRowMap2Account(row map[string]string) *Account {
 	account.PaymentPassword = row["payment_password"]
 	return account
 }
+
+

@@ -7,6 +7,6 @@ import (
 
 func Init() {
 	token.Init()
-	common.DbInit()
-
+	common.UserDbInit()
+	common.AssetDbInit()
 }

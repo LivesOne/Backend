@@ -24,4 +24,5 @@ type (
 
 	Contacts struct {
 	}
+
 )

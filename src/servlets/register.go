@@ -4,6 +4,7 @@ import (
 	"server"
 	"servlets/accounts"
 	"servlets/constants"
+	"servlets/asset"
 )
 
 func RegisterHandlers() {
@@ -13,4 +14,5 @@ func RegisterHandlers() {
 
 	// register accounts handlers
 	accounts.RegisterHandlers()
+	asset.RegisterHandlers()
 }
