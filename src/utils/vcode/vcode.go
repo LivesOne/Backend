@@ -238,7 +238,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 			ValidationCode: code,
 			PhoneNo:        phone,
 			Vid:            MESSAGE_VID,
-			Expired:        expire,
+			Expired:        600,
 			Flag:           utils.Int2Str(flag),
 		}
 		url := config.GetConfig().SmsSvrAddr + "/validate"
