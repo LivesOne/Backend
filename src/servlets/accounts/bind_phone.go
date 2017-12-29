@@ -82,7 +82,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		secret.Phone, secret.Country, requestData.Param.VCode, 0, 0)
 	if ok == false {
 		logger.Info("bind phone: validate sms and call vcode failed")
-		response.SetResponseBase(constants.RC_DUP_PHONE)
+		response.SetResponseBase(constants.RC_INVALID_VCODE)
 		return
 	}
 

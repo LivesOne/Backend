@@ -118,7 +118,8 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	}
 	pwdSha256, err := utils.RsaDecrypt(requestData.Param.PWD, privKey)
 	if err != nil {
-		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+		logger.Info("reset password: decrypt pwd error:", err)
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
@@ -127,11 +128,12 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 
 	// save to db
 	if err := common.SetLoginPassword(account.UID, pwdDb); err != nil {
+		logger.Info("reset password: save login pwd in DB error:", err)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
-	// send response
-	response.SetResponseBase(constants.RC_OK)
-	return
+	// // send response
+	// response.SetResponseBase(constants.RC_OK)
+	// return
 }
