@@ -157,4 +157,22 @@ func (r *RedisDB) GetAll(hash string) (uid, key, token string, ret int) {
 	} else {
 		return reply["uid"], reply["key"], reply["token"], constants.ERR_INT_OK
 	}
+
+}
+
+func (r *RedisDB) GetTxID(key string) (int, int) {
+	conn := r.pool.Get()
+	defer conn.Close()
+
+	// idx, err := redis.Int(conn.Do("INCR", key))
+
+	reply, err := conn.Do("INCR", key)
+	if err != nil {
+		return -1, constants.ERR_INT_TK_DB
+	} else if reply == nil {
+		return -1, constants.ERR_INT_TK_NOTEXISTS
+	} else {
+		idx, _ := redis.Int(reply, nil)
+		return idx, constants.ERR_INT_OK
+	}
 }

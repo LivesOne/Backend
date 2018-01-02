@@ -58,3 +58,7 @@ func GetToken(hash string) (token string, err int) {
 func GetAll(hash string) (uid, key, token string, err int) {
 	return gDB.GetAll(hash)
 }
+
+func GetTxID(key string) (int, int) {
+	return gDB.GetTxID(key)
+}
