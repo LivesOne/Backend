@@ -53,6 +53,10 @@ func Sha256(in string) string {
 // [in] src : original data
 // [out] encryped data with base64 encode
 func AesEncrypt(src, key, iv string) (string, error) {
+	if (len(src) < 1) || (len(key) < 1) || (len(iv) < 1) {
+		return "", errors.New("invalid param")
+	}
+
 	encrypt, err := aesEncrypt([]byte(src), []byte(key), []byte(iv))
 	if err != nil {
 		return "", err
@@ -62,14 +66,14 @@ func AesEncrypt(src, key, iv string) (string, error) {
 
 func aesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
-	if err != nil {
+	if (err != nil) || (block == nil) {
 		logger.Info("invalid decrypt key")
 		return nil, errors.New("invalid decrypt key")
 	}
 	blockSize := block.BlockSize()
-	plaintext = PKCS5Padding(plaintext, blockSize)
+	plaintextNew := PKCS5Padding(plaintext, blockSize)
 	blockMode := cipher.NewCBCEncrypter(block, iv)
-	ciphertext := make([]byte, len(plaintext))
+	ciphertext := make([]byte, len(plaintextNew))
 	blockMode.CryptBlocks(ciphertext, plaintext)
 
 	return ciphertext, nil
@@ -79,6 +83,10 @@ func aesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 // [in] src : encryped data with base64 encode
 // [out] original data
 func AesDecrypt(src, key, iv string) (string, error) {
+	if (len(src) < 1) || (len(key) < 1) || (len(iv) < 1) {
+		return "", errors.New("invalid param")
+	}
+
 	srcDecode := Base64Decode(src)
 	orig, err := aesDecrypt(srcDecode, []byte(key), []byte(iv))
 	if err != nil {
@@ -89,7 +97,7 @@ func AesDecrypt(src, key, iv string) (string, error) {
 
 func aesDecrypt(src []byte, key []byte, iv []byte) ([]byte, error) {
 	block, err := aes.NewCipher(key)
-	if err != nil {
+	if (err != nil) || (block == nil) {
 		logger.Info("invalid decrypt key")
 		return nil, errors.New("invalid decrypt key")
 	}
@@ -115,14 +123,24 @@ func aesDecrypt(src []byte, key []byte, iv []byte) ([]byte, error) {
 
 func PKCS5Padding(src []byte, blockSize int) []byte {
 	padding := blockSize - len(src)%blockSize
+	if padding < 1 {
+		return src
+	}
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(src, padtext...)
 }
 
 func PKCS5UnPadding(src []byte) []byte {
 	length := len(src)
+	if length < 1 {
+		return src
+	}
 	unpadding := int(src[length-1])
-	return src[:(length - unpadding)]
+	lenNew := length - unpadding
+	if (lenNew < 0) || (lenNew > length-1) {
+		return src
+	}
+	return src[:lenNew]
 }
 
 //convert base64 encoded string to binary as input
