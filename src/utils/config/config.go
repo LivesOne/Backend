@@ -50,8 +50,16 @@ var gPrivKeyContent []byte
 // LoadConfig load the configuration from the configuration file
 func LoadConfig(cfgFilename string) error {
 
-	return utils.ReadJSONFile(cfgFilename, &gConfig)
+	err := utils.ReadJSONFile(cfgFilename, &gConfig)
+	if err != nil {
+		return err
+	}
+	if gConfig.isValid() == false {
+		logger.Info("configuration item not integrity")
+		return errors.New("configuration item not integrity")
+	}
 
+	return nil
 }
 
 // GetConfig get the config data
@@ -87,4 +95,26 @@ func GetPrivateKey(ver int) ([]byte, error) {
 // GetPrivateKeyFilename returns the rsa private key file name
 func GetPrivateKeyFilename() string {
 	return filepath.Join(utils.GetAppBaseDir(), "../config", gConfig.PrivKey)
+}
+
+func (db *DBConfig) isValid() bool {
+
+	return len(db.DBHost) > 0 &&
+		len(db.DBUser) > 0 &&
+		len(db.DBUserPwd) > 0 &&
+		len(db.DBDatabase) > 0
+
+}
+
+func (cfg *Configuration) isValid() bool {
+
+	return len(cfg.ServerAddr) > 0 &&
+		len(cfg.PrivKey) > 0 &&
+		cfg.User.isValid() &&
+		cfg.Asset.isValid() &&
+		len(cfg.RedisAddr) > 0 &&
+		len(cfg.RedisAuth) > 0 &&
+		len(cfg.SmsSvrAddr) > 0 &&
+		len(cfg.MailSvrAddr) > 0 &&
+		len(cfg.ImgSvrAddr) > 0
 }
