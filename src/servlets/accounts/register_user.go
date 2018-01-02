@@ -89,8 +89,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
-		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-		insertAndCheckUid(account)
+		insertAndCheckUid(account, hashedPWD)
 	case constants.LOGIN_TYPE_EMAIL:
 		f, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
 		if f {
@@ -100,9 +99,9 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				if db_factory.CheckDuplicateByColumn(err, "email") {
 					response.SetResponseBase(constants.RC_DUP_EMAIL)
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
-					account.UIDString, account.UID = getUid()
-					account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-					e := insertAndCheckUid(account)
+					// account.UIDString, account.UID = getUid()
+					// account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
+					e := insertAndCheckUid(account, hashedPWD)
 					if e != nil {
 						if db_factory.CheckDuplicateByColumn(err, "email") {
 							response.SetResponseBase(constants.RC_DUP_EMAIL)
@@ -126,9 +125,9 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				if db_factory.CheckDuplicateByColumn(err, "phone") {
 					response.SetResponseBase(constants.RC_DUP_PHONE)
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
-					account.UIDString, account.UID = getUid()
-					account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-					e := insertAndCheckUid(account)
+					// account.UIDString, account.UID = getUid()
+					// account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
+					e := insertAndCheckUid(account, hashedPWD)
 					if e != nil {
 						if db_factory.CheckDuplicateByColumn(err, "phone") {
 							response.SetResponseBase(constants.RC_DUP_PHONE)
@@ -215,16 +214,18 @@ func getUid() (string, int64) {
 	return uid, uid_num
 }
 
-func insertAndCheckUid(account *common.Account) error {
+func insertAndCheckUid(account *common.Account, hashedPWD string) error {
 	var err error
 	for {
+		account.UIDString, account.UID = getUid()
+		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 		_, err = common.InsertAccount(account)
 		if err == nil {
 			break
 		} else {
-			if db_factory.CheckDuplicateByColumn(err, "uid") {
-				account.UIDString, account.UID = getUid()
-			} else {
+			if db_factory.CheckDuplicateByColumn(err, "uid") == false {
+				// account.UIDString, account.UID = getUid()
+				// } else {
 				break
 			}
 		}
@@ -240,7 +241,7 @@ func getAccount(data *registerRequest) (*common.Account, error) {
 	// 	return nil, err
 	// }
 
-	account.UIDString, account.UID = getUid()
+	// account.UIDString, account.UID = getUid()  // delay this before insert to DB
 
 	account.Email = data.Param.EMail
 	account.Country = data.Param.Country

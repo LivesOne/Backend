@@ -74,7 +74,7 @@ func aesEncrypt(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	plaintextNew := PKCS5Padding(plaintext, blockSize)
 	blockMode := cipher.NewCBCEncrypter(block, iv)
 	ciphertext := make([]byte, len(plaintextNew))
-	blockMode.CryptBlocks(ciphertext, plaintext)
+	blockMode.CryptBlocks(ciphertext, plaintextNew)
 
 	return ciphertext, nil
 }
@@ -123,9 +123,9 @@ func aesDecrypt(src []byte, key []byte, iv []byte) ([]byte, error) {
 
 func PKCS5Padding(src []byte, blockSize int) []byte {
 	padding := blockSize - len(src)%blockSize
-	if padding < 1 {
-		return src
-	}
+	// if padding < 1 {
+	// 	return src
+	// }
 	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
 	return append(src, padtext...)
 }
