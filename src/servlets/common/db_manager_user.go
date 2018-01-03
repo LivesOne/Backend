@@ -65,20 +65,28 @@ func ExistsPhone(country int, phone string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
-func GetUidByEmail(email string) int64 {
-	row, _ := gDbUser.QueryRow("select uid from account where email = ? limit 1", email)
+func GetAssetByUid(uid int64) (int64,int) {
+	row, _ := gDbUser.QueryRow("select uid,status from account where uid = ? limit 1", uid)
 	if row == nil {
-		return 0
+		return 0,0
 	}
-	return utils.Str2Int64(row["uid"])
+	return utils.Str2Int64(row["uid"]),utils.Str2Int(row["status"])
 }
 
-func GetUidByPhone(country int, phone string) int64 {
-	row, _ := gDbUser.QueryRow("select uid from account where country = ? and phone = ? limit 1", country, phone)
+func GetAssetByEmail(email string) (int64,int) {
+	row, _ := gDbUser.QueryRow("select uid,status from account where email = ? limit 1", email)
 	if row == nil {
-		return 0
+		return 0,0
 	}
-	return utils.Str2Int64(row["uid"])
+	return utils.Str2Int64(row["uid"]),utils.Str2Int(row["status"])
+}
+
+func GetAssetByPhone(country int, phone string) (int64,int) {
+	row, _ := gDbUser.QueryRow("select uid,status from account where country = ? and phone = ? limit 1", country, phone)
+	if row == nil {
+		return 0,0
+	}
+	return utils.Str2Int64(row["uid"]),utils.Str2Int(row["status"])
 }
 
 func InsertAccount(account *Account) (int64, error) {
@@ -195,6 +203,12 @@ func SetLoginPassword(uid int64, password string) error {
 
 func SetPaymentPassword(uid int64, password string) error {
 	_, err := gDbUser.Exec("update account set payment_password = ? where uid = ?", password, uid)
+	return err
+}
+
+
+func SetAssetStatus(uid int64,status int)error{
+	_, err := gDbUser.Exec("update account set status = ? where uid = ?", status, uid)
 	return err
 }
 

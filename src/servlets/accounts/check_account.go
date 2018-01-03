@@ -8,14 +8,17 @@ import (
 )
 
 const (
-	CHECK_TYPE_UID = 1
+	CHECK_TYPE_UID   = 1
 	CHECK_TYPE_EMAIL = 2
 	CHECK_TYPE_PHONE = 3
 
+	CHECK_ACCOUNT_EXISTS     = 1
+	CHECK_ACCOUNT_NOT_EXISTS = 2
 )
+
 type checkAccountRequest struct {
-	Base  common.BaseInfo   `json:"base"`
-	Param checkAccountParam `json:"param"`
+	Base  *common.BaseInfo   `json:"base"`
+	Param *checkAccountParam `json:"param"`
 }
 
 type checkAccountParam struct {
@@ -23,13 +26,15 @@ type checkAccountParam struct {
 	Country int    `json:"country"`
 	Phone   string `json:"phone"`
 	EMail   string `json:"email"`
-	Uid     string    `json:"uid"`
+	Uid     string `json:"uid"`
 }
 
 type checkAccountResponse struct {
-	Exists int `json:"exists"`
-	Uid string `json:"uid"`
+	Exists int    `json:"exists"`
+	Uid    string `json:"uid"`
+	Status int    `json:"status"`
 }
+
 // checkVCodeHandler
 type checkAccountHandler struct {
 	//header      *common.HeaderParams // request header param
@@ -52,25 +57,29 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 	data := checkAccountRequest{}
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
-	resData := checkAccountResponse{Exists:2}
+	resData := checkAccountResponse{Exists: CHECK_ACCOUNT_NOT_EXISTS}
 
 	switch data.Param.Type {
 	case CHECK_TYPE_UID:
-		if common.ExistsUID(utils.Str2Int64(data.Param.Uid)) {
-			resData.Exists = 1
-			resData.Uid = data.Param.Uid
+		uid, status := common.GetAssetByUid((utils.Str2Int64(data.Param.Uid)))
+		if uid != 0 {
+			resData.Exists = CHECK_ACCOUNT_EXISTS
+			resData.Uid = utils.Int642Str(uid)
+			resData.Status = status
 		}
 	case CHECK_TYPE_EMAIL:
-		uid := common.GetUidByEmail(data.Param.EMail)
+		uid, status := common.GetAssetByEmail(data.Param.EMail)
 		if uid != 0 {
-			resData.Exists = 1
+			resData.Exists = CHECK_ACCOUNT_EXISTS
 			resData.Uid = utils.Int642Str(uid)
+			resData.Status = status
 		}
 	case CHECK_TYPE_PHONE:
-		uid := common.GetUidByPhone(data.Param.Country,data.Param.Phone)
+		uid, status := common.GetAssetByPhone(data.Param.Country, data.Param.Phone)
 		if uid != 0 {
-			resData.Exists = 1
+			resData.Exists = CHECK_ACCOUNT_EXISTS
 			resData.Uid = utils.Int642Str(uid)
+			resData.Status = status
 		}
 	}
 	response.Data = resData
