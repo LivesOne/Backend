@@ -7,9 +7,7 @@ import (
 	"io"
 	"net/http"
 	"servlets/constants"
-	"servlets/token"
 	"strconv"
-	"time"
 	"utils"
 	"utils/logger"
 )
@@ -137,13 +135,16 @@ func GenerateUID() string {
 
 // GenerateTxID generate a new transaction ID
 func GenerateTxID() int64 {
-	rid, err := token.GetTxID("id_tx")
+	rid, err := GetRedisDB().GetTxID("id_tx")
 	if err != constants.ERR_INT_OK {
 		return -1
 	}
 
+	// rid ONLY live in lower 22 bits
+	rid = rid & 0x00000000003FFFFF
+
 	const timebase int64 = 1514764800000 // Jan 1, 2018, 00:00:00
-	delta := time.Now().UnixNano()/1000/1000 - timebase
+	delta := utils.GetTimestamp13() - timebase
 
 	txid := (delta << 22) & 0x7FFFFFFFFFC00000 // move left 22 bit
 	txid += int64(rid)

@@ -1,6 +1,7 @@
 package token
 
 import (
+	"servlets/common"
 	"servlets/constants"
 	"utils"
 	"utils/config"
@@ -9,7 +10,7 @@ import (
 	"github.com/thanhpk/randstr"
 )
 
-var gDB RedisDB
+var gDB *common.RedisDB = common.GetRedisDB()
 
 func Init() {
 	//	gDB = RedisDB{}
@@ -59,6 +60,6 @@ func GetAll(hash string) (uid, key, token string, err int) {
 	return gDB.GetAll(hash)
 }
 
-func GetTxID(key string) (int, int) {
+func GetTxID(key string) (int64, int) {
 	return gDB.GetTxID(key)
 }
