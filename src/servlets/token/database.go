@@ -1,4 +1,4 @@
-package common
+package token
 
 // const (
 // 	TK_ERR_OK        = 0

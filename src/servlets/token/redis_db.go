@@ -1,67 +1,18 @@
-package common
+package token
 
 import (
+	"servlets/common"
 	"servlets/constants"
 	"time"
-
-	"utils/logger"
 
 	"github.com/garyburd/redigo/redis"
 )
 
 type RedisDB struct {
-	pool *redis.Pool
-}
-
-var gDB RedisDB
-
-func GetRedisDB() *RedisDB {
-	return &gDB
-}
-
-func (r *RedisDB) Open(conf map[string]string) {
-	logger.Debug(conf)
-	r.pool = &redis.Pool{
-		MaxIdle:     8,
-		MaxActive:   16,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			//c, err := redis.Dial("tcp", conf["addr"])
-			c, err := redis.Dial("tcp", conf["addr"],
-				redis.DialConnectTimeout(500*time.Millisecond),
-				redis.DialReadTimeout(500*time.Millisecond),
-				redis.DialWriteTimeout(500*time.Millisecond),
-				redis.DialKeepAlive(1*time.Second),
-				redis.DialPassword(conf["auth"]))
-			if err != nil {
-				logger.Info("token: can't connect to redis server")
-				return nil, err
-			}
-
-			// if len(conf["auth"]) > 0 {
-			// 	succ, err := redis.Bool(c.Do("AUTH", conf["auth"]))
-			// 	if err != nil {
-			// 		logger.Info("token: can't connect to redis server")
-			// 		c.Close()
-			// 		return nil, err
-			// 	} else if !succ {
-			// 		logger.Info("token: redis server password wrong")
-			// 		c.Close()
-			// 		return nil, errors.New("redis server password wrong")
-			// 	}
-			// }
-			return c, err
-		},
-
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
 }
 
 func (r *RedisDB) Insert(hash, uid, key, token string, expire int64) int {
-	conn := r.pool.Get()
+	conn := common.GetRedisConn()
 	defer conn.Close()
 
 	// _, err := conn.Do("WATCH", "tk:"+hash)
@@ -87,7 +38,7 @@ func (r *RedisDB) Insert(hash, uid, key, token string, expire int64) int {
 }
 
 func (r *RedisDB) Update(hash, key string, expire int64) int {
-	conn := r.pool.Get()
+	conn := common.GetRedisConn()
 	defer conn.Close()
 
 	// _, err := conn.Do("WATCH", "tk:"+hash)
@@ -113,7 +64,7 @@ func (r *RedisDB) Update(hash, key string, expire int64) int {
 }
 
 func (r *RedisDB) Delete(hash string) int {
-	conn := r.pool.Get()
+	conn := common.GetRedisConn()
 	defer conn.Close()
 
 	_, err := conn.Do("DEL", "tk:"+hash)
@@ -125,7 +76,7 @@ func (r *RedisDB) Delete(hash string) int {
 }
 
 func (r *RedisDB) getField(hash string, field string) (string, int) {
-	conn := r.pool.Get()
+	conn := common.GetRedisConn()
 	defer conn.Close()
 
 	reply, err := conn.Do("HGET", "tk:"+hash, field)
@@ -152,7 +103,7 @@ func (r *RedisDB) GetToken(hash string) (string, int) {
 }
 
 func (r *RedisDB) GetAll(hash string) (uid, key, token string, ret int) {
-	conn := r.pool.Get()
+	conn := common.GetRedisConn()
 	defer conn.Close()
 
 	reply, err := redis.StringMap(conn.Do("HGETALL", "tk:"+hash))
@@ -168,19 +119,19 @@ func (r *RedisDB) GetAll(hash string) (uid, key, token string, ret int) {
 
 }
 
-func (r *RedisDB) GetTxID(key string) (int64, int) {
-	conn := r.pool.Get()
-	defer conn.Close()
+// func (r *RedisDB) GetTxID(key string) (int64, int) {
+// 	conn := common.GetRedisConn()
+// 	defer conn.Close()
 
-	// idx, err := redis.Int(conn.Do("INCR", key))
+// 	// idx, err := redis.Int(conn.Do("INCR", key))
 
-	reply, err := conn.Do("INCR", key)
-	if err != nil {
-		return -1, constants.ERR_INT_TK_DB
-	} else if reply == nil {
-		return -1, constants.ERR_INT_TK_NOTEXISTS
-	} else {
-		idx, _ := redis.Int64(reply, nil)
-		return idx, constants.ERR_INT_OK
-	}
-}
+// 	reply, err := conn.Do("INCR", key)
+// 	if err != nil {
+// 		return -1, constants.ERR_INT_TK_DB
+// 	} else if reply == nil {
+// 		return -1, constants.ERR_INT_TK_NOTEXISTS
+// 	} else {
+// 		idx, _ := redis.Int64(reply, nil)
+// 		return idx, constants.ERR_INT_OK
+// 	}
+// }

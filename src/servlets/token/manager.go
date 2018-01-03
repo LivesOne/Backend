@@ -10,12 +10,12 @@ import (
 	"github.com/thanhpk/randstr"
 )
 
-var gDB *common.RedisDB = common.GetRedisDB()
+var gDB RedisDB
 
 func Init() {
-	//	gDB = RedisDB{}
+	gDB = RedisDB{}
 	logger.Debug(config.GetConfig().RedisAddr)
-	gDB.Open(map[string]string{
+	common.Init_redis(map[string]string{
 		"addr": config.GetConfig().RedisAddr,
 		"auth": config.GetConfig().RedisAuth,
 	})
@@ -58,8 +58,4 @@ func GetToken(hash string) (token string, err int) {
 
 func GetAll(hash string) (uid, key, token string, err int) {
 	return gDB.GetAll(hash)
-}
-
-func GetTxID(key string) (int64, int) {
-	return gDB.GetTxID(key)
 }

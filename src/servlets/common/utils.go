@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"utils"
 	"utils/logger"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -135,7 +137,7 @@ func GenerateUID() string {
 
 // GenerateTxID generate a new transaction ID
 func GenerateTxID() int64 {
-	rid, err := GetRedisDB().GetTxID("id_tx")
+	rid, err := getTxID("id_tx")
 	if err != constants.ERR_INT_OK {
 		return -1
 	}
@@ -152,4 +154,24 @@ func GenerateTxID() int64 {
 	// fmt.Println("id from redis:", rid, " txid:", txid)
 
 	return txid
+}
+
+// getTxID gets the INCR tx ID from the redis
+// put this function in the redis_db.go file && call it from the GenerateTxID()
+//        causes "import cycle" error
+func getTxID(key string) (int64, int) {
+	conn := GetRedisConn()
+	defer conn.Close()
+
+	// idx, err := redis.Int(conn.Do("INCR", key))
+
+	reply, err := conn.Do("INCR", key)
+	if err != nil {
+		return -1, constants.ERR_INT_TK_DB
+	} else if reply == nil {
+		return -1, constants.ERR_INT_TK_NOTEXISTS
+	} else {
+		idx, _ := redis.Int64(reply, nil)
+		return idx, constants.ERR_INT_OK
+	}
 }
