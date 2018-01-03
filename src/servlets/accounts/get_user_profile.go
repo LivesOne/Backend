@@ -8,6 +8,11 @@ import (
 	"utils/logger"
 )
 
+type profileResponse struct {
+	common.Account
+	Have_pay_pwd bool `json:"have_pay_pwd"`
+}
+
 // getProfileHandler
 type getProfileHandler struct {
 }
@@ -42,6 +47,10 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
+	profile := profileResponse{
+		Have_pay_pwd: (len(account.PaymentPassword) > 0),
+	}
+
 	account.ID = 0
 	account.UID = 0
 	account.LoginPassword = ""
@@ -49,5 +58,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.From = ""
 	account.RegisterType = 0
 
-	response.Data = account
+	profile.Account = *account
+
+	response.Data = profile
 }
