@@ -14,6 +14,7 @@ import (
 
 //var gDbUser *sql.DB
 var gDbUser *db_factory.DBPool
+
 func UserDbInit() error {
 
 	//dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?timeout=90s&charset=utf8",
@@ -45,9 +46,6 @@ func UserDbInit() error {
 	} else {
 		logger.Fatal(gDbUser.Err())
 	}
-
-
-
 
 	return nil
 }
@@ -205,7 +203,7 @@ func convRowMap2Account(row map[string]string) *Account {
 	account.ID = utils.Str2Int64(row["id"])
 	account.UID = utils.Str2Int64(row["uid"])
 	account.UIDString = row["uid"]
-	account.Nickname = row["nick_name"]
+	account.Nickname = row["nickname"]
 	account.Email = row["email"]
 	account.Country = utils.Str2Int(row["country"])
 	account.Phone = row["phone"]
@@ -219,5 +217,3 @@ func convRowMap2Account(row map[string]string) *Account {
 	account.PaymentPassword = row["payment_password"]
 	return account
 }
-
-
