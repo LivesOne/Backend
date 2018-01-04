@@ -91,7 +91,13 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			return
 		}
 
-		if !common.TransAccountLvt(perPending.From,perPending.To,perPending.Value) {
+		if !common.TransAccountLvt(txid,perPending.From,perPending.To,perPending.Value) {
+			//插入commited
+			common.InsertCommited(perPending)
+			//删除pending
+			common.DeletePending(txid)
+			//删除数据库中txid
+			common.RemoveTXID(txid)
 			response.SetResponseBase(constants.RC_INSUFFICIENT_BALANCE)
 			return
 		}

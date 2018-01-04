@@ -47,7 +47,12 @@ func txCommitDelete(db,c string,txid int64)error{
 	return collection.Remove(bson.M{"_id":txid})
 }
 
-
+func txCommonDel(db,tb string,id interface{})error{
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(db).C(tb)
+	return collection.RemoveId(id)
+}
 
 func InsertPending(pending *DTTXHistory) error {
 	return txCommonInsert(txdbc.DBDatabase, PENDING, pending)
@@ -74,6 +79,8 @@ func FindPending(txid int64)*DTTXHistory{
 	return &res
 }
 
+
+
 func FindAndModify(txid int64,updDoc *DTTXHistory)*DTTXHistory{
 	session := tSession.Clone()
 	defer session.Close()
@@ -97,5 +104,7 @@ func FindAndModify(txid int64,updDoc *DTTXHistory)*DTTXHistory{
 	return &res
 }
 
-
+func DelPending(txid int64)error{
+	return txCommitDelete(txdbc.DBDatabase,PENDING,txid)
+}
 

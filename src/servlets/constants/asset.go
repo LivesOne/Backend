@@ -10,4 +10,12 @@ const (
 
 	AUTH_TYPE_LOGIN_PWD = 1
 	AUTH_TYPE_PAYMENT_PWD = 2
+
+
+
+
+	ASSET_STATUS_INIT = 1
+
+
+
 )

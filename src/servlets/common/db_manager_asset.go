@@ -8,6 +8,8 @@ import (
 	_ "utils/config"
 	"utils/db_factory"
 	"utils/logger"
+	"database/sql"
+	"servlets/constants"
 )
 
 const  (
@@ -63,8 +65,12 @@ func QueryBalance(uid int64)int64{
 	return 0
 }
 
-func TransAccountLvt(from,to,value int64)(bool){
-	tx,err := gDbUser.Begin()
+func TransAccountLvt(txid,from,to,value int64)(bool){
+	//检测资产初始化情况
+	CheckAndInitAsset(from)
+	CheckAndInitAsset(to)
+
+	tx,err := gDBAsset.Begin()
 	if err!=nil {
 		logger.Error("db pool begin error ",err.Error())
 		return false
@@ -94,6 +100,47 @@ func TransAccountLvt(from,to,value int64)(bool){
 		tx.Rollback()
 		return false
 	}
+
+	//txid 写入数据库
+	InsertTXID(txid,tx)
+
+
 	tx.Commit()
+
 	return true
+}
+
+func CheckAndInitAsset(uid int64){
+	uid,status := GetAssetByUid(uid)
+	if status != constants.ASSET_STATUS_INIT {
+		InsertAsset(uid)
+		InsertReward(uid)
+	}
+}
+
+func InsertTXID(txid int64,tx *sql.Tx)error {
+	_,err := tx.Exec("Insert into recent_tx_ids values (?)", txid)
+	if err != nil {
+		logger.Error("query error ",err.Error())
+	}
+	return err
+
+}
+
+func RemoveTXID(txid int64) error{
+	_,err := gDBAsset.Exec("delete from recent_tx_ids where txid = ?", txid)
+	if err != nil {
+		logger.Error("query error ",err.Error())
+	}
+	return err
+}
+
+func InsertReward(uid int64) {
+	sql := "insert ignore into user_reward (uid,total,lastday,lastmodify) values (?,?,?,?) "
+	gDbUser.Exec(sql, uid, 0, 0, 0)
+}
+
+func InsertAsset(uid int64) {
+	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
+	gDbUser.Exec(sql, uid, 0, 0)
 }
