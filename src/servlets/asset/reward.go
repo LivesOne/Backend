@@ -55,7 +55,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 
 	base := requestData.Base
 
-	if base!= nil || !base.App.IsValid() {
+	if base == nil || !base.App.IsValid() {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
