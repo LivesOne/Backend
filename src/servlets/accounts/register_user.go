@@ -91,56 +91,44 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	case constants.LOGIN_TYPE_UID:
 		insertAndCheckUid(account, hashedPWD)
 	case constants.LOGIN_TYPE_EMAIL:
-		f, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
-		if f {
+		ok, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
+		if ok == false {
+			response.SetResponseBase(constants.RC_INVALID_VCODE)
+			return
+		}
+
+		for {
+			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithEmail(account)
 			if err != nil {
 				if db_factory.CheckDuplicateByColumn(err, "email") {
 					response.SetResponseBase(constants.RC_DUP_EMAIL)
+					return
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
-					// account.UIDString, account.UID = getUid()
-					// account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-					e := insertAndCheckUid(account, hashedPWD)
-					if e != nil {
-						if db_factory.CheckDuplicateByColumn(err, "email") {
-							response.SetResponseBase(constants.RC_DUP_EMAIL)
-						} else {
-							response.SetResponseBase(constants.RC_SYSTEM_ERR)
-						}
-					}
+					continue
 				}
-				return
 			}
-		} else {
+		}
+	case constants.LOGIN_TYPE_PHONE:
+		ok, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
+		if ok == false {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
-	case constants.LOGIN_TYPE_PHONE:
-		f, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
-		if f {
+
+		for {
+			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithPhone(account)
 			if err != nil {
 				if db_factory.CheckDuplicateByColumn(err, "phone") {
 					response.SetResponseBase(constants.RC_DUP_PHONE)
+					return
 				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
-					// account.UIDString, account.UID = getUid()
-					// account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-					e := insertAndCheckUid(account, hashedPWD)
-					if e != nil {
-						if db_factory.CheckDuplicateByColumn(err, "phone") {
-							response.SetResponseBase(constants.RC_DUP_PHONE)
-						} else {
-							response.SetResponseBase(constants.RC_SYSTEM_ERR)
-						}
-					}
+					continue
 				}
-				return
 			}
-		} else {
-			response.SetResponseBase(constants.RC_INVALID_VCODE)
-			return
 		}
 	}
 
@@ -154,12 +142,6 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		Regtime: account.RegisterTime,
 	}
 }
-
-// func setResponseBase(resData *common.ResponseData, error constants.Error) {
-// 	resData.Base.RC = error.Rc
-// 	resData.Base.Msg = error.Msg
-// 	logger.Info(error.Msg)
-// }
 
 func checkRequestParams(header *common.HeaderParams, data *registerRequest) bool {
 	if header.Timestamp < 1 {
@@ -220,13 +202,9 @@ func insertAndCheckUid(account *common.Account, hashedPWD string) error {
 		account.UIDString, account.UID = getUid()
 		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 		_, err = common.InsertAccount(account)
-		if err == nil {
-			break
-		} else {
-			if db_factory.CheckDuplicateByColumn(err, "uid") == false {
-				// account.UIDString, account.UID = getUid()
-				// } else {
-				break
+		if err != nil {
+			if db_factory.CheckDuplicateByColumn(err, "uid") {
+				continue
 			}
 		}
 	}
