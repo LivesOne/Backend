@@ -32,6 +32,13 @@ var (
 	RC_EMAIL_NOT_MATCH     = Error{20007, "email not match"}
 	RC_PHONE_NOT_MATCH     = Error{20008, "phone not match"}
 
+	RC_ACCOUNT_ACCESS_LIMITED = Error{21001, "account access limited"}
+	RC_INSUFFICIENT_BALANCE   = Error{21002, "insufficient balance"}
+	RC_INVALID_OBJECT_ACCOUNT = Error{21003, "invalid object account"}
+	RC_TRANS_AUTH_FAILED      = Error{21004, "transaction authentication failed"}
+	RC_TRANS_IN_PROGRESS      = Error{21005, "transaction in progress"}
+	RC_TRANS_TIMEOUT          = Error{21006, "transaction timeout"}
+
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
 	// RC_TOKEN_DB                        = Error{20103, "token db not connect"}

@@ -81,6 +81,8 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	pwd,err := utils.AesDecrypt(prePwd,key,iv)
 	if err != nil {
 		logger.Error("pwd Decrypt error  ",err.Error())
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
 	}
 
 	from := utils.Str2Int64(uidString)

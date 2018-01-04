@@ -63,14 +63,25 @@ func QueryBalance(uid int64)int64{
 	return 0
 }
 
-func TransAccountLvt(from,to,value int64)bool{
+func TransAccountLvt(from,to,value int64)(bool){
 	tx,err := gDbUser.Begin()
 	if err!=nil {
 		logger.Error("db pool begin error ",err.Error())
 		return false
 	}
 	tx.Exec("select * from user_asset where uid in (?,?)",from,to)
-	//TODO 余额校验是否够支付
+
+	//查询转出账户余额是否满足需要
+	var balance int64
+	row := tx.QueryRow("select balance from user_asset where uid  = ?",from)
+	row.Scan(&balance)
+
+	if balance < value {
+		tx.Rollback()
+		return false
+	}
+
+
 	_,err1 := tx.Exec("update user_asset set balance = balance - ? where uid = ?",value,from)
 	if err1 != nil {
 		logger.Error("sql error ",err1.Error())

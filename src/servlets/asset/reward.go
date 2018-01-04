@@ -5,7 +5,6 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils"
-	"strconv"
 )
 
 
@@ -66,7 +65,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 
 	re := common.QueryReward(intUid)
 
-	yesterday := formatLVT(re.Yesterday)
+	yesterday := utils.LVTintToFloatStr(re.Yesterday)
 
 
 
