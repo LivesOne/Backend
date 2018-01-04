@@ -15,7 +15,7 @@ var gDBAsset *db_factory.DBPool
 
 func AssetDbInit() error {
 
-	db_config_asset := config.GetConfig().User
+	db_config_asset := config.GetConfig().Asset
 	facConfig_asset := db_factory.Config{
 		Host:        db_config_asset.DBHost,
 		UserName:    db_config_asset.DBUser,

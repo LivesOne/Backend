@@ -68,7 +68,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	t := re.Lastmodify
 	nt := utils.GetTimestamp13()
 
-	if t < (nt - DAY_1){
+	if !utils.IsNextDay(t,nt){
 		yesterday = "0.00"
 	}
 	//如果时间戳不是昨天，返回0
