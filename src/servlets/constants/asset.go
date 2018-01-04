@@ -1,0 +1,13 @@
+package constants
+
+const (
+	TX_TYPE_REWARD   = 1
+	TX_TYPE_TRANS    = 2
+	TX_STATUS_DEFAULT = 0
+	TX_STATUS_COMMIT = 1
+	TX_CODE_SUCC = 0
+
+
+	AUTH_TYPE_LOGIN_PWD = 1
+	AUTH_TYPE_PAYMENT_PWD = 2
+)

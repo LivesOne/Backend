@@ -27,7 +27,7 @@ type Configuration struct {
 	User DBConfig
 	// asset db config
 	Asset DBConfig
-
+	TxHistory DBConfig
 	// redis的参数
 	RedisAddr string //"[ip]:port"
 	RedisAuth string

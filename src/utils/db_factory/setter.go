@@ -5,7 +5,7 @@ import (
 	log "utils/logger"
 )
 
-func (m DBPool) Query(query string, args ...interface{}) []map[string]string {
+func (m *DBPool) Query(query string, args ...interface{}) []map[string]string {
 	log.Debug("Query sql :(", query,")")
 	rows, err := m.currDB.Query(query, args...)
 	defer rows.Close()
@@ -20,7 +20,7 @@ func (m DBPool) Query(query string, args ...interface{}) []map[string]string {
 	return res
 }
 
-func (m DBPool) QueryRow(query string, args ...interface{}) (map[string]string,error) {
+func (m *DBPool) QueryRow(query string, args ...interface{}) (map[string]string,error) {
 	log.Debug("Query Row sql :(", query,")")
 	rows, err := m.currDB.Query(query, args...)
 	defer rows.Close()
@@ -33,7 +33,7 @@ func (m DBPool) QueryRow(query string, args ...interface{}) (map[string]string,e
 	return nil,err
 }
 
-func (m DBPool) Exec(sql string, args ...interface{}) (sql.Result,error) {
+func (m *DBPool) Exec(sql string, args ...interface{}) (sql.Result,error) {
 	log.Debug("Exec sql :(", sql,")")
 	res, err := m.currDB.Exec(sql, args...)
 	if err != nil {
@@ -42,26 +42,30 @@ func (m DBPool) Exec(sql string, args ...interface{}) (sql.Result,error) {
 	return res,err
 }
 
-func (m DBPool) Prepare(query string) (*sql.Stmt, error) {
+func (m *DBPool) Prepare(query string) (*sql.Stmt, error) {
 	return m.currDB.Prepare(query)
 }
 
-func (m DBPool) GetDb() *sql.DB {
+func (m *DBPool) GetDb() *sql.DB {
 	return m.currDB
 }
 
-func (m DBPool) Close() {
+func (m *DBPool) Close() {
 	m.currDB.Close()
 }
 
-func (m DBPool) Ping() error {
+func (m *DBPool) Ping() error {
 	return m.currDB.Ping()
 }
 
-func (m DBPool) IsConn() bool {
+func (m *DBPool) IsConn() bool {
 	return m.isConn
 }
 
-func (m DBPool) Err() error {
+func (m *DBPool) Err() error {
 	return m.err
+}
+
+func (m *DBPool) Begin()(*sql.Tx, error){
+	return m.currDB.Begin()
 }

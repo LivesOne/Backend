@@ -10,6 +10,9 @@ import (
 	"utils/logger"
 )
 
+const  (
+	CONV_LVT = 10000*10000
+)
 //var gDbUser *sql.DB
 var gDBAsset *db_factory.DBPool
 
@@ -45,4 +48,41 @@ func QueryReward(uid int64) *Reward {
 		Lastmodify: utils.Str2Int64(row["lastmodify"]),
 		Uid:        uid,
 	}
+}
+
+
+func QueryBalance(uid int64)int64{
+	row, err := gDBAsset.QueryRow("select balance from user_asset where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"])
+	}
+	return 0
+}
+
+func TransAccountLvt(from,to,value int64)bool{
+	tx,err := gDbUser.Begin()
+	if err!=nil {
+		logger.Error("db pool begin error ",err.Error())
+		return false
+	}
+	tx.Exec("select * from user_asset where uid in (?,?)",from,to)
+	//TODO 余额校验是否够支付
+	_,err1 := tx.Exec("update user_asset set balance = balance - ? where uid = ?",value,from)
+	if err1 != nil {
+		logger.Error("sql error ",err1.Error())
+		tx.Rollback()
+		return false
+	}
+	_,err2 := tx.Exec("update user_asset set balance = balance + ? where uid = ?",value,to)
+	if err2 != nil {
+		logger.Error("sql error ",err2.Error())
+		tx.Rollback()
+		return false
+	}
+	tx.Commit()
+	return true
 }

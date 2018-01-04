@@ -73,9 +73,15 @@ const (
 
 	// Contacts Sync APIs
 
-
 	//Assets Management APIs
 
-
 	ASSET_REWARD = "/asset/v1/reward"
+
+	ASSET_BALANCE = "/asset/v1/balance"
+
+	ASSET_TRANS_PREPARE = "/asset/v1/trans/prepare"
+
+	ASSET_TRANS_COMMIT = "/asset/v1/trans/commit"
+
+	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
 )

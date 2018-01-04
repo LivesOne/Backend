@@ -8,10 +8,6 @@ import (
 	"strconv"
 )
 
-const  (
-	CONV_LVT = 10000*10000
-	DAY_1 = 24*60*60*1000
-)
 
 type rewardParam struct {
 	Uid string `json:"uid"`
@@ -82,12 +78,9 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	}
 	//如果时间戳不是昨天，返回0
 	response.Data = rewardResData{
-		Total:     formatLVT(re.Total),
+		Total:     utils.LVTintToFloatStr(re.Total),
 		Yesterday: yesterday,
 	}
 
 }
 
-func formatLVT(lvt int64)string{
-	return strconv.FormatFloat((float64(lvt) / CONV_LVT),'f',8,64)
-}

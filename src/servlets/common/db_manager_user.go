@@ -212,6 +212,24 @@ func SetAssetStatus(uid int64,status int)error{
 	return err
 }
 
+func CheckLoginPwd(uid int64,pwd string)bool{
+	row,err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and login_password = ?",uid,pwd)
+	if err != nil {
+		logger.Error("query err ",err.Error())
+		return false
+	}
+	return utils.Str2Int(row["c"])>0
+}
+
+func CheckPaymentPwd(uid int64,pwd string)bool{
+	row,err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and payment_password = ?",uid,pwd)
+	if err != nil {
+		logger.Error("query err ",err.Error())
+		return false
+	}
+	return utils.Str2Int(row["c"])>0
+}
+
 func convRowMap2Account(row map[string]string) *Account {
 	var account *Account = &Account{}
 	account.ID = utils.Str2Int64(row["id"])

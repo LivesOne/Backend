@@ -24,6 +24,7 @@ const (
 
 	DayDuration  = 24 * time.Hour
 	TwoDayDuration = 2 * DayDuration
+	CONV_LVT = 10000*10000
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -135,4 +136,14 @@ func Timestamp13ToDate(timestamp int64) time.Time {
 	timeLocal := time.Unix(second, nanosecond)
 	timeUtc := timeLocal.UTC()
 	return timeUtc
+}
+
+func LVTintToFloatStr(lvt int64)string{
+	return strconv.FormatFloat((float64(lvt) / CONV_LVT),'f',8,64)
+}
+
+
+func FloatStrToLVTint(lvt string)int64{
+	fs,_ := strconv.ParseFloat(lvt,64)
+	return int64(fs*CONV_LVT)
 }

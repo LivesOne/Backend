@@ -13,6 +13,14 @@
         "DBUserPwd" : "U9D$WHTo",
         "DBDatabase" : "livesone_user"
     },
+
+    "TxHistory" :
+    {
+        "DBHost" : "10.100.15.96:27017",
+        "DBUser" : "",
+        "DBUserPwd" : "db_livesone_tx_history",
+        "DBDatabase" : "livesone_user"
+    },
  
     "Asset" : 
     {
