@@ -52,6 +52,15 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
 
+
+	base := requestData.Base
+
+	if base!= nil || !base.App.IsValid() {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+
 	intUid := utils.Str2Int64(requestData.Param.Uid)
 
 	if !common.ExistsUID(intUid) {
