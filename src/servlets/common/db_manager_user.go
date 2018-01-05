@@ -244,7 +244,7 @@ func SetAssetStatus(uid int64, status int) error {
 }
 
 func CheckLoginPwd(uid int64, pwdInDB string) bool {
-	row, err := gDbUser.QueryRow("select login_password from account where uid = ? ", uid, pwd)
+	row, err := gDbUser.QueryRow("select login_password from account where uid = ? ", uid)
 	if err != nil {
 		logger.Error("query err ", err.Error())
 		return false
@@ -259,7 +259,6 @@ func CheckPaymentPwd(uid int64,pwdInDB string) bool {
 		logger.Error("query err ", err.Error())
 		return false
 	}
-
 	pwd := utils.Sha256(pwdInDB + utils.Int642Str(uid))
 	return pwd == row["payment_password"]
 }
