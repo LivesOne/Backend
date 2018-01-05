@@ -160,6 +160,9 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 
 func decodeSecret(secret,key ,iv string)*transPrepareSecret{
+	if len(secret) == 0 {
+		return nil
+	}
 	logger.Debug("secret ",secret)
 	sec := utils.Base64Decode(secret)
 	logger.Debug("base64 decode secret ",sec)
