@@ -200,7 +200,7 @@ func GetAccountByEmail(email string) (*Account, error) {
 func GetAccountByPhone(country int, phone string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where country = ? and phone = ? limit 1", country, phone)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	return convRowMap2Account(row), err
 }
@@ -211,7 +211,21 @@ func GetAccountListByPhoneOnly(phone string) ([](*Account), error) {
 	if (rows == nil) || (len(rows) < 1) {
 		return nil, errors.New("no such record:" + phone)
 	}
-	// return convRowMap2Account(row), err
+
+	accounts := make([](*Account), len(rows))
+	for idx := len(rows) - 1; idx > -1; idx-- {
+		accounts[idx] = convRowMap2Account(rows[idx])
+	}
+	return accounts, nil
+}
+
+func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
+	rows := gDbUser.Query("select * from account where phone = ? or uid = ? ", condition, condition)
+	// logger.Info("GetAccountListByPhoneOrUID:--------------------------", rows, len(rows))
+	if (rows == nil) || (len(rows) < 1) {
+		return nil, errors.New("no such record:" + condition)
+	}
+
 	accounts := make([](*Account), len(rows))
 	for idx := len(rows) - 1; idx > -1; idx-- {
 		accounts[idx] = convRowMap2Account(rows[idx])
@@ -253,7 +267,7 @@ func CheckLoginPwd(uid int64, pwdInDB string) bool {
 	return pwd == row["login_password"]
 }
 
-func CheckPaymentPwd(uid int64,pwdInDB string) bool {
+func CheckPaymentPwd(uid int64, pwdInDB string) bool {
 	row, err := gDbUser.QueryRow("select payment_password from account where uid = ? ", uid)
 	if err != nil {
 		logger.Error("query err ", err.Error())

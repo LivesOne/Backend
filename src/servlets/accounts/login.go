@@ -76,40 +76,17 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 	// var account *common.Account
 	var accountList [](*common.Account) = nil
-	// logger.Info("login: aaaaaaaaaaaaaaaaaaa loginData.Param.Account:", loginData.Param.Account)
 	err = nil
 	if utils.IsValidEmailAddr(loginData.Param.Account) {
 		// MUST email login
 		// MUST NOT uid and phone login
-		// logger.Info("login: 1111111 ")
 		var account *common.Account
 		account, err = common.GetAccountByEmail(loginData.Param.Account)
 		if (err == nil) && (account != nil) {
 			accountList = [](*common.Account){account}
-			// logger.Info("login: 1111111 read account form DB success:\n", utils.ToJSONIndent(accountList))
 		}
 	} else {
-		// maybe uid or phone login
-		// logger.Info("login: 00000000000000 ")
-		if (len(loginData.Param.Account) == constants.LEN_uid) &&
-			utils.IsDigit(loginData.Param.Account) {
-			// maybe this is UID, try it
-			// right now, length of UID is 9
-			// logger.Info("login: 2222222222222 ")
-			var account *common.Account
-			account, err = common.GetAccountByUID(loginData.Param.Account)
-			if (err == nil) && (account != nil) {
-				accountList = [](*common.Account){account}
-				// logger.Info("login: 2222222222 read account form DB success:\n", utils.ToJSONIndent(accountList))
-			}
-		}
-		if accountList == nil {
-			// I don't care is that a valid UID or not
-			// try it as Phone
-			// account, err = common.GetAccountByPhone(loginData.Param.Country, loginData.Param.Phone)
-			accountList, err = common.GetAccountListByPhoneOnly(loginData.Param.Account)
-			// logger.Info("login: 33333333333 read account form DB success:\n", utils.ToJSONIndent(accountList))
-		}
+		accountList, err = common.GetAccountListByPhoneOrUID(loginData.Param.Account)
 	}
 
 	if (err != nil) || (accountList == nil) || (len(accountList) < 1) {
