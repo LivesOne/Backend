@@ -164,14 +164,12 @@ func decodeSecret(secret,key ,iv string)*transPrepareSecret{
 		return nil
 	}
 	logger.Debug("secret ",secret)
-	sec := utils.Base64Decode(secret)
-	logger.Debug("base64 decode secret ",sec)
-	secJson,err := utils.AesDecrypt(string(sec),key,iv)
+	secJson,err := utils.AesDecrypt(secret,key,iv)
 	if err !=nil{
 		logger.Error("aes decode error ",err.Error())
 		return nil
 	}
-	logger.Debug("aes decode secret ",secJson)
+	logger.Debug("base64 and aes decode secret ",secJson)
 	tps := transPrepareSecret{}
 	err = json.Unmarshal([]byte(secJson),&tps)
 	if err != nil {
