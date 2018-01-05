@@ -3,28 +3,27 @@ package utils
 import (
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"net/http"
-	"utils/logger"
 	"time"
+	"utils/logger"
 )
-
 
 const (
 	Second int64 = 1000
-	Minute = 60 * Second
-	Hour = 60 * Minute
-	Day = 24 * Hour
-	TwoDay = 2 * Day
+	Minute       = 60 * Second
+	Hour         = 60 * Minute
+	Day          = 24 * Hour
+	TwoDay       = 2 * Day
 
-	DayDuration  = 24 * time.Hour
+	DayDuration    = 24 * time.Hour
 	TwoDayDuration = 2 * DayDuration
-	CONV_LVT = 10000*10000
+	CONV_LVT       = 10000 * 10000
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -68,12 +67,12 @@ func Str2Int(str string) int {
 	return tmp
 }
 
-func Int2Str(i int)string  {
+func Int2Str(i int) string {
 	return strconv.Itoa(i)
 }
 
-func Int642Str(i int64)string  {
-	return strconv.FormatInt(i,10)
+func Int642Str(i int64) string {
+	return strconv.FormatInt(i, 10)
 }
 
 func Str2Int64(str string) int64 {
@@ -86,6 +85,10 @@ func IsValidEmailAddr(email string) bool {
 	return ret
 }
 
+func IsDigit(str string) bool {
+	ret, _ := regexp.MatchString("^[0-9]*$", str)
+	return ret
+}
 
 //发起post请求
 func Post(url string, params string) (resBody string, e error) {
@@ -131,19 +134,18 @@ func GetDayStart(timestamp int64) time.Time {
 }
 
 func Timestamp13ToDate(timestamp int64) time.Time {
-	second := timestamp/1000
+	second := timestamp / 1000
 	nanosecond := timestamp % 1000 * 1000000
 	timeLocal := time.Unix(second, nanosecond)
 	timeUtc := timeLocal.UTC()
 	return timeUtc
 }
 
-func LVTintToFloatStr(lvt int64)string{
-	return strconv.FormatFloat((float64(lvt) / CONV_LVT),'f',8,64)
+func LVTintToFloatStr(lvt int64) string {
+	return strconv.FormatFloat((float64(lvt) / CONV_LVT), 'f', 8, 64)
 }
 
-
-func FloatStrToLVTint(lvt string)int64{
-	fs,_ := strconv.ParseFloat(lvt,64)
-	return int64(fs*CONV_LVT)
+func FloatStrToLVTint(lvt string) int64 {
+	fs, _ := strconv.ParseFloat(lvt, 64)
+	return int64(fs * CONV_LVT)
 }
