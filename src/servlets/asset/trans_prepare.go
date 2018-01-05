@@ -181,9 +181,10 @@ func decodeSecret(secret,key ,iv string)*transPrepareSecret{
 
 
 func validateValue(value string)bool {
-	points := strings.Split(value,".")
-	if len(points) == 2 && len(points[1]) <= 8 {
-		if utils.Str2Float64(value) > 0 {
+	if utils.Str2Float64(value) > 0 {
+		index := strings.Index(value,".")
+		last := value[index+1:]
+		if len(last) <= 8 {
 			return true
 		}
 	}
