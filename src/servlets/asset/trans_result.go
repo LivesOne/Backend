@@ -57,7 +57,8 @@ func (handler *transResultHandler) Handle(request *http.Request, writer http.Res
 			response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
 			return
 		}
-
+		//都未查到，返回无效的txid
+		response.SetResponseBase(constants.RC_INVALID_TXID)
 	}else {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}

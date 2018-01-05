@@ -7,16 +7,25 @@ import (
 	"utils"
 	"servlets/token"
 	"utils/logger"
+	"encoding/json"
 )
 
 
 
 type transPrepareParam struct {
 	TxType   int    `json:"tx_type"`
+	AuthType int    `json:"auth_type"`
+	Secret string `json:"secret"`
+}
+
+type transPrepareSecret struct {
 	To       string `json:"to"`
 	Value    string `json:"value"`
-	AuthType int    `json:"auth_type"`
 	Pwd      string `json:"pwd"`
+}
+
+func (tps *transPrepareSecret)isValid()bool{
+	return len(tps.To)>0 && len(tps.Value) > 0 && len(tps.Pwd) >0
 }
 
 type transPrepareRequest struct {
@@ -74,16 +83,20 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
-
-	prePwd := requestData.Param.Pwd
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
-	pwd,err := utils.AesDecrypt(prePwd,key,iv)
-	if err != nil {
-		logger.Error("pwd Decrypt error  ",err.Error())
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+
+
+
+	secret := decodeSecret(requestData.Param.Secret,key,iv)
+
+	if secret == nil || !secret.isValid() {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
+
 	}
+
+
+	pwd := secret.Pwd
 
 	from := utils.Str2Int64(uidString)
 	switch requestData.Param.AuthType {
@@ -102,6 +115,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 
 
+
 	txid := common.GenerateTxID()
 
 	if txid == -1 {
@@ -110,7 +124,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	to := utils.Str2Int64(requestData.Param.To)
+	to := utils.Str2Int64(secret.To)
 
 	switch requestData.Param.TxType {
 		case constants.TX_TYPE_TRANS:
@@ -121,7 +135,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 				Type:   constants.TX_TYPE_TRANS,
 				From:   from,
 				To:     to,
-				Value:  utils.FloatStrToLVTint(requestData.Param.Value),
+				Value:  utils.FloatStrToLVTint(secret.Value),
 				Ts:     ts,
 				Code:   constants.TX_CODE_SUCC,
 			}
@@ -137,5 +151,26 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		default:
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
+
+}
+
+
+func decodeSecret(secret,key ,iv string)*transPrepareSecret{
+	logger.Debug("secret ",secret)
+	sec := utils.Base64Decode(secret)
+	logger.Debug("base64 decode secret ",sec)
+	secJson,err := utils.AesDecrypt(string(sec),key,iv)
+	if err !=nil{
+		logger.Error("aes decode error ",err.Error())
+		return nil
+	}
+	logger.Debug("aes decode secret ",secJson)
+	tps := transPrepareSecret{}
+	err = json.Unmarshal([]byte(secJson),&tps)
+	if err != nil {
+		logger.Error("json Unmarshal error ",err.Error() )
+		return nil
+	}
+	return &tps
 
 }

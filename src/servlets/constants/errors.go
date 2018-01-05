@@ -38,6 +38,7 @@ var (
 	RC_TRANS_AUTH_FAILED      = Error{21004, "transaction authentication failed"}
 	RC_TRANS_IN_PROGRESS      = Error{21005, "transaction in progress"}
 	RC_TRANS_TIMEOUT          = Error{21006, "transaction timeout"}
+	RC_INVALID_TXID         = Error{21007, "invalid txid"}
 
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}

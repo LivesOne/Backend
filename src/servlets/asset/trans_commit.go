@@ -5,7 +5,12 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils"
-	"time"
+	"utils/logger"
+	"servlets/token"
+)
+
+const(
+	TRANS_TIMEOUT = 10*1000
 )
 
 type transCommitParam struct {
@@ -43,8 +48,40 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	common.ParseHttpBodyParams(request, &requestData)
 
 
-	//
-	txid := utils.Str2Int64(requestData.Param.Txid)
+	httpHeader := common.ParseHttpHeaderParams(request)
+
+	// if httpHeader.IsValid() == false {
+	if  !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash()  {
+		logger.Info("modify pwd: request param error")
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	// 判断用户身份
+	_, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+		logger.Info("asset balance: get info from cache error:", err)
+		response.SetResponseBase(err)
+		return
+	}
+	if len(aesKey) != constants.AES_totalLen {
+		logger.Info("asset balance: get aeskey from cache error:", len(aesKey))
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
+
+	base64TxId := utils.Base64Decode(requestData.Param.Txid)
+
+	txIdStr,err := utils.AesDecrypt(string(base64TxId),key,iv)
+	if err != nil {
+		logger.Error("aes decrypt error ",err.Error())
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	//获取解密后的txid
+	txid := utils.Str2Int64(txIdStr)
 	//修改原pending 并返回修改之前的值 如果status 是默认值0 继续  不是就停止
 	perPending := common.FindAndModifyPending(txid,constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
@@ -54,14 +91,14 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	}
 
 
-	//TODO txid 时间戳检测
+	//txid 时间戳检测
 
 	ts := utils.GetTimestamp13()
 	txid_ts := utils.TXIDToTimeStamp13(txid)
 
 
 	//暂时写死10秒
-	if ts - txid_ts > 10*1000{
+	if ts - txid_ts > TRANS_TIMEOUT {
 		//删除pending
 		common.DeletePending(txid)
 		response.SetResponseBase(constants.RC_TRANS_TIMEOUT)
