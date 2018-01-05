@@ -243,22 +243,25 @@ func SetAssetStatus(uid int64, status int) error {
 	return err
 }
 
-func CheckLoginPwd(uid int64, pwd string) bool {
-	row, err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and login_password = ?", uid, pwd)
+func CheckLoginPwd(uid int64, pwdInDB string) bool {
+	row, err := gDbUser.QueryRow("select login_password from account where uid = ? ", uid, pwd)
 	if err != nil {
 		logger.Error("query err ", err.Error())
 		return false
 	}
-	return utils.Str2Int(row["c"]) > 0
+	pwd := utils.Sha256(pwdInDB + utils.Int642Str(uid))
+	return pwd == row["login_password"]
 }
 
-func CheckPaymentPwd(uid int64, pwd string) bool {
-	row, err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and payment_password = ?", uid, pwd)
+func CheckPaymentPwd(uid int64,pwdInDB string) bool {
+	row, err := gDbUser.QueryRow("select payment_password from account where uid = ? ", uid)
 	if err != nil {
 		logger.Error("query err ", err.Error())
 		return false
 	}
-	return utils.Str2Int(row["c"]) > 0
+
+	pwd := utils.Sha256(pwdInDB + utils.Int642Str(uid))
+	return pwd == row["payment_password"]
 }
 
 func convRowMap2Account(row map[string]string) *Account {
