@@ -8,6 +8,7 @@ import (
 	"servlets/token"
 	"utils/logger"
 	"encoding/json"
+	"strings"
 )
 
 
@@ -92,9 +93,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	if secret == nil || !secret.isValid() {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
-
 	}
 
+	if !validateValue(secret.Value) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	pwd := secret.Pwd
 
@@ -173,4 +177,15 @@ func decodeSecret(secret,key ,iv string)*transPrepareSecret{
 	}
 	return &tps
 
+}
+
+
+func validateValue(value string)bool {
+	points := strings.Split(value,".")
+	if len(points) == 2 && len(points[1]) <= 8 {
+		if utils.Str2Float64(value) > 0 {
+			return true
+		}
+	}
+	return false
 }

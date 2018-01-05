@@ -147,8 +147,12 @@ func LVTintToFloatStr(lvt int64) string {
 }
 
 func FloatStrToLVTint(lvt string) int64 {
-	fs, _ := strconv.ParseFloat(lvt, 64)
-	return int64(fs * CONV_LVT)
+	return int64(Str2Float64(lvt) * CONV_LVT)
+}
+
+func Str2Float64(str string)float64{
+	fs, _ := strconv.ParseFloat(str, 64)
+	return fs
 }
 
 func TXIDToTimeStamp13(txid int64)int64{
