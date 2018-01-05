@@ -57,6 +57,12 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 	data := checkAccountRequest{}
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
+
+	if data.Base == nil || data.Param == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 	resData := checkAccountResponse{Exists: CHECK_ACCOUNT_NOT_EXISTS}
 
 	switch data.Param.Type {

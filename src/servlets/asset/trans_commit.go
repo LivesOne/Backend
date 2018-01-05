@@ -47,6 +47,13 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	common.ParseHttpBodyParams(request, &requestData)
 
+
+	if requestData.Base == nil || requestData.Param == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+
 	httpHeader := common.ParseHttpHeaderParams(request)
 
 	// if httpHeader.IsValid() == false {

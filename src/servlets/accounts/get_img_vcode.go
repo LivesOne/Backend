@@ -16,8 +16,8 @@ type imgParam struct {
 }
 
 type imgRequest struct {
-	Base  common.BaseInfo `json:"base,omitempty"`
-	Param imgParam        `json:"param,omitempty"`
+	Base  *common.BaseInfo `json:"base,omitempty"`
+	Param *imgParam        `json:"param,omitempty"`
 }
 
 type responseImg struct {
@@ -53,6 +53,10 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 
 	params := imgRequest{}
 	common.ParseHttpBodyParams(request, &params)
+	if params.Base == nil || params.Param == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	vcodeRes := vcode.GetImgVCode(params.Param.Width,
 		params.Param.Height,

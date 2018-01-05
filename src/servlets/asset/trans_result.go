@@ -42,6 +42,11 @@ func (handler *transResultHandler) Handle(request *http.Request, writer http.Res
 	common.ParseHttpBodyParams(request, &requestData)
 
 
+	if requestData.Base == nil || requestData.Param == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 	if len(requestData.Param.Txid) >0 {
 		txid := utils.Str2Int64(requestData.Param.Txid)
 		//数据库存在 返回成功

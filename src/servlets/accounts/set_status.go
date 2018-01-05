@@ -41,6 +41,11 @@ func (handler *setStatusHandler) Handle(request *http.Request, writer http.Respo
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
 
+	if data.Base == nil || data.Param == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 	uidInt64 := utils.Str2Int64(data.Param.Uid)
 	err := common.SetAssetStatus(uidInt64, data.Param.Status)
 

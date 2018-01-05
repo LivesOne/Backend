@@ -20,8 +20,8 @@ type checkVCodeParam struct {
 }
 
 type checkVCodeRequest struct {
-	Base  common.BaseInfo `json:"base"`
-	Param checkVCodeParam `json:"param"`
+	Base  *common.BaseInfo `json:"base"`
+	Param *checkVCodeParam `json:"param"`
 }
 
 // checkVCodeHandler
@@ -46,7 +46,10 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 	data := checkVCodeRequest{}
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
-
+	if data.Base == nil || data.Param == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	switch data.Param.Type {
 	case MESSAGE,CALL:

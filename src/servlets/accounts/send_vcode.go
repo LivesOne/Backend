@@ -60,6 +60,12 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 	requestData := sendVCodeRequest{} // request body
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
+
+	if requestData.Base == nil || requestData.Param == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 	//validate add exists
 	if !validateAction(requestData.Param) {
 		response.Base = &common.BaseResp{
