@@ -64,7 +64,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	common.ParseHttpBodyParams(request, &requestData)
 
 
-	if requestData.Base == nil || requestData.Param == nil {
+	if requestData.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
