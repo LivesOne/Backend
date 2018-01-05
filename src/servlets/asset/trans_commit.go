@@ -48,7 +48,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	common.ParseHttpBodyParams(request, &requestData)
 
 
-	if requestData.Base == nil || requestData.Param == nil {
+	if requestData.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -58,7 +58,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("modify pwd: request param error")
+		logger.Info("asset trans commited: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -66,12 +66,12 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	// 判断用户身份
 	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset balance: get info from cache error:", err)
+		logger.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset balance: get aeskey from cache error:", len(aesKey))
+		logger.Info("asset trans commited: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
