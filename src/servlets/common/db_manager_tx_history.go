@@ -94,7 +94,7 @@ func CheckPending(txid int64)bool{
 }
 
 
-func FindAndModifyPending(txid,from,status int64)(*DTTXHistory,bool){
+func FindAndModifyPending(txid,from,status int64)(*DTTXHistory){
 	session := tSession.Clone()
 	defer session.Close()
 	coll := session.DB(txdbc.DBDatabase).C(PENDING)
@@ -116,13 +116,12 @@ func FindAndModifyPending(txid,from,status int64)(*DTTXHistory,bool){
 		},
 		ReturnNew: false,
 	}
-	info,err := coll.Find(query).Apply(change,&res)
+	_,err := coll.Find(query).Apply(change,&res)
 	if err!=nil {
 		logger.Error("findAndModify error ",err.Error())
 	}
-
-	logger.Info("findAndModify matched doc record num ",info.Matched)
-	return &res,info.Matched>0
+	//logger.Info("findAndModify matched doc record num ",info.Matched)
+	return &res
 }
 
 

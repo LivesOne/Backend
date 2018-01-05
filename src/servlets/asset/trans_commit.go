@@ -89,9 +89,9 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
 	//修改原pending 并返回修改之前的值 如果status 是默认值0 继续  不是就停止
-	perPending,flag := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
+	perPending := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
-	if !flag {
+	if perPending.Id != txid {
 		response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
 		return
 	}
