@@ -65,18 +65,20 @@ func QueryBalance(uid int64)int64{
 	return 0
 }
 
-func TransAccountLvt(txid,from,to,value int64)(bool){
+
+
+func TransAccountLvt(txid,from,to,value int64)(bool,int){
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
 	if !CheckAndInitAsset(from) {
-		return false
+		return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
 
 
 	tx,err := gDBAsset.Begin()
 	if err!=nil {
 		logger.Error("db pool begin error ",err.Error())
-		return false
+		return false,constants.TRANS_ERR_SYS
 	}
 	tx.Exec("select * from user_asset where uid in (?,?) for update",from,to)
 
@@ -87,20 +89,20 @@ func TransAccountLvt(txid,from,to,value int64)(bool){
 
 	if balance < value {
 		tx.Rollback()
-		return false
+		return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
 
 	_,err1 := tx.Exec("update user_asset set balance = balance - ? where uid = ?",value,from)
 	if err1 != nil {
 		logger.Error("sql error ",err1.Error())
 		tx.Rollback()
-		return false
+		return false,constants.TRANS_ERR_SYS
 	}
 	_,err2 := tx.Exec("update user_asset set balance = balance + ? where uid = ?",value,to)
 	if err2 != nil {
 		logger.Error("sql error ",err2.Error())
 		tx.Rollback()
-		return false
+		return false,constants.TRANS_ERR_SYS
 	}
 
 	//txid 写入数据库
@@ -108,7 +110,7 @@ func TransAccountLvt(txid,from,to,value int64)(bool){
 
 	tx.Commit()
 
-	return true
+	return true,constants.TRANS_ERR_SUCC
 }
 
 func CheckAndInitAsset(uid int64)bool{

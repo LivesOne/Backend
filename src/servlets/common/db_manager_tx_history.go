@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"utils/logger"
 	"gopkg.in/mgo.v2/bson"
+	"servlets/constants"
 )
 
 var tSession *mgo.Session
@@ -93,26 +94,30 @@ func CheckPending(txid int64)bool{
 }
 
 
-func FindAndModifyPending(txid,status int64)*DTTXHistory{
+func FindAndModifyPending(txid,from,status int64)*DTTXHistory{
 	session := tSession.Clone()
 	defer session.Close()
-	db := session.DB(txdbc.DBDatabase)
+	coll := session.DB(txdbc.DBDatabase).C(PENDING)
 	res := DTTXHistory{}
-	cmd := bson.D{
-		bson.DocElem{
-			Name:"findAndModify",
-			Value:PENDING,
-		},
-		bson.DocElem{
-			Name:"query",
-			Value:bson.M{"_id":txid},
-		},
-		bson.DocElem{
-			Name:"update",
-			Value:bson.M{"status":status},
+	query := bson.M{
+		"_id":txid,
+		"from":from,
+		"status":bson.M{
+			"$bitsAllClear": []int{0}  ,
 		},
 	}
-	db.Run(cmd,&res)
+	change := mgo.Change{
+		Update: bson.M{
+			"$bit":bson.M{
+				"status":bson.M{
+					"and":constants.TX_STATUS_COMMIT,
+				},
+			},
+		},
+		ReturnNew: false,
+	}
+	coll.Find(query).Apply(change,&res)
+
 	return &res
 }
 
