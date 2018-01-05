@@ -53,16 +53,25 @@ func UserDbInit() error {
 
 func ExistsUID(uid int64) bool {
 	row, _ := gDbUser.QueryRow("select count(1) as c from account where uid = ? limit 1", uid)
+	if row == nil {
+		return false
+	}
 	return utils.Str2Int(row["c"]) > 0
 }
 
 func ExistsEmail(email string) bool {
 	row, _ := gDbUser.QueryRow("select count(1) as c from account where email = ? limit 1", email)
+	if row == nil {
+		return false
+	}
 	return utils.Str2Int(row["c"]) > 0
 }
 
 func ExistsPhone(country int, phone string) bool {
 	row, _ := gDbUser.QueryRow("select count(1) as c from account where country = ? and phone = ? limit 1", country, phone)
+	if row == nil {
+		return false
+	}
 	return utils.Str2Int(row["c"]) > 0
 }
 
@@ -191,7 +200,7 @@ func GetAccountByEmail(email string) (*Account, error) {
 func GetAccountByPhone(country int, phone string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where country = ? and phone = ? limit 1", country, phone)
 	if err != nil {
-		logger.Fatal(err)
+		return nil,err
 	}
 	return convRowMap2Account(row), err
 }
