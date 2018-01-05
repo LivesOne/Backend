@@ -58,7 +58,7 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
 
-	if data.Base == nil || data.Param == nil {
+	if data.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
