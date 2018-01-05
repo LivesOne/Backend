@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"utils/logger"
+	"servlets/constants"
 )
 
 const (
@@ -148,4 +149,10 @@ func LVTintToFloatStr(lvt int64) string {
 func FloatStrToLVTint(lvt string) int64 {
 	fs, _ := strconv.ParseFloat(lvt, 64)
 	return int64(fs * CONV_LVT)
+}
+
+func TXIDToTimeStamp13(txid int64)int64{
+	const timebase int64 = 1514764800000
+	tagTs := txid >> 22 +constants.BASE_TIMESTAMP
+	return tagTs
 }

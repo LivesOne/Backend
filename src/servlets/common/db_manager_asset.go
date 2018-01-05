@@ -67,15 +67,18 @@ func QueryBalance(uid int64)int64{
 
 func TransAccountLvt(txid,from,to,value int64)(bool){
 	//检测资产初始化情况
-	CheckAndInitAsset(from)
-	CheckAndInitAsset(to)
+	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
+	if !CheckAndInitAsset(from) {
+		return false
+	}
+
 
 	tx,err := gDBAsset.Begin()
 	if err!=nil {
 		logger.Error("db pool begin error ",err.Error())
 		return false
 	}
-	tx.Exec("select * from user_asset where uid in (?,?)",from,to)
+	tx.Exec("select * from user_asset where uid in (?,?) for update",from,to)
 
 	//查询转出账户余额是否满足需要
 	var balance int64
@@ -86,7 +89,6 @@ func TransAccountLvt(txid,from,to,value int64)(bool){
 		tx.Rollback()
 		return false
 	}
-
 
 	_,err1 := tx.Exec("update user_asset set balance = balance - ? where uid = ?",value,from)
 	if err1 != nil {
@@ -104,18 +106,23 @@ func TransAccountLvt(txid,from,to,value int64)(bool){
 	//txid 写入数据库
 	InsertTXID(txid,tx)
 
-
 	tx.Commit()
 
 	return true
 }
 
-func CheckAndInitAsset(uid int64){
+func CheckAndInitAsset(uid int64)bool{
 	uid,status := GetAssetByUid(uid)
 	if status != constants.ASSET_STATUS_INIT {
+		//初始化资产
 		InsertAsset(uid)
+		//初始化工资
 		InsertReward(uid)
+		//修改资产初始化状态
+		SetAssetStatus(uid,constants.ASSET_STATUS_INIT )
+		return false
 	}
+	return true
 }
 
 func InsertTXID(txid int64,tx *sql.Tx)error {
@@ -143,4 +150,14 @@ func InsertReward(uid int64) {
 func InsertAsset(uid int64) {
 	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
 	gDbUser.Exec(sql, uid, 0, 0)
+}
+
+
+func CheckTXID(txid int64)bool{
+	row,err := gDBAsset.QueryRow("select count(1) as c from recent_tx_ids where txid = ?",txid)
+	if err != nil {
+		logger.Error("query row error ",err.Error())
+		return false
+	}
+	return utils.Str2Int(row["c"])>0
 }

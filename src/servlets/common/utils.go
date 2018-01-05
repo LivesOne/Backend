@@ -145,8 +145,8 @@ func GenerateTxID() int64 {
 	// rid ONLY live in lower 22 bits
 	rid = rid & 0x00000000003FFFFF
 
-	const timebase int64 = 1514764800000 // Jan 1, 2018, 00:00:00
-	delta := utils.GetTimestamp13() - timebase
+	//const timebase int64 =
+	delta := utils.GetTimestamp13() - constants.BASE_TIMESTAMP // Jan 1, 2018, 00:00:00
 
 	txid := (delta << 22) & 0x7FFFFFFFFFC00000 // move left 22 bit
 	txid += int64(rid)

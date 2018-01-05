@@ -47,11 +47,16 @@ func txCommitDelete(db,c string,txid int64)error{
 	return collection.Remove(bson.M{"_id":txid})
 }
 
-func txCommonDel(db,tb string,id interface{})error{
+func txCommonCheckExists(db,tb string,id interface{})bool{
 	session := tSession.Clone()
 	defer session.Close()
 	collection := session.DB(db).C(tb)
-	return collection.RemoveId(id)
+	c,e := collection.FindId(id).Count()
+	if e != nil {
+		logger.Error("query mongo err ",e.Error())
+		return false
+	}
+	return c>0
 }
 
 func InsertPending(pending *DTTXHistory) error {
@@ -79,9 +84,16 @@ func FindPending(txid int64)*DTTXHistory{
 	return &res
 }
 
+func CheckCommited(txid int64)bool{
+	return txCommonCheckExists(txdbc.DBDatabase,COMMITED,txid)
+}
+
+func CheckPending(txid int64)bool{
+	return txCommonCheckExists(txdbc.DBDatabase,PENDING,txid)
+}
 
 
-func FindAndModify(txid int64,updDoc *DTTXHistory)*DTTXHistory{
+func FindAndModifyPending(txid,status int64)*DTTXHistory{
 	session := tSession.Clone()
 	defer session.Close()
 	db := session.DB(txdbc.DBDatabase)
@@ -97,14 +109,11 @@ func FindAndModify(txid int64,updDoc *DTTXHistory)*DTTXHistory{
 		},
 		bson.DocElem{
 			Name:"update",
-			Value:updDoc,
+			Value:bson.M{"status":status},
 		},
 	}
 	db.Run(cmd,&res)
 	return &res
 }
 
-func DelPending(txid int64)error{
-	return txCommitDelete(txdbc.DBDatabase,PENDING,txid)
-}
 

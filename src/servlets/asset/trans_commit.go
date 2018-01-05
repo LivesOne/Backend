@@ -5,8 +5,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils"
-	"utils/logger"
-	"servlets/token"
+	"time"
 )
 
 type transCommitParam struct {
@@ -35,71 +34,65 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			RC:  constants.RC_OK.Rc,
 			Msg: constants.RC_OK.Msg,
 		},
-		Data: 0, // data expire Int 失效时间，单位秒
+		Data: 0,
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-
-
-
-	httpHeader := common.ParseHttpHeaderParams(request)
-
-	// if httpHeader.IsValid() == false {
-	if  !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash()  {
-		logger.Info("modify pwd: request param error")
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
-
-	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset balance: get info from cache error:", err)
-		response.SetResponseBase(err)
-		return
-	}
-	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset balance: get aeskey from cache error:", len(aesKey))
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
-	}
-
-
-
 	requestData := transCommitRequest{} // request body
-	//header := common.ParseHttpHeaderParams(request)
+
 	common.ParseHttpBodyParams(request, &requestData)
-	uid := utils.Str2Int64(uidString)
 
 
 	//
 	txid := utils.Str2Int64(requestData.Param.Txid)
-	//获取原pending
-	pending := common.FindPending(txid)
-	pending.Status = constants.TX_STATUS_COMMIT
 	//修改原pending 并返回修改之前的值 如果status 是默认值0 继续  不是就停止
-	perPending := common.FindAndModify(txid,pending)
-	if perPending.Id == txid && perPending.Status == constants.TX_STATUS_DEFAULT {
-		//校验token对应的uid 和panding 中的from uid 是否一致
-		if uid != perPending.From {
-			response.SetResponseBase(constants.RC_INVALID_TOKEN)
-			return
-		}
+	perPending := common.FindAndModifyPending(txid,constants.TX_STATUS_COMMIT)
+	//未查到数据，返回处理中
+	if perPending.Id != txid {
+		response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
+		return
+	}
+
+
+	//TODO txid 时间戳检测
+
+	ts := utils.GetTimestamp13()
+	txid_ts := utils.TXIDToTimeStamp13(txid)
+
+
+	//暂时写死10秒
+	if ts - txid_ts > 10*1000{
+		//删除pending
+		common.DeletePending(txid)
+		response.SetResponseBase(constants.RC_TRANS_TIMEOUT)
+		return
+
+	}
+
+
+	//查到数据 检测状态是否为不为1
+	if perPending.Status != constants.TX_STATUS_COMMIT {
 		//判断to是否存在
-		if !common.ExistsUID(perPending.To) {
+		if common.ExistsUID(perPending.To) {
+			//存在就检测资产初始化状况，未初始化的用户给初始化
+			common.CheckAndInitAsset(perPending.To)
+		}else{
 			response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 			return
 		}
 
-		if !common.TransAccountLvt(txid,perPending.From,perPending.To,perPending.Value) {
-			//插入commited
+		if common.TransAccountLvt(txid,perPending.From,perPending.To,perPending.Value) {
+			//成功 插入commited
 			common.InsertCommited(perPending)
 			//删除pending
 			common.DeletePending(txid)
 			//删除数据库中txid
 			common.RemoveTXID(txid)
+		} else {
+			//删除pending
+			common.DeletePending(txid)
+			//失败设置返回信息
 			response.SetResponseBase(constants.RC_INSUFFICIENT_BALANCE)
-			return
 		}
 	}
 
