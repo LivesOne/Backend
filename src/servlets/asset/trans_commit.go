@@ -77,9 +77,8 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	}
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-	base64TxId := utils.Base64Decode(requestData.Param.Txid)
 
-	txIdStr, err := utils.AesDecrypt(string(base64TxId), key, iv)
+	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
 	if err != nil {
 		logger.Error("aes decrypt error ", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
