@@ -101,13 +101,14 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithEmail(account)
-			if err != nil {
-				if db_factory.CheckDuplicateByColumn(err, "email") {
-					response.SetResponseBase(constants.RC_DUP_EMAIL)
-					return
-				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
-					continue
-				}
+			if err == nil {
+				break
+			}
+			if db_factory.CheckDuplicateByColumn(err, "email") {
+				response.SetResponseBase(constants.RC_DUP_EMAIL)
+				return
+			} else if db_factory.CheckDuplicateByColumn(err, "uid") {
+				continue
 			}
 		}
 	case constants.LOGIN_TYPE_PHONE:
@@ -121,13 +122,14 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithPhone(account)
-			if err != nil {
-				if db_factory.CheckDuplicateByColumn(err, "phone") {
-					response.SetResponseBase(constants.RC_DUP_PHONE)
-					return
-				} else if db_factory.CheckDuplicateByColumn(err, "uid") {
-					continue
-				}
+			if err == nil {
+				break
+			}
+			if db_factory.CheckDuplicateByColumn(err, "phone") {
+				response.SetResponseBase(constants.RC_DUP_PHONE)
+				return
+			} else if db_factory.CheckDuplicateByColumn(err, "uid") {
+				continue
 			}
 		}
 	}
@@ -202,10 +204,11 @@ func insertAndCheckUid(account *common.Account, hashedPWD string) error {
 		account.UIDString, account.UID = getUid()
 		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 		_, err = common.InsertAccount(account)
-		if err != nil {
-			if db_factory.CheckDuplicateByColumn(err, "uid") {
-				continue
-			}
+		if err == nil {
+			break
+		}
+		if db_factory.CheckDuplicateByColumn(err, "uid") {
+			continue
 		}
 	}
 	return err
