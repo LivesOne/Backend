@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	_ "fmt"
 	"utils/config"
 	_ "utils/config"
@@ -65,28 +66,28 @@ func ExistsPhone(country int, phone string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
-func GetAssetByUid(uid int64) (int64,int) {
+func GetAssetByUid(uid int64) (int64, int) {
 	row, _ := gDbUser.QueryRow("select uid,status from account where uid = ? limit 1", uid)
 	if row == nil {
-		return 0,0
+		return 0, 0
 	}
-	return utils.Str2Int64(row["uid"]),utils.Str2Int(row["status"])
+	return utils.Str2Int64(row["uid"]), utils.Str2Int(row["status"])
 }
 
-func GetAssetByEmail(email string) (int64,int) {
+func GetAssetByEmail(email string) (int64, int) {
 	row, _ := gDbUser.QueryRow("select uid,status from account where email = ? limit 1", email)
 	if row == nil {
-		return 0,0
+		return 0, 0
 	}
-	return utils.Str2Int64(row["uid"]),utils.Str2Int(row["status"])
+	return utils.Str2Int64(row["uid"]), utils.Str2Int(row["status"])
 }
 
-func GetAssetByPhone(country int, phone string) (int64,int) {
+func GetAssetByPhone(country int, phone string) (int64, int) {
 	row, _ := gDbUser.QueryRow("select uid,status from account where country = ? and phone = ? limit 1", country, phone)
 	if row == nil {
-		return 0,0
+		return 0, 0
 	}
-	return utils.Str2Int64(row["uid"]),utils.Str2Int(row["status"])
+	return utils.Str2Int64(row["uid"]), utils.Str2Int(row["status"])
 }
 
 func InsertAccount(account *Account) (int64, error) {
@@ -165,16 +166,24 @@ func InsertAccountWithPhone(account *Account) (int64, error) {
 
 func GetAccountByUID(uid string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where uid = ?", uid)
+	// logger.Info("GetAccountByUID:--------------------------", row, len(row), err)
 	if err != nil {
 		logger.Fatal(err)
+	}
+	if len(row) < 1 {
+		return nil, errors.New("no record for:" + uid)
 	}
 	return convRowMap2Account(row), err
 }
 
 func GetAccountByEmail(email string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where email = ?", email)
+	// logger.Info("GetAccountByEmail:--------------------------", row, len(row), err)
 	if err != nil {
 		logger.Fatal(err)
+	}
+	if len(row) < 1 {
+		return nil, errors.New("no record for:" + email)
 	}
 	return convRowMap2Account(row), err
 }
@@ -185,6 +194,20 @@ func GetAccountByPhone(country int, phone string) (*Account, error) {
 		logger.Fatal(err)
 	}
 	return convRowMap2Account(row), err
+}
+
+func GetAccountListByPhoneOnly(phone string) ([](*Account), error) {
+	rows := gDbUser.Query("select * from account where phone = ? ", phone)
+	// logger.Info("GetAccountListByPhoneOnly:--------------------------", rows, len(rows))
+	if (rows == nil) || (len(rows) < 1) {
+		return nil, errors.New("no such record:" + phone)
+	}
+	// return convRowMap2Account(row), err
+	accounts := make([](*Account), len(rows))
+	for idx := len(rows) - 1; idx > -1; idx-- {
+		accounts[idx] = convRowMap2Account(rows[idx])
+	}
+	return accounts, nil
 }
 
 func SetEmail(uid int64, email string) error {
@@ -206,28 +229,27 @@ func SetPaymentPassword(uid int64, password string) error {
 	return err
 }
 
-
-func SetAssetStatus(uid int64,status int)error{
+func SetAssetStatus(uid int64, status int) error {
 	_, err := gDbUser.Exec("update account set status = ? where uid = ?", status, uid)
 	return err
 }
 
-func CheckLoginPwd(uid int64,pwd string)bool{
-	row,err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and login_password = ?",uid,pwd)
+func CheckLoginPwd(uid int64, pwd string) bool {
+	row, err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and login_password = ?", uid, pwd)
 	if err != nil {
-		logger.Error("query err ",err.Error())
+		logger.Error("query err ", err.Error())
 		return false
 	}
-	return utils.Str2Int(row["c"])>0
+	return utils.Str2Int(row["c"]) > 0
 }
 
-func CheckPaymentPwd(uid int64,pwd string)bool{
-	row,err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and payment_password = ?",uid,pwd)
+func CheckPaymentPwd(uid int64, pwd string) bool {
+	row, err := gDbUser.QueryRow("select count(1) as c from account where uid = ? and payment_password = ?", uid, pwd)
 	if err != nil {
-		logger.Error("query err ",err.Error())
+		logger.Error("query err ", err.Error())
 		return false
 	}
-	return utils.Str2Int(row["c"])>0
+	return utils.Str2Int(row["c"]) > 0
 }
 
 func convRowMap2Account(row map[string]string) *Account {

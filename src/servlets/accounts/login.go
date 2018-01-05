@@ -12,14 +12,15 @@ import (
 )
 
 type loginParam struct {
-	Type    int    `json:"type"`
-	UID     string `json:"uid"`
-	EMail   string `json:"email"`
-	Country int    `json:"country"`
-	Phone   string `json:"phone"`
+	// Type    int    `json:"type"`
+	// UID     string `json:"uid"`
+	// EMail   string `json:"email"`
+	// Country int    `json:"country"`
+	// Phone   string `json:"phone"`
 	PWD     string `json:"pwd"`
 	Key     string `json:"key"`
 	Spkv    int    `json:"spkv"`
+	Account string `json:"account"`
 }
 
 type loginRequest struct {
@@ -73,34 +74,61 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		return
 	}
 
-	var account *common.Account
-	switch loginData.Param.Type {
-	case constants.LOGIN_TYPE_UID:
-		// right now, length of UID is 9
-		if len(loginData.Param.UID) != constants.LEN_uid {
-			logger.Info("login: uid info invalid")
-			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-			return
+	// var account *common.Account
+	var accountList [](*common.Account) = nil
+	// logger.Info("login: aaaaaaaaaaaaaaaaaaa loginData.Param.Account:", loginData.Param.Account)
+	err = nil
+	if utils.IsValidEmailAddr(loginData.Param.Account) {
+		// MUST email login
+		// MUST NOT uid and phone login
+		// logger.Info("login: 1111111 ")
+		var account *common.Account
+		account, err = common.GetAccountByEmail(loginData.Param.Account)
+		if (err == nil) && (account != nil) {
+			accountList = [](*common.Account){account}
+			// logger.Info("login: 1111111 read account form DB success:\n", utils.ToJSONIndent(accountList))
 		}
-		account, err = common.GetAccountByUID(loginData.Param.UID)
-	case constants.LOGIN_TYPE_EMAIL:
-		if utils.IsValidEmailAddr(loginData.Param.EMail) == false {
-			response.SetResponseBase(constants.RC_EMAIL_NOT_MATCH)
-			return
+	} else {
+		// maybe uid or phone login
+		// logger.Info("login: 00000000000000 ")
+		if (len(loginData.Param.Account) == constants.LEN_uid) &&
+			utils.IsDigit(loginData.Param.Account) {
+			// maybe this is UID, try it
+			// right now, length of UID is 9
+			// logger.Info("login: 2222222222222 ")
+			var account *common.Account
+			account, err = common.GetAccountByUID(loginData.Param.Account)
+			if (err == nil) && (account != nil) {
+				accountList = [](*common.Account){account}
+				// logger.Info("login: 2222222222 read account form DB success:\n", utils.ToJSONIndent(accountList))
+			}
 		}
-		account, err = common.GetAccountByEmail(loginData.Param.EMail)
-	case constants.LOGIN_TYPE_PHONE:
-		account, err = common.GetAccountByPhone(loginData.Param.Country, loginData.Param.Phone)
+		if accountList == nil {
+			// I don't care is that a valid UID or not
+			// try it as Phone
+			// account, err = common.GetAccountByPhone(loginData.Param.Country, loginData.Param.Phone)
+			accountList, err = common.GetAccountListByPhoneOnly(loginData.Param.Account)
+			// logger.Info("login: 33333333333 read account form DB success:\n", utils.ToJSONIndent(accountList))
+		}
 	}
 
-	if err != nil {
+	if (err != nil) || (accountList == nil) || (len(accountList) < 1) {
 		logger.Info("login: read account from DB error:", err)
 		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 		return
 	}
-	logger.Info("read account form DB success:\n", utils.ToJSONIndent(account))
+	logger.Info("login: read account form DB success:\n", utils.ToJSONIndent(accountList))
 
-	if handler.checkUserPassword(account.LoginPassword, aesKey, loginData.Param.PWD, account.UIDString) == false {
+	var account *common.Account = nil
+	for _, act := range accountList {
+		// if handler.checkUserPassword(account.LoginPassword, aesKey, loginData.Param.PWD, account.UIDString) == false {
+		if handler.checkUserPassword(act.LoginPassword, aesKey, loginData.Param.PWD, act.UIDString) {
+			account = act
+			break
+		}
+	}
+	if account == nil {
+		// no account match the login information
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
@@ -155,27 +183,32 @@ func (handler *loginHandler) checkRequestParams(header *common.HeaderParams, log
 		return false
 	}
 
-	if (loginData.Param.Type < constants.LOGIN_TYPE_UID) || (loginData.Param.Type > constants.LOGIN_TYPE_PHONE) {
-		logger.Info("login: login type invalid")
+	if len(loginData.Param.Account) < 1 {
+		logger.Info("login: account param missed")
 		return false
 	}
 
-	if loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && (utils.IsValidEmailAddr(loginData.Param.EMail) == false) {
-		logger.Info("login: email info invalid")
-		return false
-	}
+	// if (loginData.Param.Type < constants.LOGIN_TYPE_UID) || (loginData.Param.Type > constants.LOGIN_TYPE_PHONE) {
+	// 	logger.Info("login: login type invalid")
+	// 	return false
+	// }
 
-	if loginData.Param.Type == constants.LOGIN_TYPE_PHONE && (loginData.Param.Country == 0 || len(loginData.Param.Phone) < 1) {
-		logger.Info("login: phone info invalid")
-		return false
-	}
+	// if loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && (utils.IsValidEmailAddr(loginData.Param.EMail) == false) {
+	// 	logger.Info("login: email info invalid")
+	// 	return false
+	// }
+
+	// if loginData.Param.Type == constants.LOGIN_TYPE_PHONE && (loginData.Param.Country == 0 || len(loginData.Param.Phone) < 1) {
+	// 	logger.Info("login: phone info invalid")
+	// 	return false
+	// }
 
 	if (len(loginData.Param.PWD) < 1) || (len(loginData.Param.Key) < 1) {
 		logger.Info("login: no pwd or key info")
 		return false
 	}
 
-	if (len(loginData.Param.PWD) < 1) || (loginData.Param.Spkv < 1) {
+	if loginData.Param.Spkv < 1 {
 		logger.Info("login: no pwd or spkv info")
 		return false
 	}
