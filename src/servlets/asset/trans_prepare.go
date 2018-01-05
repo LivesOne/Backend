@@ -75,7 +75,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	// if httpHeader.IsValid() == false {
 	if  !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash()  {
-		logger.Info("modify pwd: request param error")
+		logger.Info("asset trans prepare: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -83,12 +83,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset balance: get info from cache error:", err)
+		logger.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset balance: get aeskey from cache error:", len(aesKey))
+		logger.Info("asset trans prepare: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
