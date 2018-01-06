@@ -73,7 +73,7 @@ func TransAccountLvt(txid,from,to,value int64)(bool,int){
 	if !CheckAndInitAsset(from) {
 		return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
-
+	ts := utils.GetTimestamp13()
 
 	tx,err := gDBAsset.Begin()
 	if err!=nil {
@@ -92,13 +92,13 @@ func TransAccountLvt(txid,from,to,value int64)(bool,int){
 		return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
 
-	_,err1 := tx.Exec("update user_asset set balance = balance - ? where uid = ?",value,from)
+	_,err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?",value,ts,from)
 	if err1 != nil {
 		logger.Error("sql error ",err1.Error())
 		tx.Rollback()
 		return false,constants.TRANS_ERR_SYS
 	}
-	_,err2 := tx.Exec("update user_asset set balance = balance + ? where uid = ?",value,to)
+	_,err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?",value,ts,to)
 	if err2 != nil {
 		logger.Error("sql error ",err2.Error())
 		tx.Rollback()
