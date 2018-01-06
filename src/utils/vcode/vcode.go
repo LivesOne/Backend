@@ -89,7 +89,6 @@ type httpReqValidateMessageParam struct {
 	ValidationCode string `json:"validation_code"`
 	PhoneNo        string `json:"phone_no"`
 	Vid            int    `json:"vid"`
-	Expired        int    `json:"expired"`
 	Flag           string `json:"flag"`
 }
 
@@ -246,7 +245,6 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 			ValidationCode: code,
 			PhoneNo:        phone,
 			Vid:            MESSAGE_VID,
-			Expired:        600,
 			Flag:           utils.Int2Str(flag),
 		}
 		url := config.GetConfig().SmsSvrAddr + "/validate"
