@@ -116,11 +116,11 @@ func FindAndModifyPending(txid,from,status int64)(*DTTXHistory){
 		},
 		ReturnNew: false,
 	}
-	_,err := coll.Find(query).Apply(change,&res)
+	info,err := coll.Find(query).Apply(change,&res)
 	if err!=nil {
 		logger.Error("findAndModify error ",err.Error())
 	}
-	//logger.Info("findAndModify matched doc record num ",info.Matched)
+	logger.Info("findAndModify matched doc record num ",*info)
 	return &res
 }
 
