@@ -144,14 +144,16 @@ func RemoveTXID(txid int64) error{
 	return err
 }
 
-func InsertReward(uid int64) {
+func InsertReward(uid int64) error {
 	sql := "insert ignore into user_reward (uid,total,lastday,lastmodify) values (?,?,?,?) "
-	gDBAsset.Exec(sql, uid, 0, 0, 0)
+	_,err := gDBAsset.Exec(sql, uid, 0, 0, 0)
+	return err
 }
 
-func InsertAsset(uid int64) {
+func InsertAsset(uid int64)error {
 	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
-	gDBAsset.Exec(sql, uid, 0, 0)
+	_,err := gDBAsset.Exec(sql, uid, 0, 0)
+	return err
 }
 
 
