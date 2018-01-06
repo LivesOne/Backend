@@ -16,10 +16,10 @@
 
     "TxHistory" :
     {
-        "DBHost" : "10.100.15.96:27017",
+        "DBHost" : "10.100.13.6:20000",
         "DBUser" : "",
-        "DBUserPwd" : "db_livesone_tx_history",
-        "DBDatabase" : "livesone_user"
+        "DBUserPwd" : "",
+        "DBDatabase" : "db_livesone_tx_history"
     },
  
     "Asset" : 
