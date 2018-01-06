@@ -108,9 +108,19 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	pwd := secret.Pwd
+
+
 
 	from := utils.Str2Int64(uidString)
+	to := utils.Str2Int64(secret.To)
+
+	//不能给自己转账，不能转无效用户
+	if from == to || common.ExistsUID(to) {
+		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
+		return
+	}
+
+	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
 		if !common.CheckLoginPwd(from,pwd) {
@@ -136,7 +146,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	to := utils.Str2Int64(secret.To)
 
 	switch requestData.Param.TxType {
 		case constants.TX_TYPE_TRANS:
