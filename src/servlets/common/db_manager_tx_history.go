@@ -110,7 +110,7 @@ func FindAndModifyPending(txid,from,status int64)(*DTTXHistory,bool){
 		Update: bson.M{
 			"$bit":bson.M{
 				"status":bson.M{
-					"and":constants.TX_STATUS_COMMIT,
+					"or":constants.TX_STATUS_COMMIT,
 				},
 			},
 		},
