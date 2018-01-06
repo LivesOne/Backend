@@ -34,6 +34,7 @@ const (
 	VOICE_CODE_CALL  = 1
 	MAIL_TPL_MAXTHON = 1
 	MAIL_TOL_LVT     = 2
+	MAIL_TOL_LVT_EN     = 3
 
 	FLAG_KEEP = 1
 
@@ -180,11 +181,18 @@ func SendCallVCode(phone string, country int, ln string, expire int) (bool, erro
 	return messageServerReq(phone, country, ln, expire, VOICE_CODE_CALL)
 }
 
+func CheckTpl(ln string)int{
+	if ln == "zh-cn"{
+		return MAIL_TOL_LVT
+	}
+	return MAIL_TOL_LVT_EN
+}
+
 func SendMailVCode(email string, ln string, expire int) *httpReqVCode {
 	if isNotNull(email) {
 		req := httpReqMailParam{
 			Mail:   email,
-			Tpl:    MAIL_TOL_LVT,
+			Tpl:    CheckTpl(ln),
 			Ln:     ln,
 			Expire: expire,
 		}
