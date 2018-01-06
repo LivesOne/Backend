@@ -15,7 +15,7 @@ import (
 const  (
 	CONV_LVT = 10000*10000
 )
-//var gDbUser *sql.DB
+//var gDBAsset *sql.DB
 var gDBAsset *db_factory.DBPool
 
 func AssetDbInit() error {
@@ -146,12 +146,12 @@ func RemoveTXID(txid int64) error{
 
 func InsertReward(uid int64) {
 	sql := "insert ignore into user_reward (uid,total,lastday,lastmodify) values (?,?,?,?) "
-	gDbUser.Exec(sql, uid, 0, 0, 0)
+	gDBAsset.Exec(sql, uid, 0, 0, 0)
 }
 
 func InsertAsset(uid int64) {
 	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
-	gDbUser.Exec(sql, uid, 0, 0)
+	gDBAsset.Exec(sql, uid, 0, 0)
 }
 
 
