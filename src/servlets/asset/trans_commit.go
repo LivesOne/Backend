@@ -125,16 +125,20 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	f,c := common.TransAccountLvt(txid, perPending.From, perPending.To, perPending.Value)
 	if f {
 		//成功 插入commited
-		common.InsertCommited(perPending)
-		//删除pending
-		common.DeletePending(txid)
-		//删除数据库中txid
-		common.RemoveTXID(txid)
+		err := common.InsertCommited(perPending)
+		if err == nil {
+			//删除pending
+			common.DeletePending(txid)
+			//不删除数据库中的txid
+			//common.RemoveTXID(txid)
+		}else{
+			logger.Error("insert mongodb error ",err.Error())
+		}
+
 	} else {
 		//删除pending
 		common.DeletePending(txid)
 		//失败设置返回信息
-
 		switch c {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
 			response.SetResponseBase(constants.RC_INSUFFICIENT_BALANCE)

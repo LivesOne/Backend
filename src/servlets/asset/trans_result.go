@@ -53,10 +53,10 @@ func (handler *transResultHandler) Handle(request *http.Request, writer http.Res
 		if common.CheckTXID(txid){
 			return
 		}
-		//commited存在返回成功
-		if common.CheckCommited(txid) {
-			return
-		}
+		////commited存在返回成功
+		//if common.CheckCommited(txid) {
+		//	return
+		//}
 		//pending存在 返回处理中
 		if common.CheckPending(txid) {
 			response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
