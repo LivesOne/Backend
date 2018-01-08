@@ -46,7 +46,7 @@ func (r *RedisDB) Update(hash, key string, expire int64) int {
 	// 	return TK_ERR_DB
 	// }
 
-	exists, err := redis.Bool(conn.Do("EXISTS", "tk:"+hash))
+	exists, err := redis.Bool(conn.Do("EXPIRE", "tk:"+hash, expire))
 	if err != nil {
 		return constants.ERR_INT_TK_DB
 	} else if !exists {
@@ -58,7 +58,7 @@ func (r *RedisDB) Update(hash, key string, expire int64) int {
 	if err != nil {
 		return constants.ERR_INT_TK_DB
 	} else {
-		conn.Do("EXPIRE", "tk:"+hash, expire)
+		//conn.Do("EXPIRE", "tk:"+hash, expire)
 		return constants.ERR_INT_OK
 	}
 }
