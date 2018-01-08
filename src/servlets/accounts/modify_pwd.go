@@ -73,9 +73,14 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 	secret := new(modifySecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	errT := DecryptSecret(requestData.Param.Secret, key, iv, &secret)
-	if (errT != constants.RC_OK) || (len(secret.NewPwd) < 1) {
-		logger.Info("modify pwd: decrypt secret error:", errT, len(secret.NewPwd))
+	if errT != constants.RC_OK {
+		logger.Info("modify pwd: decrypt secret error:", errT)
 		response.SetResponseBase(errT)
+		return
+	}
+	if  (len(secret.NewPwd) < 1) {
+		logger.Info("modify pwd: new password is empty, length is:", len(secret.NewPwd))
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 	// 检查新旧密码是否重复
