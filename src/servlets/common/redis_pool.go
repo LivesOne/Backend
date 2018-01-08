@@ -3,6 +3,7 @@ package common
 import (
 	"time"
 
+	"utils/config"
 	"utils/logger"
 
 	"github.com/garyburd/redigo/redis"
@@ -10,20 +11,19 @@ import (
 
 var redisPool *redis.Pool
 
-func Init_redis(conf map[string]string) {
-	logger.Debug(conf)
+func RedisPoolInit() {
 	redisPool = &redis.Pool{
 		MaxIdle:     8,
 		MaxActive:   16,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			//c, err := redis.Dial("tcp", conf["addr"])
-			c, err := redis.Dial("tcp", conf["addr"],
+			c, err := redis.Dial("tcp", config.GetConfig().RedisAddr,
 				redis.DialConnectTimeout(500*time.Millisecond),
 				redis.DialReadTimeout(500*time.Millisecond),
 				redis.DialWriteTimeout(500*time.Millisecond),
 				redis.DialKeepAlive(1*time.Second),
-				redis.DialPassword(conf["auth"]))
+				redis.DialPassword(config.GetConfig().RedisAuth))
 			if err != nil {
 				logger.Info("token: can't connect to redis server")
 				return nil, err

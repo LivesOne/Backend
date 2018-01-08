@@ -6,8 +6,10 @@ import (
 )
 
 func Init() {
-	token.Init()
+	common.RedisPoolInit()
 	common.UserDbInit()
 	common.AssetDbInit()
 	common.InitTxHistoryMongoDB()
+
+	token.Init()
 }

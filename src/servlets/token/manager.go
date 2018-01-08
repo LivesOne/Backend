@@ -1,11 +1,8 @@
 package token
 
 import (
-	"servlets/common"
 	"servlets/constants"
 	"utils"
-	"utils/config"
-	"utils/logger"
 
 	"github.com/thanhpk/randstr"
 )
@@ -14,11 +11,6 @@ var gDB RedisDB
 
 func Init() {
 	gDB = RedisDB{}
-	logger.Debug(config.GetConfig().RedisAddr)
-	common.Init_redis(map[string]string{
-		"addr": config.GetConfig().RedisAddr,
-		"auth": config.GetConfig().RedisAuth,
-	})
 }
 
 func New(uid, key string, expire int64) (newtoken string, err int) {
