@@ -106,7 +106,14 @@ func TransAccountLvt(txid,from,to,value int64)(bool,int){
 	}
 
 	//txid 写入数据库
-	InsertTXID(txid,tx)
+	_,e := InsertTXID(txid,tx)
+
+	if e != nil {
+		logger.Error("sql error ",e.Error())
+		tx.Rollback()
+		return false,constants.TRANS_ERR_SYS
+	}
+
 
 	tx.Commit()
 
@@ -127,12 +134,12 @@ func CheckAndInitAsset(uid int64)bool{
 	return true
 }
 
-func InsertTXID(txid int64,tx *sql.Tx)error {
-	_,err := tx.Exec("Insert into recent_tx_ids values (?)", txid)
+func InsertTXID(txid int64,tx *sql.Tx)(sql.Result,error) {
+	res,err := tx.Exec("Insert into recent_tx_ids values (?)", txid)
 	if err != nil {
 		logger.Error("query error ",err.Error())
 	}
-	return err
+	return res,err
 
 }
 

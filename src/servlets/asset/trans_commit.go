@@ -112,12 +112,14 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	//查到数据 检测状态是否为不为1
 	//if perPending.Status != constants.TX_STATUS_COMMIT {
+
+	//在准备阶段判断to是否存在，不存在的交易 数据不入mongo
 	//判断to是否存在
 	//if common.ExistsUID(perPending.To) {
 
-	//在准备阶段判断to是否存在，不存在的交易 数据不入mongo
 	//存在就检测资产初始化状况，未初始化的用户给初始化
 	common.CheckAndInitAsset(perPending.To)
+
 	//} else {
 	//	response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 	//	return
@@ -131,8 +133,6 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			common.DeletePending(txid)
 			//不删除数据库中的txid
 			//common.RemoveTXID(txid)
-		}else{
-			logger.Error("insert mongodb error ",err.Error())
 		}
 
 	} else {
