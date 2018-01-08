@@ -153,7 +153,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 			txh := common.DTTXHistory{
 				Id:     txid,
 				Status: constants.TX_STATUS_DEFAULT,
-				Type:   constants.TX_TYPE_TRANS,
+				Type:   requestData.Param.TxType,
 				From:   from,
 				To:     to,
 				Value:  utils.FloatStrToLVTint(secret.Value),
