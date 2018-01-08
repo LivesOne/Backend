@@ -148,7 +148,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 
 	switch requestData.Param.TxType {
-		case constants.TX_TYPE_TRANS:
+	case constants.TX_TYPE_PRIVATE_PLACEMENT,constants.TX_TYPE_ACTIVITY_REWARD,constants.TX_TYPE_TRANS:
 			ts := utils.GetTimestamp13()
 			txh := common.DTTXHistory{
 				Id:     txid,
