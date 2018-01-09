@@ -41,7 +41,7 @@ func (handler *setStatusHandler) Handle(request *http.Request, writer http.Respo
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &data)
 
-	if data.Base == nil || data.Param == nil {
+	if data.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
