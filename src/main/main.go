@@ -30,9 +30,11 @@ func initialize() {
 
 	appbase := utils.GetAppBaseDir()
 
-	logger.InitLogger(filepath.Join(appbase, logsDir))
-	logger.Info("server initialize.....")
+
 
 	cfgFile := filepath.Join(appbase, configFile)
 	config.LoadConfig(cfgFile)
+
+	logger.InitLogger(config.GetConfig().LogDir)
+	logger.Info("server initialize.....")
 }

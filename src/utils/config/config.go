@@ -45,6 +45,7 @@ type Configuration struct {
 	// 图像验证网关相关
 	ImgSvrAddr string
 	// log相关
+	LogDir string
 }
 
 // configuration data
@@ -132,5 +133,6 @@ func (cfg *Configuration) isValid() bool {
 		cfg.Redis.isValid() &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
-		len(cfg.ImgSvrAddr) > 0
+		len(cfg.ImgSvrAddr) > 0 &&
+		len(cfg.LogDir) > 0
 }

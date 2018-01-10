@@ -2,7 +2,7 @@
     "ServerAddr" : ":8080",
 
     "PrivKey" : "rsa_private_key.pem",
-
+    "LogDir": "/tmp/logs/",
     "Redis" :
     {
         "MaxConn" : 10,
