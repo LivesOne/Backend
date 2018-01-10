@@ -12,18 +12,19 @@ import (
 var redisPool *redis.Pool
 
 func RedisPoolInit() {
+	redisCfg := config.GetConfig().Redis
 	redisPool = &redis.Pool{
-		MaxIdle:     8,
-		MaxActive:   16,
+		MaxIdle:     redisCfg.MaxConn,
+		MaxActive:   redisCfg.MaxConn,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
 			//c, err := redis.Dial("tcp", conf["addr"])
-			c, err := redis.Dial("tcp", config.GetConfig().RedisAddr,
+			c, err := redis.Dial("tcp", redisCfg.RedisAddr,
 				redis.DialConnectTimeout(500*time.Millisecond),
 				redis.DialReadTimeout(500*time.Millisecond),
 				redis.DialWriteTimeout(500*time.Millisecond),
 				redis.DialKeepAlive(1*time.Second),
-				redis.DialPassword(config.GetConfig().RedisAuth))
+				redis.DialPassword(redisCfg.RedisAuth))
 			if err != nil {
 				logger.Info("token: can't connect to redis server")
 				return nil, err

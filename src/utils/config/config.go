@@ -10,10 +10,17 @@ import (
 
 type DBConfig struct {
 	// mysql config
+	MaxConn    int
 	DBHost     string
 	DBUser     string
 	DBUserPwd  string
 	DBDatabase string
+}
+
+type RedisConfig struct {
+	MaxConn    int
+	RedisAddr string //"[ip]:port"
+	RedisAuth string
 }
 
 // Configuration holds all config data
@@ -29,8 +36,7 @@ type Configuration struct {
 	Asset DBConfig
 	TxHistory DBConfig
 	// redis的参数
-	RedisAddr string //"[ip]:port"
-	RedisAuth string
+	Redis RedisConfig
 
 	// 短信验证网关相关
 	SmsSvrAddr string
@@ -54,10 +60,12 @@ func LoadConfig(cfgFilename string) error {
 	if err != nil {
 		return err
 	}
+
 	if gConfig.isValid() == false {
-		logger.Info("configuration item not integrity")
+		logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
 		return errors.New("configuration item not integrity")
 	}
+	// logger.Info("load configuration success")
 
 	return nil
 }
@@ -99,12 +107,21 @@ func GetPrivateKeyFilename() string {
 
 func (db *DBConfig) isValid() bool {
 
-	return len(db.DBHost) > 0 &&
+	return db.MaxConn > 0 &&
+		len(db.DBHost) > 0 &&
 		len(db.DBUser) > 0 &&
 		len(db.DBUserPwd) > 0 &&
 		len(db.DBDatabase) > 0
 
 }
+
+func (db *RedisConfig) isValid() bool {
+
+	return db.MaxConn > 0 &&
+		len(db.RedisAddr) > 0 &&
+		len(db.RedisAuth) > 0
+}
+
 
 func (cfg *Configuration) isValid() bool {
 
@@ -112,8 +129,7 @@ func (cfg *Configuration) isValid() bool {
 		len(cfg.PrivKey) > 0 &&
 		cfg.User.isValid() &&
 		cfg.Asset.isValid() &&
-		len(cfg.RedisAddr) > 0 &&
-		len(cfg.RedisAuth) > 0 &&
+		cfg.Redis.isValid() &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
 		len(cfg.ImgSvrAddr) > 0

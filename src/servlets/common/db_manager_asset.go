@@ -26,8 +26,8 @@ func AssetDbInit() error {
 		UserName:    db_config_asset.DBUser,
 		Password:    db_config_asset.DBUserPwd,
 		Database:    db_config_asset.DBDatabase,
-		MaxConn:     10,
-		MaxIdleConn: 1,
+		MaxConn:     db_config_asset.MaxConn,
+		MaxIdleConn: db_config_asset.MaxConn,
 	}
 	gDBAsset = db_factory.NewDataSource(facConfig_asset)
 	if gDBAsset.IsConn() {

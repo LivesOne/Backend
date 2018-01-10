@@ -3,11 +3,16 @@
 
     "PrivKey" : "rsa_private_key.pem",
 
-    "RedisAddr" : "10.100.15.96:6379",
-    "RedisAuth" : "lvt_serv",
- 
+    "Redis" :
+    {
+        "MaxConn" : 10,
+        "RedisAddr" : "10.100.15.96:6379",
+        "RedisAuth" : "lvt_serv"
+    },
+
     "User" : 
     {
+        "MaxConn" : 10,
         "DBHost" : "10.100.15.96:3306",
         "DBUser" : "lvt_serv",
         "DBUserPwd" : "U9D$WHTo",
@@ -16,6 +21,7 @@
 
     "TxHistory" :
     {
+        "MaxConn" : 10,
         "DBHost" : "10.100.13.6:20000",
         "DBUser" : "",
         "DBUserPwd" : "",
@@ -24,6 +30,7 @@
  
     "Asset" : 
     {
+        "MaxConn" : 10,
         "DBHost" : "10.100.15.96:3306",
         "DBUser" : "lvt_serv",
         "DBUserPwd" : "U9D$WHTo",

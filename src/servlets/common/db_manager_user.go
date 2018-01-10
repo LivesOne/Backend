@@ -38,8 +38,8 @@ func UserDbInit() error {
 		UserName:    db_config_user.DBUser,
 		Password:    db_config_user.DBUserPwd,
 		Database:    db_config_user.DBDatabase,
-		MaxConn:     10,
-		MaxIdleConn: 1,
+		MaxConn:     db_config_user.MaxConn,
+		MaxIdleConn: db_config_user.MaxConn,
 	}
 	gDbUser = db_factory.NewDataSource(facConfig_user)
 	if gDbUser.IsConn() {

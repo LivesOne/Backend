@@ -14,7 +14,7 @@ var txdbc config.DBConfig
 
 const (
 
-	MGDBPoolMax = 10
+	// MGDBPoolMax = 10
 	PENDING = "dt_pending"
 	COMMITED = "dt_committed"
 )
@@ -22,10 +22,10 @@ const (
 func InitTxHistoryMongoDB() {
 	config := config.GetConfig()
 	txdbc = config.TxHistory
-	connStr := fmt.Sprintf("%s?maxPoolSize=%d", txdbc.DBHost, MGDBPoolMax)
+	connStr := fmt.Sprintf("%s?maxPoolSize=%d", txdbc.DBHost, txdbc.MaxConn)
 	logger.Info("conn mongo db ---> ", connStr)
 	tSession, _ = mgo.Dial(connStr)
-	tSession.SetPoolLimit(MGDBPoolMax)
+	tSession.SetPoolLimit(txdbc.MaxConn)
 }
 
 
