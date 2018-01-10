@@ -65,7 +65,15 @@ func InsertPending(pending *DTTXHistory) error {
 }
 
 func InsertCommited(commited *DTTXHistory) error {
-	return txCommonInsert(txdbc.DBDatabase, COMMITED, commited)
+	session := tSession.Clone()
+	defer session.Close()
+	session.SetSafe(&mgo.Safe{WMode: "majority"})
+	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
+	err := collection.Insert(commited)
+	if err != nil {
+		logger.Error("mongo_base method:Insert ", err.Error())
+	}
+	return err
 }
 
 func DeletePending(txid int64)error{
