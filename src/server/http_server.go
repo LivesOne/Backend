@@ -5,6 +5,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"runtime/debug"
+	"servlets/common"
+	"servlets/constants"
+	"utils/logger"
 )
 
 var gRouter *gin.Engine
@@ -13,6 +17,7 @@ var gServer *http.Server
 //Init http server object
 func init() {
 	gRouter = gin.Default()
+	gRouter.Use(globalRecover)
 }
 
 //RegisterHandler
@@ -43,4 +48,16 @@ func Start(addr string) {
 		MaxHeaderBytes: 1 << 20,
 	}
 	gServer.ListenAndServe()
+}
+
+func globalRecover(c *gin.Context) {
+	defer func(c *gin.Context) {
+		if rec := recover(); rec != nil {
+			logger.Fatal("server panic: ", rec, string(debug.Stack()))
+			response := common.NewResponseData()
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			c.JSON(http.StatusOK, response)
+		}
+	}(c)
+	c.Next()
 }
