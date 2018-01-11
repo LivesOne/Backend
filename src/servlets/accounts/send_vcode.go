@@ -5,6 +5,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils/vcode"
+	"utils/logger"
 )
 
 const (
@@ -57,12 +58,13 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
+	header := common.ParseHttpHeaderParams(request)
 	requestData := sendVCodeRequest{} // request body
-	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
 
-	if requestData.Base == nil || requestData.Param == nil {
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+	if requestData.Base == nil || requestData.Param == nil ||
+		handler.checkRequestParams(header, &requestData) {
+			response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
@@ -150,5 +152,25 @@ func validateAction(param *sendVCodeParam) bool {
 			return false
 		}
 	}
+	return true
+}
+
+
+
+func (handler *sendVCodeHandler) checkRequestParams(header *common.HeaderParams, data *sendVCodeRequest) bool {
+	if header == nil || (data == nil) {
+		return false
+	}
+
+	if (header.IsValidTimestamp() == false)  {
+		logger.Info("send verify code: some header param missed")
+		return false
+	}
+
+	if (data.Base.App == nil) || (data.Base.App.IsValid() == false) {
+		logger.Info("send verify code: app info invalid")
+		return false
+	}
+
 	return true
 }

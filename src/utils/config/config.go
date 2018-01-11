@@ -38,6 +38,9 @@ type Configuration struct {
 	// redis的参数
 	Redis RedisConfig
 
+	AppIDs []string // app IDs read from configuration file
+	appsMap map[string]bool // used to check apps ID existing or not
+
 	// 短信验证网关相关
 	SmsSvrAddr string
 	// 邮件验证网关相关
@@ -66,7 +69,13 @@ func LoadConfig(cfgFilename string) error {
 		logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
 		return errors.New("configuration item not integrity")
 	}
-	// logger.Info("load configuration success")
+	gConfig.appsMap = make(map[string]bool)
+	for _, appid := range gConfig.AppIDs {
+		gConfig.appsMap[appid] = true
+	}
+	gConfig.AppIDs = nil // release it
+	// logger.Info("load configuration success, is app id valid:", gConfig.IsAppIDValid("maxthon"))
+	// logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
 
 	return nil
 }
@@ -131,8 +140,15 @@ func (cfg *Configuration) isValid() bool {
 		cfg.User.isValid() &&
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
+		len(cfg.AppIDs) > 0 &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
 		len(cfg.ImgSvrAddr) > 0 &&
 		len(cfg.LogDir) > 0
+}
+
+
+func IsAppIDValid(appid string) bool {
+	_, existing := gConfig.appsMap[appid]
+	return existing
 }

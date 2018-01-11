@@ -5,6 +5,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils/vcode"
+	"utils/logger"
 )
 
 type imgParam struct {
@@ -49,11 +50,12 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	//handler.header = common.ParseHttpHeaderParams(request)
+	header := common.ParseHttpHeaderParams(request)
 
 	params := imgRequest{}
 	common.ParseHttpBodyParams(request, &params)
-	if params.Base == nil || params.Param == nil {
+	if params.Base == nil || params.Param == nil || 
+		handler.checkRequestParams(header, &params) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -74,4 +76,23 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	}
 
+}
+
+
+func (handler *getImgVCodeHandler) checkRequestParams(header *common.HeaderParams, data *imgRequest) bool {
+	if header == nil || (data == nil) {
+		return false
+	}
+
+	if (header.IsValidTimestamp() == false)  {
+		logger.Info("get image verify code: some header param missed")
+		return false
+	}
+
+	if (data.Base.App == nil) || (data.Base.App.IsValid() == false) {
+		logger.Info("get image verify code: app info invalid")
+		return false
+	}
+
+	return true
 }
