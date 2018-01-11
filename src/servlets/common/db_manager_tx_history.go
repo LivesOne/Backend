@@ -65,6 +65,7 @@ func InsertPending(pending *DTTXHistory) error {
 }
 
 func InsertCommited(commited *DTTXHistory) error {
+	logger.Info("INSERT COMMITED :",*commited)
 	session := tSession.Clone()
 	defer session.Close()
 	session.SetSafe(&mgo.Safe{WMode: "majority"})
@@ -76,8 +77,9 @@ func InsertCommited(commited *DTTXHistory) error {
 	return err
 }
 
-func DeletePending(txid int64)error{
-	return txCommitDelete(txdbc.DBDatabase,PENDING,txid)
+func DeletePending(tx *DTTXHistory)error{
+	logger.Info("DELETE PENDING :",*tx)
+	return txCommitDelete(txdbc.DBDatabase,PENDING,tx.Id)
 }
 
 func FindPending(txid int64)*DTTXHistory{
