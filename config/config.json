@@ -3,6 +3,7 @@
 
     "PrivKey" : "rsa_private_key.pem",
     "LogDir": "/tmp/logs/",
+    "LoggerLevel" :"INFO",
     "Redis" :
     {
         "MaxConn" : 10,

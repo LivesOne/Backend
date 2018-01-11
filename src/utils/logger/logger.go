@@ -5,10 +5,11 @@ import (
 	"os"
 
 	"github.com/donnie4w/go-logger/logger"
+	"strings"
 )
 
 // InitLogger
-func InitLogger(dir string) {
+func InitLogger(dir string,level string) {
 
 	ensureDirExist(dir)
 
@@ -19,9 +20,34 @@ func InitLogger(dir string) {
 
 	// //指定日志级别  ALL，DEBUG，INFO，WARN，ERROR，FATAL，OFF 级别由低到高
 	// //一般习惯是测试阶段为debug，		 生成环境为info以上
-	logger.SetLevel(logger.ALL)
+	logger.SetLevel(loggerLevel(level))
 
 }
+
+
+func loggerLevel(level string)logger.LEVEL{
+	level = strings.ToUpper(level)
+	switch level {
+	case "ALL":
+		return logger.ALL
+	case "DEBUG":
+		return logger.DEBUG
+	case "INFO":
+		return logger.INFO
+	case "WARN":
+		return logger.WARN
+	case "ERROR":
+		return logger.ERROR
+	case "FATAL":
+		return logger.FATAL
+	case "OFF":
+		return logger.OFF
+	default:
+		return logger.ALL
+
+	}
+}
+
 
 func ensureDirExist(dir string) {
 	_, err := os.Stat(dir)

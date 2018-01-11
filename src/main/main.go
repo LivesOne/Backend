@@ -35,6 +35,6 @@ func initialize() {
 	cfgFile := filepath.Join(appbase, configFile)
 	config.LoadConfig(cfgFile)
 
-	logger.InitLogger(config.GetConfig().LogDir)
+	logger.InitLogger(config.GetConfig().LogDir,config.GetConfig().LoggerLevel)
 	logger.Info("server initialize.....")
 }

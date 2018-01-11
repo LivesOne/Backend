@@ -49,6 +49,8 @@ type Configuration struct {
 	ImgSvrAddr string
 	// log相关
 	LogDir string
+
+	LoggerLevel string
 }
 
 // configuration data
