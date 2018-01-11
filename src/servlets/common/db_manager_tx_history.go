@@ -77,9 +77,9 @@ func InsertCommited(commited *DTTXHistory) error {
 	return err
 }
 
-func DeletePending(tx *DTTXHistory)error{
-	logger.Info("DELETE PENDING :",*tx)
-	return txCommitDelete(txdbc.DBDatabase,PENDING,tx.Id)
+func DeletePending(txid int64)error{
+	logger.Info("DELETE PENDING :",FindPending(txid))
+	return txCommitDelete(txdbc.DBDatabase,PENDING,txid)
 }
 
 func FindPending(txid int64)*DTTXHistory{
