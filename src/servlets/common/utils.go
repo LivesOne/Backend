@@ -161,6 +161,9 @@ func GenerateTxID() int64 {
 //        causes "import cycle" error
 func getTxID(key string) (int64, int) {
 	conn := GetRedisConn()
+	if conn == nil {
+		return -1,constants.ERR_INT_TK_DB
+	}
 	defer conn.Close()
 
 	// idx, err := redis.Int(conn.Do("INCR", key))

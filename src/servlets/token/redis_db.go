@@ -13,6 +13,9 @@ type RedisDB struct {
 
 func (r *RedisDB) Insert(hash, uid, key, token string, expire int64) int {
 	conn := common.GetRedisConn()
+	if conn == nil {
+		return constants.ERR_INT_TK_DB
+	}
 	defer conn.Close()
 
 	// _, err := conn.Do("WATCH", "tk:"+hash)
@@ -39,6 +42,9 @@ func (r *RedisDB) Insert(hash, uid, key, token string, expire int64) int {
 
 func (r *RedisDB) Update(hash, key string, expire int64) int {
 	conn := common.GetRedisConn()
+	if conn == nil {
+		return constants.ERR_INT_TK_DB
+	}
 	defer conn.Close()
 
 	// _, err := conn.Do("WATCH", "tk:"+hash)
@@ -65,6 +71,9 @@ func (r *RedisDB) Update(hash, key string, expire int64) int {
 
 func (r *RedisDB) Delete(hash string) int {
 	conn := common.GetRedisConn()
+	if conn == nil {
+		return constants.ERR_INT_TK_DB
+	}
 	defer conn.Close()
 
 	_, err := conn.Do("DEL", "tk:"+hash)
@@ -77,6 +86,9 @@ func (r *RedisDB) Delete(hash string) int {
 
 func (r *RedisDB) getField(hash string, field string) (string, int) {
 	conn := common.GetRedisConn()
+	if conn == nil {
+		return "",constants.ERR_INT_TK_DB
+	}
 	defer conn.Close()
 
 	reply, err := conn.Do("HGET", "tk:"+hash, field)
@@ -104,6 +116,9 @@ func (r *RedisDB) GetToken(hash string) (string, int) {
 
 func (r *RedisDB) GetAll(hash string) (uid, key, token string, ret int) {
 	conn := common.GetRedisConn()
+	if conn == nil {
+		return "","","",constants.ERR_INT_TK_DB
+	}
 	defer conn.Close()
 
 	reply, err := redis.StringMap(conn.Do("HGETALL", "tk:"+hash))
