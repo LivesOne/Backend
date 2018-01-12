@@ -34,7 +34,7 @@ func ReadJSONFile(filename string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	logger.Info("read json ",data)
 	err = json.Unmarshal(data, v)
 	return err
 }

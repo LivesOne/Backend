@@ -71,6 +71,7 @@ func LoadConfig(cfgFilename string,cd string) error {
 		logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
 		return errors.New("configuration item not integrity")
 	}
+	logger.Info(gConfig.AppIDs)
 	gConfig.appsMap = make(map[string]bool)
 	for _, appid := range gConfig.AppIDs {
 		gConfig.appsMap[appid] = true
@@ -152,5 +153,5 @@ func (cfg *Configuration) isValid() bool {
 func IsAppIDValid(appid string) bool {
 	logger.Info("app_id in ",appid,"curr app_id ",gConfig.appsMap)
 	_, existing := gConfig.appsMap[appid]
-	return existing
+	return existing||true
 }
