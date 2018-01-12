@@ -28,6 +28,8 @@ func initialize(cfgPath string) {
 	const (
 		// configuration file name
 		configFile = "../config/config.json"
+
+		configDir = "../config"
 		// logs directory
 		logsDir = "logs"
 		// logDir = ""
@@ -36,16 +38,20 @@ func initialize(cfgPath string) {
 
 
 
-
 	appbase := utils.GetAppBaseDir()
+
+	cfgDir := filepath.Join(appbase, configDir)
+
 	if len(cfgPath) == 0 {
 		cfgPath = filepath.Join(appbase, configFile)
+	}else{
+		cfgDir = filepath.Join(cfgPath, "../")
 	}
 	//cfgFile := filepath.Join(appbase, configFile)
 
 	fmt.Println("init config file path ",cfgPath)
-	config.LoadConfig(cfgPath)
+	config.LoadConfig(cfgPath,cfgDir)
 
-	logger.InitLogger(config.GetConfig().LogConfigPath,appbase)
+	logger.InitLogger(cfgDir,config.GetConfig().LogConfig)
 	logger.Info("server initialize.....")
 }

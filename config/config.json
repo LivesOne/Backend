@@ -2,7 +2,7 @@
     "ServerAddr" : ":8080",
 
     "PrivKey" : "rsa_private_key.pem",
-    "LogConfigPath": "",
+    "LogConfig": "l4g.xml",
     "Redis" :
     {
         "MaxConn" : 10,

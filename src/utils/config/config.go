@@ -48,7 +48,7 @@ type Configuration struct {
 	// 图像验证网关相关
 	ImgSvrAddr string
 	// log相关
-	LogConfigPath string
+	LogConfig string
 }
 
 // configuration data
@@ -57,8 +57,10 @@ var gConfig Configuration
 // RSA private key content read from the private key file
 var gPrivKeyContent []byte
 
+var cfgDir string
+
 // LoadConfig load the configuration from the configuration file
-func LoadConfig(cfgFilename string) error {
+func LoadConfig(cfgFilename string,cfgDir string) error {
 
 	err := utils.ReadJSONFile(cfgFilename, &gConfig)
 	if err != nil {
@@ -76,7 +78,7 @@ func LoadConfig(cfgFilename string) error {
 	gConfig.AppIDs = nil // release it
 	// logger.Info("load configuration success, is app id valid:", gConfig.IsAppIDValid("maxthon"))
 	// logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
-
+	cfgDir = cfgDir
 	return nil
 }
 
@@ -112,7 +114,7 @@ func GetPrivateKey(ver int) ([]byte, error) {
 
 // GetPrivateKeyFilename returns the rsa private key file name
 func GetPrivateKeyFilename() string {
-	return filepath.Join(utils.GetAppBaseDir(), "../config", gConfig.PrivKey)
+	return filepath.Join(cfgDir, gConfig.PrivKey)
 }
 
 func (db *DBConfig) isValid() bool {

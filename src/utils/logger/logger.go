@@ -8,19 +8,15 @@ import (
 )
 
 // InitLogger
-func InitLogger(cfgPath string,dir string) {
+func InitLogger(dir string,cfgName string) {
 
-	if len(cfgPath) == 0 {
-		cfgPath = filepath.Join(dir, "../config/l4g.xml")
-	}
-
-
+	basePath := filepath.Join(dir, cfgName)
 	//fmt.Println(filepath.Join(dir, "logs"))
 	//ensureDirExist(filepath.Join(dir, "logs"))
 
-	log4go.LoadConfiguration(cfgPath)
+	log4go.LoadConfiguration(basePath)
 
-	Info("init logger config path ",cfgPath)
+	Info("init logger config path ",basePath)
 
 }
 
