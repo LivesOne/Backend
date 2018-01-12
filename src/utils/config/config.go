@@ -17,6 +17,15 @@ type DBConfig struct {
 	DBDatabase string
 }
 
+type MongoConfig struct {
+	// mysql config
+	MaxConn    int
+	DBHost     string
+	DBUser     string
+	DBUserPwd  string
+	DBDatabase string
+}
+
 type RedisConfig struct {
 	MaxConn    int
 	RedisAddr string //"[ip]:port"
@@ -34,7 +43,7 @@ type Configuration struct {
 	User DBConfig
 	// asset db config
 	Asset DBConfig
-	TxHistory DBConfig
+	TxHistory MongoConfig
 	// redis的参数
 	Redis RedisConfig
 
@@ -69,9 +78,9 @@ func LoadConfig(cfgFilename string,cd string) error {
 
 	if gConfig.isValid() == false {
 		logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
-		return errors.New("configuration item not integrity")
+		//return errors.New("configuration item not integrity")
 	}
-	logger.Info(gConfig.AppIDs)
+	//logger.Info(gConfig.AppIDs)
 	gConfig.appsMap = make(map[string]bool)
 	for _, appid := range gConfig.AppIDs {
 		gConfig.appsMap[appid] = true
@@ -101,6 +110,7 @@ func GetPrivateKey(ver int) ([]byte, error) {
 	if (gPrivKeyContent == nil) || (len(gPrivKeyContent) < 1) {
 
 		filename := GetPrivateKeyFilename()
+		logger.Info("PrivateKey path ",filename)
 		// fmt.Println("private key file:", filename, "ddd:", gConfig.PrivKey)
 		var err error
 		gPrivKeyContent, err = ioutil.ReadFile(filename)
@@ -128,11 +138,16 @@ func (db *DBConfig) isValid() bool {
 
 }
 
-func (db *RedisConfig) isValid() bool {
+func (db *MongoConfig) isValid() bool {
 
 	return db.MaxConn > 0 &&
-		len(db.RedisAddr) > 0 &&
-		len(db.RedisAuth) > 0
+		len(db.DBHost) > 0 &&
+		len(db.DBDatabase) > 0
+
+}
+
+func (db *RedisConfig) isValid() bool {
+	return db.MaxConn > 0 && len(db.RedisAddr) > 0
 }
 
 
@@ -143,6 +158,7 @@ func (cfg *Configuration) isValid() bool {
 		cfg.User.isValid() &&
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
+		cfg.TxHistory.isValid() &&
 		len(cfg.AppIDs) > 0 &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
@@ -153,5 +169,5 @@ func (cfg *Configuration) isValid() bool {
 func IsAppIDValid(appid string) bool {
 	logger.Info("app_id in ",appid,"curr app_id ",gConfig.appsMap)
 	_, existing := gConfig.appsMap[appid]
-	return existing||true
+	return existing
 }

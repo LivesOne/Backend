@@ -10,7 +10,7 @@ import (
 )
 
 var tSession *mgo.Session
-var txdbc config.DBConfig
+var txdbc config.MongoConfig
 
 const (
 
