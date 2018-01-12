@@ -2,10 +2,9 @@ package vcode
 
 import (
 	"encoding/json"
-	"github.com/donnie4w/go-logger/logger"
 	"utils"
 	"utils/config"
-	log "utils/logger"
+	"utils/logger"
 )
 
 const (
@@ -130,12 +129,12 @@ func GetImgVCode(w, h, len, expire int) *httpImgVCodeResParam {
 	url := config.GetConfig().ImgSvrAddr + "/img/v1/getCode"
 	svrResStr, err := utils.Post(url, string(reqParam))
 	if err != nil {
-		log.Error("url ---> ", url, " http send error ", err.Error())
+		logger.Error("url ---> ", url, " http send error ", err.Error())
 	} else {
 		svrRes := httpImgVCodeResParam{}
 		err := json.Unmarshal([]byte(svrResStr), &svrRes)
 		if err != nil {
-			log.Info("ParseHttpBodyParams, parse body param error: ", err)
+			logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 		}
 		return &svrRes
 	}
@@ -198,7 +197,7 @@ func SendMailVCode(email string, ln string, expire int) *httpReqVCode {
 			svrRes := httpMailVCodeResParam{}
 			err := json.Unmarshal([]byte(jsonRes), &svrRes)
 			if err != nil {
-				log.Info("ParseHttpBodyParams, parse body param error: ", err)
+				logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 			}
 			return svrRes.Data
 
@@ -218,13 +217,13 @@ func ValidateImgVCode(id string, vcode string) (bool, int) {
 	reqParam, _ := json.Marshal(typeData)
 	svrResStr, err := utils.Post(url, string(reqParam))
 	if err != nil {
-		log.Error("url ---> ", url, " http send error ", err.Error())
+		logger.Error("url ---> ", url, " http send error ", err.Error())
 		return false, HTTP_ERR
 	}
 	svrRes := httpResParam{}
 	err1 := json.Unmarshal([]byte(svrResStr), &svrRes)
 	if err1 != nil {
-		log.Info("ParseHttpBodyParams, parse body param error: ", err)
+		logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 		return false, JSON_PARSE_ERR
 	}
 	return svrRes.Ret == SUCCESS, svrRes.Ret
@@ -268,18 +267,18 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 		reqParam, _ := json.Marshal(typeData)
 		svrResStr, err := utils.Post(url, string(reqParam))
 		if err != nil {
-			log.Error("url ---> ", url, " http send error ", err.Error())
+			logger.Error("url ---> ", url, " http send error ", err.Error())
 			return false, HTTP_ERR
 		}
 		svrRes := httpResParam{}
 		err1 := json.Unmarshal([]byte(svrResStr), &svrRes)
 		if err1 != nil {
-			log.Info("ParseHttpBodyParams, parse body param error: ", err)
+			logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 			return false, JSON_PARSE_ERR
 		}
 		return svrRes.Ret == SUCCESS, svrRes.Ret
 	} else {
-		log.Error("vcode_id||vcode||email can not be empty")
+		logger.Error("vcode_id||vcode||email can not be empty")
 		return false, PARAMS_ERR
 	}
 }

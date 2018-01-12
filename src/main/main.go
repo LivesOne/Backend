@@ -6,19 +6,24 @@ import (
 	"servlets"
 	"utils"
 	"utils/config"
+	"os"
+	"fmt"
 	"utils/logger"
 )
 
 func main() {
-
-	initialize()
+	cfgPath := ""
+	if len(os.Args) > 1{
+		cfgPath = os.Args[1]
+	}
+	initialize(cfgPath)
 	servlets.Init()
 	servlets.RegisterHandlers()
 	server.Start(config.GetConfig().ServerAddr)
 
 }
 
-func initialize() {
+func initialize(cfgPath string) {
 
 	const (
 		// configuration file name
@@ -28,13 +33,19 @@ func initialize() {
 		// logDir = ""
 	)
 
+
+
+
+
 	appbase := utils.GetAppBaseDir()
+	if len(cfgPath) == 0 {
+		cfgPath = filepath.Join(appbase, configFile)
+	}
+	//cfgFile := filepath.Join(appbase, configFile)
 
+	fmt.Println("init config file path ",cfgPath)
+	config.LoadConfig(cfgPath)
 
-
-	cfgFile := filepath.Join(appbase, configFile)
-	config.LoadConfig(cfgFile)
-
-	logger.InitLogger(config.GetConfig().LogDir,config.GetConfig().LoggerLevel)
+	logger.InitLogger(config.GetConfig().LogConfigPath,appbase)
 	logger.Info("server initialize.....")
 }

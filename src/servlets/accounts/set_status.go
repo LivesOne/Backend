@@ -1,11 +1,11 @@
 package accounts
 
 import (
-	"github.com/donnie4w/go-logger/logger"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"utils"
+	"utils/logger"
 )
 
 type setStatusRequest struct {

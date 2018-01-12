@@ -29,7 +29,7 @@ func UserDbInit() error {
 	//var err error
 	//gDbUser, err = sql.Open("mysql", dsn)
 	//if err != nil {
-	//	logger.Fatal(err)
+	//	logger.Error(err)
 	//	return err
 	//}
 	db_config_user := config.GetConfig().User
@@ -45,7 +45,7 @@ func UserDbInit() error {
 	if gDbUser.IsConn() {
 		logger.Debug("connection database successful")
 	} else {
-		logger.Fatal(gDbUser.Err())
+		logger.Error(gDbUser.Err())
 	}
 
 	return nil
@@ -107,14 +107,14 @@ func InsertAccount(account *Account) (int64, error) {
 	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, login_password=?, " +
 		"`language`=?, region=?, `from`=?, register_time=?, update_time=?, register_type=?")
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 		return 0, err
 	}
 	defer stmt.Close()
 	ret, err := stmt.Exec(account.UID, account.LoginPassword,
 		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 		return 0, err
 	}
 
@@ -132,14 +132,14 @@ func InsertAccountWithEmail(account *Account) (int64, error) {
 	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, email=?, login_password=?, " +
 		"`language`=?, region=?, `from`=?, register_time=?, update_time=?, register_type=?")
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 		return 0, err
 	}
 	defer stmt.Close()
 	ret, err := stmt.Exec(account.UID, account.Email, account.LoginPassword,
 		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 		return 0, err
 	}
 
@@ -157,14 +157,14 @@ func InsertAccountWithPhone(account *Account) (int64, error) {
 	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, country=?, phone=?, login_password=?, " +
 		"`language`=?, region=?, `from`=?, register_time=?, update_time=?, register_type=?")
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 		return 0, err
 	}
 	defer stmt.Close()
 	ret, err := stmt.Exec(account.UID, account.Country, account.Phone, account.LoginPassword,
 		account.Language, account.Region, account.From, account.RegisterTime, account.UpdateTime, account.RegisterType)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 		return 0, err
 	}
 
@@ -177,7 +177,7 @@ func GetAccountByUID(uid string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where uid = ?", uid)
 	// logger.Info("GetAccountByUID:--------------------------", row, len(row), err)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 	}
 	if len(row) < 1 {
 		return nil, errors.New("no record for:" + uid)
@@ -189,7 +189,7 @@ func GetAccountByEmail(email string) (*Account, error) {
 	row, err := gDbUser.QueryRow("select * from account where email = ?", email)
 	// logger.Info("GetAccountByEmail:--------------------------", row, len(row), err)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 	}
 	if len(row) < 1 {
 		return nil, errors.New("no record for:" + email)

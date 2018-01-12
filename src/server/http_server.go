@@ -53,7 +53,7 @@ func Start(addr string) {
 func globalRecover(c *gin.Context) {
 	defer func(c *gin.Context) {
 		if rec := recover(); rec != nil {
-			logger.Fatal("server panic: ", rec, string(debug.Stack()))
+			logger.Error("server panic: ", rec, string(debug.Stack()))
 			response := common.NewResponseData()
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			c.JSON(http.StatusOK, response)

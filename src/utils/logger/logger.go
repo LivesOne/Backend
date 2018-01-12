@@ -3,50 +3,28 @@ package logger
 import (
 	"fmt"
 	"os"
-
-	"github.com/donnie4w/go-logger/logger"
-	"strings"
+	"github.com/alecthomas/log4go"
+	"path/filepath"
 )
 
 // InitLogger
-func InitLogger(dir string,level string) {
+func InitLogger(cfgPath string,dir string) {
 
-	ensureDirExist(dir)
-
-	//指定日志文件备份方式为日期的方式
-	//第一个参数为日志文件存放目录
-	//第二个参数为日志文件命名
-	logger.SetRollingDaily(dir, "livesone-backend.log")
-
-	// //指定日志级别  ALL，DEBUG，INFO，WARN，ERROR，FATAL，OFF 级别由低到高
-	// //一般习惯是测试阶段为debug，		 生成环境为info以上
-	logger.SetLevel(loggerLevel(level))
-
-}
-
-
-func loggerLevel(level string)logger.LEVEL{
-	level = strings.ToUpper(level)
-	switch level {
-	case "ALL":
-		return logger.ALL
-	case "DEBUG":
-		return logger.DEBUG
-	case "INFO":
-		return logger.INFO
-	case "WARN":
-		return logger.WARN
-	case "ERROR":
-		return logger.ERROR
-	case "FATAL":
-		return logger.FATAL
-	case "OFF":
-		return logger.OFF
-	default:
-		return logger.ALL
-
+	if len(cfgPath) == 0 {
+		cfgPath = filepath.Join(dir, "../config/l4g.xml")
 	}
+
+
+	//fmt.Println(filepath.Join(dir, "logs"))
+	//ensureDirExist(filepath.Join(dir, "logs"))
+
+	log4go.LoadConfiguration(cfgPath)
+
+	Info("init logger config path ",cfgPath)
+
 }
+
+
 
 
 func ensureDirExist(dir string) {
@@ -63,21 +41,18 @@ func ensureDirExist(dir string) {
 }
 
 func Debug(v ...interface{}) {
-	logger.Debug(v)
+	log4go.Debug(v)
 }
 
-func Error(v ...interface{}) {
-	logger.Debug(v)
+func Error(v  ...interface{}) {
+	log4go.Error(v)
 }
 
-func Fatal(v ...interface{}) {
-	logger.Fatal(v)
-}
 
 func Info(v ...interface{}) {
-	logger.Info(v)
+	log4go.Info(v)
 }
 
 func Warn(v ...interface{}) {
-	logger.Warn(v)
+	log4go.Warn(v)
 }

@@ -2,8 +2,7 @@
     "ServerAddr" : ":8080",
 
     "PrivKey" : "rsa_private_key.pem",
-    "LogDir": "/tmp/logs/",
-    "LoggerLevel" :"INFO",
+    "LogConfigPath": "",
     "Redis" :
     {
         "MaxConn" : 10,
