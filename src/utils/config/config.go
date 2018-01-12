@@ -60,7 +60,7 @@ var gPrivKeyContent []byte
 var cfgDir string
 
 // LoadConfig load the configuration from the configuration file
-func LoadConfig(cfgFilename string,cfgDir string) error {
+func LoadConfig(cfgFilename string,cd string) error {
 
 	err := utils.ReadJSONFile(cfgFilename, &gConfig)
 	if err != nil {
@@ -78,7 +78,7 @@ func LoadConfig(cfgFilename string,cfgDir string) error {
 	gConfig.AppIDs = nil // release it
 	// logger.Info("load configuration success, is app id valid:", gConfig.IsAppIDValid("maxthon"))
 	// logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
-	cfgDir = cfgDir
+	cfgDir = cd
 	return nil
 }
 
