@@ -150,6 +150,7 @@ func (cfg *Configuration) isValid() bool {
 
 
 func IsAppIDValid(appid string) bool {
+	logger.Info("app_id in ",appid,"curr app_id ",gConfig.appsMap)
 	_, existing := gConfig.appsMap[appid]
 	return existing
 }
