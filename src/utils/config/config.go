@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"utils"
 	"utils/logger"
+	"fmt"
 )
 
 type DBConfig struct {
@@ -77,7 +78,10 @@ func LoadConfig(cfgFilename string,cd string) error {
 	}
 
 	if gConfig.isValid() == false {
-		logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
+		err := errors.New("configuration item not integrity")
+		fmt.Println("configuration item not integrity\n", err)
+		fmt.Println("json str --- >",utils.ToJSONIndent(gConfig))
+		panic(err)
 		//return errors.New("configuration item not integrity")
 	}
 	//logger.Info(gConfig.AppIDs)
