@@ -55,7 +55,7 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 	params := imgRequest{}
 	common.ParseHttpBodyParams(request, &params)
 	if params.Base == nil || params.Param == nil || 
-		handler.checkRequestParams(header, &params) {
+		(handler.checkRequestParams(header, &params) == false) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}

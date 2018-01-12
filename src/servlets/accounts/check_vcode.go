@@ -49,7 +49,7 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 	data := checkVCodeRequest{}
 	common.ParseHttpBodyParams(request, &data)
 	if data.Base == nil || data.Param == nil ||
-		handler.checkRequestParams(header, &data) {
+		(handler.checkRequestParams(header, &data) == false) {
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
