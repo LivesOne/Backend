@@ -11,7 +11,7 @@
         <type>file</type>
         <level>DEBUG</level>
         <!-- 绝对路径比较稳妥 -->
-        <property name="filename">/Users/lrs/work/logs/livesone-backend.log</property>
+        <property name="filename">livesone-backend.log</property>
         <!--
            %T - Time (15:04:05 MST)
            %t - Time (15:04)

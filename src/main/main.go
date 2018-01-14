@@ -1,21 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"path/filepath"
 	"server"
 	"servlets"
 	"utils"
 	"utils/config"
-	"os"
-	"fmt"
 	"utils/logger"
 )
 
 func main() {
 	cfgPath := ""
-	if len(os.Args) > 1{
+	if len(os.Args) > 1 {
 		cfgPath = os.Args[1]
 	}
+
 	initialize(cfgPath)
 	servlets.Init()
 	servlets.RegisterHandlers()
@@ -30,13 +31,7 @@ func initialize(cfgPath string) {
 		configFile = "../config/config.json"
 
 		configDir = "../config"
-		// logs directory
-		logsDir = "logs"
-		// logDir = ""
 	)
-
-
-
 
 	appbase := utils.GetAppBaseDir()
 
@@ -44,14 +39,13 @@ func initialize(cfgPath string) {
 
 	if len(cfgPath) == 0 {
 		cfgPath = filepath.Join(appbase, configFile)
-	}else{
+	} else {
 		cfgDir = filepath.Join(cfgPath, "../")
 	}
-	//cfgFile := filepath.Join(appbase, configFile)
 
-	fmt.Println("init config file path ",cfgPath)
-	config.LoadConfig(cfgPath,cfgDir)
+	fmt.Println("init config file path ", cfgPath)
+	config.LoadConfig(cfgPath, cfgDir)
 
-	logger.InitLogger(cfgDir,config.GetConfig().LogConfig)
+	logger.InitLogger(cfgDir, config.GetConfig().LogConfig)
 	logger.Info("server initialize.....")
 }

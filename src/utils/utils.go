@@ -8,11 +8,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"servlets/constants"
 	"strconv"
 	"strings"
 	"time"
 	"utils/logger"
-	"servlets/constants"
 )
 
 const (
@@ -48,20 +48,6 @@ func GetAppBaseDir() string {
 	//fmt.Println("[BaseDir]", appDir)
 	return appDir
 }
-
-//SetupLogFile 设置日志输出文件
-// func SetupLogFile(fileName string) {
-// 	appDir := GetAppBaseDir()
-// 	fmt.Println("appDir >> ", appDir, "   fileName >> ", fileName)
-// 	logFile, err := os.OpenFile(appDir+fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.ModeAppend|0666)
-// 	fmt.Println("logFile >> ", logFile)
-// 	//fmt.Println("error >> ", err.Error())
-// 	if err == nil {
-// 		log.SetOutput(logFile)
-// 		// log.Println("\n\n\n")
-// 		log.SetFlags(log.Flags() | log.Lshortfile)
-// 	}
-// }
 
 func Str2Int(str string) int {
 	tmp, _ := strconv.Atoi(str)
@@ -150,13 +136,13 @@ func FloatStrToLVTint(lvt string) int64 {
 	return int64(Str2Float64(lvt) * CONV_LVT)
 }
 
-func Str2Float64(str string)float64{
+func Str2Float64(str string) float64 {
 	fs, _ := strconv.ParseFloat(str, 64)
 	return fs
 }
 
-func TXIDToTimeStamp13(txid int64)int64{
+func TXIDToTimeStamp13(txid int64) int64 {
 	const timebase int64 = 1514764800000
-	tagTs := txid >> 22 +constants.BASE_TIMESTAMP
+	tagTs := txid>>22 + constants.BASE_TIMESTAMP
 	return tagTs
 }

@@ -3,6 +3,12 @@
 
     "PrivKey" : "rsa_private_key.pem",
     "LogConfig": "l4g.xml",
+
+    "AppIDs" :
+    [
+        "maxthon"
+    ],
+
     "Redis" :
     {
         "MaxConn" : 10,
@@ -19,15 +25,6 @@
         "DBDatabase" : "livesone_user"
     },
 
-    "TxHistory" :
-    {
-        "MaxConn" : 10,
-        "DBHost" : "10.100.13.6:20000",
-        "DBUser" : "",
-        "DBUserPwd" : "",
-        "DBDatabase" : "db_livesone_tx_history"
-    },
- 
     "Asset" : 
     {
         "MaxConn" : 10,
@@ -37,11 +34,15 @@
         "DBDatabase" : "livesone_asset"
     },
 
-    "AppIDs" :
-    [
-        "maxthon"
-    ],
-
+    "TxHistory" :
+    {
+        "MaxConn" : 10,
+        "DBHost" : "10.100.13.6:20000",
+        "DBUser" : "",
+        "DBUserPwd" : "",
+        "DBDatabase" : "db_livesone_tx_history"
+    },
+  
     "SmsSvrAddr":"http://10.100.13.6:8045",
     "MailSvrAddr":"http://10.0.5.248:8080/vcode",
     "ImgSvrAddr":"http://10.0.5.248:8080/vcode"
