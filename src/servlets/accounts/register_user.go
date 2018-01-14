@@ -87,7 +87,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 
-		for i := 1; i <= 10; i++ {
+		for i := 1; i <= 5; i++ {
 			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithEmail(account)
@@ -99,6 +99,8 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				return
 			} else if db_factory.CheckDuplicateByColumn(err, "uid") {
 				continue
+			} else {
+				break
 			}
 		}
 	case constants.LOGIN_TYPE_PHONE:
@@ -108,7 +110,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 
-		for i := 1; i <= 10; i++ {
+		for i := 1; i <= 5; i++ {
 			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithPhone(account)
@@ -120,6 +122,8 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				return
 			} else if db_factory.CheckDuplicateByColumn(err, "uid") {
 				continue
+			} else {
+				break
 			}
 		}
 	}
@@ -180,7 +184,7 @@ func getUid() (string, int64) {
 
 func insertAndCheckUid(account *common.Account, hashedPWD string) error {
 	var err error
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= 5; i++ {
 		account.UIDString, account.UID = getUid()
 		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 		_, err = common.InsertAccount(account)
