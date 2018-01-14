@@ -20,8 +20,6 @@ type setStatusParam struct {
 
 // checkVCodeHandler
 type setStatusHandler struct {
-	//header      *common.HeaderParams // request header param
-	//requestData *checkVCodeRequest   // request body
 }
 
 func (handler *setStatusHandler) Method() string {

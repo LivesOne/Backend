@@ -37,8 +37,6 @@ type checkAccountResponse struct {
 
 // checkVCodeHandler
 type checkAccountHandler struct {
-	//header      *common.HeaderParams // request header param
-	//requestData *checkVCodeRequest   // request body
 }
 
 func (handler *checkAccountHandler) Method() string {

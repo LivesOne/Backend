@@ -78,7 +78,7 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(errT)
 		return
 	}
-	if  (len(secret.NewPwd) < 1) {
+	if len(secret.NewPwd) < 1 {
 		logger.Info("modify pwd: new password is empty, length is:", len(secret.NewPwd))
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return

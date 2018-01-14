@@ -49,18 +49,6 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
-	// 判断用户身份
-	// uidString, _, _, tokenErr := token.GetAll(header.TokenHash)
-	// if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-	// 	response.SetResponseBase(err)
-	// }
-	// uid := utils.Str2Int64(uidString)
-	// account, err := common.GetAccountByUID(uidString)
-	// if err != nil {
-	// 	response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-	// 	return
-	// }
-
 	var account *common.Account
 	var err error
 	// 检查验证码
@@ -132,8 +120,4 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
-	// // send response
-	// response.SetResponseBase(constants.RC_OK)
-	// return
 }

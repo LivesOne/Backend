@@ -213,16 +213,6 @@ func (handler *loginHandler) isSignValid(aeskey, signature string, timestamp int
 	return signature == hash
 }
 
-// func (handler *loginHandler) verifySignature(signature, aeskey string, timestamp int64) bool {
-// 	if len(signature) < 1 {
-// 		return false
-// 	}
-// 	tmp := aeskey + strconv.FormatInt(timestamp, 10)
-// 	// hash := sha256.Sum256([]byte(tmp))
-// 	hash := utils.Sha256(tmp)
-// 	return signature == string(hash[:])
-// }
-
 func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, error) {
 
 	privKey, err := config.GetPrivateKey(spkv)
@@ -239,19 +229,6 @@ func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, 
 
 	return string(aeskey), nil
 }
-
-// func (handler *loginHandler) parsePWD(original string) (string, error) {
-
-// 	aeskey, err := utils.RsaDecrypt(original, config.GetPrivateKey())
-// 	if err != nil {
-// 		logger.Info("login: decrypt pwd error:", err)
-// 		return "", err
-// 	}
-
-// 	logger.Info("login: ----------hash pwd:", aeskey)
-
-// 	return string(aeskey), nil
-// }
 
 func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload, uid string) bool {
 

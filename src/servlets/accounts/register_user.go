@@ -40,16 +40,6 @@ type responseRegister struct {
 
 // registerUserHandler implements the "Echo message" interface
 type registerUserHandler struct {
-	// http request, header params
-	//header *common.HeaderParams
-	// http request, body params
-	//registerData *registerRequest
-
-	// http response data to client
-	//response *common.ResponseData
-
-	// hashedPWD upload by client
-	// hashedPWD string
 }
 
 func (handler *registerUserHandler) Method() string {
@@ -183,16 +173,6 @@ func getUid() (string, int64) {
 	var uid string
 	var uid_num int64
 
-	//for {
-	//	uid = common.GenerateUID()
-	//	uid_num, _ = strconv.ParseInt(uid, 10, 64)
-	//
-	//	if common.ExistsUID(uid_num) {
-	//		continue
-	//	} else {
-	//		break
-	//	}
-	//}
 	uid = common.GenerateUID()
 	uid_num, _ = strconv.ParseInt(uid, 10, 64)
 	return uid, uid_num
@@ -217,18 +197,10 @@ func insertAndCheckUid(account *common.Account, hashedPWD string) error {
 func getAccount(data *registerRequest) (*common.Account, error) {
 	var account common.Account
 
-	// recoverPWD, err := recoverPwd(data)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// account.UIDString, account.UID = getUid()  // delay this before insert to DB
-
 	account.Email = data.Param.EMail
 	account.Country = data.Param.Country
 	account.Phone = data.Param.Phone
 
-	// account.LoginPassword = utils.Sha256(recoverPWD + account.UIDString)
 	account.RegisterTime = time.Now().Unix()
 	account.UpdateTime = account.RegisterTime
 	account.RegisterType = data.Param.Type
@@ -242,16 +214,13 @@ func (handler *registerUserHandler) recoverHashedPwd(pwdUpload string, spkv int)
 
 	privKey, err := config.GetPrivateKey(spkv)
 	if (err != nil) || (privKey == nil) {
-		// response.SetResponseBase(constants.RC_PARAM_ERR)
 		// logger.Info("register user: load private key failed")
 		return "", errors.New("register user: load private key failed")
 	}
 
-	// fmt.Println("2222222222222222:ggggggggggggggg")
 	// hashPwd, err := utils.RsaDecrypt(string(base64Decode), privKey)
 	hashPwd, err := utils.RsaDecrypt(pwdUpload, privKey)
 	if err != nil {
-		// fmt.Println("2222222222222222:", err)
 		// logger.Info("register user: decrypt pwd error:", err)
 		return "", err
 	}

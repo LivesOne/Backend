@@ -4,10 +4,9 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils/vcode"
 	"utils/logger"
+	"utils/vcode"
 )
-
 
 type checkVCodeParam struct {
 	Type    int    `json:"type"`
@@ -27,8 +26,6 @@ type checkVCodeRequest struct {
 
 // checkVCodeHandler
 type checkVCodeHandler struct {
-	//header      *common.HeaderParams // request header param
-	//requestData *checkVCodeRequest   // request body
 }
 
 func (handler *checkVCodeHandler) Method() string {
@@ -50,18 +47,18 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 	common.ParseHttpBodyParams(request, &data)
 	if data.Base == nil || data.Param == nil ||
 		(handler.checkRequestParams(header, &data) == false) {
-			response.SetResponseBase(constants.RC_PARAM_ERR)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	switch data.Param.Type {
-	case MESSAGE,CALL:
-		f,_ :=vcode.ValidateSmsAndCallVCode(data.Param.Phone,data.Param.Country,data.Param.VCode,3600,vcode.FLAG_DEF)
+	case MESSAGE, CALL:
+		f, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
 		if !f {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 		}
 	case EMAIL:
-		f,_ := vcode.ValidateMailVCode(data.Param.VCodeId,data.Param.VCode,data.Param.EMail)
+		f, _ := vcode.ValidateMailVCode(data.Param.VCodeId, data.Param.VCode, data.Param.EMail)
 		if !f {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 		}
@@ -71,13 +68,12 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 
 }
 
-
 func (handler *checkVCodeHandler) checkRequestParams(header *common.HeaderParams, data *checkVCodeRequest) bool {
 	if header == nil || (data == nil) {
 		return false
 	}
 
-	if (header.IsValidTimestamp() == false)  {
+	if header.IsValidTimestamp() == false {
 		logger.Info("check verify code: some header param missed")
 		return false
 	}

@@ -23,8 +23,6 @@ type setTxPwdRequest struct {
 
 // setTxPwdHandler
 type setTxPwdHandler struct {
-	// header      *common.HeaderParams // request header param
-	// requestData *setTxPwdRequest     // request body
 }
 
 func (handler *setTxPwdHandler) Method() string {

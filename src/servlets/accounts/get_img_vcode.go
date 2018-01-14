@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils/vcode"
 	"utils/logger"
+	"utils/vcode"
 )
 
 type imgParam struct {
@@ -30,10 +30,6 @@ type responseImg struct {
 
 // loginHandler implements the "Echo message" interface
 type getImgVCodeHandler struct {
-
-	//header      *common.HeaderParams // request header param
-	//requestData *imgRequest    // request body
-
 }
 
 func (handler *getImgVCodeHandler) Method() string {
@@ -54,7 +50,7 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 
 	params := imgRequest{}
 	common.ParseHttpBodyParams(request, &params)
-	if params.Base == nil || params.Param == nil || 
+	if params.Base == nil || params.Param == nil ||
 		(handler.checkRequestParams(header, &params) == false) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -78,13 +74,12 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 
 }
 
-
 func (handler *getImgVCodeHandler) checkRequestParams(header *common.HeaderParams, data *imgRequest) bool {
 	if header == nil || (data == nil) {
 		return false
 	}
 
-	if (header.IsValidTimestamp() == false)  {
+	if header.IsValidTimestamp() == false {
 		logger.Info("get image verify code: some header param missed")
 		return false
 	}

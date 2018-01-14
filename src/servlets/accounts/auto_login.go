@@ -136,26 +136,6 @@ func (handler *autoLoginHandler) isSignValid(aeskey, signature string, timestamp
 	return signature == hash
 }
 
-// func (handler *autoLoginHandler) getUID(tokenUpload string) (string, string) {
-
-// 	iv := handler.aesKey[:constants.AES_ivLen]
-// 	key := handler.aesKey[constants.AES_ivLen:]
-// 	tokenTmp := utils.Base64Decode(tokenUpload)
-// 	tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
-// 	if err != nil {
-// 		logger.Info("autologin: parse token failed", tokenUpload)
-// 		return "", ""
-// 	}
-
-// 	uid, errT := token.GetUID(string(tokenDecrypt))
-// 	if errT != constants.ERR_INT_OK {
-// 		logger.Info("autologin: get uid from token cache failed", string(tokenDecrypt))
-// 		return "", ""
-// 	}
-
-// 	return uid, utils.Sha256(string(tokenDecrypt))
-// }
-
 func (handler *autoLoginHandler) getUID(aeskey, tokenHash, paramToken string) string {
 
 	// retrive the original token from cache

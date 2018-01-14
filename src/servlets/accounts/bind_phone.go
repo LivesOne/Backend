@@ -24,8 +24,6 @@ type bindPhoneRequest struct {
 
 // bindPhoneHandler
 type bindPhoneHandler struct {
-	// header      *common.HeaderParams // request header param
-	// requestData *bindPhoneRequest // request body
 }
 
 type phoneSecret struct {

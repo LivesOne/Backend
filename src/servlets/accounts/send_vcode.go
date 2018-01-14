@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils/vcode"
 	"utils/logger"
+	"utils/vcode"
 )
 
 const (
@@ -39,8 +39,6 @@ type sendVCodeRequest struct {
 
 // sendVCodeHandler
 type sendVCodeHandler struct {
-	//header      *common.HeaderParams // request header param
-	//requestData *sendVCodeRequest    // request body
 }
 
 func (handler *sendVCodeHandler) Method() string {
@@ -64,7 +62,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 
 	if requestData.Base == nil || requestData.Param == nil ||
 		(handler.checkRequestParams(header, &requestData) == false) {
-			response.SetResponseBase(constants.RC_PARAM_ERR)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
@@ -81,7 +79,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 		if succFlag {
 			switch requestData.Param.Type {
 			case MESSAGE:
-				f,_ := vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				f, _ := vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
 				if f {
 					response.Data = &sendVCodeRes{
 						Vcode_id: "maxthonVCodeId",
@@ -94,7 +92,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 					}
 				}
 			case CALL:
-				f,_ := vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				f, _ := vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
 				if f {
 					response.Data = &sendVCodeRes{
 						Vcode_id: "maxthonVCodeId",
@@ -155,14 +153,12 @@ func validateAction(param *sendVCodeParam) bool {
 	return true
 }
 
-
-
 func (handler *sendVCodeHandler) checkRequestParams(header *common.HeaderParams, data *sendVCodeRequest) bool {
 	if header == nil || (data == nil) {
 		return false
 	}
 
-	if (header.IsValidTimestamp() == false)  {
+	if header.IsValidTimestamp() == false {
 		logger.Info("send verify code: some header param missed")
 		return false
 	}

@@ -19,8 +19,6 @@ type logoutRequest struct {
 
 // logoutHandler implements the "Echo message" interface
 type logoutHandler struct {
-	// header     *common.HeaderParams // request header param
-	// logoutData *logoutRequest       // request login data
 }
 
 func (handler *logoutHandler) Method() string {
@@ -54,21 +52,6 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 	}
 }
-
-// func (handler *logoutHandler) checkRequestParams() bool {
-
-// 	if handler.header.IsValid() == false {
-// 		logger.Info("logout: some header param missed")
-// 		return false
-// 	}
-
-// 	if len(handler.logoutData.Param.Token) < 1 {
-// 		logger.Info("logout: token info invalid")
-// 		return false
-// 	}
-
-// 	return true
-// }
 
 func (handler *logoutHandler) checkToken(headerTokenHash, paramToken string) bool {
 
