@@ -97,7 +97,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 
-		for {
+		for i := 1; i <= 10; i++ {
 			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithEmail(account)
@@ -118,7 +118,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 
-		for {
+		for i := 1; i <= 10; i++ {
 			account.UIDString, account.UID = getUid()
 			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 			_, err = common.InsertAccountWithPhone(account)
@@ -200,7 +200,7 @@ func getUid() (string, int64) {
 
 func insertAndCheckUid(account *common.Account, hashedPWD string) error {
 	var err error
-	for {
+	for i := 1; i <= 10; i++ {
 		account.UIDString, account.UID = getUid()
 		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
 		_, err = common.InsertAccount(account)
