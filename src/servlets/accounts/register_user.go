@@ -125,7 +125,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			if err == nil {
 				break
 			}
-			if db_factory.CheckDuplicateByColumn(err, "phone") {
+			if db_factory.CheckDuplicateByColumn(err, "mobile") {
 				response.SetResponseBase(constants.RC_DUP_PHONE)
 				return
 			} else if db_factory.CheckDuplicateByColumn(err, "uid") {
