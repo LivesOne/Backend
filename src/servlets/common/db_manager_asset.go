@@ -34,6 +34,7 @@ func AssetDbInit() error {
 		logger.Debug("connection database successful")
 	} else {
 		logger.Error(gDBAsset.Err())
+		return gDBAsset.Err()
 	}
 
 	return nil

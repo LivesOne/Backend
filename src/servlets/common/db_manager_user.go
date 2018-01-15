@@ -46,6 +46,7 @@ func UserDbInit() error {
 		logger.Debug("connection database successful")
 	} else {
 		logger.Error(gDbUser.Err())
+		return gDbUser.Err()
 	}
 
 	return nil
@@ -102,7 +103,7 @@ func GetAssetByPhone(country int, phone string) (int64, int) {
 func InsertAccount(account *Account) (int64, error) {
 	if !gDbUser.IsConn() {
 		logger.Error("database not ready")
-		return 0, nil
+		return 0, errors.New("database not ready")
 	}
 	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, login_password=?, " +
 		"`language`=?, region=?, `from`=?, register_time=?, update_time=?, register_type=?")
@@ -126,7 +127,7 @@ func InsertAccount(account *Account) (int64, error) {
 func InsertAccountWithEmail(account *Account) (int64, error) {
 	if !gDbUser.IsConn() {
 		logger.Error("database not ready")
-		return 0, nil
+		return 0, errors.New("database not ready")
 	}
 
 	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, email=?, login_password=?, " +
@@ -151,7 +152,7 @@ func InsertAccountWithEmail(account *Account) (int64, error) {
 func InsertAccountWithPhone(account *Account) (int64, error) {
 	if !gDbUser.IsConn() {
 		logger.Error("database not ready")
-		return 0, nil
+		return 0, errors.New("database not ready")
 	}
 
 	stmt, err := gDbUser.Prepare("INSERT account SET uid=?, country=?, phone=?, login_password=?, " +
