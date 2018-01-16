@@ -119,17 +119,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 				}
 			}
 		} else {
-			switch code {
-			case vcode.CODE_EXPIRED_ERR:
-				response.SetResponseBase(constants.RC_VCODE_EXPIRE)
-			case vcode.VALIDATE_CODE_FAILD:
-				response.SetResponseBase(constants.RC_INVALID_VCODE)
-			default:
-				response.Base = &common.BaseResp{
-					RC:  constants.RC_PARAM_ERR.Rc,
-					Msg: constants.RC_PARAM_ERR.Msg,
-				}
-			}
+			response.SetResponseBase(vcode.ConvImgErr(code))
 		}
 	}
 

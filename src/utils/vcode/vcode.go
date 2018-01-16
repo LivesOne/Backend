@@ -5,25 +5,19 @@ import (
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"servlets/constants"
 )
 
 const (
 	SUCCESS = 0
 
 	NOT_FOUND_ERR = 404
-
 	SERVER_ERR = 500
-
 	NO_PARAMS_ERR = 1
-
 	PARAMS_ERR = 2
-
 	JSON_PARSE_ERR = 3
-
 	CODE_EXPIRED_ERR = 4
-
 	VALIDATE_CODE_FAILD = 5
-
 	EMAIL_VALIDATE_FAILD = 6
 
 	HTTP_ERR = 7
@@ -37,6 +31,10 @@ const (
 	FLAG_KEEP = 1
 
 	FLAG_DEF = 0
+
+
+	SMS_SUCC = 1
+	SMS_PROTOCOL_ERR = 200
 )
 
 type httpResParam struct {
@@ -249,7 +247,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 		} else {
 			httpRes := httpResSms{}
 			json.Unmarshal([]byte(jsonRes), &httpRes)
-			return httpRes.Code == 1, nil
+			return httpRes.Code == SMS_SUCC, nil
 		}
 	} else {
 		return false, nil
@@ -281,5 +279,19 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 		logger.Error("vcode_id||vcode||email can not be empty")
 		logger.Error("id --> ",id," code --> ",vcode," email --> ",email)
 		return false, PARAMS_ERR
+	}
+}
+
+
+func ConvImgErr(code int)constants.Error{
+	switch code {
+	case CODE_EXPIRED_ERR:
+		return constants.RC_VCODE_EXPIRE
+	case VALIDATE_CODE_FAILD:
+		return constants.RC_INVALID_VCODE
+	case EMAIL_VALIDATE_FAILD:
+		return constants.RC_EMAIL_NOT_MATCH
+	default:
+		return constants.RC_SYSTEM_ERR
 	}
 }

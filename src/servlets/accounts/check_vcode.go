@@ -58,9 +58,9 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 		}
 	case EMAIL:
-		f, _ := vcode.ValidateMailVCode(data.Param.VCodeId, data.Param.VCode, data.Param.EMail)
+		f, ec := vcode.ValidateMailVCode(data.Param.VCodeId, data.Param.VCode, data.Param.EMail)
 		if !f {
-			response.SetResponseBase(constants.RC_INVALID_VCODE)
+			response.SetResponseBase(vcode.ConvImgErr(ec))
 		}
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
