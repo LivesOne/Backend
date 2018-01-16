@@ -78,6 +78,7 @@ func InsertCommited(commited *DTTXHistory) error {
 	return err
 }
 
+
 func DeletePending(txid int64)error{
 	logger.Info("DELETE PENDING :",FindPending(txid))
 	return txCommitDelete(txdbc.DBDatabase,PENDING,txid)
@@ -164,6 +165,27 @@ func FindTopPending(query interface{},top int)*DTTXHistory{
 	return &res
 }
 
-func InsertFailed(faild *DTTXHistory) error {
-	return txCommonInsert(txdbc.DBDatabase, FAILED, faild)
+func UpsertFailed(faild *DTTXHistory) (*mgo.ChangeInfo,error) {
+	logger.Info("UPSERT FAILED :",*faild)
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(txdbc.DBDatabase).C(FAILED)
+	info,err := collection.UpsertId(faild.Id,faild)
+	if err != nil {
+		logger.Error("mongo_base method:UpsertId ", err.Error())
+	}
+	return info,err
+}
+
+func UpsertCommited(commited *DTTXHistory) (*mgo.ChangeInfo,error) {
+	logger.Info("UPSERT COMMITED :",*commited)
+	session := tSession.Clone()
+	defer session.Close()
+	session.SetSafe(&mgo.Safe{WMode: "majority"})
+	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
+	info,err := collection.UpsertId(commited.Id,commited)
+	if err != nil {
+		logger.Error("mongo_base method:UpsertId ", err.Error())
+	}
+	return info,err
 }
