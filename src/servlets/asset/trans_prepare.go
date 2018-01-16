@@ -151,7 +151,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	case txType == constants.TX_TYPE_PRIVATE_PLACEMENT ||
 		 txType == constants.TX_TYPE_ACTIVITY_REWARD ||
 		 txType == constants.TX_TYPE_TRANS:
-			ts := utils.GetTimestamp13()
 			txh := common.DTTXHistory{
 				Id:     txid,
 				Status: constants.TX_STATUS_DEFAULT,
@@ -159,7 +158,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 				From:   from,
 				To:     to,
 				Value:  utils.FloatStrToLVTint(secret.Value),
-				Ts:     ts,
+				Ts:     utils.TXIDToTimeStamp13(txid),
 				Code:   constants.TX_CODE_SUCC,
 			}
 			err := common.InsertPending(&txh)

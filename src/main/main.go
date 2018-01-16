@@ -9,6 +9,7 @@ import (
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"servlets/log_cleaner"
 )
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
 	initialize(cfgPath)
 	servlets.Init()
 	servlets.RegisterHandlers()
+	log_cleaner.StartJob()
 	server.Start(config.GetConfig().ServerAddr)
 
 }

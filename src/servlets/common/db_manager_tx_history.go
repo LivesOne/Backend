@@ -137,4 +137,28 @@ func FindAndModifyPending(txid,from,status int64)(*DTTXHistory,bool){
 	return &res,f
 }
 
+func ExistsPending(txid int64)bool{
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(txdbc.DBDatabase).C(PENDING)
+	c , err := collection.FindId(txid).Count()
+	if err != nil {
+		logger.Error("query mongo db error ",err.Error())
+		return false
+	}
+	return c>0
+}
 
+
+func FindTopPending(top int)*DTTXHistory{
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(txdbc.DBDatabase).C(PENDING)
+	var res DTTXHistory
+	err := collection.FindId(nil).Sort("-_id").Limit(top).One(&res)
+	if err != nil {
+		logger.Error("query mongo error ",err.Error())
+		return nil
+	}
+	return &res
+}

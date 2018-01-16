@@ -173,3 +173,6 @@ func CheckTXID(txid int64)bool{
 	}
 	return utils.Str2Int(row["c"])>0
 }
+func FindTopTxid(top int)([]map[string]string){
+	return gDBAsset.Query("select txid from recent_tx_ids order by txid desc limit ?",top)
+}
