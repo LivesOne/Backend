@@ -68,8 +68,8 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 	} else if checkType == 2 {
 		ok, err := vcode.ValidateSmsAndCallVCode(
 			account.Phone, account.Country, requestData.Param.VCode, 0, 0)
-		if err != nil || ok == false {
-			response.SetResponseBase(constants.RC_INVALID_VCODE)
+		if  ok == false {
+			response.SetResponseBase(vcode.ConvSmsErr(err))
 			return
 		}
 

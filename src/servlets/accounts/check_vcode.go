@@ -53,9 +53,9 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 
 	switch data.Param.Type {
 	case MESSAGE, CALL:
-		f, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
+		f, code := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
 		if !f {
-			response.SetResponseBase(constants.RC_INVALID_VCODE)
+			response.SetResponseBase(vcode.ConvSmsErr(code))
 		}
 	case EMAIL:
 		f, ec := vcode.ValidateMailVCode(data.Param.VCodeId, data.Param.VCode, data.Param.EMail)

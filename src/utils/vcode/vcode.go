@@ -35,6 +35,8 @@ const (
 
 	SMS_SUCC = 1
 	SMS_PROTOCOL_ERR = 200
+	SMS_CODE_EXPIRED_ERR = 103
+	SMS_VALIDATE_CODE_FAILD = 102
 )
 
 type httpResParam struct {
@@ -227,7 +229,7 @@ func ValidateImgVCode(id string, vcode string) (bool, int) {
 	return svrRes.Ret == SUCCESS, svrRes.Ret
 }
 
-func ValidateSmsAndCallVCode(phone string, country int, code string, expire int, flag int) (bool, error) {
+func ValidateSmsAndCallVCode(phone string, country int, code string, expire int, flag int) (bool, int) {
 	if isNotNull(phone) && country > 0 {
 		//{"area_code":86,"lan":"cn","phone_no":"13901008888","vid":2,"expired":3600,"voice_code":0}
 
@@ -243,14 +245,14 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 		jsonRes, err := utils.Post(url, string(reqStr))
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
-			return false, err
+			return false, SMS_PROTOCOL_ERR
 		} else {
 			httpRes := httpResSms{}
 			json.Unmarshal([]byte(jsonRes), &httpRes)
-			return httpRes.Code == SMS_SUCC, nil
+			return httpRes.Code == SMS_SUCC, httpRes.Code
 		}
 	} else {
-		return false, nil
+		return false, SMS_PROTOCOL_ERR
 	}
 }
 
@@ -291,6 +293,23 @@ func ConvImgErr(code int)constants.Error{
 		return constants.RC_INVALID_VCODE
 	case EMAIL_VALIDATE_FAILD:
 		return constants.RC_EMAIL_NOT_MATCH
+	case PARAMS_ERR:
+		return constants.RC_PROTOCOL_ERR
+	default:
+		return constants.RC_SYSTEM_ERR
+	}
+}
+
+func ConvSmsErr(code int)constants.Error{
+	switch code {
+	case SMS_CODE_EXPIRED_ERR:
+		return constants.RC_VCODE_EXPIRE
+	case SMS_VALIDATE_CODE_FAILD:
+		return constants.RC_INVALID_VCODE
+	case EMAIL_VALIDATE_FAILD:
+		return constants.RC_EMAIL_NOT_MATCH
+	case SMS_PROTOCOL_ERR:
+		return constants.RC_PROTOCOL_ERR
 	default:
 		return constants.RC_SYSTEM_ERR
 	}
