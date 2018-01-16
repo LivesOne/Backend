@@ -1,26 +1,32 @@
 package log_cleaner
 
 import (
-	"github.com/robfig/cron"
 	"time"
 	"utils/logger"
 	"utils"
+	"math/rand"
 )
 
 func StartJob(){
-	c := cron.NewWithLocation(time.UTC)
-	//每个整点执行
-	c.AddFunc("0 0 * * * ?", func() {
-		startTask()
-	})
-	//启动定时任务
-	c.Start()
+	go func(){
+		logger.Info("start cleaner pending job ---> ",utils.GetFormatDateNow())
+		for {
+			startTask()
+		}
+	}()
 }
 
 
 func startTask(){
-	logger.Info("start cleaner task job time :",utils.GetFormatDateNow())
-	for cleanerTxid() {}
+	//循环至每月数据
 	for cleanerPending() {}
-	logger.Info("end cleaner task job time :",utils.GetFormatDateNow())
+	//随机3-5秒休眠
+	s := random3To5()
+	logger.Info("sleep task second ",s)
+	time.Sleep(time.Duration(s) * time.Second)
+}
+
+func random3To5()int{
+	rand.Seed(time.Now().UnixNano())
+	return 3+rand.Intn(2)
 }

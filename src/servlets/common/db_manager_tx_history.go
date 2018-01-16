@@ -17,6 +17,7 @@ const (
 	// MGDBPoolMax = 10
 	PENDING = "dt_pending"
 	COMMITED = "dt_committed"
+	FAILED         = "dt_failed"
 )
 
 func InitTxHistoryMongoDB() {
@@ -150,15 +151,19 @@ func ExistsPending(txid int64)bool{
 }
 
 
-func FindTopPending(top int)*DTTXHistory{
+func FindTopPending(query interface{},top int)*DTTXHistory{
 	session := tSession.Clone()
 	defer session.Close()
 	collection := session.DB(txdbc.DBDatabase).C(PENDING)
 	var res DTTXHistory
-	err := collection.FindId(nil).Sort("-_id").Limit(top).One(&res)
+	err := collection.FindId(query).Sort("+_id").One(&res)
 	if err != nil {
 		logger.Error("query mongo error ",err.Error())
 		return nil
 	}
 	return &res
+}
+
+func InsertFailed(faild *DTTXHistory) error {
+	return txCommonInsert(txdbc.DBDatabase, FAILED, faild)
 }
