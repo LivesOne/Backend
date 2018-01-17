@@ -35,7 +35,7 @@ func cleanerPending()bool{
 				if common.CheckTXID(pd.Id) {
 					err := common.InsertCommited(pd)
 					if common.CheckDup(err) {
-						common.DeletePending(pd.Id)
+						common.DeletePendingByInfo(pd)
 					}
 				} else {
 					err := common.InsertFailed(pd)

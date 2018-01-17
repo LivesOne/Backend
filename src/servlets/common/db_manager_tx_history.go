@@ -78,6 +78,11 @@ func DeletePending(txid int64)error{
 	return txCommitDelete(txdbc.DBDatabase,PENDING,txid)
 }
 
+func DeletePendingByInfo(tx *DTTXHistory)error{
+	logger.Info("DELETE PENDING :",*tx)
+	return txCommitDelete(txdbc.DBDatabase,PENDING,tx.Id)
+}
+
 func FindPending(txid int64)*DTTXHistory{
 	session := tSession.Clone()
 	defer session.Close()
@@ -151,7 +156,7 @@ func FindTopPending(query interface{},top int)*DTTXHistory{
 	defer session.Close()
 	collection := session.DB(txdbc.DBDatabase).C(PENDING)
 	var res DTTXHistory
-	err := collection.FindId(query).Sort("+_id").One(&res)
+	err := collection.Find(query).Sort("+_id").One(&res)
 	if err != nil {
 		logger.Error("query mongo error ",err.Error())
 		return nil
