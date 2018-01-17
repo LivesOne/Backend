@@ -33,15 +33,13 @@ func cleanerPending()bool{
 			//超时处理
 			if (mts - pdts) > T_S_120 {
 				if common.CheckTXID(pd.Id) {
-					_,err := common.UpsertCommited(pd)
-					if err == nil {
+					err := common.InsertCommited(pd)
+					if common.CheckDup(err) {
 						common.DeletePending(pd.Id)
-					} else {
-						logger.Error("insert mongo commited error ",err.Error())
 					}
 				} else {
-					_,err := common.UpsertFailed(pd)
-					if err == nil {
+					err := common.InsertFailed(pd)
+					if common.CheckDup(err) {
 						common.DeletePending(pd.Id)
 					} else {
 						logger.Error("insert mongo failed error ",err.Error())

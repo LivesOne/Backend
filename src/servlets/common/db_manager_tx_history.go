@@ -34,6 +34,7 @@ func InitTxHistoryMongoDB() {
 func txCommonInsert(db, c string, p interface{}) error {
 	session := tSession.Clone()
 	defer session.Close()
+	session.SetSafe(&mgo.Safe{WMode: "majority"})
 	collection := session.DB(db).C(c)
 	err := collection.Insert(p)
 	if err != nil {
@@ -66,18 +67,11 @@ func InsertPending(pending *DTTXHistory) error {
 }
 
 func InsertCommited(commited *DTTXHistory) error {
-	logger.Info("INSERT COMMITED :",*commited)
-	session := tSession.Clone()
-	defer session.Close()
-	session.SetSafe(&mgo.Safe{WMode: "majority"})
-	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
-	err := collection.Insert(commited)
-	if err != nil {
-		logger.Error("mongo_base method:Insert ", err.Error())
-	}
-	return err
+	return txCommonInsert(txdbc.DBDatabase, COMMITED, commited)
 }
-
+func InsertFailed(failed *DTTXHistory) error {
+	return txCommonInsert(txdbc.DBDatabase, FAILED, failed)
+}
 
 func DeletePending(txid int64)error{
 	logger.Info("DELETE PENDING :",FindPending(txid))
@@ -165,27 +159,9 @@ func FindTopPending(query interface{},top int)*DTTXHistory{
 	return &res
 }
 
-func UpsertFailed(faild *DTTXHistory) (*mgo.ChangeInfo,error) {
-	logger.Info("UPSERT FAILED :",*faild)
-	session := tSession.Clone()
-	defer session.Close()
-	collection := session.DB(txdbc.DBDatabase).C(FAILED)
-	info,err := collection.UpsertId(faild.Id,faild)
+func CheckDup(err error)bool{
 	if err != nil {
-		logger.Error("mongo_base method:UpsertId ", err.Error())
+		return mgo.IsDup(err)
 	}
-	return info,err
-}
-
-func UpsertCommited(commited *DTTXHistory) (*mgo.ChangeInfo,error) {
-	logger.Info("UPSERT COMMITED :",*commited)
-	session := tSession.Clone()
-	defer session.Close()
-	session.SetSafe(&mgo.Safe{WMode: "majority"})
-	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
-	info,err := collection.UpsertId(commited.Id,commited)
-	if err != nil {
-		logger.Error("mongo_base method:UpsertId ", err.Error())
-	}
-	return info,err
+	return true
 }

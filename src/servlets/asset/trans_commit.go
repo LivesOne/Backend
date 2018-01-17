@@ -128,7 +128,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	if f {
 		//成功 插入commited
 		err := common.InsertCommited(perPending)
-		if err == nil {
+		if common.CheckDup(err) {
 			//删除pending
 			common.DeletePending(txid)
 			//不删除数据库中的txid
