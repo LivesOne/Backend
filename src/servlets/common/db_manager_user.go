@@ -279,21 +279,24 @@ func CheckPaymentPwd(uid int64, pwdInDB string) bool {
 }
 
 func convRowMap2Account(row map[string]string) *Account {
-	var account *Account = &Account{}
-	account.ID = utils.Str2Int64(row["id"])
-	account.UID = utils.Str2Int64(row["uid"])
-	account.UIDString = row["uid"]
-	account.Nickname = row["nickname"]
-	account.Email = row["email"]
-	account.Country = utils.Str2Int(row["country"])
-	account.Phone = row["phone"]
-	account.Language = row["language"]
-	account.Region = row["region"]
-	account.From = row["from"]
-	account.RegisterTime = utils.Str2Int64(row["register_time"])
-	account.UpdateTime = utils.Str2Int64(row["update_time"])
-	account.RegisterType = utils.Str2Int(row["register_type"])
-	account.LoginPassword = row["login_password"]
-	account.PaymentPassword = row["payment_password"]
-	return account
+	if len(row)>0{
+		var account *Account = &Account{}
+		account.ID = utils.Str2Int64(row["id"])
+		account.UID = utils.Str2Int64(row["uid"])
+		account.UIDString = row["uid"]
+		account.Nickname = row["nickname"]
+		account.Email = row["email"]
+		account.Country = utils.Str2Int(row["country"])
+		account.Phone = row["phone"]
+		account.Language = row["language"]
+		account.Region = row["region"]
+		account.From = row["from"]
+		account.RegisterTime = utils.Str2Int64(row["register_time"])
+		account.UpdateTime = utils.Str2Int64(row["update_time"])
+		account.RegisterType = utils.Str2Int(row["register_type"])
+		account.LoginPassword = row["login_password"]
+		account.PaymentPassword = row["payment_password"]
+		return account
+	}
+	return nil
 }
