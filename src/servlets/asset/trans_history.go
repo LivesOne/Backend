@@ -127,8 +127,8 @@ func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 			rcs[i] = transHistoryRecord{
 				Txid:  v.Id,
 				Type:  v.Type,
-				From:  utils.Int642Str(v.From),
-				To:    utils.Int642Str(v.To),
+				From:  convUidStr(v.From),
+				To:    convUidStr(v.To),
 				Value: utils.LVTintToFloatStr(v.Value),
 				ts:    v.Ts,
 			}
@@ -136,6 +136,13 @@ func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 		data.Records = rcs
 	}
 	return &data
+}
+
+func convUidStr(uid int64)string{
+	if uid == 0 {
+		return ""
+	}
+	return utils.Int642Str(uid)
 }
 
 func buildQuery(uid int64, param *transHistoryParam) bson.M {
