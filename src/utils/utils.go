@@ -150,3 +150,9 @@ func TXIDToTimeStamp13(txid int64) int64 {
 func GetFormatDateNow()string{
 	return time.Now().UTC().Format("2006-01-02 15:04:05")
 }
+
+func TimestampToTxid(ts,iv int64)int64{
+	delta := ts - iv - constants.BASE_TIMESTAMP
+	tstx := (delta << 22) & 0x7FFFFFFFFFC00000
+	return tstx
+}

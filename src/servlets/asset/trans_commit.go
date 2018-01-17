@@ -104,7 +104,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	//暂时写死10秒
 	if ts-txid_ts > TRANS_TIMEOUT {
 		//删除pending
-		common.DeletePending(txid)
+		common.DeletePendingByInfo(perPending)
 		response.SetResponseBase(constants.RC_TRANS_TIMEOUT)
 		return
 
@@ -130,14 +130,14 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		err := common.InsertCommited(perPending)
 		if common.CheckDup(err) {
 			//删除pending
-			common.DeletePending(txid)
+			common.DeletePendingByInfo(perPending)
 			//不删除数据库中的txid
 			//common.RemoveTXID(txid)
 		}
 
 	} else {
 		//删除pending
-		common.DeletePending(txid)
+		common.DeletePendingByInfo(perPending)
 		//失败设置返回信息
 		switch c {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:

@@ -11,4 +11,5 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_TRANS_PREPARE, &transPrepareHandler{})
 	server.RegisterHandler(constants.ASSET_TRANS_COMMIT, &transCommitHandler{})
 	server.RegisterHandler(constants.ASSET_TRANS_RESULT, &transResultHandler{})
+	server.RegisterHandler(constants.ASSET_TRANS_HISTORY, &transHistoryHandler{})
 }

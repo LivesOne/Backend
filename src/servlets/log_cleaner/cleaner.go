@@ -20,7 +20,7 @@ func cleanerPending()bool{
 	mts := utils.GetTimestamp13()
 	query := bson.M{
 		"_id":bson.M{
-			"$lt":getTimeOutTS(mts),
+			"$lt":utils.TimestampToTxid(mts,T_S_60),
 		},
 	}
 	pd := common.FindTopPending(query,1)
@@ -40,7 +40,7 @@ func cleanerPending()bool{
 				} else {
 					err := common.InsertFailed(pd)
 					if common.CheckDup(err) {
-						common.DeletePending(pd.Id)
+						common.DeletePendingByInfo(pd)
 					} else {
 						logger.Error("insert mongo failed error ",err.Error())
 					}
@@ -56,9 +56,3 @@ func cleanerPending()bool{
 	return false
 }
 
-func getTimeOutTS(ts int64) int64{
-	//当前时间减去60秒 在减去txid生成时需要减去的时间戳
-	delta := ts - T_S_60 - constants.BASE_TIMESTAMP
-	timeout := (delta << 22) & 0x7FFFFFFFFFC00000
-	return timeout
-}
