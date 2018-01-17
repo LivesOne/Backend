@@ -177,7 +177,7 @@ func QueryCommitted(query interface{},limit int)[]DTTXHistory{
 	defer session.Close()
 	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
 	res := []DTTXHistory{}
-	err := collection.Find(query).Sort("+_id").Limit(limit).All(&res)
+	err := collection.Find(query).Sort("-_id").Limit(limit).All(&res)
 	if err != nil {
 		logger.Error("query mongo db error ",err.Error())
 		return nil
