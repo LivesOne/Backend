@@ -6,6 +6,11 @@ import (
 	"utils/config"
 	"utils/logger"
 	"servlets/constants"
+	"sort"
+	"bytes"
+	"crypto/md5"
+	"fmt"
+	"math/rand"
 )
 
 const (
@@ -284,6 +289,47 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 	}
 }
 
+func genSignature(secretKey string, params map[string]string) string {
+	var keys []string
+	for key,_ := range params {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	buf := bytes.NewBufferString("")
+	for _, key := range keys {
+		buf.WriteString(key + params[key])
+	}
+	buf.WriteString(secretKey)
+	has := md5.Sum(buf.Bytes())
+	return fmt.Sprintf("%x", has)
+}
+
+
+func ValidateWYYD(validate string)(bool,int){
+	if len(validate) > 0 {
+		ts := utils.GetTimestamp13()
+		rand.Seed(ts)
+		param := make(map[string]string,0)
+		param["captchaId"] = config.GetConfig().CAPTCHA_ID
+		param["validate"] = validate
+		param["user"] = ""
+		param["secretId"] = config.GetConfig().CAPTCHA_SECRET_ID
+		param["version"] = "v2"
+		param["timestamp"] = utils.Int642Str(ts)
+		param["nonce"] = utils.Int2Str(rand.Intn(200))
+		param["signature"] = genSignature(config.GetConfig().CAPTCHA_SECRET_KEY,param)
+		resBodyStr , err := utils.FormPost(config.GetConfig().CAPTCHA_URL,param)
+		if err != nil {
+			return false,HTTP_ERR
+		}
+		//TODO validate success
+		fmt.Println(resBodyStr)
+		return true,SUCCESS
+	}
+	return false,PARAMS_ERR
+}
+
+
 
 func ConvImgErr(code int)constants.Error{
 	switch code {
@@ -314,3 +360,4 @@ func ConvSmsErr(code int)constants.Error{
 		return constants.RC_SYSTEM_ERR
 	}
 }
+

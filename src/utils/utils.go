@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 	"utils/logger"
+	"bytes"
+	"net/url"
 )
 
 const (
@@ -96,6 +98,45 @@ func Post(url string, params string) (resBody string, e error) {
 		return res, e2
 	}
 }
+
+func BuildHttpReqParam(params map[string]string)string{
+	const(
+		s = "="
+		a = "&"
+	)
+	if params != nil && len(params) > 0 {
+		var buffer bytes.Buffer
+		for i,v := range params{
+			buffer.WriteString(a)
+			buffer.WriteString(i)
+			buffer.WriteString(s)
+			buffer.WriteString(url.QueryEscape(v))
+		}
+		strParam := buffer.String()
+		return strParam[1:]
+	}
+	return ""
+}
+
+func FormPost(url string,params map[string]string)(resBody string, e error){
+	strParam := BuildHttpReqParam(params)
+	logger.Info("form http post url ",url,"body ",strParam)
+	resp, e1 := http.Post(url, "application/x-www-form-urlencoded", strings.NewReader(strParam))
+	if e1 != nil {
+		logger.Error("post error ---> ", e1.Error())
+		return "", e1
+	} else {
+		defer resp.Body.Close()
+		body, e2 := ioutil.ReadAll(resp.Body)
+		if e2 != nil {
+			logger.Error("post error ---> ", e2.Error())
+		}
+		res := string(body)
+		logger.Info("SendPost res ---> ", res)
+		return res, e2
+	}
+}
+
 func GetTimestamp13() int64 {
 	now := time.Now()
 	return now.UnixNano() / 1000000

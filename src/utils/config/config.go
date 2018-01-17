@@ -59,6 +59,11 @@ type Configuration struct {
 	ImgSvrAddr string
 	// log相关
 	LogConfig string
+	CAPTCHA_URL string
+	CAPTCHA_ID string
+	CAPTCHA_SECRET_ID string
+	CAPTCHA_SECRET_KEY string
+
 }
 
 // configuration data

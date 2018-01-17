@@ -45,5 +45,9 @@
   
     "SmsSvrAddr":"http://10.100.13.6:8045",
     "MailSvrAddr":"http://10.0.5.248:8080/vcode",
-    "ImgSvrAddr":"http://10.0.5.248:8080/vcode"
+    "ImgSvrAddr":"http://10.0.5.248:8080/vcode",
+    "CAPTCHA_URL":"http://c.dun.163yun.com/api/v2/verify",
+    "CAPTCHA_ID":"",
+    "CAPTCHA_SECRET_ID":"",
+    "CAPTCHA_SECRET_KEY":""
 }
