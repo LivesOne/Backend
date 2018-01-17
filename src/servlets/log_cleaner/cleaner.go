@@ -48,7 +48,7 @@ func cleanerPending()bool{
 			}
 		} else {
 			if (mts - pdts) > T_S_60 {
-				common.DeletePending(pd.Id)
+				common.DeletePendingByInfo(pd)
 			}
 		}
 		return true
