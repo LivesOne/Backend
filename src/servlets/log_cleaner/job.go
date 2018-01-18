@@ -28,5 +28,5 @@ func startTask(){
 
 func random3To5()int{
 	rand.Seed(time.Now().UnixNano())
-	return 3+rand.Intn(2)
+	return 3+rand.Intn(3)
 }

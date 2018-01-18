@@ -114,8 +114,9 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 	data := transHistoryResData{
 		More:0,
+		Records:make([]transHistoryRecord,0),
 	}
-	if records != nil {
+	if records != nil && len(records) > 0 {
 		rcl := len(records)
 		if rcl > max {
 			data.More = 1
@@ -123,8 +124,8 @@ func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 			rcl = max
 		}
 		rcs := make([]transHistoryRecord,rcl)
-		for i,v := range records {
-			rcs[i] = transHistoryRecord{
+		for _,v := range records {
+			r := transHistoryRecord{
 				Txid:  v.Id,
 				Type:  v.Type,
 				From:  convUidStr(v.From),
@@ -132,6 +133,7 @@ func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 				Value: utils.LVTintToFloatStr(v.Value),
 				ts:    v.Ts,
 			}
+			data.Records = append(data.Records,r)
 		}
 		data.Records = rcs
 	}
