@@ -130,7 +130,7 @@ func buildResData(records []common.DTTXHistory, max int,uid int64) *transHistory
 				From:  convUidStr(v.From),
 				To:    convUidStr(v.To),
 				Value: utils.LVTintToFloatStr(v.Value),
-				ts:    v.Ts,
+				Ts:    v.Ts,
 			}
 			data.Records = append(data.Records, r)
 		}
