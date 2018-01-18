@@ -1,6 +1,7 @@
 package constants
 
 const (
+	TX_TYPE_ALL               = 0
 	TX_TYPE_REWARD            = 1
 	TX_TYPE_PRIVATE_PLACEMENT = 2
 	TX_TYPE_ACTIVITY_REWARD   = 3

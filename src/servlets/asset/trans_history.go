@@ -86,10 +86,11 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 
 	requestData := transHistoryRequest{} // request body
 	common.ParseHttpBodyParams(request, &requestData)
-	if requestData.Param == nil {
+	if requestData.Param == nil || validateType(requestData.Param.Type) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
 
 	q := buildQuery(uid, requestData.Param)
 
@@ -135,6 +136,14 @@ func buildResData(records []common.DTTXHistory, max int,uid int64) *transHistory
 		}
 	}
 	return &data
+}
+
+func validateType(t int)bool{
+	if t<constants.TX_TYPE_ALL ||
+		t > constants.TX_TYPE_RECEIVABLES {
+		return false
+	}
+	return true
 }
 
 func convType(t int, to, uid int64) int {
