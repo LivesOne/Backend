@@ -10,7 +10,6 @@ import (
 	"utils/logger"
 )
 
-
 const (
 	MAX_COUNT = 100
 	DEF_COUNT = 20
@@ -92,7 +91,7 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	q := buildQuery(uid,requestData.Param)
+	q := buildQuery(uid, requestData.Param)
 
 	c := DEF_COUNT
 
@@ -104,17 +103,17 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 		}
 	}
 
-logger.Debug(c)
+	logger.Debug(c)
 	//query record
 	//查新c+1条记录，如果len > c 说明more = 1
-	records := common.QueryCommitted(q,c+1)
-	response.Data = buildResData(records,c)
+	records := common.QueryCommitted(q, c+1)
+	response.Data = buildResData(records, c,uid)
 }
 
-func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
+func buildResData(records []common.DTTXHistory, max int,uid int64) *transHistoryResData {
 	data := transHistoryResData{
-		More:0,
-		Records:make([]transHistoryRecord,0),
+		More:    0,
+		Records: make([]transHistoryRecord, 0),
 	}
 	if records != nil && len(records) > 0 {
 		rcl := len(records)
@@ -123,22 +122,32 @@ func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 			records = records[:max]
 			rcl = max
 		}
-		for _,v := range records {
+		for _, v := range records {
 			r := transHistoryRecord{
 				Txid:  v.Id,
-				Type:  v.Type,
+				Type:  convType(v.Type,v.To,uid),
 				From:  convUidStr(v.From),
 				To:    convUidStr(v.To),
 				Value: utils.LVTintToFloatStr(v.Value),
 				ts:    v.Ts,
 			}
-			data.Records = append(data.Records,r)
+			data.Records = append(data.Records, r)
 		}
 	}
 	return &data
 }
 
-func convUidStr(uid int64)string{
+func convType(t int, to, uid int64) int {
+	if t == constants.TX_TYPE_TRANS {
+		if to == uid {
+			return constants.TX_TYPE_RECEIVABLES
+		}
+		return constants.TX_TYPE_TRANS
+	}
+	return t
+}
+
+func convUidStr(uid int64) string {
 	if uid == 0 {
 		return ""
 	}
@@ -155,20 +164,20 @@ func buildQuery(uid int64, param *transHistoryParam) bson.M {
 		ts := []bson.M{}
 		if param.Begin > 0 {
 			begin := bson.M{
-				"_id":bson.M{
-					"$gt":utils.TimestampToTxid(param.Begin,0),
+				"_id": bson.M{
+					"$gt": utils.TimestampToTxid(param.Begin, 0),
 				},
 			}
-			ts = append(ts,begin)
+			ts = append(ts, begin)
 		}
 		if param.End > 0 {
 			//end +1 毫秒 为了保证当前毫秒数的记录可以查出来  后22位置0 +1毫秒后的记录不会查出
 			end := bson.M{
-				"_id":bson.M{
-					"$lt":utils.TimestampToTxid(param.End+1,0),
+				"_id": bson.M{
+					"$lt": utils.TimestampToTxid(param.End+1, 0),
 				},
 			}
-			ts = append(ts,end)
+			ts = append(ts, end)
 		}
 		if len(ts) > 0 {
 			query["$and"] = ts
@@ -177,22 +186,22 @@ func buildQuery(uid int64, param *transHistoryParam) bson.M {
 		//生成不同的查询条件
 		switch {
 		case param.Type == constants.TX_TYPE_REWARD ||
-			 param.Type == constants.TX_TYPE_PRIVATE_PLACEMENT:
-				 query["to"] = uid
-				 query["type"] = param.Type
+			param.Type == constants.TX_TYPE_PRIVATE_PLACEMENT:
+			query["to"] = uid
+			query["type"] = param.Type
 		case param.Type == constants.TX_TYPE_RECEIVABLES:
-				 query["to"] = uid
-				 query["type"] = constants.TX_TYPE_TRANS
+			query["to"] = uid
+			query["type"] = constants.TX_TYPE_TRANS
 		case param.Type == constants.TX_TYPE_TRANS:
-				 query["from"] = uid
-				 query["type"] = constants.TX_TYPE_TRANS
+			query["from"] = uid
+			query["type"] = constants.TX_TYPE_TRANS
 		default:
 			query["$or"] = []bson.M{
 				bson.M{
-					"from":uid,
+					"from": uid,
 				},
 				bson.M{
-					"to":uid,
+					"to": uid,
 				},
 			}
 		}
