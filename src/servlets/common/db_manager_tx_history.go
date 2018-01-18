@@ -184,5 +184,6 @@ func QueryCommitted(query interface{},limit int)[]DTTXHistory{
 		logger.Error("query mongo db error ",err.Error())
 		return nil
 	}
+	logger.Debug("query res ",utils.ToJSONIndent(res))
 	return res
 }
