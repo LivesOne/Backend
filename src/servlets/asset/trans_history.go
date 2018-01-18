@@ -65,7 +65,7 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("modify pwd: request param error")
+		logger.Info("asset transHistory: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}

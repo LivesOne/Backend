@@ -50,7 +50,7 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	// if httpHeader.IsValid() == false {
 	if  !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash()  {
-		logger.Info("modify pwd: request param error")
+		logger.Info("asset balance: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}

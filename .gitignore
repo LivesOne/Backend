@@ -5,3 +5,4 @@ bin
 main
 logs
 livesone-backend.log
+config/config2.json
