@@ -157,7 +157,7 @@ func FindTopPending(query interface{},top int)*DTTXHistory{
 	collection := session.DB(txdbc.DBDatabase).C(PENDING)
 	var res DTTXHistory
 	err := collection.Find(query).Sort("+_id").One(&res)
-	if err != nil {
+	if err != nil && err != mgo.ErrNotFound {
 		logger.Error("query mongo error ",err.Error())
 		return nil
 	}
@@ -178,7 +178,7 @@ func QueryCommitted(query interface{},limit int)[]DTTXHistory{
 	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
 	res := []DTTXHistory{}
 	err := collection.Find(query).Sort("-_id").Limit(limit).All(&res)
-	if err != nil {
+	if err != nil && err != mgo.ErrNotFound  {
 		logger.Error("query mongo db error ",err.Error())
 		return nil
 	}
