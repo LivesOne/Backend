@@ -189,14 +189,12 @@ func buildQuery(uid int64, param *transHistoryParam) bson.M {
 				 query["from"] = uid
 				 query["type"] = constants.TX_TYPE_TRANS
 		default:
-			query["$or"] = bson.D{
-				bson.DocElem{
-					Name:"from",
-					Value:uid,
+			query["$or"] = []bson.M{
+				bson.M{
+					"from":uid,
 				},
-				bson.DocElem{
-					Name:"to",
-					Value:uid,
+				bson.M{
+					"to":uid,
 				},
 			}
 		}
