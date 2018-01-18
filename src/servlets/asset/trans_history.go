@@ -38,7 +38,7 @@ type transHistoryRecord struct {
 	From  string `json:"from"`
 	To    string `json:"to"`
 	Value string `json:"value"`
-	ts    int64  `json:"ts"`
+	Ts    int64  `json:"ts"`
 }
 
 // sendVCodeHandler
