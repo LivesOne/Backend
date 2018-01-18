@@ -139,7 +139,21 @@ func validateAction(param *sendVCodeParam) bool {
 		default:
 			return false
 		}
+	} else if param.Action == "reset" {
+		switch param.Type {
+		case MESSAGE, CALL:
+			if common.ExistsPhone(param.Country, param.Phone) {
+				return true
+			}
+		case EMAIL:
+			if common.ExistsEmail(param.EMail) {
+				return true
+			}
+		default:
+			return false
+		}
 	}
+
 	return true
 }
 
