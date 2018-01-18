@@ -86,7 +86,7 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 
 	requestData := transHistoryRequest{} // request body
 	common.ParseHttpBodyParams(request, &requestData)
-	if requestData.Param == nil || validateType(requestData.Param.Type) {
+	if requestData.Param == nil || !validateType(requestData.Param.Type) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
