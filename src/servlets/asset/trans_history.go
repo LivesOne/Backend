@@ -154,29 +154,25 @@ func buildQuery(uid int64, param *transHistoryParam) bson.M {
 		query["_id"] = utils.Str2Int64(param.Txid)
 	} else {
 		//判断时间参数
-		ts := bson.D{}
+		ts := []bson.M{}
 		if param.Begin > 0 {
-			begin := bson.DocElem{
-				Name:"_id",
-				Value:bson.DocElem{
-					Name:"$gt",
-					Value:utils.TimestampToTxid(param.Begin,0),
+			begin := bson.M{
+				"_id":bson.M{
+					"$gt":utils.TimestampToTxid(param.Begin,0),
 				},
 			}
 			ts = append(ts,begin)
 		}
 		if param.End > 0 {
 			//end +1 毫秒 为了保证当前毫秒数的记录可以查出来  后22位置0 +1毫秒后的记录不会查出
-			end := bson.DocElem{
-				Name:"_id",
-				Value:bson.DocElem{
-					Name:"$lt",
-					Value:utils.TimestampToTxid(param.End+1,0),
+			end := bson.M{
+				"_id":bson.M{
+					"$lt":utils.TimestampToTxid(param.End+1,0),
 				},
 			}
 			ts = append(ts,end)
 		}
-		if param.Begin > 0 || param.End > 0 {
+		if len(ts) > 0 {
 			query["$and"] = ts
 		}
 		//判断查询类型
