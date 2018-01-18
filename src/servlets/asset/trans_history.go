@@ -104,7 +104,7 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 		}
 	}
 
-
+logger.Debug(c)
 	//query record
 	//查新c+1条记录，如果len > c 说明more = 1
 	records := common.QueryCommitted(q,c+1)
@@ -123,7 +123,6 @@ func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 			records = records[:max]
 			rcl = max
 		}
-		rcs := make([]transHistoryRecord,rcl)
 		for _,v := range records {
 			r := transHistoryRecord{
 				Txid:  v.Id,
@@ -135,7 +134,6 @@ func buildResData(records []common.DTTXHistory,max int)*transHistoryResData{
 			}
 			data.Records = append(data.Records,r)
 		}
-		data.Records = rcs
 	}
 	return &data
 }
