@@ -176,7 +176,7 @@ func buildQuery(uid int64, param *transHistoryParam) bson.M {
 			}
 			ts = append(ts,end)
 		}
-		if len(ts) > 0 {
+		if param.Begin > 0 || param.End > 0 {
 			query["$and"] = ts
 		}
 		//判断查询类型

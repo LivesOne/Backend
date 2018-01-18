@@ -7,6 +7,7 @@ import (
 	"utils/logger"
 	"gopkg.in/mgo.v2/bson"
 	"servlets/constants"
+	"utils"
 )
 
 var tSession *mgo.Session
@@ -175,6 +176,7 @@ func CheckDup(err error)bool{
 func QueryCommitted(query interface{},limit int)[]DTTXHistory{
 	session := tSession.Clone()
 	defer session.Close()
+	logger.Debug("mongo query :",utils.ToJSONIndent(query))
 	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
 	res := []DTTXHistory{}
 	err := collection.Find(query).Sort("-_id").Limit(limit).All(&res)
