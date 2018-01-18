@@ -119,7 +119,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 				}
 			}
 		} else {
-			response.SetResponseBase(vcode.ConvMailErr(code))
+			response.SetResponseBase(vcode.ConvImgErr(code))
 		}
 	}
 
