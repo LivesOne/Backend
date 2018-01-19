@@ -24,7 +24,7 @@ func RedisPoolInit() {
 				redis.DialConnectTimeout(500*time.Millisecond),
 				redis.DialReadTimeout(500*time.Millisecond),
 				redis.DialWriteTimeout(500*time.Millisecond),
-				redis.DialKeepAlive(1*time.Minute),
+				redis.DialKeepAlive(20*time.Second),
 				redis.DialPassword(redisCfg.RedisAuth))
 			if err != nil {
 				logger.Info("token: can't connect to redis server")
