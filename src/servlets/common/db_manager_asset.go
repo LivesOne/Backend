@@ -71,8 +71,9 @@ func QueryBalance(uid int64)int64{
 func TransAccountLvt(txid,from,to,value int64)(bool,int){
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
-	if !CheckAndInitAsset(from) {
-		return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	f,c := CheckAndInitAsset(from)
+	if !f {
+		return f,c
 	}
 	ts := utils.GetTimestamp13()
 
@@ -121,18 +122,30 @@ func TransAccountLvt(txid,from,to,value int64)(bool,int){
 	return true,constants.TRANS_ERR_SUCC
 }
 
-func CheckAndInitAsset(uid int64)bool{
-	uid,status := GetAssetByUid(uid)
-	if status != constants.ASSET_STATUS_INIT {
-		//初始化资产
-		InsertAsset(uid)
-		//初始化工资
-		InsertReward(uid)
-		//修改资产初始化状态
-		SetAssetStatus(uid,constants.ASSET_STATUS_INIT )
-		return false
+func CheckAndInitAsset(uid int64)(bool,int){
+	//初始化资产
+	res,err := InsertAsset(uid)
+	if err != nil {
+		logger.Error("init asset error ",err.Error())
+		return false,constants.TRANS_ERR_SYS
 	}
-	return true
+
+	rowsCount ,err := res.RowsAffected()
+	if err != nil {
+		logger.Error("get RowsAffected error ",err.Error())
+		return false,constants.TRANS_ERR_SYS
+	}
+
+	_,err = InsertReward(uid)
+	if err != nil {
+		logger.Error("init reward error ",err.Error())
+		return false,constants.TRANS_ERR_SYS
+	}
+
+	if rowsCount == 0 {
+		return true,constants.TRANS_ERR_SUCC
+	}
+	return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
 }
 
 func InsertTXID(txid int64,tx *sql.Tx)(sql.Result,error) {
@@ -152,16 +165,14 @@ func RemoveTXID(txid int64) error{
 	return err
 }
 
-func InsertReward(uid int64) error {
+func InsertReward(uid int64) (sql.Result , error) {
 	sql := "insert ignore into user_reward (uid,total,lastday,lastmodify) values (?,?,?,?) "
-	_,err := gDBAsset.Exec(sql, uid, 0, 0, 0)
-	return err
+	return gDBAsset.Exec(sql, uid, 0, 0, 0)
 }
 
-func InsertAsset(uid int64)error {
+func InsertAsset(uid int64)(sql.Result , error) {
 	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
-	_,err := gDBAsset.Exec(sql, uid, 0, 0)
-	return err
+	return gDBAsset.Exec(sql, uid, 0, 0)
 }
 
 
