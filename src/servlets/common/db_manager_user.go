@@ -239,6 +239,11 @@ func SetEmail(uid int64, email string) error {
 	return err
 }
 
+func SetNickname(uid int64, nickname string) error {
+	_, err := gDbUser.Exec("update account set nickname = ? where uid = ?", nickname, uid)
+	return err
+}
+
 func SetPhone(uid int64, country int, phone string) error {
 	_, err := gDbUser.Exec("update account set country = ?,phone = ? where uid = ?", country, phone, uid)
 	return err
@@ -279,7 +284,7 @@ func CheckPaymentPwd(uid int64, pwdInDB string) bool {
 }
 
 func convRowMap2Account(row map[string]string) *Account {
-	if len(row)>0{
+	if len(row) > 0 {
 		var account *Account = &Account{}
 		account.ID = utils.Str2Int64(row["id"])
 		account.UID = utils.Str2Int64(row["uid"])
