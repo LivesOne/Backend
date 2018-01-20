@@ -11,6 +11,7 @@ import (
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"utils/lvthttp"
 )
 
 const (
@@ -330,7 +331,7 @@ func ValidateWYYD(validate string) (bool, int) {
 		param["timestamp"] = utils.Int642Str(ts)
 		param["nonce"] = utils.Int2Str(rand.Intn(200))
 		param["signature"] = genSignature(config.GetConfig().CAPTCHA_SECRET_KEY, param)
-		resBodyStr, err := utils.FormPost(config.GetConfig().CAPTCHA_URL, param)
+		resBodyStr, err := lvthttp.FormPost(config.GetConfig().CAPTCHA_URL, param)
 		if err != nil {
 			return false, HTTP_ERR
 		}
