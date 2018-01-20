@@ -77,11 +77,11 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// 判断手机验证码正确
-	ok, _ := vcode.ValidateSmsAndCallVCode(
+	ok, c := vcode.ValidateSmsAndCallVCode(
 		secret.Phone, secret.Country, requestData.Param.VCode, 0, 0)
 	if ok == false {
 		logger.Info("bind phone: validate sms and call vcode failed")
-		response.SetResponseBase(constants.RC_INVALID_VCODE)
+		response.SetResponseBase(vcode.ConvSmsErr(c))
 		return
 	}
 

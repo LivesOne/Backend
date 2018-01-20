@@ -36,32 +36,6 @@ func TokenErr2RcErr(tokenErr int) constants.Error {
 	}
 }
 
-func ValidateMailVCodeErr2RcErr(validateErr int) constants.Error {
-	switch validateErr {
-	case vcode.SUCCESS:
-		return constants.RC_OK
-	case vcode.NOT_FOUND_ERR:
-		return constants.RC_PARAM_ERR
-	case vcode.SERVER_ERR:
-		return constants.RC_PARAM_ERR
-	case vcode.NO_PARAMS_ERR:
-		return constants.RC_PARAM_ERR
-	case vcode.PARAMS_ERR:
-		return constants.RC_PARAM_ERR
-	case vcode.JSON_PARSE_ERR:
-		return constants.RC_PARAM_ERR
-	case vcode.CODE_EXPIRED_ERR:
-		return constants.RC_PARAM_ERR
-	case vcode.VALIDATE_CODE_FAILD:
-		return constants.RC_PARAM_ERR
-	case vcode.EMAIL_VALIDATE_FAILD:
-		return constants.RC_PARAM_ERR
-	case vcode.HTTP_ERR:
-		return constants.RC_PARAM_ERR
-	default:
-		return constants.RC_PARAM_ERR
-	}
-}
 
 // 生成 request 所需的 signature
 func GenerateSig(hash string) (string, constants.Error) {
