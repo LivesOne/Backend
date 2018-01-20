@@ -93,20 +93,34 @@ func TransAccountLvt(txid,from,to,value int64)(bool,int){
 		tx.Rollback()
 		return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
-
-	_,err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?",value,ts,from)
+	//扣除转出方balance
+	info1,err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?",value,ts,from)
 	if err1 != nil {
 		logger.Error("sql error ",err1.Error())
 		tx.Rollback()
 		return false,constants.TRANS_ERR_SYS
 	}
-	_,err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?",value,ts,to)
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa ,_ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ",rsa," can not find user  ",from,"")
+		tx.Rollback()
+		return false,constants.TRANS_ERR_SYS
+	}
+	//增加目标的balance
+	info2,err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?",value,ts,to)
 	if err2 != nil {
 		logger.Error("sql error ",err2.Error())
 		tx.Rollback()
 		return false,constants.TRANS_ERR_SYS
 	}
-
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa ,_ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ",rsa," can not find user  ",to,"")
+		tx.Rollback()
+		return false,constants.TRANS_ERR_SYS
+	}
 	//txid 写入数据库
 	_,e := InsertTXID(txid,tx)
 
