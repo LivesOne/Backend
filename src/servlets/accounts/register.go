@@ -12,7 +12,7 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_LOGOUT, &logoutHandler{})
 	server.RegisterHandler(constants.ACCOUNT_GET_IMG_VCODE, &getImgVCodeHandler{})
 	server.RegisterHandler(constants.ACCOUNT_SEND_VCODE, &sendVCodeHandler{})
-	server.RegisterHandler(constants.ACCOUNT_CHECK_VCODE, &checkVCodeHandler{})
+	//server.RegisterHandler(constants.ACCOUNT_CHECK_VCODE, &checkVCodeHandler{})
 	server.RegisterHandler(constants.ACCOUNT_MODIFY_PWD, &modifyPwdHandler{})
 	server.RegisterHandler(constants.ACCOUNT_RESET_PWD, &resetPwdHandler{})
 	server.RegisterHandler(constants.ACCOUNT_RESET_TX_PWD, &setTxPwdHandler{})
@@ -21,6 +21,6 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_GET_PROFILE, &getProfileHandler{})
 	server.RegisterHandler(constants.ACCOUNT_MODIFY_PROFILE, &modifyUserProfileHandler{})
 	server.RegisterHandler(constants.ACCOUNT_CHECK_ACCOUNT, &checkAccountHandler{})
-	server.RegisterHandler(constants.ACCOUNT_SET_STATUS, &setStatusHandler{})
+	//server.RegisterHandler(constants.ACCOUNT_SET_STATUS, &setStatusHandler{})
 
 }
