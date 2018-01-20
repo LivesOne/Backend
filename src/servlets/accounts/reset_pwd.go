@@ -69,7 +69,7 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			requestData.Param.VCodeID, requestData.Param.VCode, account.Email)
 		if ok == false {
 			logger.Info("reset password: verify email vcode failed", errT)
-			response.SetResponseBase(ValidateMailVCodeErr2RcErr(errT))
+			response.SetResponseBase(vcode.ConvImgErr(errT))
 			return
 		}
 

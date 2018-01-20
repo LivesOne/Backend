@@ -61,7 +61,7 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 		ok, err := vcode.ValidateMailVCode(
 			requestData.Param.VCodeId, requestData.Param.VCode, account.Email)
 		if ok == false {
-			response.SetResponseBase(ValidateMailVCodeErr2RcErr(err))
+			response.SetResponseBase(vcode.ConvImgErr(err))
 			return
 		}
 
