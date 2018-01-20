@@ -77,6 +77,11 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
+	if !common.CheckLoginPwd(uid,secret.Pwd){
+		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+		return
+	}
+
 	// save data to db
 	dbErr := common.SetEmail(uid, secret.Email)
 	if dbErr != nil {
