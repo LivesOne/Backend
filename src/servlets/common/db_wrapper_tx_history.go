@@ -10,6 +10,11 @@ type (
 		Value  int64   `bson:"value"`
 		Ts     int64   `bson:"ts"`
 		Code   int     `bson:"code"`
+		Miner  []Miner `bson:"miner"`
 	}
 
+	Miner struct {
+		Sid   int   `bson:"sid"`
+		Value int64 `bson:"value"`
+	}
 )
