@@ -5,8 +5,8 @@ package common
 
 import (
 	"servlets/constants"
-	"utils/logger"
 	"utils/config"
+	"utils/logger"
 )
 
 // HeaderParams contains all data in the http request
@@ -43,10 +43,10 @@ type (
 	}
 
 	AppInfo struct {
-		Name  string `json:"name,omitempty"`
-		AppID string `json:"appid,omitempty"`
-		Plat  string `json:"plat,omitempty"`
-		Ver   string `json:"ver,omitempty"`
+		Name  string      `json:"name,omitempty"`
+		AppID string      `json:"appid,omitempty"`
+		Plat  interface{} `json:"plat,omitempty"`
+		Ver   string      `json:"ver,omitempty"`
 	}
 
 	// BaseReq defines the Request Params format
@@ -85,11 +85,10 @@ type (
 
 // IsValid check is it a valid App Info
 func (app *AppInfo) IsValid() bool {
-	return (len(app.Name) > 0) && 
-			// (len(app.AppID) > 0) && 
-			config.IsAppIDValid(app.AppID) &&
-			(len(app.Plat) > 0) && 
-			(len(app.Ver) > 0)
+	return (len(app.Name) > 0) &&
+		config.IsAppIDValid(app.AppID) &&
+		// (len(app.Plat) > 0) &&
+		(len(app.Ver) > 0)
 }
 
 func NewResponseData() *ResponseData {
