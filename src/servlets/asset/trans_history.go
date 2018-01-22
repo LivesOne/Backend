@@ -39,7 +39,12 @@ type transHistoryRecord struct {
 	To    string `json:"to"`
 	Value string `json:"value"`
 	Ts    int64  `json:"ts"`
-	Miner []common.Miner `json:"miner,omitempty"`
+	Miner []transHistoryMiner `json:"miner,omitempty"`
+}
+
+type transHistoryMiner struct {
+	Sid int `json:"sid"`
+	Value string `json:"value"`
 }
 
 // sendVCodeHandler
@@ -133,9 +138,15 @@ func buildResData(records []common.DTTXHistory, max int,uid int64) *transHistory
 				Value: utils.LVTintToFloatStr(v.Value),
 				Ts:    v.Ts,
 			}
-
 			if len(v.Miner) > 0 {
-				r.Miner = v.Miner
+				m := make([]transHistoryMiner,0)
+				for _,item := range v.Miner {
+					m = append(m,transHistoryMiner{
+						Sid:   item.Sid,
+						Value: utils.LVTintToFloatStr(item.Value),
+					})
+				}
+				r.Miner = m
 			}
 			data.Records = append(data.Records, r)
 		}
