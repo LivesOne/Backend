@@ -147,31 +147,41 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	txType := requestData.Param.TxType
-	switch  {
-	case txType == constants.TX_TYPE_PRIVATE_PLACEMENT ||
-		 txType == constants.TX_TYPE_ACTIVITY_REWARD ||
-		 txType == constants.TX_TYPE_TRANS:
-			txh := common.DTTXHistory{
-				Id:     txid,
-				Status: constants.TX_STATUS_DEFAULT,
-				Type:   requestData.Param.TxType,
-				From:   from,
-				To:     to,
-				Value:  utils.FloatStrToLVTint(secret.Value),
-				Ts:     utils.TXIDToTimeStamp13(txid),
-				Code:   constants.TX_CODE_SUCC,
+	//交易类型 只支持，私募，红包，转账
+	if   txType != constants.TX_TYPE_TRANS  &&
+		 txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
+		 txType != constants.TX_TYPE_ACTIVITY_REWARD{
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	//如果是私募或者红包，需要校验转出者的id
+	if  txType == constants.TX_TYPE_PRIVATE_PLACEMENT ||
+		txType == constants.TX_TYPE_ACTIVITY_REWARD{
+			if !common.CheckTansTypeFromUid(from,txType) {
+				response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+
+				return
 			}
-			err := common.InsertPending(&txh)
-			if err != nil {
-				logger.Error("insert mongo db error ",err.Error())
-				response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			} else {
-				response.Data = transPrepareResData{
-					Txid: utils.Int642Str(txid),
-				}
-			}
-		default:
-			response.SetResponseBase(constants.RC_PARAM_ERR)
+	}
+
+	txh := common.DTTXHistory{
+		Id:     txid,
+		Status: constants.TX_STATUS_DEFAULT,
+		Type:   requestData.Param.TxType,
+		From:   from,
+		To:     to,
+		Value:  utils.FloatStrToLVTint(secret.Value),
+		Ts:     utils.TXIDToTimeStamp13(txid),
+		Code:   constants.TX_CODE_SUCC,
+	}
+	err := common.InsertPending(&txh)
+	if err != nil {
+		logger.Error("insert mongo db error ",err.Error())
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+	} else {
+		response.Data = transPrepareResData{
+			Txid: utils.Int642Str(txid),
+		}
 	}
 
 }

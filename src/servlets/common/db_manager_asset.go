@@ -198,3 +198,16 @@ func CheckTXID(txid int64)bool{
 	}
 	return utils.Str2Int(row["c"])>0
 }
+
+
+func CheckTansTypeFromUid(uid int64,transType int)bool{
+	row ,err := gDBAsset.QueryRow("select uid from livesone_account where id = ?",transType)
+	if err != nil {
+		logger.Error("query row error ",err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int64(row["uid"]) == uid
+}
