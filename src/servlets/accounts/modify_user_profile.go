@@ -6,6 +6,7 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/db_factory"
 	"utils/logger"
 )
 
@@ -47,8 +48,8 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// fmt.Println("modify user profile: 22222222 \n", utils.ToJSONIndent(header), utils.ToJSONIndent(requestData))
 
 	// 判断用户身份
+	// _, aesKey, _, _ := token.GetAll(header.TokenHash)
 	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	// _, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 		logger.Info("modify user profile: read user info error:", err)
@@ -75,12 +76,24 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	}
 
 	uid := utils.Str2Int64(uidString)
-	// uid := int64(100004250)
+
+	// if common.ExistsNickname(secret.Nickname) {
+	// 	response.SetResponseBase(constants.RC_DUP_NICKNAME)
+	// 	logger.Info("modify user profile: duplicate nickname:", secret.Nickname)
+	// 	return
+	// }
 
 	dbErr := common.SetNickname(uid, secret.Nickname)
 	if dbErr != nil {
-		logger.Info("modify user profile: save nickname to db error:", dbErr)
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
+			logger.Info("modify user profile: duplicate nickname", dbErr)
+			response.SetResponseBase(constants.RC_DUP_NICKNAME)
+		} else {
+			logger.Info("modify user profile : save nickname to db error:", dbErr)
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		}
+		// } else {
+		// 	fmt.Println("modify user profile: success")
 	}
 
 }
