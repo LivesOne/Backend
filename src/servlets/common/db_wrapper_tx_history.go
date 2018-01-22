@@ -14,7 +14,7 @@ type (
 	}
 
 	Miner struct {
-		Sid   int   `bson:"sid"`
-		Value int64 `bson:"value"`
+		Sid   int   `bson:"sid" json:"sid"`
+		Value int64 `bson:"value" json:"value"`
 	}
 )
