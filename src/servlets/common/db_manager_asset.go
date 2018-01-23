@@ -31,7 +31,7 @@ func AssetDbInit() error {
 	}
 	gDBAsset = db_factory.NewDataSource(facConfig_asset)
 	if gDBAsset.IsConn() {
-		logger.Debug("connection database successful")
+		logger.Debug("connection ",db_config_asset.DBHost,db_config_asset.DBDatabase,"database successful")
 	} else {
 		logger.Error(gDBAsset.Err())
 		return gDBAsset.Err()

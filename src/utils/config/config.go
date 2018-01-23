@@ -63,6 +63,7 @@ type Configuration struct {
 	CAPTCHA_ID string
 	CAPTCHA_SECRET_ID string
 	CAPTCHA_SECRET_KEY string
+	MaxActivityRewardValue int
 
 }
 

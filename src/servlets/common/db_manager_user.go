@@ -43,7 +43,7 @@ func UserDbInit() error {
 	}
 	gDbUser = db_factory.NewDataSource(facConfig_user)
 	if gDbUser.IsConn() {
-		logger.Debug("connection database successful")
+		logger.Debug("connection ",db_config_user.DBHost,db_config_user.DBDatabase,"database successful")
 	} else {
 		logger.Error(gDbUser.Err())
 		return gDbUser.Err()

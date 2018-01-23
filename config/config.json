@@ -3,7 +3,7 @@
 
     "PrivKey" : "rsa_private_key.pem",
     "LogConfig": "l4g.xml",
-
+    "MaxActivityRewardValue":100,
     "AppIDs" :
     [
         "maxthon"

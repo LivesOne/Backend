@@ -9,6 +9,7 @@ import (
 	"utils/logger"
 	"encoding/json"
 	"strings"
+	"utils/config"
 )
 
 
@@ -157,9 +158,9 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	//如果是私募或者红包，需要校验转出者的id
 	if  txType == constants.TX_TYPE_PRIVATE_PLACEMENT ||
 		txType == constants.TX_TYPE_ACTIVITY_REWARD{
-			if !common.CheckTansTypeFromUid(from,txType) {
+			if (txType == constants.TX_TYPE_ACTIVITY_REWARD && utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue)) ||
+				!common.CheckTansTypeFromUid(from,txType) {
 				response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-
 				return
 			}
 	}

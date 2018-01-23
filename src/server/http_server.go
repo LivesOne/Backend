@@ -9,6 +9,8 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils/logger"
+	"fmt"
+	"reflect"
 )
 
 var gRouter *gin.Engine
@@ -16,12 +18,15 @@ var gServer *http.Server
 
 //Init http server object
 func init() {
+	gin.SetMode(gin.ReleaseMode)
 	gRouter = gin.Default()
 	gRouter.Use(globalRecover)
+	gRouter.Use(logUrl)
 }
 
 //RegisterHandler
 func RegisterHandler(url string, handler HttpHandler) {
+	registerHandlerLog(url,handler)
 	switch handler.Method() {
 	case http.MethodGet:
 		gRouter.GET(url, func(ctx *gin.Context) {
@@ -60,4 +65,15 @@ func globalRecover(c *gin.Context) {
 		}
 	}(c)
 	c.Next()
+}
+
+func logUrl(c *gin.Context){
+	logger.Info("req url ---> ",c.Request.URL)
+	c.Next()
+}
+
+func registerHandlerLog(url string,handler HttpHandler){
+	t := reflect.ValueOf(handler).Type()
+	s := fmt.Sprintf("register req method %s url %s ---> %s",handler.Method(),url,t.String())
+	logger.Info(s)
 }
