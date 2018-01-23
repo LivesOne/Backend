@@ -1,33 +1,31 @@
 package asset
 
 import (
+	"encoding/json"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils"
 	"servlets/token"
-	"utils/logger"
-	"encoding/json"
 	"strings"
+	"utils"
 	"utils/config"
+	"utils/logger"
 )
-
-
 
 type transPrepareParam struct {
 	TxType   int    `json:"tx_type"`
 	AuthType int    `json:"auth_type"`
-	Secret string `json:"secret"`
+	Secret   string `json:"secret"`
 }
 
 type transPrepareSecret struct {
-	To       string `json:"to"`
-	Value    string `json:"value"`
-	Pwd      string `json:"pwd"`
+	To    string `json:"to"`
+	Value string `json:"value"`
+	Pwd   string `json:"pwd"`
 }
 
-func (tps *transPrepareSecret)isValid()bool{
-	return len(tps.To)>0 && len(tps.Value) > 0 && len(tps.Pwd) >0
+func (tps *transPrepareSecret) isValid() bool {
+	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Pwd) > 0
 }
 
 type transPrepareRequest struct {
@@ -64,18 +62,15 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	common.ParseHttpBodyParams(request, &requestData)
 
-
 	if requestData.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-
-
 	httpHeader := common.ParseHttpHeaderParams(request)
 
 	// if httpHeader.IsValid() == false {
-	if  !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash()  {
+	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
 		logger.Info("asset trans prepare: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -95,9 +90,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-
-
-	secret := decodeSecret(requestData.Param.Secret,key,iv)
+	secret := decodeSecret(requestData.Param.Secret, key, iv)
 
 	if secret == nil || !secret.isValid() {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -108,9 +101,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
-
-
 
 	from := utils.Str2Int64(uidString)
 	to := utils.Str2Int64(secret.To)
@@ -124,20 +114,16 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
-		if !common.CheckLoginPwd(from,pwd) {
+		if !common.CheckLoginPwd(from, pwd) {
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
-		if !common.CheckPaymentPwd(from,pwd) {
+		if !common.CheckPaymentPwd(from, pwd) {
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
 	}
-
-
-
-
 
 	txid := common.GenerateTxID()
 
@@ -149,20 +135,26 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	txType := requestData.Param.TxType
 	//交易类型 只支持，私募，红包，转账
-	if   txType != constants.TX_TYPE_TRANS  &&
-		 txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
-		 txType != constants.TX_TYPE_ACTIVITY_REWARD{
+	if txType != constants.TX_TYPE_TRANS &&
+		txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
+		txType != constants.TX_TYPE_ACTIVITY_REWARD {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 	//如果是私募或者红包，需要校验转出者的id
-	if  txType == constants.TX_TYPE_PRIVATE_PLACEMENT ||
-		txType == constants.TX_TYPE_ACTIVITY_REWARD{
-			if (txType == constants.TX_TYPE_ACTIVITY_REWARD && utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue)) ||
-				!common.CheckTansTypeFromUid(from,txType) {
-				response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-				return
-			}
+	if txType == constants.TX_TYPE_PRIVATE_PLACEMENT ||
+		txType == constants.TX_TYPE_ACTIVITY_REWARD {
+
+		if txType == constants.TX_TYPE_ACTIVITY_REWARD && utils.Str2Float64(secret.Value) >
+			float64(config.GetConfig().MaxActivityRewardValue) {
+			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
+			return
+		}
+
+		if !common.CheckTansTypeFromUid(from, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
 	}
 
 	txh := common.DTTXHistory{
@@ -177,7 +169,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 	err := common.InsertPending(&txh)
 	if err != nil {
-		logger.Error("insert mongo db error ",err.Error())
+		logger.Error("insert mongo db error ", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = transPrepareResData{
@@ -187,32 +179,30 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 }
 
-
-func decodeSecret(secret,key ,iv string)*transPrepareSecret{
+func decodeSecret(secret, key, iv string) *transPrepareSecret {
 	if len(secret) == 0 {
 		return nil
 	}
-	logger.Debug("secret ",secret)
-	secJson,err := utils.AesDecrypt(secret,key,iv)
-	if err !=nil{
-		logger.Error("aes decode error ",err.Error())
+	logger.Debug("secret ", secret)
+	secJson, err := utils.AesDecrypt(secret, key, iv)
+	if err != nil {
+		logger.Error("aes decode error ", err.Error())
 		return nil
 	}
-	logger.Debug("base64 and aes decode secret ",secJson)
+	logger.Debug("base64 and aes decode secret ", secJson)
 	tps := transPrepareSecret{}
-	err = json.Unmarshal([]byte(secJson),&tps)
+	err = json.Unmarshal([]byte(secJson), &tps)
 	if err != nil {
-		logger.Error("json Unmarshal error ",err.Error() )
+		logger.Error("json Unmarshal error ", err.Error())
 		return nil
 	}
 	return &tps
 
 }
 
-
-func validateValue(value string)bool {
+func validateValue(value string) bool {
 	if utils.Str2Float64(value) > 0 {
-		index := strings.Index(value,".")
+		index := strings.Index(value, ".")
 		last := value[index+1:]
 		if len(last) <= 8 {
 			return true
