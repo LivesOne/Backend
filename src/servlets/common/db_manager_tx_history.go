@@ -113,6 +113,7 @@ func FindAndModifyPending(txid,from,status int64)(*DTTXHistory,bool){
 	res := DTTXHistory{}
 	query := bson.M{
 		"_id":txid,
+		"from":from,
 	}
 	change := mgo.Change{
 		Update: bson.M{
