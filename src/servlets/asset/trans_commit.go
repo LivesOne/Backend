@@ -91,10 +91,12 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	//修改原pending 并返回修改之前的值 如果status 是默认值0 继续  不是就停止
 	perPending,flag := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
-	if !flag {
+	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
 		return
 	}
+
+
 
 	//txid 时间戳检测
 
