@@ -34,7 +34,7 @@ type RedisConfig struct {
 }
 
 type captcha struct{
-	URL string
+	Url string
 	Id string
 	SecretId string
 	SecretKey string
