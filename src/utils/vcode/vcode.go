@@ -332,7 +332,7 @@ func ValidateWYYD(validate string) (bool, int) {
 		param["timestamp"] = utils.Int642Str(ts)
 		param["nonce"] = utils.Int2Str(rand.Intn(200))
 		param["signature"] = genSignature(captcha.SecretKey, param)
-		resBodyStr, err := lvthttp.FormPost(captcha.URL, param)
+		resBodyStr, err := lvthttp.FormPost(captcha.Url, param)
 		if err != nil {
 			return false, HTTP_ERR
 		}
