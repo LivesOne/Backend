@@ -320,18 +320,18 @@ func genSignature(secretKey string, params map[string]string) string {
 
 func ValidateWYYD(validate string) (bool, int) {
 	if len(validate) > 0 {
-		captcha :=  config.GetConfig().CAPTCHA
+		captcha :=  config.GetConfig().Captcha
 		ts := utils.GetTimestamp13()
 		rand.Seed(ts)
 		param := make(map[string]string, 0)
-		param["captchaId"] = captcha.ID
+		param["captchaId"] = captcha.Id
 		param["validate"] = validate
 		param["user"] = ""
-		param["secretId"] = captcha.SECRET_ID
+		param["secretId"] = captcha.SecretId
 		param["version"] = "v2"
 		param["timestamp"] = utils.Int642Str(ts)
 		param["nonce"] = utils.Int2Str(rand.Intn(200))
-		param["signature"] = genSignature(captcha.SECRET_KEY, param)
+		param["signature"] = genSignature(captcha.SecretKey, param)
 		resBodyStr, err := lvthttp.FormPost(captcha.URL, param)
 		if err != nil {
 			return false, HTTP_ERR

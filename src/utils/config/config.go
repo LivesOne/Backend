@@ -35,9 +35,9 @@ type RedisConfig struct {
 
 type captcha struct{
 	URL string
-	ID string
-	SECRET_ID string
-	SECRET_KEY string
+	Id string
+	SecretId string
+	SecretKey string
 }
 
 
@@ -67,7 +67,7 @@ type Configuration struct {
 	ImgSvrAddr string
 	// log相关
 	LogConfig string
-	CAPTCHA captcha
+	Captcha captcha
 	MaxActivityRewardValue int
 
 }
