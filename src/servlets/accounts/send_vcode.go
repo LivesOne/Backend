@@ -67,11 +67,9 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	//validate add exists
-	if !validateAction(requestData.Param) {
-		response.Base = &common.BaseResp{
-			RC:  constants.RC_PARAM_ERR.Rc,
-			Msg: "action add params exists",
-		}
+	validateFlag, rcErr := validateAction(requestData.Param)
+	if !validateFlag {
+		response.SetResponseBase(rcErr)
 	} else {
 		//validate img vcode
 
@@ -125,36 +123,35 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 
 }
 
-func validateAction(param *sendVCodeParam) bool {
+func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 	if param.Action == "add" {
 		switch param.Type {
 		case MESSAGE, CALL:
 			if common.ExistsPhone(param.Country, param.Phone) {
-				return false
+				return false, constants.RC_DUP_PHONE
 			}
 		case EMAIL:
 			if common.ExistsEmail(param.EMail) {
-				return false
+				return false, constants.RC_DUP_EMAIL
 			}
 		default:
-			return false
+			return false, constants.RC_PARAM_ERR
 		}
 	} else if param.Action == "reset" {
 		switch param.Type {
 		case MESSAGE, CALL:
-			if common.ExistsPhone(param.Country, param.Phone) {
-				return true
+			if !common.ExistsPhone(param.Country, param.Phone) {
+				return false, constants.RC_INVALID_ACCOUNT
 			}
 		case EMAIL:
-			if common.ExistsEmail(param.EMail) {
-				return true
+			if !common.ExistsEmail(param.EMail) {
+				return false, constants.RC_INVALID_ACCOUNT
 			}
 		default:
-			return false
+			return false, constants.RC_PARAM_ERR
 		}
 	}
-
-	return true
+	return true, constants.RC_OK
 }
 
 func (handler *sendVCodeHandler) checkRequestParams(header *common.HeaderParams, data *sendVCodeRequest) bool {
