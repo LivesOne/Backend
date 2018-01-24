@@ -33,6 +33,14 @@ type RedisConfig struct {
 	RedisAuth string
 }
 
+type captcha struct{
+	URL string
+	ID string
+	SECRET_ID string
+	SECRET_KEY string
+}
+
+
 // Configuration holds all config data
 type Configuration struct {
 	ServerAddr string //"[ip]:port"
@@ -59,10 +67,7 @@ type Configuration struct {
 	ImgSvrAddr string
 	// log相关
 	LogConfig string
-	CAPTCHA_URL string
-	CAPTCHA_ID string
-	CAPTCHA_SECRET_ID string
-	CAPTCHA_SECRET_KEY string
+	CAPTCHA captcha
 	MaxActivityRewardValue int
 
 }
