@@ -1,37 +1,40 @@
 package lvthttp
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
+	"net/url"
 	"utils/logger"
-	"strings"
-	"io/ioutil"
 	"net"
 	"time"
-	"encoding/json"
-	"net/url"
-)
-
-const(
-	POST_REMOTE_TIMEOUT = 30
 )
 
 var (
-	client http.Client
+	client *HttpClien
 )
 
+func init() {
+	client = NewDefaultHttpClient()
+}
 func dialTimeout(network, addr string) (net.Conn, error) {
 	return net.DialTimeout(network, addr, time.Second*POST_REMOTE_TIMEOUT)
 }
-
-func init(){
-	transport := http.Transport{
-		Dial:              dialTimeout,
-		DisableKeepAlives: true,//为true时会在 body.Close()时关闭连接,不然close的时候也不会关闭链接
+func NewHttpClient(keepAlives bool)*HttpClien{
+	c := HttpClien{
+		transport :&http.Transport{
+			Dial:              dialTimeout,
+			DisableKeepAlives: !keepAlives, //为true时会在 body.Close()时关闭连接,不然close的时候也不会关闭链接
+		},
 	}
-	client = http.Client{
-		Transport: &transport,
-	}
+	c.build()
+	return &c
 }
+
+func NewDefaultHttpClient()*HttpClien{
+	return NewHttpClient(true)
+}
+
 
 func toJson(t interface{}) string {
 	jsonByte, err := json.Marshal(t)
@@ -42,59 +45,50 @@ func toJson(t interface{}) string {
 	return string(jsonByte)
 }
 
-func map2UrlValues(p map[string]string)url.Values{
+func map2UrlValues(p map[string]string) url.Values {
 	if len(p) > 0 {
-		uv := make(url.Values,0)
-		for i,v := range p{
-			uv[i] = []string{v}
+		uv := url.Values{}
+		for i, v := range p {
+			uv.Add(i, v)
 		}
 		return uv
 	}
 	return nil
 }
 
-func post(url,contentType,param string)(resp *http.Response, err error){
-	return client.Post(url, contentType, strings.NewReader(param))
-}
 
-func postForm(url string,data url.Values)(resp *http.Response, err error){
-	return client.PostForm(url, data)
+func read(resp *http.Response) (string, error) {
+	body := resp.Body
+	defer body.Close()
+	var bodyparam string
+	var bodyTmp []byte = make([]byte, resp.ContentLength)
+	// logger.Info("bodyparam: ", len(bodyparam), cap(bodyparam))
+	for {
+		count, err := body.Read(bodyTmp)
+		if count > 0 {
+			bodyparam += string(bodyTmp[:count])
+		}
+		if err == io.EOF {
+			break
+		}
+		// request.Body.Read(bodyparam)
+		if err != nil {
+			logger.Info("ParseHttpBodyParams: read http body error : ", err)
+			return "", err
+		}
+	}
+	return bodyparam, nil
 }
 
 //发起post请求
 func JsonPost(url string, params interface{}) (resBody string, e error) {
-	jsonParam := toJson(params)
-	logger.Info("SendPost url", url, "param", jsonParam)
-	resp, e1 := post(url, "application/json", jsonParam)
-	if e1 != nil {
-		logger.Error("send post error ---> ", e1.Error())
-		return "", e1
-	} else {
-		defer resp.Body.Close()
-		body, e2 := ioutil.ReadAll(resp.Body)
-		if e2 != nil {
-			logger.Error("post read error ---> ", e2.Error())
-		}
-		resBody := string(body)
-		logger.Info("http res", resBody)
-		return resBody, e2
-	}
+	return client.JsonPost(url,params)
 }
 
-func FormPost(url string,params map[string]string)(resBody string, e error){
-	logger.Info("form http post url ",url,"param ",params)
-	resp, e1 := postForm(url,map2UrlValues(params))
-	if e1 != nil {
-		logger.Error("post error ---> ", e1.Error())
-		return "", e1
-	} else {
-		defer resp.Body.Close()
-		body, e2 := ioutil.ReadAll(resp.Body)
-		if e2 != nil {
-			logger.Error("post error ---> ", e2.Error())
-		}
-		res := string(body)
-		logger.Info("SendPost res ---> ", res)
-		return res, e2
-	}
+func FormPost(url string, params map[string]string) (resBody string, e error) {
+	return client.FormPost(url,params)
+}
+
+func Do(req *http.Request) (*http.Response, error) {
+	return client.Do(req)
 }
