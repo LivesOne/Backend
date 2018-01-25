@@ -137,9 +137,8 @@ func GetImgVCode(w, h, len, expire int) *httpImgVCodeResParam {
 		Len:    len,
 		Expire: expire,
 	}
-	reqParam, _ := json.Marshal(typeData)
 	url := config.GetConfig().ImgSvrAddr + "/img/v1/getCode"
-	svrResStr, err := lvthttp.JsonPost(url, string(reqParam))
+	svrResStr, err := lvthttp.JsonPost(url, typeData)
 	if err != nil {
 		logger.Error("url ---> ", url, " http send error ", err.Error())
 	} else {
@@ -166,8 +165,7 @@ func messageServerReq(phone string, country int, ln string, expire int, voiceCod
 			VoiceCode: voiceCode,
 		}
 		url := config.GetConfig().SmsSvrAddr + "/get"
-		reqStr, _ := json.Marshal(req)
-		jsonRes, err := lvthttp.JsonPost(url, string(reqStr))
+		jsonRes, err := lvthttp.JsonPost(url, req)
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
 			return false, err
@@ -199,8 +197,7 @@ func SendMailVCode(email string, ln string, expire int) *httpReqVCode {
 			Expire: expire,
 		}
 		url := config.GetConfig().MailSvrAddr + "/mail/v1/getCode"
-		reqStr, _ := json.Marshal(req)
-		jsonRes, err := lvthttp.JsonPost(url, string(reqStr))
+		jsonRes, err := lvthttp.JsonPost(url, req)
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
 		} else {
@@ -224,8 +221,7 @@ func validateImgVCode(id string, vcode string) (bool, int) {
 		Id:   id,
 		Code: vcode,
 	}
-	reqParam, _ := json.Marshal(typeData)
-	svrResStr, err := lvthttp.JsonPost(url, string(reqParam))
+	svrResStr, err := lvthttp.JsonPost(url, typeData)
 	if err != nil {
 		logger.Error("url ---> ", url, " http send error ", err.Error())
 		return false, HTTP_ERR
@@ -260,8 +256,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 			Flag:           utils.Int2Str(flag),
 		}
 		url := config.GetConfig().SmsSvrAddr + "/validate"
-		reqStr, _ := json.Marshal(req)
-		jsonRes, err := lvthttp.JsonPost(url, string(reqStr))
+		jsonRes, err := lvthttp.JsonPost(url, req)
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
 			return false, SMS_PROTOCOL_ERR
@@ -283,8 +278,7 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 			Code:  vcode,
 			Email: email,
 		}
-		reqParam, _ := json.Marshal(typeData)
-		svrResStr, err := lvthttp.JsonPost(url, string(reqParam))
+		svrResStr, err := lvthttp.JsonPost(url,typeData)
 		if err != nil {
 			logger.Error("url ---> ", url, " http send error ", err.Error())
 			return false, HTTP_ERR
