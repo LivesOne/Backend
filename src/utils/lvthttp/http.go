@@ -2,12 +2,12 @@ package lvthttp
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/url"
 	"utils/logger"
 	"net"
 	"time"
+	"io/ioutil"
 )
 
 var (
@@ -59,25 +59,15 @@ func map2UrlValues(p map[string]string) url.Values {
 
 func read(resp *http.Response) (string, error) {
 	body := resp.Body
-	defer body.Close()
-	var bodyparam string
-	var bodyTmp []byte = make([]byte, resp.ContentLength)
-	// logger.Info("bodyparam: ", len(bodyparam), cap(bodyparam))
-	for {
-		count, err := body.Read(bodyTmp)
-		if count > 0 {
-			bodyparam += string(bodyTmp[:count])
-		}
-		if err == io.EOF {
-			break
-		}
-		// request.Body.Read(bodyparam)
-		if err != nil {
-			logger.Info("ParseHttpBodyParams: read http body error : ", err)
-			return "", err
-		}
+	if resp != nil {
+		defer body.Close()
 	}
-	return bodyparam, nil
+	res,err := ioutil.ReadAll(body)
+	if err != nil {
+		logger.Info("ParseHttpBodyParams: read http body error : ", err)
+		return "", err
+	}
+	return string(res), nil
 }
 
 //发起post请求
