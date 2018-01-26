@@ -66,7 +66,7 @@ func Str2Int64(str string) int64 {
 }
 
 func IsValidEmailAddr(email string) bool {
-	ret, _ := regexp.MatchString("^([a-z0-9_\\.-]+)@([\\da-z\\.-]+)\\.([a-z\\.]{2,6})$", email)
+	ret, _ := regexp.MatchString("^.+@.+$", email)
 	return ret
 }
 
