@@ -211,3 +211,11 @@ func CheckTansTypeFromUid(uid int64,transType int)bool{
 	}
 	return utils.Str2Int64(row["uid"]) == uid
 }
+
+func CheckAssetLimeted(uid int64)bool{
+	row,err := gDBAsset.QueryRow("select status from user_asset where uid = ?",uid)
+	if err != nil || row == nil {
+		return false
+	}
+	return utils.Str2Int(row["status"]) == constants.ASSET_STATUS_DEF
+}
