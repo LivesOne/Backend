@@ -95,11 +95,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
 		return
 	}
-	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
-	if !common.CheckAssetLimeted(perPending.From){
-		response.SetResponseBase(constants.RC_ACCOUNT_ACCESS_LIMITED)
-		return
-	}
+
 
 
 	//txid 时间戳检测
@@ -150,6 +146,8 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			response.SetResponseBase(constants.RC_INSUFFICIENT_BALANCE)
 		case constants.TRANS_ERR_SYS:
 			response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
+		case constants.TRANS_ERR_ASSET_LIMITED:
+			response.SetResponseBase(constants.RC_ACCOUNT_ACCESS_LIMITED)
 		}
 	}
 	//}

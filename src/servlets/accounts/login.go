@@ -110,6 +110,16 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		return
 	}
 
+
+
+	if !common.CheckUserLoginLimited(account.UID) {
+		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+		return
+	}
+
+
+
+
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)
 	const expire int64 = 24 * 3600

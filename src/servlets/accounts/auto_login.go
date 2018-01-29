@@ -79,6 +79,12 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
+	if !common.CheckUserLoginLimited(utils.Str2Int64(uid)) {
+		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+		return
+	}
+
+
 	const expire int64 = 24 * 3600
 	errT := token.Update(header.TokenHash, aesKey, expire)
 	if errT != constants.ERR_INT_OK {

@@ -11,6 +11,7 @@ import (
 	"utils"
 
 	_ "github.com/go-sql-driver/mysql"
+	"servlets/constants"
 )
 
 //var gDbUser *sql.DB
@@ -281,6 +282,15 @@ func CheckPaymentPwd(uid int64, pwdInDB string) bool {
 	}
 	pwd := utils.Sha256(pwdInDB + utils.Int642Str(uid))
 	return pwd == row["payment_password"]
+}
+
+func CheckUserLoginLimited(uid int64)bool{
+	row, err := gDbUser.QueryRow("select status from account where uid = ? ", uid)
+	if err != nil || row == nil {
+		logger.Error("query err ", err.Error())
+		return false
+	}
+	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
 }
 
 func convRowMap2Account(row map[string]string) *Account {

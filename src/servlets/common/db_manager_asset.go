@@ -84,6 +84,13 @@ func TransAccountLvt(txid,from,to,value int64)(bool,int){
 	}
 	tx.Exec("select * from user_asset where uid in (?,?) for update",from,to)
 
+
+	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
+	if !CheckAssetLimeted(from,tx){
+		return false,constants.TRANS_ERR_ASSET_LIMITED
+	}
+
+
 	//查询转出账户余额是否满足需要
 	var balance int64
 	row := tx.QueryRow("select balance from user_asset where uid  = ?",from)
@@ -212,10 +219,13 @@ func CheckTansTypeFromUid(uid int64,transType int)bool{
 	return utils.Str2Int64(row["uid"]) == uid
 }
 
-func CheckAssetLimeted(uid int64)bool{
-	row,err := gDBAsset.QueryRow("select status from user_asset where uid = ?",uid)
-	if err != nil || row == nil {
+func CheckAssetLimeted(uid int64,tx *sql.Tx)bool{
+	row := tx.QueryRow("select status from user_asset where uid = ?",uid)
+	status := -1
+	err := row.Scan(&status)
+	if err != nil {
+		logger.Error("query row error ",err.Error())
 		return false
 	}
-	return utils.Str2Int(row["status"]) == constants.ASSET_STATUS_DEF
+	return status == constants.ASSET_STATUS_DEF
 }

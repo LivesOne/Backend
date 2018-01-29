@@ -17,12 +17,16 @@ var (
 func init() {
 	client = NewDefaultHttpClient()
 }
+
 func dialTimeout(network, addr string) (net.Conn, error) {
 	return net.DialTimeout(network, addr, time.Second*POST_REMOTE_TIMEOUT)
 }
+
 func NewHttpClient(keepAlives bool)*HttpClien{
 	c := HttpClien{
 		transport :&http.Transport{
+			MaxIdleConns:1000,
+			MaxIdleConnsPerHost:1000,
 			Dial:              dialTimeout,
 			DisableKeepAlives: !keepAlives, //为true时会在 body.Close()时关闭连接,不然close的时候也不会关闭链接
 		},
@@ -58,10 +62,11 @@ func map2UrlValues(p map[string]string) url.Values {
 
 
 func read(resp *http.Response) (string, error) {
-	body := resp.Body
-	if resp != nil {
-		defer body.Close()
+	if resp == nil {
+		return "",nil
 	}
+	body := resp.Body
+	defer body.Close()
 	res,err := ioutil.ReadAll(body)
 	if err != nil {
 		logger.Info("ParseHttpBodyParams: read http body error : ", err)

@@ -30,3 +30,10 @@ const (
 	// AES total length
 	AES_totalLen = AES_ivLen + AES_keyLen
 )
+
+
+const (
+	USER_LIMITED_DEF = 0
+
+	USER_LIMITED_UNLOGIN = 1
+)

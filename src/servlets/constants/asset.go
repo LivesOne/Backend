@@ -24,4 +24,5 @@ const (
 	TRANS_ERR_SUCC                 = 0
 	TRANS_ERR_SYS                  = 1
 	TRANS_ERR_INSUFFICIENT_BALANCE = 2
+	TRANS_ERR_ASSET_LIMITED        = 3
 )
