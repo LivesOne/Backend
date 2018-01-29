@@ -87,6 +87,7 @@ func TransAccountLvt(txid,from,to,value int64)(bool,int){
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
 	if !CheckAssetLimeted(from,tx){
+		tx.Rollback()
 		return false,constants.TRANS_ERR_ASSET_LIMITED
 	}
 
