@@ -42,7 +42,7 @@ type responseLogin struct {
 }
 
 type limitedRes struct {
-	Uid int64 `json:"uid"`
+	Uid string `json:"uid"`
 }
 
 // loginHandler implements the "Echo message" interface
@@ -119,7 +119,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	if !common.CheckUserLoginLimited(account.UID) {
 		response.SetResponseBase(constants.RC_ACCOUNT_LIMITED)
 		response.Data = limitedRes{
-			Uid: account.UID,
+			Uid: utils.Int642Str(account.UID),
 		}
 		return
 	}
