@@ -31,6 +31,7 @@ var (
 	RC_INVALID_PAYMENT_PWD = Error{20006, "invalid payment password"}
 	RC_EMAIL_NOT_MATCH     = Error{20007, "email not match"}
 	RC_PHONE_NOT_MATCH     = Error{20008, "phone not match"}
+	RC_ACCOUNT_LIMITED    = Error{20009, "account limited"}
 
 	RC_ACCOUNT_ACCESS_LIMITED = Error{21001, "account access limited"}
 	RC_INSUFFICIENT_BALANCE   = Error{21002, "insufficient balance"}

@@ -41,6 +41,10 @@ type responseLogin struct {
 	SPK    *responseLoginSPK `json:"spk"`
 }
 
+type limitedRes struct {
+	Uid int64 `json:"uid"`
+}
+
 // loginHandler implements the "Echo message" interface
 type loginHandler struct {
 }
@@ -113,7 +117,10 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 
 	if !common.CheckUserLoginLimited(account.UID) {
-		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+		response.SetResponseBase(constants.RC_ACCOUNT_LIMITED)
+		response.Data = limitedRes{
+			Uid: account.UID,
+		}
 		return
 	}
 
