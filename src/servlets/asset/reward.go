@@ -19,7 +19,7 @@ type rewardRequest struct {
 type rewardResData struct {
 	Total      string `json:"total"`
 	Yesterday  string `json:"yesterday"`
-	LastModify int64  `json:"last_modify"`
+	Ts int64  `json:"ts"`
 }
 
 // sendVCodeHandler
@@ -75,7 +75,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	response.Data = rewardResData{
 		Total:      utils.LVTintToFloatStr(re.Total),
 		Yesterday:  yesterday,
-		LastModify: t,
+		Ts: t,
 	}
 
 }
