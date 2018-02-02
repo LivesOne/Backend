@@ -7,7 +7,6 @@ import (
 	"utils"
 )
 
-
 type rewardParam struct {
 	Uid string `json:"uid"`
 }
@@ -18,8 +17,9 @@ type rewardRequest struct {
 }
 
 type rewardResData struct {
-	Total     string `json:"total"`
-	Yesterday string `json:"yesterday"`
+	Total      string `json:"total"`
+	Yesterday  string `json:"yesterday"`
+	LastModify int64  `json:"last_modify"`
 }
 
 // sendVCodeHandler
@@ -47,14 +47,12 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
 
-
 	base := requestData.Base
 
 	if base == nil || !base.App.IsValid() {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
 
 	intUid := utils.Str2Int64(requestData.Param.Uid)
 
@@ -67,19 +65,17 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 
 	yesterday := utils.LVTintToFloatStr(re.Yesterday)
 
-
-
 	t := re.Lastmodify
 	nt := utils.GetTimestamp13()
 
 	//如果时间戳不是昨天，返回0
-	if utils.IsNextDay(t,nt){
+	if utils.IsNextDay(t, nt) {
 		yesterday = "0.00000000"
 	}
 	response.Data = rewardResData{
-		Total:     utils.LVTintToFloatStr(re.Total),
-		Yesterday: yesterday,
+		Total:      utils.LVTintToFloatStr(re.Total),
+		Yesterday:  yesterday,
+		LastModify: t,
 	}
 
 }
-
