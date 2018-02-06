@@ -90,11 +90,14 @@ func IsNextDay(last, cur int64) bool {
 	lastDate := GetDayStart(last)
 	curDate := GetDayStart(cur)
 	duration := curDate.Sub(lastDate)
-	if (duration >= DayDuration) && (TwoDayDuration > duration) {
-		return true
-	} else {
-		return false
-	}
+	return duration < DayDuration
+}
+
+func IsToday(last, cur int64) bool {
+	lastDate := GetDayStart(last)
+	curDate := GetDayStart(cur)
+	duration := curDate.Sub(lastDate)
+	return duration == time.Duration(0)
 }
 
 // 获取时间戳 UTC 时间的当日凌晨时间

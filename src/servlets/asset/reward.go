@@ -63,14 +63,14 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 
 	re := common.QueryReward(intUid)
 
-	yesterday := utils.LVTintToFloatStr(re.Yesterday)
+	yesterday := "0.00000000"
 
 	t := re.Lastmodify
 	nt := utils.GetTimestamp13()
 
 	//如果时间戳不是昨天，返回0
-	if utils.IsNextDay(t, nt) {
-		yesterday = "0.00000000"
+	if utils.IsToday(t, nt) {
+		yesterday = utils.LVTintToFloatStr(re.Yesterday)
 	}
 	response.Data = rewardResData{
 		Total:      utils.LVTintToFloatStr(re.Total),
