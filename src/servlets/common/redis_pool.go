@@ -55,8 +55,12 @@ func RedisPoolInit() {
 
 func GetRedisConn() redis.Conn {
 	if redisPool != nil {
-		return redisPool.Get()
+		conn := redisPool.Get()
+		err := conn.Err()
+		if err != nil {
+			logger.Error("redis conn err ",err.Error())
+		}
+		return conn
 	}
-
 	return nil
 }

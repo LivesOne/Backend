@@ -28,7 +28,7 @@ func getCFG()*config.TransferLimit{
 
 func rdsDo(commandName string, args ...interface{})(reply interface{}, err error){
 	conn := GetRedisConn()
-	if conn != nil {
+	if conn == nil {
 		return 0,errors.New("can not connect redis")
 	}
 	defer conn.Close()
