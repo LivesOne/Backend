@@ -96,6 +96,20 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
+	//交易次数校验不通过，删除pending
+	if f,e := common.CheckCommitLimit(perPending.From);!f {
+		common.DeletePendingByInfo(perPending)
+		response.SetResponseBase(e)
+		return
+	}
+
+	//金额校验不通过，删除pending
+	if f,e := common.CheckAmount(perPending.From,perPending.Value);!f {
+		common.DeletePendingByInfo(perPending)
+		response.SetResponseBase(e)
+		return
+	}
+
 
 
 	//txid 时间戳检测
@@ -135,6 +149,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			common.DeletePendingByInfo(perPending)
 			//不删除数据库中的txid
 			//common.RemoveTXID(txid)
+			common.SetTotalTransfer(perPending.From,perPending.Value)
 		}
 
 	} else {

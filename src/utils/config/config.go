@@ -40,6 +40,13 @@ type captcha struct{
 	SecretKey string
 }
 
+type TransferLimit struct {
+	SingleAmountMin int64
+	SingleAmountMax int64
+	DailyAmountMax int64
+	DailyPrepareAccecss int
+	DailyCommitAccess int
+}
 
 // Configuration holds all config data
 type Configuration struct {
@@ -55,7 +62,7 @@ type Configuration struct {
 	TxHistory MongoConfig
 	// redis的参数
 	Redis RedisConfig
-
+	TransferLimit TransferLimit
 	AppIDs []string // app IDs read from configuration file
 	appsMap map[string]bool // used to check apps ID existing or not
 

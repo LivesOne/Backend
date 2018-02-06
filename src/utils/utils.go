@@ -78,8 +78,11 @@ func IsDigit(str string) bool {
 
 
 func GetTimestamp13() int64 {
-	now := time.Now()
-	return now.UnixNano() / 1000000
+	return GetTimestamp13ByTime(time.Now())
+}
+
+func GetTimestamp13ByTime(t time.Time) int64 {
+	return t.UnixNano() / 1000000
 }
 
 // 按 UTC 时间，判断 cur 是不是 last 的第二天

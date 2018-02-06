@@ -110,6 +110,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
+	//校验用户的交易限制
+	if f,e := common.CheckPrepareLimit(from);!f{
+		response.SetResponseBase(e)
+		return
+	}
+
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {

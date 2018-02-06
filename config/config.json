@@ -46,6 +46,14 @@
     "SmsSvrAddr":"http://10.100.13.6:8045",
     "MailSvrAddr":"http://10.0.5.248:8080/vcode",
     "ImgSvrAddr":"http://10.0.5.248:8080/vcode",
+    "TransferLimit" :
+    {
+        "SingleAmountMin": 10,
+        "SingleAmountMax": 20000,
+        "DailyAmountMax": 20000,
+        "DailyPrepareAccecss": 25,
+        "DailyCommitAccess": 20
+    },
     "Captcha":{
         "Url":"http://c.dun.163yun.com/api/v2/verify",
         "Id":"",
