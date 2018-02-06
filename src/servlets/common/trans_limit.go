@@ -15,6 +15,7 @@ const(
 	DAILY_TOTAL_TRANSFER_KEY_PROXY = "tl:dt:"
 	TS = 1000
 	DAY_TS = 24*3600*TS
+	LVT_CONV = 100000000
 )
 
 var cfg *config.TransferLimit
@@ -121,7 +122,7 @@ func checkTotalTransfer(lvtUid,amount int64)(bool,constants.Error){
 			logger.Error("redis get error ",err.Error())
 			return false,constants.RC_SYSTEM_ERR
 		}
-		if (amount + int64(total)) > getCFG().DailyAmountMax {
+		if (amount + int64(total)) > (getCFG().DailyAmountMax * LVT_CONV) {
 			return false,constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 
@@ -131,10 +132,10 @@ func checkTotalTransfer(lvtUid,amount int64)(bool,constants.Error){
 
 
 func checkSingleAmount(amount int64)(bool,constants.Error){
-	if amount > getCFG().SingleAmountMax {
+	if amount > (getCFG().SingleAmountMax * LVT_CONV)  {
 		return false,constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
-	if amount < getCFG().SingleAmountMin {
+	if amount < (getCFG().SingleAmountMin * LVT_CONV)  {
 		return false,constants.RC_TRANS_AMOUNT_TOO_LITTLE
 	}
 	return true,constants.RC_OK

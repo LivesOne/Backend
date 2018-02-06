@@ -96,19 +96,25 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
-	//交易次数校验不通过，删除pending
-	if f,e := common.CheckCommitLimit(perPending.From);!f {
-		common.DeletePendingByInfo(perPending)
-		response.SetResponseBase(e)
-		return
+	// 只有转账进行限制
+	if perPending.Type == constants.TX_TYPE_TRANS {
+		//交易次数校验不通过，删除pending
+		if f,e := common.CheckCommitLimit(perPending.From);!f {
+			common.DeletePendingByInfo(perPending)
+			response.SetResponseBase(e)
+			return
+		}
+
+		//金额校验不通过，删除pending
+		if f,e := common.CheckAmount(perPending.From,perPending.Value);!f {
+			common.DeletePendingByInfo(perPending)
+			response.SetResponseBase(e)
+			return
+		}
+
 	}
 
-	//金额校验不通过，删除pending
-	if f,e := common.CheckAmount(perPending.From,perPending.Value);!f {
-		common.DeletePendingByInfo(perPending)
-		response.SetResponseBase(e)
-		return
-	}
+
 
 
 
@@ -148,8 +154,11 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			//删除pending
 			common.DeletePendingByInfo(perPending)
 			//不删除数据库中的txid
-			//common.RemoveTXID(txid)
-			common.SetTotalTransfer(perPending.From,perPending.Value)
+
+			if perPending.Type == constants.TX_TYPE_TRANS {
+				//common.RemoveTXID(txid)
+				common.SetTotalTransfer(perPending.From,perPending.Value)
+			}
 		}
 
 	} else {

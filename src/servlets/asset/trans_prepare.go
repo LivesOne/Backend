@@ -110,11 +110,17 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
-	//校验用户的交易限制
-	if f,e := common.CheckPrepareLimit(from);!f{
-		response.SetResponseBase(e)
-		return
+
+	txType := requestData.Param.TxType
+
+	if txType == constants.TX_TYPE_TRANS {
+		//校验用户的交易限制
+		if f,e := common.CheckPrepareLimit(from);!f{
+			response.SetResponseBase(e)
+			return
+		}
 	}
+
 
 
 	pwd := secret.Pwd
@@ -139,7 +145,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	txType := requestData.Param.TxType
 	//交易类型 只支持，私募，红包，转账
 	if txType != constants.TX_TYPE_TRANS &&
 		txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
