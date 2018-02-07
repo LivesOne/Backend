@@ -114,17 +114,17 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	txType := requestData.Param.TxType
 
 	if txType == constants.TX_TYPE_TRANS {
+		//金额校验不通过，删除pending
+		if f,e := common.CheckAmount(from,utils.FloatStrToLVTint(secret.Value));!f {
+			response.SetResponseBase(e)
+			return
+		}
 		//校验用户的交易限制
 		if f,e := common.CheckPrepareLimit(from);!f{
 			response.SetResponseBase(e)
 			return
 		}
 
-		//金额校验不通过，删除pending
-		if f,e := common.CheckAmount(from,utils.FloatStrToLVTint(secret.Value));!f {
-			response.SetResponseBase(e)
-			return
-		}
 	}
 
 
