@@ -105,12 +105,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			return
 		}
 
-		//金额校验不通过，删除pending
-		if f,e := common.CheckAmount(perPending.From,perPending.Value);!f {
-			common.DeletePendingByInfo(perPending)
-			response.SetResponseBase(e)
-			return
-		}
+
 
 	}
 

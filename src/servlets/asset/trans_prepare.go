@@ -119,6 +119,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 			response.SetResponseBase(e)
 			return
 		}
+
+		//金额校验不通过，删除pending
+		if f,e := common.CheckAmount(from,utils.FloatStrToLVTint(secret.Value));!f {
+			response.SetResponseBase(e)
+			return
+		}
 	}
 
 
