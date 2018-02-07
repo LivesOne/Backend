@@ -161,8 +161,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	//如果是活动领取，需要校验转出者的id
 	if txType == constants.TX_TYPE_ACTIVITY_REWARD {
 
-		if txType == constants.TX_TYPE_ACTIVITY_REWARD && utils.Str2Float64(secret.Value) >
-			float64(config.GetConfig().MaxActivityRewardValue) {
+		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
 			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
 			return
 		}
