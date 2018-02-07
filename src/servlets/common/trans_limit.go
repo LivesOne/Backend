@@ -53,11 +53,11 @@ func rdsGet(key string)(int,error){
 }
 
 func setAndExpire(key string,value,expire int)error{
-	_,err := rdsDo("SET",key,value)
-	if err != nil {
-		return err
-	}
-	_,err = rdsDo("EXPIRE",key,expire)
+	_,err := rdsDo("SET",key,value,"EX",expire)
+	//if err != nil {
+	//	return err
+	//}
+	//_,err = rdsDo("EXPIRE",key,expire)
 	return err
 }
 
