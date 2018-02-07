@@ -151,16 +151,15 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	//交易类型 只支持，私募，红包，转账
+	//交易类型 只支持，红包，转账 不支持私募，工资
 	if txType != constants.TX_TYPE_TRANS &&
-		txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
+		//txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
 		txType != constants.TX_TYPE_ACTIVITY_REWARD {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	//如果是私募或者红包，需要校验转出者的id
-	if txType == constants.TX_TYPE_PRIVATE_PLACEMENT ||
-		txType == constants.TX_TYPE_ACTIVITY_REWARD {
+	//如果是活动领取，需要校验转出者的id
+	if txType == constants.TX_TYPE_ACTIVITY_REWARD {
 
 		if txType == constants.TX_TYPE_ACTIVITY_REWARD && utils.Str2Float64(secret.Value) >
 			float64(config.GetConfig().MaxActivityRewardValue) {
