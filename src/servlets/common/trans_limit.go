@@ -99,7 +99,7 @@ func checkLimit(key string,limit int,incrFlag bool)(bool,constants.Error){
 
 func CheckPrepareLimit(lvtUid int64)(bool,constants.Error){
 	key := DAILY_PREPARE_KEY_PROXY + utils.Int642Str(lvtUid)
-	return checkLimit(key,getCFG().DailyPrepareAccecss,true)
+	return checkLimit(key,getCFG().DailyPrepareAccess,true)
 }
 
 func CheckCommitLimit(lvtUid int64)(bool,constants.Error){

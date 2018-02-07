@@ -51,7 +51,7 @@
         "SingleAmountMin": 10,
         "SingleAmountMax": 20000,
         "DailyAmountMax": 20000,
-        "DailyPrepareAccecss": 25,
+        "DailyPrepareAccess": 25,
         "DailyCommitAccess": 20
     },
     "Captcha":{

@@ -44,7 +44,7 @@ type TransferLimit struct {
 	SingleAmountMin int64
 	SingleAmountMax int64
 	DailyAmountMax int64
-	DailyPrepareAccecss int
+	DailyPrepareAccess int
 	DailyCommitAccess int
 }
 
