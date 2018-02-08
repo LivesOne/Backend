@@ -16,3 +16,19 @@ func ToJSONIndent(v interface{}) string {
 		return ""
 	}
 }
+
+
+func ToJSON(v interface{}) string {
+
+	ret, err := json.Marshal(v)
+	if err != nil {
+		logger.Info("MarshalIndent object to json failed", v)
+		return ""
+	}
+	return string(ret)
+}
+
+
+func FromJson(jsonStr string,v interface{})error{
+	return json.Unmarshal([]byte(jsonStr),v)
+}
