@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"utils/logger"
 )
 
 type RedisDB struct {
@@ -122,6 +123,7 @@ func (r *RedisDB) GetAll(hash string) (uid, key, token string, ret int) {
 	defer conn.Close()
 
 	reply, err := redis.StringMap(conn.Do("HGETALL", "tk:"+hash))
+	logger.Debug("token map --->",reply)
 	if err != nil {
 		// logger.Info("------------------------, read cache error:", err)
 		return "", "", "", constants.ERR_INT_TK_DB
