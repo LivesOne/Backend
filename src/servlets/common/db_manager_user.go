@@ -2,14 +2,11 @@ package common
 
 import (
 	"errors"
-	_ "fmt"
 	"utils/config"
-	_ "utils/config"
 	"utils/db_factory"
 	"utils/logger"
-
+	"regexp"
 	"utils"
-
 	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
 )
@@ -222,6 +219,9 @@ func GetAccountListByPhoneOnly(phone string) ([](*Account), error) {
 }
 
 func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
+	if len(condition) ==0 || !isNum(condition) {
+		return nil,errors.New("condition",condition," is Wrongful ")
+	}
 	rows := gDbUser.Query("select * from account where phone = ? or uid = ? ", condition, condition)
 	// logger.Info("GetAccountListByPhoneOrUID:--------------------------", rows, len(rows))
 	if (rows == nil) || (len(rows) < 1) {
@@ -314,4 +314,8 @@ func convRowMap2Account(row map[string]string) *Account {
 		return account
 	}
 	return nil
+}
+func isNum(s string)bool{
+	r, _ := regexp.Compile("[0-9]*")
+	return r.MatchString(s)
 }
