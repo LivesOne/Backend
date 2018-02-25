@@ -41,6 +41,9 @@ func AssetDbInit() error {
 }
 
 func QueryReward(uid int64) *Reward {
+	if uid == 0 {
+		return nil
+	}
 	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify from user_reward where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
