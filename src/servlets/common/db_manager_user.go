@@ -220,7 +220,7 @@ func GetAccountListByPhoneOnly(phone string) ([](*Account), error) {
 
 func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
 	if len(condition) ==0 || !isNum(condition) {
-		return nil,errors.New("condition",condition," is Wrongful ")
+		return nil,errors.New("condition"+condition+" is Wrongful ")
 	}
 	rows := gDbUser.Query("select * from account where phone = ? or uid = ? ", condition, condition)
 	// logger.Info("GetAccountListByPhoneOrUID:--------------------------", rows, len(rows))
