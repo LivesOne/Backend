@@ -68,6 +68,10 @@ func (c *HttpClien)FormPost(url string, params map[string]string) (resBody strin
 
 func (c *HttpClien)Do(req *http.Request) (*http.Response, error) {
 	res,err := c.client.Do(req)
+	if err != nil {
+		logger.Debug("post error ---> ", err.Error())
+		return nil, err
+	}
 	if checkHttpStatus(res.StatusCode) {
 		return nil, errors.New("http status "+res.Status)
 	}
