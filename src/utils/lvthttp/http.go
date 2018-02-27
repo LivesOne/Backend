@@ -17,11 +17,9 @@ var (
 func init() {
 	client = NewDefaultHttpClient()
 }
-
 func dialTimeout(network, addr string) (net.Conn, error) {
 	return net.DialTimeout(network, addr, time.Second*POST_REMOTE_TIMEOUT)
 }
-
 func NewHttpClient(keepAlives bool)*HttpClien{
 	c := HttpClien{
 		transport :&http.Transport{
@@ -60,7 +58,6 @@ func map2UrlValues(p map[string]string) url.Values {
 	return nil
 }
 
-
 func read(resp *http.Response) (string, error) {
 	if resp == nil {
 		return "",nil
@@ -73,6 +70,10 @@ func read(resp *http.Response) (string, error) {
 		return "", err
 	}
 	return string(res), nil
+}
+
+func checkHttpStatus(status int)bool{
+	return status >= 200 && status < 300
 }
 
 //发起post请求
