@@ -8,6 +8,7 @@ import (
 	"net"
 	"time"
 	"io/ioutil"
+	"errors"
 )
 
 var (
@@ -69,7 +70,11 @@ func read(resp *http.Response) (string, error) {
 		logger.Info("ParseHttpBodyParams: read http body error : ", err)
 		return "", err
 	}
-	return string(res), nil
+	respStr := string(res)
+	if !checkHttpStatus(resp.StatusCode) {
+		return respStr, errors.New("http status "+resp.Status)
+	}
+	return respStr, nil
 }
 
 func checkHttpStatus(status int)bool{
