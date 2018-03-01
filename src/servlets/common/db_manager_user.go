@@ -222,11 +222,7 @@ func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
 	if len(condition) ==0 || !isNum(condition) {
 		return nil,errors.New("condition"+condition+" is Wrongful ")
 	}
-	sql := `
-			select * from account where uid = ?
-		    union all
-			select * from account where phone = ?
-		   `
+	sql := "select * from account where uid = ? union all select * from account where phone = ?"
 	uid,phone := utils.Str2Int64(condition), condition
 
 	rows := gDbUser.Query(sql, uid, phone)
