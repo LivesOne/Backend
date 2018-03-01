@@ -3,9 +3,13 @@ package db_factory
 import (
 	"database/sql"
 	log "utils/logger"
+	"time"
+	"strconv"
 )
 
 func (m *DBPool) Query(query string, args ...interface{}) []map[string]string {
+	start := time.Now()
+	defer logTime(start,query)
 	log.Debug("Query sql :(", query,")")
 	rows, err := m.currDB.Query(query, args...)
 	defer rows.Close()
@@ -21,6 +25,8 @@ func (m *DBPool) Query(query string, args ...interface{}) []map[string]string {
 }
 
 func (m *DBPool) QueryRow(query string, args ...interface{}) (map[string]string,error) {
+	start := time.Now()
+	defer logTime(start,query)
 	log.Debug("Query Row sql :(", query,")")
 	rows, err := m.currDB.Query(query, args...)
 	defer rows.Close()
@@ -34,6 +40,8 @@ func (m *DBPool) QueryRow(query string, args ...interface{}) (map[string]string,
 }
 
 func (m *DBPool) Exec(sql string, args ...interface{}) (sql.Result,error) {
+	start := time.Now()
+	defer logTime(start,sql)
 	log.Debug("Exec sql :(", sql,")")
 	res, err := m.currDB.Exec(sql, args...)
 	if err != nil {
@@ -68,4 +76,11 @@ func (m *DBPool) Err() error {
 
 func (m *DBPool) Begin()(*sql.Tx, error){
 	return m.currDB.Begin()
+}
+
+func logTime(start time.Time, msg ...interface{}) {
+	subSec := time.Now().UTC().Sub(start).Seconds()
+	ms := subSec * 1000
+	dis := strconv.FormatFloat(ms, 'f', 2, 64)
+	log.Debug(msg, " ", dis, " ms")
 }
