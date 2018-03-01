@@ -222,16 +222,25 @@ func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
 	if len(condition) ==0 || !isNum(condition) {
 		return nil,errors.New("condition"+condition+" is Wrongful ")
 	}
+	sql := `
+			select * from account where uid = ?
+		    union all
+			select * from account where phone = ?
+		   `
+	uid,phone := utils.Str2Int64(condition), condition
 
-	rows := gDbUser.Query("select * from account where phone = ? or uid = ? ", condition, condition)
+	rows := gDbUser.Query(sql, uid, phone)
 	// logger.Info("GetAccountListByPhoneOrUID:--------------------------", rows, len(rows))
 	if (rows == nil) || (len(rows) < 1) {
 		return nil, errors.New("no such record:" + condition)
 	}
 
 	accounts := make([](*Account), len(rows))
-	for idx := len(rows) - 1; idx > -1; idx-- {
-		accounts[idx] = convRowMap2Account(rows[idx])
+	//for idx := len(rows) - 1; idx > -1; idx-- {
+	//	accounts[idx] = convRowMap2Account(rows[idx])
+	//}
+	for i,v := range rows {
+		accounts[i] = convRowMap2Account(v)
 	}
 	return accounts, nil
 }
