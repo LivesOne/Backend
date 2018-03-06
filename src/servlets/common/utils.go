@@ -101,38 +101,60 @@ func GenerateUID() string {
 	box := []byte(s)
 
 	len := 9
-	uid := "1"
+	var uid string
 
-	i := 0
-	for {
-		if i > len-3 {
-			break
+	for true {
+		uid = "1"
+		i := 0
+		for {
+			if i > len-3 {
+				break
+			}
+
+			r := make([]byte, 16)
+			rand.Read(r)
+			index := int(r[0]) % 10
+			uid += string(box[index])
+
+			i++
 		}
 
-		r := make([]byte, 16)
-		rand.Read(r)
-		index := int(r[0]) % 10
+		ieee := crc32.NewIEEE()
+		io.WriteString(ieee, uid)
+		sum := ieee.Sum32()
 
-		/*
-			if i == 0 && index == 0 {
-				continue
-			}
-		*/
+		crc := int(sum) % 10
+		uid += string(box[crc])
 
-		uid += string(box[index])
-
-		i++
+		if IsGoodUID(uid) {
+			logger.Info("Good UID: ", uid)
+			continue
+		}
+		break
 	}
 
-	ieee := crc32.NewIEEE()
-	io.WriteString(ieee, uid)
-	sum := ieee.Sum32()
-
-	crc := int(sum) % 10
-
-	uid += string(box[crc])
-
 	return uid
+}
+
+func IsGoodUID(uid string) bool {
+
+	var last_number byte
+	numbers := []byte(uid)
+	count := 0
+	for _, number := range numbers {
+		if number == last_number {
+			count++
+		} else {
+			last_number = number
+			count = 1
+		}
+
+		if count >= 4 {
+			return true
+		}
+	}
+
+	return false
 }
 
 // GenerateTxID generate a new transaction ID
