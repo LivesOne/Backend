@@ -6,6 +6,7 @@ import (
 	"strings"
 	"net/url"
 	"errors"
+	"time"
 )
 
 const (
@@ -15,12 +16,14 @@ const (
 type HttpClien struct{
 	transport *http.Transport
 	client *http.Client
+	httpTimeout time.Duration
 }
 
 
 func (c *HttpClien)build(){
 	c.client = &http.Client{
 		Transport: c.transport,
+		Timeout:c.httpTimeout,
 	}
 }
 

@@ -301,7 +301,7 @@ func CheckUserLoginLimited(uid int64)bool{
 
 func convRowMap2Account(row map[string]string) *Account {
 	if len(row) > 0 {
-		var account *Account = &Account{}
+		account := &Account{}
 		account.ID = utils.Str2Int64(row["id"])
 		account.UID = utils.Str2Int64(row["uid"])
 		account.UIDString = row["uid"]
@@ -317,6 +317,7 @@ func convRowMap2Account(row map[string]string) *Account {
 		account.RegisterType = utils.Str2Int(row["register_type"])
 		account.LoginPassword = row["login_password"]
 		account.PaymentPassword = row["payment_password"]
+		account.Level = utils.Str2Int(row["level"])
 		return account
 	}
 	return nil

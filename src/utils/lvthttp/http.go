@@ -21,7 +21,7 @@ func init() {
 func dialTimeout(network, addr string) (net.Conn, error) {
 	return net.DialTimeout(network, addr, time.Second*POST_REMOTE_TIMEOUT)
 }
-func NewHttpClient(keepAlives bool)*HttpClien{
+func NewHttpClient(keepAlives bool,timeout time.Duration)*HttpClien{
 	c := HttpClien{
 		transport :&http.Transport{
 			MaxIdleConns:1000,
@@ -29,13 +29,14 @@ func NewHttpClient(keepAlives bool)*HttpClien{
 			Dial:              dialTimeout,
 			DisableKeepAlives: !keepAlives, //为true时会在 body.Close()时关闭连接,不然close的时候也不会关闭链接
 		},
+		httpTimeout:timeout,
 	}
 	c.build()
 	return &c
 }
 
 func NewDefaultHttpClient()*HttpClien{
-	return NewHttpClient(true)
+	return NewHttpClient(true,time.Second*POST_REMOTE_TIMEOUT)
 }
 
 
