@@ -12,6 +12,7 @@ import (
 	"utils/logger"
 
 	"github.com/garyburd/redigo/redis"
+	"strings"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -101,38 +102,86 @@ func GenerateUID() string {
 	box := []byte(s)
 
 	len := 9
-	uid := "1"
+	var uid string
 
-	i := 0
-	for {
-		if i > len-3 {
-			break
+	for true {
+		uid = "1"
+		i := 0
+		for {
+			if i > len-3 {
+				break
+			}
+
+			r := make([]byte, 16)
+			rand.Read(r)
+			index := int(r[0]) % 10
+			uid += string(box[index])
+
+			i++
 		}
 
-		r := make([]byte, 16)
-		rand.Read(r)
-		index := int(r[0]) % 10
+		ieee := crc32.NewIEEE()
+		io.WriteString(ieee, uid)
+		sum := ieee.Sum32()
 
-		/*
-			if i == 0 && index == 0 {
-				continue
-			}
-		*/
+		crc := int(sum) % 10
+		uid += string(box[crc])
 
-		uid += string(box[index])
-
-		i++
+		if IsGoodUID(uid) {
+			logger.Info("Good UID: ", uid)
+			continue
+		}
+		break
 	}
 
-	ieee := crc32.NewIEEE()
-	io.WriteString(ieee, uid)
-	sum := ieee.Sum32()
-
-	crc := int(sum) % 10
-
-	uid += string(box[crc])
-
 	return uid
+}
+
+func IsGoodUID(uid string) bool {
+
+	// check same or increase or decrease number
+	var last_number byte
+	numbers := []byte(uid)
+	count_same := 0
+	count_incr := 0
+	count_decr := 0
+	for _, number := range numbers {
+		if number == last_number {
+			count_same++
+			count_incr = 1
+			count_decr = 1
+		} else if number == last_number+1 {
+			count_incr++
+			count_same = 1
+			count_decr = 1
+		} else if number == last_number-1 {
+			count_decr++
+			count_same = 1
+			count_incr = 1
+		} else {
+			count_same = 1
+			count_incr = 1
+			count_decr = 1
+		}
+
+		last_number = number
+
+		if count_same >= 4 || count_incr >= 4 || count_decr >= 4 {
+			return true
+		}
+	}
+
+	// check fixed sub string
+	var fixed_strings = []string{"666", "686", "688", "866", "868", "886", "888", "999", "000",
+		"1688", "2688", "2008", "2088", "5188", "5201314", "5211314", "10010", "10086"}
+
+	for _, v := range fixed_strings {
+		if strings.Contains(uid, v) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // GenerateTxID generate a new transaction ID
@@ -162,7 +211,7 @@ func GenerateTxID() int64 {
 func getTxID(key string) (int64, int) {
 	conn := GetRedisConn()
 	if conn == nil {
-		return -1,constants.ERR_INT_TK_DB
+		return -1, constants.ERR_INT_TK_DB
 	}
 	defer conn.Close()
 

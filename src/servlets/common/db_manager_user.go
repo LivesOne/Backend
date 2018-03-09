@@ -1,13 +1,13 @@
 package common
 
 import (
-	_ "github.com/go-sql-driver/mysql"
 	"errors"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"utils"
 	"regexp"
+	"utils"
+	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
 )
 
@@ -220,17 +220,23 @@ func GetAccountListByPhoneOnly(phone string) ([](*Account), error) {
 
 func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
 	if len(condition) ==0 || !isNum(condition) {
-		return nil,errors.New("condition",condition," is Wrongful ")
+		return nil,errors.New("condition"+condition+" is Wrongful ")
 	}
-	rows := gDbUser.Query("select * from account where phone = ? or uid = ? ", condition, condition)
+	sql := "select * from account where uid = ? union all select * from account where phone = ?"
+	uid,phone := utils.Str2Int64(condition), condition
+
+	rows := gDbUser.Query(sql, uid, phone)
 	// logger.Info("GetAccountListByPhoneOrUID:--------------------------", rows, len(rows))
 	if (rows == nil) || (len(rows) < 1) {
 		return nil, errors.New("no such record:" + condition)
 	}
 
 	accounts := make([](*Account), len(rows))
-	for idx := len(rows) - 1; idx > -1; idx-- {
-		accounts[idx] = convRowMap2Account(rows[idx])
+	//for idx := len(rows) - 1; idx > -1; idx-- {
+	//	accounts[idx] = convRowMap2Account(rows[idx])
+	//}
+	for i,v := range rows {
+		accounts[i] = convRowMap2Account(v)
 	}
 	return accounts, nil
 }
@@ -293,9 +299,18 @@ func CheckUserLoginLimited(uid int64)bool{
 	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
 }
 
+func GetUserLevel(uid int64)int{
+	row, err := gDbUser.QueryRow("select level from account where uid = ? ", uid)
+	if err != nil || row == nil {
+		logger.Error("query err ", err.Error())
+		return 0
+	}
+	return utils.Str2Int(row["level"])
+}
+
 func convRowMap2Account(row map[string]string) *Account {
 	if len(row) > 0 {
-		var account *Account = &Account{}
+		account := &Account{}
 		account.ID = utils.Str2Int64(row["id"])
 		account.UID = utils.Str2Int64(row["uid"])
 		account.UIDString = row["uid"]
@@ -311,11 +326,11 @@ func convRowMap2Account(row map[string]string) *Account {
 		account.RegisterType = utils.Str2Int(row["register_type"])
 		account.LoginPassword = row["login_password"]
 		account.PaymentPassword = row["payment_password"]
+		account.Level = utils.Str2Int(row["level"])
 		return account
 	}
 	return nil
 }
-
 func isNum(s string)bool{
 	r, _ := regexp.Compile("[0-9]*")
 	return r.MatchString(s)

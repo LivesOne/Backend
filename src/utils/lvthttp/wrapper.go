@@ -5,6 +5,8 @@ import (
 	"utils/logger"
 	"strings"
 	"net/url"
+	"errors"
+	"time"
 )
 
 const (
@@ -14,12 +16,14 @@ const (
 type HttpClien struct{
 	transport *http.Transport
 	client *http.Client
+	httpTimeout time.Duration
 }
 
 
 func (c *HttpClien)build(){
 	c.client = &http.Client{
 		Transport: c.transport,
+		Timeout:c.httpTimeout,
 	}
 }
 
@@ -58,5 +62,13 @@ func (c *HttpClien)FormPost(url string, params map[string]string) (resBody strin
 }
 
 func (c *HttpClien)Do(req *http.Request) (*http.Response, error) {
-	return c.client.Do(req)
+	res,err := c.client.Do(req)
+	if err != nil {
+		logger.Debug("post error ---> ", err.Error())
+		return nil, err
+	}
+	if !checkHttpStatus(res.StatusCode) {
+		return res, errors.New("http status "+res.Status)
+	}
+	return res,err
 }

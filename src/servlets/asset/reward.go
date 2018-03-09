@@ -61,7 +61,12 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	re := common.QueryReward(intUid)
+	re,err := common.QueryReward(intUid)
+
+	if err != nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
 
 	yesterday := "0.00000000"
 

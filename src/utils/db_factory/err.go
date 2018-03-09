@@ -1110,6 +1110,7 @@ func parseErrCode(err error) *MySqlError {
 	return me
 }
 
+
 func matchErrCode(errStr string)int {
 	errRegexp := regexp.MustCompile(`Error (\d+):.*`)
 	mcs := errRegexp.FindStringSubmatch(errStr)

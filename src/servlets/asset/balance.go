@@ -70,11 +70,15 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
-	balance := common.QueryBalance(uid)
-
-	response.Data = balanceResData{
-		Balance:utils.LVTintToFloatStr(balance),
+	balance,err := common.QueryBalance(uid)
+	if err != nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+	} else {
+		response.Data = balanceResData{
+			Balance:utils.LVTintToFloatStr(balance),
+		}
 	}
+
 
 
 }

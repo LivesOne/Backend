@@ -326,12 +326,15 @@ func ValidateWYYD(validate string) (bool, int) {
 		param["timestamp"] = utils.Int642Str(ts)
 		param["nonce"] = utils.Int2Str(rand.Intn(200))
 		param["signature"] = genSignature(captcha.SecretKey, param)
+		logger.Debug("validate req params --->",utils.ToJSON(param))
 		resBodyStr, err := lvthttp.FormPost(captcha.Url, param)
 		if err != nil {
+			logger.Error("http req eror ---> ",err.Error())
 			return false, HTTP_ERR
 		}
+		logger.Debug("validate response --->",resBodyStr)
 		res := wyydRes{}
-		err1 := json.Unmarshal([]byte(resBodyStr), &res)
+		err1 := utils.FromJson(resBodyStr, &res)
 		if err1 != nil {
 			logger.Info("ParseHttpBodyParams, parse body param error: ", err)
 			return false, JSON_PARSE_ERR

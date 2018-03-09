@@ -10,6 +10,7 @@ import (
 	"utils/logger"
 	"database/sql"
 	"servlets/constants"
+	"errors"
 )
 
 const  (
@@ -40,30 +41,39 @@ func AssetDbInit() error {
 	return nil
 }
 
-func QueryReward(uid int64) *Reward {
+func QueryReward(uid int64) (*Reward,error) {
+	if uid == 0 {
+		return nil,errors.New("uid is zero")
+	}
 	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify from user_reward where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
+		return nil,err
 	}
-	return &Reward{
-		Total:      utils.Str2Int64(row["total"]),
-		Yesterday:  utils.Str2Int64(row["lastday"]),
-		Lastmodify: utils.Str2Int64(row["lastmodify"]),
+	resReward :=  &Reward{
 		Uid:        uid,
 	}
+	if row != nil {
+		resReward.Total=     utils.Str2Int64(row["total"])
+		resReward.Yesterday=  utils.Str2Int64(row["lastday"])
+		resReward.Lastmodify= utils.Str2Int64(row["lastmodify"])
+
+	}
+	return resReward,err
+
 }
 
 
-func QueryBalance(uid int64)int64{
+func QueryBalance(uid int64)(int64,error){
 	row, err := gDBAsset.QueryRow("select balance from user_asset where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"])
+		return utils.Str2Int64(row["balance"]),nil
 	}
-	return 0
+	return 0,err
 }
 
 
