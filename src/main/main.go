@@ -45,9 +45,9 @@ func initialize(cfgPath string) {
 		cfgDir = filepath.Join(cfgPath, "../")
 	}
 
-	fmt.Println("init config file path ", cfgPath)
-	config.LoadConfig(cfgPath, cfgDir)
 
+	config.LoadConfig(cfgPath, cfgDir)
+	fmt.Println("init config over file path ", cfgPath)
 	logger.InitLogger(cfgDir, config.GetConfig().LogConfig)
 	logger.Info("server initialize.....")
 }

@@ -109,7 +109,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			if db_factory.CheckDuplicateByColumn(err, "email") {
 				response.SetResponseBase(constants.RC_DUP_EMAIL)
 				return
-			} else if db_factory.CheckDuplicateByColumn(err, "uid") {
+			} else if db_factory.CheckDuplicateByColumn(err, "PRIMARY") {
 				continue
 			} else {
 				break
@@ -132,7 +132,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			if db_factory.CheckDuplicateByColumn(err, "mobile") {
 				response.SetResponseBase(constants.RC_DUP_PHONE)
 				return
-			} else if db_factory.CheckDuplicateByColumn(err, "uid") {
+			} else if db_factory.CheckDuplicateByColumn(err, "PRIMARY") {
 				continue
 			} else {
 				break
@@ -203,7 +203,7 @@ func insertAndCheckUid(account *common.Account, hashedPWD string) error {
 		if err == nil {
 			break
 		}
-		if db_factory.CheckDuplicateByColumn(err, "uid") {
+		if db_factory.CheckDuplicateByColumn(err, "PRIMARY") {
 			continue
 		}
 	}

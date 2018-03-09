@@ -299,6 +299,15 @@ func CheckUserLoginLimited(uid int64)bool{
 	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
 }
 
+func GetUserLevel(uid int64)int{
+	row, err := gDbUser.QueryRow("select level from account where uid = ? ", uid)
+	if err != nil || row == nil {
+		logger.Error("query err ", err.Error())
+		return 0
+	}
+	return utils.Str2Int(row["level"])
+}
+
 func convRowMap2Account(row map[string]string) *Account {
 	if len(row) > 0 {
 		account := &Account{}
