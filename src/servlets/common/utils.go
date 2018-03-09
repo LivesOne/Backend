@@ -12,6 +12,7 @@ import (
 	"utils/logger"
 
 	"github.com/garyburd/redigo/redis"
+	"strings"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -138,18 +139,44 @@ func GenerateUID() string {
 
 func IsGoodUID(uid string) bool {
 
+	// check same or increase or decrease number
 	var last_number byte
 	numbers := []byte(uid)
-	count := 0
+	count_same := 0
+	count_incr := 0
+	count_decr := 0
 	for _, number := range numbers {
 		if number == last_number {
-			count++
+			count_same++
+			count_incr = 1
+			count_decr = 1
+		} else if number == last_number+1 {
+			count_incr++
+			count_same = 1
+			count_decr = 1
+		} else if number == last_number-1 {
+			count_decr++
+			count_same = 1
+			count_incr = 1
 		} else {
-			last_number = number
-			count = 1
+			count_same = 1
+			count_incr = 1
+			count_decr = 1
 		}
 
-		if count >= 4 {
+		last_number = number
+
+		if count_same >= 4 || count_incr >= 4 || count_decr >= 4 {
+			return true
+		}
+	}
+
+	// check fixed sub string
+	var fixed_strings = []string{"666", "686", "688", "866", "868", "886", "888", "999", "000",
+		"1688", "2688", "2008", "2088", "5188", "5201314", "5211314", "10010", "10086"}
+
+	for _, v := range fixed_strings {
+		if strings.Contains(uid, v) {
 			return true
 		}
 	}
@@ -184,7 +211,7 @@ func GenerateTxID() int64 {
 func getTxID(key string) (int64, int) {
 	conn := GetRedisConn()
 	if conn == nil {
-		return -1,constants.ERR_INT_TK_DB
+		return -1, constants.ERR_INT_TK_DB
 	}
 	defer conn.Close()
 
