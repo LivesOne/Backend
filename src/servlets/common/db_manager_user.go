@@ -299,13 +299,13 @@ func CheckUserLoginLimited(uid int64)bool{
 	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
 }
 
-func GetUserLevel(uid int64)int{
-	row, err := gDbUser.QueryRow("select level from account where uid = ? ", uid)
+func GetUserTransLevel(uid int64)int{
+	row, err := gDbUser.QueryRow("select trans_level from account where uid = ? ", uid)
 	if err != nil || row == nil {
 		logger.Error("query err ", err.Error())
 		return 0
 	}
-	return utils.Str2Int(row["level"])
+	return utils.Str2Int(row["trans_level"])
 }
 
 func convRowMap2Account(row map[string]string) *Account {
@@ -327,6 +327,7 @@ func convRowMap2Account(row map[string]string) *Account {
 		account.LoginPassword = row["login_password"]
 		account.PaymentPassword = row["payment_password"]
 		account.Level = utils.Str2Int(row["level"])
+		account.TransLevel = utils.Str2Int(row["trans_level"])
 		return account
 	}
 	return nil

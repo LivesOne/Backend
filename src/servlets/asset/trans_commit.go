@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"utils/config"
 )
 
 const (
@@ -98,15 +99,16 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	// 只有转账进行限制
 	if perPending.Type == constants.TX_TYPE_TRANS {
-		//交易次数校验不通过，删除pending
-		if f,e := common.CheckCommitLimit(perPending.From);!f {
-			common.DeletePendingByInfo(perPending)
-			response.SetResponseBase(e)
-			return
+		//非系统账号才进行限额校验
+		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+			level := common.GetUserTransLevel(perPending.From)
+			//交易次数校验不通过，删除pending
+			if f,e := common.CheckCommitLimit(perPending.From,level);!f {
+				common.DeletePendingByInfo(perPending)
+				response.SetResponseBase(e)
+				return
+			}
 		}
-
-
-
 	}
 
 

@@ -18,13 +18,16 @@ const(
 	LVT_CONV = 100000000
 )
 
-var cfg *config.TransferLimit
+var cfg map[int]config.TransferLimit
 
-func getCFG()*config.TransferLimit{
+func getCFG(userLevel int)*config.TransferLimit{
 	if cfg == nil {
-		cfg = &config.GetConfig().TransferLimit
+		cfg = config.GetConfig().TransferLimit
 	}
-	return cfg
+	if lim,ok := cfg[userLevel];ok{
+		return &lim
+	}
+	return nil
 }
 
 func rdsDo(commandName string, args ...interface{})(reply interface{}, err error){
@@ -97,17 +100,25 @@ func checkLimit(key string,limit int,incrFlag bool)(bool,constants.Error){
 }
 
 
-func CheckPrepareLimit(lvtUid int64)(bool,constants.Error){
+func CheckPrepareLimit(lvtUid int64,level int)(bool,constants.Error){
 	key := DAILY_PREPARE_KEY_PROXY + utils.Int642Str(lvtUid)
-	return checkLimit(key,getCFG().DailyPrepareAccess,true)
+	limit := getCFG(level)
+	if limit == nil {
+		return false,constants.RC_TOO_MANY_REQ
+	}
+	return checkLimit(key,limit.DailyPrepareAccess,true)
 }
 
-func CheckCommitLimit(lvtUid int64)(bool,constants.Error){
+func CheckCommitLimit(lvtUid int64,level int)(bool,constants.Error){
 	key := DAILY_COMMIT_KEY_PROXY + utils.Int642Str(lvtUid)
-	return checkLimit(key,getCFG().DailyCommitAccess,false)
+	limit := getCFG(level)
+	if limit == nil {
+		return false,constants.RC_TOO_MANY_REQ
+	}
+	return checkLimit(key,limit.DailyCommitAccess,false)
 }
 
-func checkTotalTransfer(lvtUid,amount int64)(bool,constants.Error){
+func checkTotalTransfer(lvtUid,amount int64,limit *config.TransferLimit)(bool,constants.Error){
 	key := DAILY_TOTAL_TRANSFER_KEY_PROXY + utils.Int642Str(lvtUid)
 	t,e :=  ttl(key)
 	if e != nil {
@@ -122,7 +133,8 @@ func checkTotalTransfer(lvtUid,amount int64)(bool,constants.Error){
 			logger.Error("redis get error ",err.Error())
 			return false,constants.RC_SYSTEM_ERR
 		}
-		if (amount + int64(total)) > (getCFG().DailyAmountMax * LVT_CONV) {
+
+		if (amount + int64(total)) > (limit.DailyAmountMax * LVT_CONV) {
 			return false,constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 
@@ -131,21 +143,26 @@ func checkTotalTransfer(lvtUid,amount int64)(bool,constants.Error){
 }
 
 
-func checkSingleAmount(amount int64)(bool,constants.Error){
-	if amount > (getCFG().SingleAmountMax * LVT_CONV)  {
+func checkSingleAmount(amount int64,limit *config.TransferLimit)(bool,constants.Error){
+
+	if amount > (limit.SingleAmountMax * LVT_CONV)  {
 		return false,constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
-	if amount < (getCFG().SingleAmountMin * LVT_CONV)  {
+	if amount < (limit.SingleAmountMin * LVT_CONV)  {
 		return false,constants.RC_TRANS_AMOUNT_TOO_LITTLE
 	}
 	return true,constants.RC_OK
 }
 
-func CheckAmount(lvtUid,amount int64)(bool,constants.Error){
-	if f,e := checkSingleAmount(amount);!f {
+func CheckAmount(lvtUid,amount int64,level int)(bool,constants.Error){
+	limit := getCFG(level)
+	if limit == nil {
+		return false,constants.RC_TOO_MANY_REQ
+	}
+	if f,e := checkSingleAmount(amount,limit);!f {
 		return false,e
 	}
-	return checkTotalTransfer(lvtUid,amount)
+	return checkTotalTransfer(lvtUid,amount,limit)
 }
 
 func SetTotalTransfer(lvtUid,amount int64){

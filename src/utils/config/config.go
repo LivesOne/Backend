@@ -62,7 +62,7 @@ type Configuration struct {
 	TxHistory MongoConfig
 	// redis的参数
 	Redis RedisConfig
-	TransferLimit TransferLimit
+	TransferLimit map[int]TransferLimit
 	AppIDs []string // app IDs read from configuration file
 	appsMap map[string]bool // used to check apps ID existing or not
 
@@ -76,6 +76,8 @@ type Configuration struct {
 	LogConfig string
 	Captcha captcha
 	MaxActivityRewardValue int
+
+	CautionMoneyIds []int64
 
 }
 
@@ -92,7 +94,8 @@ func LoadConfig(cfgFilename string,cd string) error {
 
 	err := utils.ReadJSONFile(cfgFilename, &gConfig)
 	if err != nil {
-		return err
+		fmt.Println("read json file error ", err)
+		panic(err)
 	}
 
 	if gConfig.isValid() == false {
@@ -187,7 +190,16 @@ func (cfg *Configuration) isValid() bool {
 		len(cfg.ImgSvrAddr) > 0
 }
 
-
+func (cfg *Configuration) CautionMoneyIdsExist(uid int64) bool {
+	if len(cfg.CautionMoneyIds) > 0 {
+		for _,v := range cfg.CautionMoneyIds {
+			if uid == v {
+				return true
+			}
+		}
+	}
+	return false
+}
 func IsAppIDValid(appid string) bool {
 	logger.Info("app_id in ",appid,"curr app_id ",gConfig.appsMap)
 	_, existing := gConfig.appsMap[appid]
