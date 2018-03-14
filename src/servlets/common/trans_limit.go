@@ -74,25 +74,19 @@ func checkLimit(key string,limit int,incrFlag bool)(bool,constants.Error){
 	if t <0 {
 		setAndExpire(key,1, getTime())
 	} else {
-
+		var c int
+		var e error
 		if incrFlag {
-			c,e := incr(key)
-			if e != nil {
-				logger.Error("incr error ",e.Error())
-				return false,constants.RC_SYSTEM_ERR
-			}
-			if c > limit {
-				return false,constants.RC_TOO_MANY_REQ
-			}
+			c,e = incr(key)
 		}else{
-			c,e := rdsGet(key)
-			if e != nil {
-				logger.Error("incr error ",e.Error())
-				return false,constants.RC_SYSTEM_ERR
-			}
-			if c > limit && limit > -1 {
-				return false,constants.RC_TOO_MANY_REQ
-			}
+			c,e = rdsGet(key)
+		}
+		if e != nil {
+			logger.Error("incr error ",e.Error())
+			return false,constants.RC_SYSTEM_ERR
+		}
+		if limit > -1 && c > limit {
+			return false,constants.RC_TOO_MANY_REQ
 		}
 
 	}
