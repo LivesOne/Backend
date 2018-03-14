@@ -154,7 +154,10 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 			if perPending.Type == constants.TX_TYPE_TRANS {
 				//common.RemoveTXID(txid)
-				common.SetTotalTransfer(perPending.From,perPending.Value)
+				if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+					common.SetTotalTransfer(perPending.From,perPending.Value)
+				}
+
 			}
 		}
 
