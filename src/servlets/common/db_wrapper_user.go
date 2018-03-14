@@ -18,7 +18,7 @@ type (
 		UpdateTime      int64  `json:"update_time"`
 		RegisterType    int    `json:"_r,omitempty"`
 		Level           int    `json:"level"`
-		TransLevel      int    `json:"trans_level"`
+		TraderLevel     int    `json:"trader_level"`
 	}
 
 	Profile struct {

@@ -51,7 +51,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		Have_pay_pwd: (len(account.PaymentPassword) > 0),
 	}
 	//提前获取交易等级
-	account.TransLevel = common.GetUserAssetTranslevelByUid(account.UID)
+	account.TraderLevel = common.GetUserAssetTranslevelByUid(account.UID)
 
 	account.ID = 0
 	account.UID = 0
