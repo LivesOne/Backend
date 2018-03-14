@@ -50,6 +50,8 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	profile := profileResponse{
 		Have_pay_pwd: (len(account.PaymentPassword) > 0),
 	}
+	//提前获取交易等级
+	account.TransLevel = common.GetUserAssetTranslevelByUid(account.UID)
 
 	account.ID = 0
 	account.UID = 0
@@ -57,7 +59,6 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.PaymentPassword = ""
 	account.From = ""
 	account.RegisterType = 0
-
 	profile.Account = *account
 
 	response.Data = profile

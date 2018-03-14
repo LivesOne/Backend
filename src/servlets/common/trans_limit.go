@@ -13,8 +13,10 @@ const(
 	DAILY_PREPARE_KEY_PROXY = "tl:dp:"
 	DAILY_COMMIT_KEY_PROXY = "tl:dc:"
 	DAILY_TOTAL_TRANSFER_KEY_PROXY = "tl:dt:"
+	USER_TRANS_KEY_PROXY = "tx:uid:"
 	TS = 1000
-	DAY_TS = 24*3600*TS
+	DAY_S = 24*3600
+	DAY_TS = DAY_S*TS
 	LVT_CONV = 100000000
 )
 
@@ -55,12 +57,9 @@ func rdsGet(key string)(int,error){
 	return redis.Int(rdsDo("GET",key))
 }
 
+
 func setAndExpire(key string,value,expire int)error{
 	_,err := rdsDo("SET",key,value,"EX",expire)
-	//if err != nil {
-	//	return err
-	//}
-	//_,err = rdsDo("EXPIRE",key,expire)
 	return err
 }
 
@@ -177,4 +176,27 @@ func getTime()int{
 	start := utils.GetDayStart(ts)
 	re := DAY_TS - (ts-utils.GetTimestamp13ByTime(start))
 	return int(re/TS)
+}
+
+
+
+func GetTransLevel(uid int64)int{
+	key := USER_TRANS_KEY_PROXY + utils.Int642Str(uid)
+	t,err := ttl(key)
+	if err != nil {
+		return 0
+	}
+	var userTransLevel = 0
+	var e error = nil
+	if t <0 {
+		userTransLevel = GetUserAssetTranslevelByUid(uid)
+		setAndExpire(key,userTransLevel, DAY_S)
+	} else {
+		userTransLevel,e = rdsGet(key)
+		if e != nil {
+			logger.Error("get redis error")
+			return 0
+		}
+	}
+	return userTransLevel
 }

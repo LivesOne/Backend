@@ -10,6 +10,7 @@ import (
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"utils/trans_limit"
 )
 
 type transPrepareParam struct {
@@ -118,7 +119,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		//非系统账号才校验额度
 		if !config.GetConfig().CautionMoneyIdsExist(to) {
 			//金额校验不通过，删除pending
-			level := common.GetUserTransLevel(from)
+			level := common.GetTransLevel(from)
 			if f,e := common.CheckAmount(from,utils.FloatStrToLVTint(secret.Value),level);!f {
 				response.SetResponseBase(e)
 				return

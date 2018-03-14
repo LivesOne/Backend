@@ -240,3 +240,17 @@ func CheckAssetLimeted(uid int64,tx *sql.Tx)bool{
 	}
 	return status == constants.ASSET_STATUS_DEF
 }
+
+
+func GetUserAssetTranslevelByUid(uid int64)int{
+	res,err := gDBAsset.QueryRow("select trans_level from user_restrict where uid = ?",uid)
+	if err != nil {
+		logger.Error("cannot get trans level ",err.Error())
+		return 0
+	}
+	if res == nil {
+		logger.Info("can not find trans level by uid ",uid)
+		return 0
+	}
+	return utils.Str2Int(res["trans_level"])
+}
