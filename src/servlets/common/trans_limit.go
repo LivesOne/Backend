@@ -16,6 +16,7 @@ const(
 	USER_TRANS_KEY_PROXY = "tx:uid:"
 	TS = 1000
 	DAY_S = 24*3600
+	DAY_30 = DAY_S*30
 	DAY_TS = DAY_S*TS
 	LVT_CONV = 100000000
 )
@@ -190,7 +191,7 @@ func GetTransLevel(uid int64)int{
 	var e error = nil
 	if t <0 {
 		userTransLevel = GetUserAssetTranslevelByUid(uid)
-		setAndExpire(key,userTransLevel, DAY_S)
+		setAndExpire(key,userTransLevel, DAY_30)
 	} else {
 		userTransLevel,e = rdsGet(key)
 		if e != nil {
