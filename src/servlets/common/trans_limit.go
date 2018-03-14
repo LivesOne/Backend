@@ -66,37 +66,35 @@ func setAndExpire(key string,value,expire int)error{
 
 
 func checkLimit(key string,limit int,incrFlag bool)(bool,constants.Error){
-	if limit > -1 {
-		t,e :=  ttl(key)
-		if e != nil {
-			logger.Error("ttl error ",e.Error())
-			return false,constants.RC_SYSTEM_ERR
-		}
-		if t <0 {
-			setAndExpire(key,1, getTime())
-		} else {
+	t,e :=  ttl(key)
+	if e != nil {
+		logger.Error("ttl error ",e.Error())
+		return false,constants.RC_SYSTEM_ERR
+	}
+	if t <0 {
+		setAndExpire(key,1, getTime())
+	} else {
 
-			if incrFlag {
-				c,e := incr(key)
-				if e != nil {
-					logger.Error("incr error ",e.Error())
-					return false,constants.RC_SYSTEM_ERR
-				}
-				if c > limit {
-					return false,constants.RC_TOO_MANY_REQ
-				}
-			}else{
-				c,e := rdsGet(key)
-				if e != nil {
-					logger.Error("incr error ",e.Error())
-					return false,constants.RC_SYSTEM_ERR
-				}
-				if c > limit {
-					return false,constants.RC_TOO_MANY_REQ
-				}
+		if incrFlag {
+			c,e := incr(key)
+			if e != nil {
+				logger.Error("incr error ",e.Error())
+				return false,constants.RC_SYSTEM_ERR
 			}
-
+			if c > limit {
+				return false,constants.RC_TOO_MANY_REQ
+			}
+		}else{
+			c,e := rdsGet(key)
+			if e != nil {
+				logger.Error("incr error ",e.Error())
+				return false,constants.RC_SYSTEM_ERR
+			}
+			if c > limit && limit > -1 {
+				return false,constants.RC_TOO_MANY_REQ
+			}
 		}
+
 	}
 	return true,constants.RC_OK
 }
@@ -121,27 +119,25 @@ func CheckCommitLimit(lvtUid int64,level int)(bool,constants.Error){
 }
 
 func checkTotalTransfer(lvtUid,amount int64,limit *config.TransferLimit)(bool,constants.Error){
-	if limit.DailyAmountMax > -1 {
-		key := DAILY_TOTAL_TRANSFER_KEY_PROXY + utils.Int642Str(lvtUid)
-		t,e :=  ttl(key)
-		if e != nil {
-			logger.Error("ttl error ",e.Error())
+	key := DAILY_TOTAL_TRANSFER_KEY_PROXY + utils.Int642Str(lvtUid)
+	t,e :=  ttl(key)
+	if e != nil {
+		logger.Error("ttl error ",e.Error())
+		return false,constants.RC_SYSTEM_ERR
+	}
+	if t <0 {
+		setAndExpire(key,0, getTime())
+	} else {
+		total,err := rdsGet(key)
+		if err != nil {
+			logger.Error("redis get error ",err.Error())
 			return false,constants.RC_SYSTEM_ERR
 		}
-		if t <0 {
-			setAndExpire(key,0, getTime())
-		} else {
-			total,err := rdsGet(key)
-			if err != nil {
-				logger.Error("redis get error ",err.Error())
-				return false,constants.RC_SYSTEM_ERR
-			}
 
-			if (amount + int64(total)) > (limit.DailyAmountMax * LVT_CONV) {
-				return false,constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
-			}
-
+		if (limit.DailyAmountMax > -1) && (amount + int64(total)) > (limit.DailyAmountMax * LVT_CONV) {
+			return false,constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
+
 	}
 	return true,constants.RC_OK
 }
