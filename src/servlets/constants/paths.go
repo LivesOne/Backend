@@ -14,7 +14,7 @@ const (
 	// Account Register
 	// http method : POST
 	ACCOUNT_REGISTER = "/user/v1/account/register"
-
+	ACCOUNT_REGISTER_UPVCODE = "/user/v1/account/register_upvcode"
 	// Account login
 	// http method : POST
 	ACCOUNT_LOGIN = "/user/v1/account/login"

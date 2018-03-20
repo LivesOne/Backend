@@ -72,6 +72,8 @@ type Configuration struct {
 	MailSvrAddr string
 	// 图像验证网关相关
 	ImgSvrAddr string
+	// 短信上行接口地址
+	SmsUpValidateSvrAddr string
 	// log相关
 	LogConfig string
 	Captcha captcha

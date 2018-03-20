@@ -12,6 +12,7 @@ import (
 	"utils/config"
 	"utils/logger"
 	"utils/lvthttp"
+	"servlets/common"
 )
 
 const (
@@ -42,6 +43,17 @@ const (
 	SMS_PROTOCOL_ERR        = 200
 	SMS_CODE_EXPIRED_ERR    = 103
 	SMS_VALIDATE_CODE_FAILD = 102
+
+
+
+
+	SMS_UP_URL_PATH = "/sms/v1/validate"
+	IMG_URL_PATH = "/img/v1/getCode"
+	SMS_URL_PATH = "/get"
+	MAIL_URL_PATH = "/mail/v1/getCode"
+	VALIDATE_URL_PATH = "/v/v1/validate"
+	SMS_VALIDATE_URL_PATH = "/validate"
+
 )
 
 type (
@@ -117,6 +129,11 @@ type (
 		Error  int    `json:"error"`
 		Msg    string `json:"msg"`
 	}
+	upSmsReq struct {
+		Country int `json:"country"`
+		Phone string `json:"phone"`
+		Code string `json:"code"`
+	}
 )
 
 func isNotNull(s string) bool {
@@ -137,7 +154,7 @@ func GetImgVCode(w, h, len, expire int) *httpImgVCodeResParam {
 		Len:    len,
 		Expire: expire,
 	}
-	url := config.GetConfig().ImgSvrAddr + "/img/v1/getCode"
+	url := config.GetConfig().ImgSvrAddr + IMG_URL_PATH
 	svrResStr, err := lvthttp.JsonPost(url, typeData)
 	if err != nil {
 		logger.Error("url ---> ", url, " http send error ", err.Error())
@@ -164,7 +181,7 @@ func messageServerReq(phone string, country int, ln string, expire int, voiceCod
 			Expire:    expire,
 			VoiceCode: voiceCode,
 		}
-		url := config.GetConfig().SmsSvrAddr + "/get"
+		url := config.GetConfig().SmsSvrAddr + SMS_URL_PATH
 		jsonRes, err := lvthttp.JsonPost(url, req)
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
@@ -196,7 +213,7 @@ func SendMailVCode(email string, ln string, expire int) *httpReqVCode {
 			Ln:     ln,
 			Expire: expire,
 		}
-		url := config.GetConfig().MailSvrAddr + "/mail/v1/getCode"
+		url := config.GetConfig().MailSvrAddr + MAIL_URL_PATH
 		jsonRes, err := lvthttp.JsonPost(url, req)
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
@@ -216,7 +233,7 @@ func SendMailVCode(email string, ln string, expire int) *httpReqVCode {
 }
 
 func validateImgVCode(id string, vcode string) (bool, int) {
-	url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
+	url := config.GetConfig().ImgSvrAddr + VALIDATE_URL_PATH
 	typeData := httpVReqParam{
 		Id:   id,
 		Code: vcode,
@@ -255,7 +272,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 			Vid:            MESSAGE_VID,
 			Flag:           utils.Int2Str(flag),
 		}
-		url := config.GetConfig().SmsSvrAddr + "/validate"
+		url := config.GetConfig().SmsSvrAddr + SMS_VALIDATE_URL_PATH
 		jsonRes, err := lvthttp.JsonPost(url, req)
 		if err != nil {
 			logger.Error("post error ---> ", err.Error())
@@ -272,7 +289,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 
 func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 	if len(id) > 0 && len(vcode) > 0 && len(email) > 0 {
-		url := config.GetConfig().ImgSvrAddr + "/v/v1/validate"
+		url := config.GetConfig().ImgSvrAddr + VALIDATE_URL_PATH
 		typeData := httpVReqParam{
 			Id:    id,
 			Code:  vcode,
@@ -383,4 +400,24 @@ func ConvSmsErr(code int) constants.Error {
 	default:
 		return constants.RC_SYSTEM_ERR
 	}
+}
+
+
+func ValidateSmsUpVCode(country int,phone,code string)(bool,constants.Error){
+	url := config.GetConfig().SmsUpValidateSvrAddr + SMS_UP_URL_PATH
+	sms := upSmsReq{
+		Country: country,
+		Phone:   phone,
+		Code:    code,
+	}
+	resp,err := lvthttp.JsonPost(url,sms)
+	if err != nil {
+		return false,constants.RC_SYSTEM_ERR
+	}
+	res := new(common.ResponseData)
+	if err := utils.FromJson(resp,res);err != nil {
+		return false,constants.RC_SYSTEM_ERR
+	}
+	base := res.Base
+	return base.RC == 0,constants.Error{base.RC,base.Msg}
 }

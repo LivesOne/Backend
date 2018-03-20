@@ -7,6 +7,7 @@ import (
 
 func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_REGISTER, &registerUserHandler{})
+	server.RegisterHandler(constants.ACCOUNT_REGISTER_UPVCODE, &registerUpVcodeHandler{})
 	server.RegisterHandler(constants.ACCOUNT_LOGIN, &loginHandler{})
 	server.RegisterHandler(constants.ACCOUNT_AUTOLOGIN, &autoLoginHandler{})
 	server.RegisterHandler(constants.ACCOUNT_LOGOUT, &logoutHandler{})
@@ -22,5 +23,4 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_MODIFY_PROFILE, &modifyUserProfileHandler{})
 	server.RegisterHandler(constants.ACCOUNT_CHECK_ACCOUNT, &checkAccountHandler{})
 	//server.RegisterHandler(constants.ACCOUNT_SET_STATUS, &setStatusHandler{})
-
 }
