@@ -11,7 +11,7 @@ const (
 	PWD_ERR_REDIS_PROXY     = "pwd_err_"
 )
 
-func AddWrongPwd(uid int64) {
+func AddWrongPwd(uid int64) (bool,int){
 	key := PWD_ERR_REDIS_PROXY + utils.Int642Str(uid)
 	inc, err := incr(key)
 	if err != nil {
@@ -33,7 +33,9 @@ func AddWrongPwd(uid int64) {
 
 	if c >0 && min > 0 {
 		setUserLimt(uid, min*60)
+		return true,min*60
 	}
+	return false,0
 }
 
 func CheckUserInLoginLimit(uid int64) (bool, int) {

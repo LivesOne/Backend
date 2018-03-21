@@ -43,6 +43,9 @@ type responseLogin struct {
 
 type limitedRes struct {
 	Uid       string `json:"uid"`
+}
+
+type tmpLimitedRes struct {
 	LimitTime int    `json:"limit_time"`
 }
 
@@ -109,8 +112,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		if limited, expire := common.CheckUserInLoginLimit(act.UID); limited {
 			//返回临时登陆受限
 			response.SetResponseBase(constants.RC_ACCOUNT_TEMP_LIMITED)
-			response.Data = limitedRes{
-				Uid:       utils.Int642Str(act.UID),
+			response.Data = tmpLimitedRes{
 				LimitTime: expire,
 			}
 			return
@@ -130,9 +132,13 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 		// 限制++acc
 		// 识别数量决定是否限制
-		// 多个
+		// 多个+
 		for _, acc := range accountList {
-			common.AddWrongPwd(acc.UID)
+			if ok,time := common.AddWrongPwd(acc.UID);ok {
+				response.Data = tmpLimitedRes{
+					LimitTime: time,
+				}
+			}
 		}
 		return
 	}
