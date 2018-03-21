@@ -128,11 +128,11 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		// no account match the login information
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 
-		// 限制++
+		// 限制++acc
 		// 识别数量决定是否限制
 		// 多个
-		for _, act := range accountList {
-			common.AddWrongPwd(act.UID)
+		for _, acc := range accountList {
+			common.AddWrongPwd(acc.UID)
 		}
 		return
 	}
