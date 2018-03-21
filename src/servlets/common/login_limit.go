@@ -25,7 +25,7 @@ func AddWrongPwd(uid int64) (bool,int){
 	c,min := 0,0
 
 	for _,v := range config.GetConfig().LoginPwdErrCntLimit {
-		if inc > v.Number && c < v.Number {
+		if inc >= v.Number && c < v.Number {
 			c = v.Number
 			min = v.Min
 		}
