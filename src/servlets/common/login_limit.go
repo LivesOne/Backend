@@ -60,7 +60,7 @@ func setUserLimt(uid int64, expire int) {
 
 
 func ClearUserLimitNum(uid int64){
-	key := LOGIN_LIMIT_REDIS_PROXY + utils.Int642Str(uid)
+	key := PWD_ERR_REDIS_PROXY + utils.Int642Str(uid)
 	err := rdsDel(key)
 	if err != nil {
 		logger.Error("redis del error",err.Error())
