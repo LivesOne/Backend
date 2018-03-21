@@ -16,7 +16,7 @@ func AddWrongPwd(uid int64) (bool,int){
 	inc, err := incr(key)
 	if err != nil {
 		logger.Error("redis incr error", err.Error())
-		return
+		return false,0
 	}
 	if inc == 1 {
 		rdsExpire(key, DAY_S)
