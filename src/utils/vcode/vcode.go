@@ -131,7 +131,7 @@ type (
 	}
 	upSmsReq struct {
 		Country int `json:"country"`
-		Phone string `json:"phone"`
+		Phone string `json:"mobile"`
 		Code string `json:"code"`
 	}
 )
