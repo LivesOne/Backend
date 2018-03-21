@@ -110,7 +110,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 			//返回临时登陆受限
 			response.SetResponseBase(constants.RC_ACCOUNT_TEMP_LIMITED)
 			response.Data = limitedRes{
-				Uid:       utils.Int642Str(account.UID),
+				Uid:       utils.Int642Str(act.UID),
 				LimitTime: expire,
 			}
 			return
