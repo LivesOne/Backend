@@ -92,7 +92,7 @@ func rdsGet(key string) (int, error) {
 }
 
 func rdsDel(key string) error {
-	_, err := rdsDo("Del", key)
+	_, err := rdsDo("DEL", key)
 	return err
 }
 
