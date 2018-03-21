@@ -1,21 +1,22 @@
 package common
 
 import (
+	"database/sql"
+	"errors"
 	_ "fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"servlets/constants"
 	"utils"
 	"utils/config"
 	_ "utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"database/sql"
-	"servlets/constants"
-	"errors"
 )
 
-const  (
-	CONV_LVT = 10000*10000
+const (
+	CONV_LVT = 10000 * 10000
 )
+
 //var gDBAsset *sql.DB
 var gDBAsset *db_factory.DBPool
 
@@ -32,7 +33,7 @@ func AssetDbInit() error {
 	}
 	gDBAsset = db_factory.NewDataSource(facConfig_asset)
 	if gDBAsset.IsConn() {
-		logger.Debug("connection ",db_config_asset.DBHost,db_config_asset.DBDatabase,"database successful")
+		logger.Debug("connection ", db_config_asset.DBHost, db_config_asset.DBDatabase, "database successful")
 	} else {
 		logger.Error(gDBAsset.Err())
 		return gDBAsset.Err()
@@ -41,187 +42,179 @@ func AssetDbInit() error {
 	return nil
 }
 
-func QueryReward(uid int64) (*Reward,error) {
+func QueryReward(uid int64) (*Reward, error) {
 	if uid == 0 {
-		return nil,errors.New("uid is zero")
+		return nil, errors.New("uid is zero")
 	}
 	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify from user_reward where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
-		return nil,err
+		return nil, err
 	}
-	resReward :=  &Reward{
-		Uid:        uid,
+	resReward := &Reward{
+		Uid: uid,
 	}
 	if row != nil {
-		resReward.Total=     utils.Str2Int64(row["total"])
-		resReward.Yesterday=  utils.Str2Int64(row["lastday"])
-		resReward.Lastmodify= utils.Str2Int64(row["lastmodify"])
+		resReward.Total = utils.Str2Int64(row["total"])
+		resReward.Yesterday = utils.Str2Int64(row["lastday"])
+		resReward.Lastmodify = utils.Str2Int64(row["lastmodify"])
 
 	}
-	return resReward,err
+	return resReward, err
 
 }
 
-
-func QueryBalance(uid int64)(int64,error){
+func QueryBalance(uid int64) (int64, error) {
 	row, err := gDBAsset.QueryRow("select balance from user_asset where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"]),nil
+		return utils.Str2Int64(row["balance"]), nil
 	}
-	return 0,err
+	return 0, err
 }
 
-
-
-func TransAccountLvt(txid,from,to,value int64)(bool,int){
+func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
-	f,c := CheckAndInitAsset(from)
+	f, c := CheckAndInitAsset(from)
 	if !f {
-		return f,c
+		return f, c
 	}
 	ts := utils.GetTimestamp13()
 
-	tx,err := gDBAsset.Begin()
-	if err!=nil {
-		logger.Error("db pool begin error ",err.Error())
-		return false,constants.TRANS_ERR_SYS
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
 	}
-	tx.Exec("select * from user_asset where uid in (?,?) for update",from,to)
-
+	tx.Exec("select * from user_asset where uid in (?,?) for update", from, to)
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
-	if !CheckAssetLimeted(from,tx){
+	if !CheckAssetLimeted(from, tx) {
 		tx.Rollback()
-		return false,constants.TRANS_ERR_ASSET_LIMITED
+		return false, constants.TRANS_ERR_ASSET_LIMITED
 	}
-
 
 	//查询转出账户余额是否满足需要
 	var balance int64
-	row := tx.QueryRow("select balance from user_asset where uid  = ?",from)
+	row := tx.QueryRow("select balance from user_asset where uid  = ?", from)
 	row.Scan(&balance)
 
 	if balance < value {
 		tx.Rollback()
-		return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
+		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
 	//扣除转出方balance
-	info1,err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?",value,ts,from)
+	info1, err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
 	if err1 != nil {
-		logger.Error("sql error ",err1.Error())
+		logger.Error("sql error ", err1.Error())
 		tx.Rollback()
-		return false,constants.TRANS_ERR_SYS
+		return false, constants.TRANS_ERR_SYS
 	}
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
-	rsa ,_ := info1.RowsAffected()
+	rsa, _ := info1.RowsAffected()
 	if rsa == 0 {
-		logger.Error("update user balance error RowsAffected ",rsa," can not find user  ",from,"")
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
 		tx.Rollback()
-		return false,constants.TRANS_ERR_SYS
+		return false, constants.TRANS_ERR_SYS
 	}
 	//增加目标的balance
-	info2,err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?",value,ts,to)
+	info2, err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
 	if err2 != nil {
-		logger.Error("sql error ",err2.Error())
+		logger.Error("sql error ", err2.Error())
 		tx.Rollback()
-		return false,constants.TRANS_ERR_SYS
+		return false, constants.TRANS_ERR_SYS
 	}
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
-	rsa ,_ = info2.RowsAffected()
+	rsa, _ = info2.RowsAffected()
 	if rsa == 0 {
-		logger.Error("update user balance error RowsAffected ",rsa," can not find user  ",to,"")
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
 		tx.Rollback()
-		return false,constants.TRANS_ERR_SYS
+		return false, constants.TRANS_ERR_SYS
 	}
 	//txid 写入数据库
-	_,e := InsertTXID(txid,tx)
+	_, e := InsertTXID(txid, tx)
 
 	if e != nil {
-		logger.Error("sql error ",e.Error())
+		logger.Error("sql error ", e.Error())
 		tx.Rollback()
-		return false,constants.TRANS_ERR_SYS
+		return false, constants.TRANS_ERR_SYS
 	}
-
 
 	tx.Commit()
 
-	return true,constants.TRANS_ERR_SUCC
+	return true, constants.TRANS_ERR_SUCC
 }
 
-func CheckAndInitAsset(uid int64)(bool,int){
+func CheckAndInitAsset(uid int64) (bool, int) {
 	//初始化资产
-	res,err := InsertAsset(uid)
+	res, err := InsertAsset(uid)
 	if err != nil {
-		logger.Error("init asset error ",err.Error())
-		return false,constants.TRANS_ERR_SYS
+		logger.Error("init asset error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
 	}
 
-	rowsCount ,err := res.RowsAffected()
+	rowsCount, err := res.RowsAffected()
 	if err != nil {
-		logger.Error("get RowsAffected error ",err.Error())
-		return false,constants.TRANS_ERR_SYS
+		logger.Error("get RowsAffected error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
 	}
 
-	_,err = InsertReward(uid)
+	_, err = InsertReward(uid)
 	if err != nil {
-		logger.Error("init reward error ",err.Error())
-		return false,constants.TRANS_ERR_SYS
+		logger.Error("init reward error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
 	}
 
 	if rowsCount == 0 {
-		return true,constants.TRANS_ERR_SUCC
+		return true, constants.TRANS_ERR_SUCC
 	}
-	return false,constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 }
 
-func InsertTXID(txid int64,tx *sql.Tx)(sql.Result,error) {
-	res,err := tx.Exec("Insert into recent_tx_ids values (?)", txid)
+func InsertTXID(txid int64, tx *sql.Tx) (sql.Result, error) {
+	res, err := tx.Exec("Insert into recent_tx_ids values (?)", txid)
 	if err != nil {
-		logger.Error("query error ",err.Error())
+		logger.Error("query error ", err.Error())
 	}
-	return res,err
+	return res, err
 
 }
 
-func RemoveTXID(txid int64) error{
-	_,err := gDBAsset.Exec("delete from recent_tx_ids where txid = ?", txid)
+func RemoveTXID(txid int64) error {
+	_, err := gDBAsset.Exec("delete from recent_tx_ids where txid = ?", txid)
 	if err != nil {
-		logger.Error("query error ",err.Error())
+		logger.Error("query error ", err.Error())
 	}
 	return err
 }
 
-func InsertReward(uid int64) (sql.Result , error) {
+func InsertReward(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_reward (uid,total,lastday,lastmodify) values (?,?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0, 0)
 }
 
-func InsertAsset(uid int64)(sql.Result , error) {
+func InsertAsset(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0)
 }
 
-
-func CheckTXID(txid int64)bool{
-	row,err := gDBAsset.QueryRow("select count(1) as c from recent_tx_ids where txid = ?",txid)
+func CheckTXID(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from recent_tx_ids where txid = ?", txid)
 	if err != nil {
-		logger.Error("query row error ",err.Error())
+		logger.Error("query row error ", err.Error())
 		return false
 	}
-	return utils.Str2Int(row["c"])>0
+	return utils.Str2Int(row["c"]) > 0
 }
 
-
-func CheckTansTypeFromUid(uid int64,transType int)bool{
-	row ,err := gDBAsset.QueryRow("select uid from livesone_account where id = ?",transType)
+func CheckTansTypeFromUid(uid int64, transType int) bool {
+	row, err := gDBAsset.QueryRow("select uid from livesone_account where id = ?", transType)
 	if err != nil {
-		logger.Error("query row error ",err.Error())
+		logger.Error("query row error ", err.Error())
 		return false
 	}
 	if row == nil {
@@ -230,26 +223,25 @@ func CheckTansTypeFromUid(uid int64,transType int)bool{
 	return utils.Str2Int64(row["uid"]) == uid
 }
 
-func CheckAssetLimeted(uid int64,tx *sql.Tx)bool{
-	row := tx.QueryRow("select status from user_asset where uid = ?",uid)
+func CheckAssetLimeted(uid int64, tx *sql.Tx) bool {
+	row := tx.QueryRow("select status from user_asset where uid = ?", uid)
 	status := -1
 	err := row.Scan(&status)
 	if err != nil {
-		logger.Error("query row error ",err.Error())
+		logger.Error("query row error ", err.Error())
 		return false
 	}
 	return status == constants.ASSET_STATUS_DEF
 }
 
-
-func GetUserAssetTranslevelByUid(uid int64)int{
-	res,err := gDBAsset.QueryRow("select trader_level from user_restrict where uid = ?",uid)
+func GetUserAssetTranslevelByUid(uid int64) int {
+	res, err := gDBAsset.QueryRow("select trader_level from user_restrict where uid = ?", uid)
 	if err != nil {
-		logger.Error("cannot get trans level ",err.Error())
+		logger.Error("cannot get trans level ", err.Error())
 		return 0
 	}
 	if res == nil {
-		logger.Info("can not find trans level by uid ",uid)
+		logger.Info("can not find trans level by uid ", uid)
 		return 0
 	}
 	return utils.Str2Int(res["trader_level"])

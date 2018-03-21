@@ -2,12 +2,12 @@ package common
 
 import (
 	"errors"
+	_ "github.com/go-sql-driver/mysql"
+	"regexp"
+	"utils"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"regexp"
-	"utils"
-	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
 )
 
@@ -41,7 +41,7 @@ func UserDbInit() error {
 	}
 	gDbUser = db_factory.NewDataSource(facConfig_user)
 	if gDbUser.IsConn() {
-		logger.Debug("connection ",db_config_user.DBHost,db_config_user.DBDatabase,"database successful")
+		logger.Debug("connection ", db_config_user.DBHost, db_config_user.DBDatabase, "database successful")
 	} else {
 		logger.Error(gDbUser.Err())
 		return gDbUser.Err()
@@ -64,6 +64,15 @@ func ExistsEmail(email string) bool {
 		return false
 	}
 	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckUserLoginLimited(uid int64)bool{
+	row, err := gDbUser.QueryRow("select status from account where uid = ? ", uid)
+	if err != nil || row == nil {
+		logger.Error("query err ", err.Error())
+		return false
+	}
+	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
 }
 
 func ExistsPhone(country int, phone string) bool {
@@ -219,11 +228,11 @@ func GetAccountListByPhoneOnly(phone string) ([](*Account), error) {
 }
 
 func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
-	if len(condition) ==0 || !isNum(condition) {
-		return nil,errors.New("condition"+condition+" is Wrongful ")
+	if len(condition) == 0 || !isNum(condition) {
+		return nil, errors.New("condition" + condition + " is Wrongful ")
 	}
 	sql := "select * from account where uid = ? union all select * from account where phone = ?"
-	uid,phone := utils.Str2Int64(condition), condition
+	uid, phone := utils.Str2Int64(condition), condition
 
 	rows := gDbUser.Query(sql, uid, phone)
 	// logger.Info("GetAccountListByPhoneOrUID:--------------------------", rows, len(rows))
@@ -235,7 +244,7 @@ func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
 	//for idx := len(rows) - 1; idx > -1; idx-- {
 	//	accounts[idx] = convRowMap2Account(rows[idx])
 	//}
-	for i,v := range rows {
+	for i, v := range rows {
 		accounts[i] = convRowMap2Account(v)
 	}
 	return accounts, nil
@@ -290,16 +299,6 @@ func CheckPaymentPwd(uid int64, pwdInDB string) bool {
 	return pwd == row["payment_password"]
 }
 
-func CheckUserLoginLimited(uid int64)bool{
-	row, err := gDbUser.QueryRow("select status from account where uid = ? ", uid)
-	if err != nil || row == nil {
-		logger.Error("query err ", err.Error())
-		return false
-	}
-	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
-}
-
-
 func convRowMap2Account(row map[string]string) *Account {
 	if len(row) > 0 {
 		account := &Account{}
@@ -319,11 +318,12 @@ func convRowMap2Account(row map[string]string) *Account {
 		account.LoginPassword = row["login_password"]
 		account.PaymentPassword = row["payment_password"]
 		account.Level = utils.Str2Int(row["level"])
+		account.Status = utils.Str2Int(row["status"])
 		return account
 	}
 	return nil
 }
-func isNum(s string)bool{
+func isNum(s string) bool {
 	r, _ := regexp.Compile("[0-9]*")
 	return r.MatchString(s)
 }

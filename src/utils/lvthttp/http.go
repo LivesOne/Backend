@@ -2,13 +2,13 @@ package lvthttp
 
 import (
 	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
-	"utils/logger"
-	"net"
 	"time"
-	"io/ioutil"
-	"errors"
+	"utils/logger"
 )
 
 var (
@@ -21,24 +21,23 @@ func init() {
 func dialTimeout(network, addr string) (net.Conn, error) {
 	return net.DialTimeout(network, addr, time.Second*POST_REMOTE_TIMEOUT)
 }
-func NewHttpClient(keepAlives bool,timeout time.Duration)*HttpClien{
+func NewHttpClient(keepAlives bool, timeout time.Duration) *HttpClien {
 	c := HttpClien{
-		transport :&http.Transport{
-			MaxIdleConns:1000,
-			MaxIdleConnsPerHost:1000,
-			Dial:              dialTimeout,
-			DisableKeepAlives: !keepAlives, //为true时会在 body.Close()时关闭连接,不然close的时候也不会关闭链接
+		transport: &http.Transport{
+			MaxIdleConns:        1000,
+			MaxIdleConnsPerHost: 1000,
+			Dial:                dialTimeout,
+			DisableKeepAlives:   !keepAlives, //为true时会在 body.Close()时关闭连接,不然close的时候也不会关闭链接
 		},
-		httpTimeout:timeout,
+		httpTimeout: timeout,
 	}
 	c.build()
 	return &c
 }
 
-func NewDefaultHttpClient()*HttpClien{
-	return NewHttpClient(true,time.Second*POST_REMOTE_TIMEOUT)
+func NewDefaultHttpClient() *HttpClien {
+	return NewHttpClient(true, time.Second*POST_REMOTE_TIMEOUT)
 }
-
 
 func toJson(t interface{}) string {
 	jsonByte, err := json.Marshal(t)
@@ -62,33 +61,33 @@ func map2UrlValues(p map[string]string) url.Values {
 
 func read(resp *http.Response) (string, error) {
 	if resp == nil {
-		return "",nil
+		return "", nil
 	}
 	body := resp.Body
 	defer body.Close()
-	res,err := ioutil.ReadAll(body)
+	res, err := ioutil.ReadAll(body)
 	if err != nil {
 		logger.Info("ParseHttpBodyParams: read http body error : ", err)
 		return "", err
 	}
 	respStr := string(res)
 	if !checkHttpStatus(resp.StatusCode) {
-		return respStr, errors.New("http status "+resp.Status)
+		return respStr, errors.New("http status " + resp.Status)
 	}
 	return respStr, nil
 }
 
-func checkHttpStatus(status int)bool{
+func checkHttpStatus(status int) bool {
 	return status >= 200 && status < 300
 }
 
 //发起post请求
 func JsonPost(url string, params interface{}) (resBody string, e error) {
-	return client.JsonPost(url,params)
+	return client.JsonPost(url, params)
 }
 
 func FormPost(url string, params map[string]string) (resBody string, e error) {
-	return client.FormPost(url,params)
+	return client.FormPost(url, params)
 }
 
 func Do(req *http.Request) (*http.Response, error) {

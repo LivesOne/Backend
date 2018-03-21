@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"server"
 	"servlets"
+	"servlets/log_cleaner"
 	"utils"
 	"utils/config"
 	"utils/logger"
-	"servlets/log_cleaner"
 )
 
 func main() {
@@ -44,7 +44,6 @@ func initialize(cfgPath string) {
 	} else {
 		cfgDir = filepath.Join(cfgPath, "../")
 	}
-
 
 	config.LoadConfig(cfgPath, cfgDir)
 	fmt.Println("init config over file path ", cfgPath)

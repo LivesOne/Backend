@@ -85,7 +85,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	if !common.CheckLoginPwd(uid,secret.Pwd){
+	if !common.CheckLoginPwd(uid, secret.Pwd) {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}

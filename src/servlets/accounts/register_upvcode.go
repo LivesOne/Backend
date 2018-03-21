@@ -1,17 +1,18 @@
 package accounts
 
 import (
+	"errors"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils/logger"
+	"time"
 	"utils"
 	"utils/config"
-	"errors"
 	"utils/db_factory"
-	"time"
+	"utils/logger"
 	"utils/vcode"
 )
+
 type registerUpVcodeParam struct {
 	Country int    `json:"country"`
 	Phone   string `json:"phone"`
@@ -22,8 +23,8 @@ type registerUpVcodeParam struct {
 
 // registerRequest holds entire request data
 type registerUpVcodeRequest struct {
-	Base  common.BaseInfo `json:"base"`
-	Param registerUpVcodeParam   `json:"param"`
+	Base  common.BaseInfo      `json:"base"`
+	Param registerUpVcodeParam `json:"param"`
 }
 type registerUpVcodeHandler struct {
 }
@@ -34,7 +35,6 @@ func (handler *registerUpVcodeHandler) Method() string {
 
 func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 
-
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
@@ -42,7 +42,7 @@ func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http
 	data := new(registerUpVcodeRequest)
 	common.ParseHttpBodyParams(request, data)
 
-	if !checkRegusterUpVcodeRequestParams(header, data){
+	if !checkRegusterUpVcodeRequestParams(header, data) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -55,7 +55,7 @@ func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http
 
 	//validate up vcode
 
-	flag,resErr := vcode.ValidateSmsUpVCode(data.Param.Country,data.Param.Phone,data.Param.VCode)
+	flag, resErr := vcode.ValidateSmsUpVCode(data.Param.Country, data.Param.Phone, data.Param.VCode)
 
 	if !flag {
 		logger.Info("validate up sms code failed")
@@ -86,7 +86,6 @@ func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http
 		}
 	}
 
-
 }
 func checkRegusterUpVcodeRequestParams(header *common.HeaderParams, data *registerUpVcodeRequest) bool {
 	if header.Timestamp < 1 {
@@ -106,7 +105,6 @@ func checkRegusterUpVcodeRequestParams(header *common.HeaderParams, data *regist
 
 	return true
 }
-
 
 func recoverHashedPwd(pwdUpload string, spkv int) (string, error) {
 

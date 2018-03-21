@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils/logger"
 	"servlets/token"
 	"utils"
+	"utils/logger"
 )
 
 type balanceParam struct {
@@ -15,7 +15,7 @@ type balanceParam struct {
 
 type balanceRequest struct {
 	Base  *common.BaseInfo `json:"base"`
-	Param *balanceParam     `json:"param"`
+	Param *balanceParam    `json:"param"`
 }
 
 type balanceResData struct {
@@ -46,10 +46,8 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 	//requestData := balanceRequest{} // request body
 	httpHeader := common.ParseHttpHeaderParams(request)
 
-
-
 	// if httpHeader.IsValid() == false {
-	if  !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash()  {
+	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
 		logger.Info("asset balance: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -70,16 +68,14 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
-	balance,err := common.QueryBalance(uid)
+	balance, err := common.QueryBalance(uid)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = balanceResData{
-			Balance:utils.LVTintToFloatStr(balance),
+			Balance: utils.LVTintToFloatStr(balance),
 		}
 	}
-
-
 
 }
 func TokenErr2RcErr(tokenErr int) constants.Error {

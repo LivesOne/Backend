@@ -12,7 +12,7 @@ type transResultParam struct {
 }
 
 type transResultRequest struct {
-	Base  *common.BaseInfo   `json:"base"`
+	Base  *common.BaseInfo  `json:"base"`
 	Param *transResultParam `json:"param"`
 }
 
@@ -41,16 +41,15 @@ func (handler *transResultHandler) Handle(request *http.Request, writer http.Res
 	//header := common.ParseHttpHeaderParams(request)
 	common.ParseHttpBodyParams(request, &requestData)
 
-
 	if requestData.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	if len(requestData.Param.Txid) >0 {
+	if len(requestData.Param.Txid) > 0 {
 		txid := utils.Str2Int64(requestData.Param.Txid)
 		//数据库存在 返回成功
-		if common.CheckTXID(txid){
+		if common.CheckTXID(txid) {
 			return
 		}
 		////commited存在返回成功
@@ -64,12 +63,8 @@ func (handler *transResultHandler) Handle(request *http.Request, writer http.Res
 		}
 		//都未查到，返回无效的txid
 		response.SetResponseBase(constants.RC_INVALID_TXID)
-	}else {
+	} else {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
-
-
-
-
 
 }

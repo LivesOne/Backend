@@ -42,7 +42,8 @@ type responseLogin struct {
 }
 
 type limitedRes struct {
-	Uid string `json:"uid"`
+	Uid       string `json:"uid"`
+	LimitTime int    `json:"limit_time"`
 }
 
 // loginHandler implements the "Echo message" interface
@@ -103,29 +104,46 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	var account *common.Account = nil
 	for _, act := range accountList {
 		// if handler.checkUserPassword(account.LoginPassword, aesKey, loginData.Param.PWD, account.UIDString) == false {
+
+		//登陆封锁
+		if limited, expire := common.CheckUserInLoginLimit(act.UID); limited {
+			//返回临时登陆受限
+			response.SetResponseBase(constants.RC_ACCOUNT_TEMP_LIMITED)
+			response.Data = limitedRes{
+				Uid:       utils.Int642Str(account.UID),
+				LimitTime: expire,
+			}
+			return
+		}
+
 		if handler.checkUserPassword(act.LoginPassword, aesKey, loginData.Param.PWD, act.UIDString) {
 			account = act
+			//登陆成功， 清理缓存限制计数
+			common.ClearUserLimitNum(act.UID)
 			break
 		}
 	}
+
 	if account == nil {
 		// no account match the login information
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+
+		// 限制++
+		// 识别数量决定是否限制
+		// 多个
+		for _, act := range accountList {
+			common.AddWrongPwd(act.UID)
+		}
 		return
 	}
 
-
-
-	if !common.CheckUserLoginLimited(account.UID) {
+	if account.Status == constants.USER_LIMITED_UNLOGIN {
 		response.SetResponseBase(constants.RC_ACCOUNT_LIMITED)
 		response.Data = limitedRes{
 			Uid: utils.Int642Str(account.UID),
 		}
 		return
 	}
-
-
-
 
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)

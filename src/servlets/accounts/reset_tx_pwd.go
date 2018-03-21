@@ -6,8 +6,8 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/vcode"
 	"utils/logger"
+	"utils/vcode"
 )
 
 type setTxPwdParam struct {
@@ -69,7 +69,7 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 	} else if checkType == 2 {
 		ok, err := vcode.ValidateSmsAndCallVCode(
 			account.Phone, account.Country, requestData.Param.VCode, 0, 0)
-		if  ok == false {
+		if ok == false {
 			response.SetResponseBase(vcode.ConvSmsErr(err))
 			return
 		}
@@ -82,7 +82,7 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 	// 解析出“sha256(密码)”
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	pwdSha256, err := utils.AesDecrypt(requestData.Param.PWD, key, iv)
-	logger.Debug("pwdSha256",pwdSha256)
+	logger.Debug("pwdSha256", pwdSha256)
 	if err != nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return

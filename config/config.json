@@ -73,6 +73,11 @@
     "CautionMoneyIds" :[
         123,
         456
+    ],
+    "LoginPwdErrCntLimit": [
+      {"Number":3, "Min":10},
+      {"Number":5, "Min":60}
     ]
-   
+
+
 }

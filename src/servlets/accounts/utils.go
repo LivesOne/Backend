@@ -35,7 +35,6 @@ func TokenErr2RcErr(tokenErr int) constants.Error {
 	}
 }
 
-
 // 生成 request 所需的 signature
 func GenerateSig(hash string) (string, constants.Error) {
 	_, key, _, err := token.GetAll(hash)

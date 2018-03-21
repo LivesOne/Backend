@@ -84,7 +84,6 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-
 	const expire int64 = 24 * 3600
 	errT := token.Update(header.TokenHash, aesKey, expire)
 	if errT != constants.ERR_INT_OK {

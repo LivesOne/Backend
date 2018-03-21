@@ -17,7 +17,6 @@ func ToJSONIndent(v interface{}) string {
 	}
 }
 
-
 func ToJSON(v interface{}) string {
 
 	ret, err := json.Marshal(v)
@@ -28,7 +27,6 @@ func ToJSON(v interface{}) string {
 	return string(ret)
 }
 
-
-func FromJson(jsonStr string,v interface{})error{
-	return json.Unmarshal([]byte(jsonStr),v)
+func FromJson(jsonStr string, v interface{}) error {
+	return json.Unmarshal([]byte(jsonStr), v)
 }

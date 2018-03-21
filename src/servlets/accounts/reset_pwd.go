@@ -87,7 +87,7 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 		}
 		ok, err := vcode.ValidateSmsAndCallVCode(
 			account.Phone, account.Country, requestData.Param.VCode, 0, 0)
-		if  ok == false {
+		if ok == false {
 			e := vcode.ConvSmsErr(err)
 			logger.Info("reset password: verify sms vcode failed", e)
 			response.SetResponseBase(e)

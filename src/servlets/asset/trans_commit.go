@@ -6,8 +6,8 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/logger"
 	"utils/config"
+	"utils/logger"
 )
 
 const (
@@ -48,12 +48,10 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	common.ParseHttpBodyParams(request, &requestData)
 
-
 	if requestData.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
 
 	httpHeader := common.ParseHttpHeaderParams(request)
 
@@ -78,7 +76,6 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	}
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-
 	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
 	if err != nil {
 		logger.Error("aes decrypt error ", err.Error())
@@ -90,7 +87,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
 	//修改原pending 并返回修改之前的值 如果status 是默认值0 继续  不是就停止
-	perPending,flag := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
+	perPending, flag := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
@@ -103,17 +100,13 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
 			level := common.GetTransLevel(perPending.From)
 			//交易次数校验不通过，删除pending
-			if f,e := common.CheckCommitLimit(perPending.From,level);!f {
+			if f, e := common.CheckCommitLimit(perPending.From, level); !f {
 				common.DeletePendingByInfo(perPending)
 				response.SetResponseBase(e)
 				return
 			}
 		}
 	}
-
-
-
-
 
 	//txid 时间戳检测
 
@@ -143,7 +136,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	//	response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 	//	return
 	//}
-	f,c := common.TransAccountLvt(txid, perPending.From, perPending.To, perPending.Value)
+	f, c := common.TransAccountLvt(txid, perPending.From, perPending.To, perPending.Value)
 	if f {
 		//成功 插入commited
 		err := common.InsertCommited(perPending)
@@ -155,7 +148,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			if perPending.Type == constants.TX_TYPE_TRANS {
 				//common.RemoveTXID(txid)
 				if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
-					common.SetTotalTransfer(perPending.From,perPending.Value)
+					common.SetTotalTransfer(perPending.From, perPending.Value)
 				}
 
 			}

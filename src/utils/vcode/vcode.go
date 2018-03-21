@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"servlets/common"
 	"servlets/constants"
 	"sort"
 	"utils"
 	"utils/config"
 	"utils/logger"
 	"utils/lvthttp"
-	"servlets/common"
 )
 
 const (
@@ -44,16 +44,12 @@ const (
 	SMS_CODE_EXPIRED_ERR    = 103
 	SMS_VALIDATE_CODE_FAILD = 102
 
-
-
-
-	SMS_UP_URL_PATH = "/sms/v1/validate"
-	IMG_URL_PATH = "/img/v1/getCode"
-	SMS_URL_PATH = "/get"
-	MAIL_URL_PATH = "/mail/v1/getCode"
-	VALIDATE_URL_PATH = "/v/v1/validate"
+	SMS_UP_URL_PATH       = "/sms/v1/validate"
+	IMG_URL_PATH          = "/img/v1/getCode"
+	SMS_URL_PATH          = "/get"
+	MAIL_URL_PATH         = "/mail/v1/getCode"
+	VALIDATE_URL_PATH     = "/v/v1/validate"
 	SMS_VALIDATE_URL_PATH = "/validate"
-
 )
 
 type (
@@ -130,9 +126,9 @@ type (
 		Msg    string `json:"msg"`
 	}
 	upSmsReq struct {
-		Country int `json:"country"`
-		Phone string `json:"mobile"`
-		Code string `json:"code"`
+		Country int    `json:"country"`
+		Phone   string `json:"mobile"`
+		Code    string `json:"code"`
 	}
 )
 
@@ -258,7 +254,7 @@ func ValidateImgVCode(id, vcode string) (bool, int) {
 	} else if len(id) == 0 && len(vcode) > 0 {
 		return ValidateWYYD(vcode)
 	}
-	return false,PARAMS_ERR
+	return false, PARAMS_ERR
 }
 
 func ValidateSmsAndCallVCode(phone string, country int, code string, expire int, flag int) (bool, int) {
@@ -295,7 +291,7 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 			Code:  vcode,
 			Email: email,
 		}
-		svrResStr, err := lvthttp.JsonPost(url,typeData)
+		svrResStr, err := lvthttp.JsonPost(url, typeData)
 		if err != nil {
 			logger.Error("url ---> ", url, " http send error ", err.Error())
 			return false, HTTP_ERR
@@ -331,7 +327,7 @@ func genSignature(secretKey string, params map[string]string) string {
 
 func ValidateWYYD(validate string) (bool, int) {
 	if len(validate) > 0 {
-		captcha :=  config.GetConfig().Captcha
+		captcha := config.GetConfig().Captcha
 		ts := utils.GetTimestamp13()
 		rand.Seed(ts)
 		param := make(map[string]string, 0)
@@ -343,13 +339,13 @@ func ValidateWYYD(validate string) (bool, int) {
 		param["timestamp"] = utils.Int642Str(ts)
 		param["nonce"] = utils.Int2Str(rand.Intn(200))
 		param["signature"] = genSignature(captcha.SecretKey, param)
-		logger.Debug("validate req params --->",utils.ToJSON(param))
+		logger.Debug("validate req params --->", utils.ToJSON(param))
 		resBodyStr, err := lvthttp.FormPost(captcha.Url, param)
 		if err != nil {
-			logger.Error("http req eror ---> ",err.Error())
+			logger.Error("http req eror ---> ", err.Error())
 			return false, HTTP_ERR
 		}
-		logger.Debug("validate response --->",resBodyStr)
+		logger.Debug("validate response --->", resBodyStr)
 		res := wyydRes{}
 		err1 := utils.FromJson(resBodyStr, &res)
 		if err1 != nil {
@@ -358,7 +354,7 @@ func ValidateWYYD(validate string) (bool, int) {
 		}
 		ret := 0
 
-		if ! res.Result {
+		if !res.Result {
 			switch res.Error {
 			case 419:
 				ret = VALIDATE_CODE_FAILD
@@ -402,22 +398,21 @@ func ConvSmsErr(code int) constants.Error {
 	}
 }
 
-
-func ValidateSmsUpVCode(country int,phone,code string)(bool,constants.Error){
+func ValidateSmsUpVCode(country int, phone, code string) (bool, constants.Error) {
 	url := config.GetConfig().SmsUpValidateSvrAddr + SMS_UP_URL_PATH
 	sms := upSmsReq{
 		Country: country,
 		Phone:   phone,
 		Code:    code,
 	}
-	resp,err := lvthttp.JsonPost(url,sms)
+	resp, err := lvthttp.JsonPost(url, sms)
 	if err != nil {
-		return false,constants.RC_SYSTEM_ERR
+		return false, constants.RC_SYSTEM_ERR
 	}
 	res := new(common.ResponseData)
-	if err := utils.FromJson(resp,res);err != nil {
-		return false,constants.RC_SYSTEM_ERR
+	if err := utils.FromJson(resp, res); err != nil {
+		return false, constants.RC_SYSTEM_ERR
 	}
 	base := res.Base
-	return base.RC == 0,constants.Error{base.RC,base.Msg}
+	return base.RC == 0, constants.Error{base.RC, base.Msg}
 }

@@ -2,13 +2,13 @@ package logger
 
 import (
 	"fmt"
-	"os"
 	"github.com/alecthomas/log4go"
+	"os"
 	"path/filepath"
 )
 
 // InitLogger
-func InitLogger(dir string,cfgName string) {
+func InitLogger(dir string, cfgName string) {
 
 	basePath := filepath.Join(dir, cfgName)
 	//fmt.Println(filepath.Join(dir, "logs"))
@@ -16,12 +16,9 @@ func InitLogger(dir string,cfgName string) {
 
 	log4go.LoadConfiguration(basePath)
 
-	Info("init logger config path ",basePath)
+	Info("init logger config path ", basePath)
 
 }
-
-
-
 
 func ensureDirExist(dir string) {
 	_, err := os.Stat(dir)
@@ -40,10 +37,9 @@ func Debug(v ...interface{}) {
 	log4go.Debug(v)
 }
 
-func Error(v  ...interface{}) {
+func Error(v ...interface{}) {
 	log4go.Error(v)
 }
-
 
 func Info(v ...interface{}) {
 	log4go.Info(v)

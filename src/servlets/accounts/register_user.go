@@ -80,7 +80,6 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
 
-
 		if len(data.Param.VCode) > 0 {
 			ok, c := vcode.ValidateImgVCode(data.Param.VCodeID, data.Param.VCode)
 			if ok == false {
@@ -88,8 +87,6 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				return
 			}
 		}
-
-
 
 		insertAndCheckUid(account, hashedPWD)
 	case constants.LOGIN_TYPE_EMAIL:

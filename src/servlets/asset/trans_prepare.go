@@ -119,20 +119,18 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		if !config.GetConfig().CautionMoneyIdsExist(to) {
 			//金额校验不通过，删除pending
 			level := common.GetTransLevel(from)
-			if f,e := common.CheckAmount(from,utils.FloatStrToLVTint(secret.Value),level);!f {
+			if f, e := common.CheckAmount(from, utils.FloatStrToLVTint(secret.Value), level); !f {
 				response.SetResponseBase(e)
 				return
 			}
 			//校验用户的交易限制
-			if f,e := common.CheckPrepareLimit(from,level);!f{
+			if f, e := common.CheckPrepareLimit(from, level); !f {
 				response.SetResponseBase(e)
 				return
 			}
 		}
 
 	}
-
-
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {

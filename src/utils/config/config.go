@@ -2,11 +2,11 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"utils"
 	"utils/logger"
-	"fmt"
 )
 
 type DBConfig struct {
@@ -28,24 +28,29 @@ type MongoConfig struct {
 }
 
 type RedisConfig struct {
-	MaxConn    int
+	MaxConn   int
 	RedisAddr string //"[ip]:port"
 	RedisAuth string
 }
 
-type captcha struct{
-	Url string
-	Id string
-	SecretId string
+type captcha struct {
+	Url       string
+	Id        string
+	SecretId  string
 	SecretKey string
 }
 
 type TransferLimit struct {
-	SingleAmountMin int64
-	SingleAmountMax int64
-	DailyAmountMax int64
+	SingleAmountMin    int64
+	SingleAmountMax    int64
+	DailyAmountMax     int64
 	DailyPrepareAccess int
-	DailyCommitAccess int
+	DailyCommitAccess  int
+}
+
+type LoginPwdErrCntLimit struct {
+	Number int
+	Min    int
 }
 
 // Configuration holds all config data
@@ -58,13 +63,15 @@ type Configuration struct {
 	// account db config
 	User DBConfig
 	// asset db config
-	Asset DBConfig
+	Asset     DBConfig
 	TxHistory MongoConfig
 	// redis的参数
 	Redis RedisConfig
-	TransferLimit map[int]TransferLimit
-	AppIDs []string // app IDs read from configuration file
-	appsMap map[string]bool // used to check apps ID existing or not
+	//密码错误登陆限制
+	LoginPwdErrCntLimit []LoginPwdErrCntLimit
+	TransferLimit       map[int]TransferLimit
+	AppIDs              []string        // app IDs read from configuration file
+	appsMap             map[string]bool // used to check apps ID existing or not
 
 	// 短信验证网关相关
 	SmsSvrAddr string
@@ -75,12 +82,10 @@ type Configuration struct {
 	// 短信上行接口地址
 	SmsUpValidateSvrAddr string
 	// log相关
-	LogConfig string
-	Captcha captcha
+	LogConfig              string
+	Captcha                captcha
 	MaxActivityRewardValue int
-
-	CautionMoneyIds []int64
-
+	CautionMoneyIds        []int64
 }
 
 // configuration data
@@ -92,7 +97,7 @@ var gPrivKeyContent []byte
 var cfgDir string
 
 // LoadConfig load the configuration from the configuration file
-func LoadConfig(cfgFilename string,cd string) error {
+func LoadConfig(cfgFilename string, cd string) error {
 
 	err := utils.ReadJSONFile(cfgFilename, &gConfig)
 	if err != nil {
@@ -103,7 +108,7 @@ func LoadConfig(cfgFilename string,cd string) error {
 	if gConfig.isValid() == false {
 		err := errors.New("configuration item not integrity")
 		fmt.Println("configuration item not integrity\n", err)
-		fmt.Println("json str --- >",utils.ToJSONIndent(gConfig))
+		fmt.Println("json str --- >", utils.ToJSONIndent(gConfig))
 		panic(err)
 		//return errors.New("configuration item not integrity")
 	}
@@ -137,7 +142,7 @@ func GetPrivateKey(ver int) ([]byte, error) {
 	if (gPrivKeyContent == nil) || (len(gPrivKeyContent) < 1) {
 
 		filename := GetPrivateKeyFilename()
-		logger.Info("PrivateKey path ",filename)
+		logger.Info("PrivateKey path ", filename)
 		// fmt.Println("private key file:", filename, "ddd:", gConfig.PrivKey)
 		var err error
 		gPrivKeyContent, err = ioutil.ReadFile(filename)
@@ -177,7 +182,6 @@ func (db *RedisConfig) isValid() bool {
 	return db.MaxConn > 0 && len(db.RedisAddr) > 0
 }
 
-
 func (cfg *Configuration) isValid() bool {
 
 	return len(cfg.ServerAddr) > 0 &&
@@ -194,7 +198,7 @@ func (cfg *Configuration) isValid() bool {
 
 func (cfg *Configuration) CautionMoneyIdsExist(uid int64) bool {
 	if len(cfg.CautionMoneyIds) > 0 {
-		for _,v := range cfg.CautionMoneyIds {
+		for _, v := range cfg.CautionMoneyIds {
 			if uid == v {
 				return true
 			}
@@ -203,7 +207,7 @@ func (cfg *Configuration) CautionMoneyIdsExist(uid int64) bool {
 	return false
 }
 func IsAppIDValid(appid string) bool {
-	logger.Info("app_id in ",appid,"curr app_id ",gConfig.appsMap)
+	logger.Info("app_id in ", appid, "curr app_id ", gConfig.appsMap)
 	_, existing := gConfig.appsMap[appid]
 	return existing
 }

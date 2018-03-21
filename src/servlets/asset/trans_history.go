@@ -33,17 +33,17 @@ type transHistoryResData struct {
 }
 
 type transHistoryRecord struct {
-	Txid  int64  `json:"txid"`
-	Type  int    `json:"type"`
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Value string `json:"value"`
-	Ts    int64  `json:"ts"`
+	Txid  int64               `json:"txid"`
+	Type  int                 `json:"type"`
+	From  string              `json:"from"`
+	To    string              `json:"to"`
+	Value string              `json:"value"`
+	Ts    int64               `json:"ts"`
 	Miner []transHistoryMiner `json:"miner,omitempty"`
 }
 
 type transHistoryMiner struct {
-	Sid int `json:"sid"`
+	Sid   int    `json:"sid"`
 	Value string `json:"value"`
 }
 
@@ -97,7 +97,6 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-
 	q := buildQuery(uid, requestData.Param)
 
 	c := DEF_COUNT
@@ -114,10 +113,10 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 	//query record
 	//查新c+1条记录，如果len > c 说明more = 1
 	records := common.QueryCommitted(q, c+1)
-	response.Data = buildResData(records, c,uid)
+	response.Data = buildResData(records, c, uid)
 }
 
-func buildResData(records []common.DTTXHistory, max int,uid int64) *transHistoryResData {
+func buildResData(records []common.DTTXHistory, max int, uid int64) *transHistoryResData {
 	data := transHistoryResData{
 		More:    0,
 		Records: make([]transHistoryRecord, 0),
@@ -132,16 +131,16 @@ func buildResData(records []common.DTTXHistory, max int,uid int64) *transHistory
 		for _, v := range records {
 			r := transHistoryRecord{
 				Txid:  v.Id,
-				Type:  convType(v.Type,v.To,uid),
+				Type:  convType(v.Type, v.To, uid),
 				From:  convUidStr(v.From),
 				To:    convUidStr(v.To),
 				Value: utils.LVTintToFloatStr(v.Value),
 				Ts:    v.Ts,
 			}
 			if len(v.Miner) > 0 {
-				m := make([]transHistoryMiner,0)
-				for _,item := range v.Miner {
-					m = append(m,transHistoryMiner{
+				m := make([]transHistoryMiner, 0)
+				for _, item := range v.Miner {
+					m = append(m, transHistoryMiner{
 						Sid:   item.Sid,
 						Value: utils.LVTintToFloatStr(item.Value),
 					})
@@ -154,8 +153,8 @@ func buildResData(records []common.DTTXHistory, max int,uid int64) *transHistory
 	return &data
 }
 
-func validateType(t int)bool{
-	if t<constants.TX_TYPE_ALL ||
+func validateType(t int) bool {
+	if t < constants.TX_TYPE_ALL ||
 		t > constants.TX_TYPE_RECEIVABLES {
 		return false
 	}
