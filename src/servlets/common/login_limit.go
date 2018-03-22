@@ -4,11 +4,13 @@ import (
 	"utils"
 	"utils/logger"
 	"utils/config"
+	"math"
 )
 
 const (
 	LOGIN_LIMIT_REDIS_PROXY = "login_limit_"
 	PWD_ERR_REDIS_PROXY     = "pwd_err_"
+	MIN_S = 60
 )
 
 func AddWrongPwd(uid int64) (bool,int){
@@ -32,8 +34,8 @@ func AddWrongPwd(uid int64) (bool,int){
 	}
 
 	if c >0 && min > 0 {
-		setUserLimt(uid, min*60)
-		return true,min*60
+		setUserLimt(uid, min*MIN_S)
+		return true,min
 	}
 	return false,0
 }
@@ -47,6 +49,10 @@ func CheckUserInLoginLimit(uid int64) (bool, int) {
 	}
 	flag := expire > 0
 
+	if flag {
+		sec := float64(expire)
+		expire = int(math.Ceil(sec/60))
+	}
 	return flag, expire
 }
 
