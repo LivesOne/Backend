@@ -21,6 +21,11 @@ type registerUpVcodeParam struct {
 	Spkv    int    `json:"spkv"`
 }
 
+type registerUpVcodeResData struct {
+	Uid string `json:"uid"`
+	RegisterTime int64 `json:"register_time"`
+}
+
 // registerRequest holds entire request data
 type registerUpVcodeRequest struct {
 	Base  common.BaseInfo      `json:"base"`
@@ -84,6 +89,11 @@ func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http
 		} else {
 			break
 		}
+	}
+
+	response.Data = registerUpVcodeResData{
+		account.UIDString,
+		account.RegisterTime,
 	}
 
 }
