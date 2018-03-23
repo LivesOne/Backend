@@ -144,7 +144,7 @@ func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 				return false, constants.RC_INVALID_ACCOUNT
 			}
 		case EMAIL:
-			if !common.ExistsEmail(param.EMail) {
+			if common.CheckResetEmail(param.EMail) {
 				return false, constants.RC_INVALID_ACCOUNT
 			}
 		default:

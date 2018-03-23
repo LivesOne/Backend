@@ -93,6 +93,16 @@ func CheckResetPhone(country int, phone string)bool{
 	return flag
 }
 
+func CheckResetEmail(email string) bool{
+	row, err := gDbUser.QueryRow("select uid from account where email = ? limit 1", email)
+	if err != nil || row == nil {
+		return true
+	}
+	uid := utils.Str2Int64(row["uid"])
+	flag,_ := CheckUserInLoginLimit(uid)
+	return flag
+}
+
 func GetAssetByUid(uid int64) (int64, int) {
 	row, _ := gDbUser.QueryRow("select uid,status from account where uid = ? limit 1", uid)
 	if row == nil {
