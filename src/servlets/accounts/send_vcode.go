@@ -51,7 +51,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
 			Msg: constants.RC_OK.Msg,
-		}
+		},
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
