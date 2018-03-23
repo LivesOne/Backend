@@ -140,7 +140,7 @@ func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 	} else if param.Action == "reset" {
 		switch param.Type {
 		case MESSAGE, CALL:
-			if !common.ExistsPhone(param.Country, param.Phone) {
+			if common.CheckResetPhone(param.Country, param.Phone) {
 				return false, constants.RC_INVALID_ACCOUNT
 			}
 		case EMAIL:
