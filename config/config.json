@@ -77,7 +77,8 @@
     "LoginPwdErrCntLimit": [
       {"Number":3, "Min":10},
       {"Number":5, "Min":60}
-    ]
+    ],
+    "PenaltyMoneyAccountUid":123
 
 
 }

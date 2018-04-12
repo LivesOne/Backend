@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"math"
 )
 
 const (
@@ -121,6 +122,14 @@ func FloatStrToLVTint(lvt string) int64 {
 	return int64(Str2Float64(lvt) * CONV_LVT)
 }
 
+func LVTintToNamorInt(lvt int64)int{
+	return int(lvt/CONV_LVT)
+}
+
+func NamorFloatToLVTint(nlvt float64)int64{
+	return int64(nlvt*CONV_LVT)
+}
+
 func Str2Float64(str string) float64 {
 	fs, _ := strconv.ParseFloat(str, 64)
 	return fs
@@ -140,4 +149,9 @@ func TimestampToTxid(ts, iv int64) int64 {
 	delta := ts - iv - constants.BASE_TIMESTAMP
 	tstx := (delta << 22) & 0x7FFFFFFFFFC00000
 	return tstx
+}
+
+
+func Round(f float64)int{
+	return int(math.Floor(f+0.5))
 }

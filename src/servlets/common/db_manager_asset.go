@@ -99,14 +99,22 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 	}
 
 	//查询转出账户余额是否满足需要
-	var balance int64
-	row := tx.QueryRow("select balance from user_asset where uid  = ?", from)
-	row.Scan(&balance)
+	//var balance int64
+	//row := tx.QueryRow("select balance from user_asset where uid  = ?", from)
+	//row.Scan(&balance)
+	//
+	//if balance < value {
+	//	tx.Rollback()
+	//	return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	//}
 
-	if balance < value {
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckBalance(from,value,tx) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
+
+
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
 	if err1 != nil {
@@ -245,4 +253,259 @@ func GetUserAssetTranslevelByUid(uid int64) int {
 		return 0
 	}
 	return utils.Str2Int(res["trader_level"])
+}
+
+func ckeckBalance(uid int64,value int64, tx *sql.Tx)bool{
+	var balance int64
+	var locked int64
+	row := tx.QueryRow("select balance,locked from user_asset where uid  = ?", uid)
+	row.Scan(&balance,&locked)
+	return balance > 0 && (balance-locked) > value
+}
+
+func CreateAssetLock(assetLock *AssetLock)(bool,int){
+
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//锁定记录
+	tx.Exec("select * from user_asset where uid = ? for update", assetLock.Uid)
+
+	//查询转出账户余额是否满足需要
+	if !ckeckBalance(assetLock.Uid,assetLock.ValueInt,tx) {
+		tx.Rollback()
+		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+
+
+	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
+	if !CheckAssetLimeted(assetLock.Uid, tx) {
+		tx.Rollback()
+		return false, constants.TRANS_ERR_ASSET_LIMITED
+	}
+
+	//修改资产数据
+	//锁仓算力大于500时 给500
+	updSql := `update
+					user_asset
+			   set
+			   		locked = locked + ?,
+			   		lock_hr = case when (lock_hr + ? > ? ) then ? else (lock_hr + ?),
+			   		lastmodify = ?
+			   where
+			   		uid = ?`
+	updParams := []interface{}{
+		assetLock.ValueInt,
+		assetLock.Hashrate,
+		constants.ASSET_LOCK_MAX_VALUE,
+		constants.ASSET_LOCK_MAX_VALUE,
+		assetLock.Hashrate,
+		assetLock.Begin,
+		assetLock.Uid,
+	}
+	info1, err1 := tx.Exec(updSql, updParams...)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", assetLock.Uid, "")
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	sql := "insert into user_asset_lock (uid,value,month,hashrate,begin,end) values (?,?,?,?,?,?)"
+	params := []interface{}{
+		assetLock.Uid,
+		assetLock.ValueInt,
+		assetLock.Month,
+		assetLock.Hashrate,
+		assetLock.Begin,
+		assetLock.End,
+	}
+	res,err := tx.Exec(sql,params...)
+	if err != nil {
+		logger.Error("create asset lock error",err.Error())
+		tx.Rollback()
+		return false,constants.TRANS_ERR_SYS
+	}
+	id,err := res.LastInsertId()
+	if err != nil {
+		logger.Error("get last insert id error",err.Error())
+		tx.Rollback()
+		return false,constants.TRANS_ERR_SYS
+	}
+	tx.Commit()
+	assetLock.Id = id
+	return true, constants.TRANS_ERR_SUCC
+}
+
+
+func QueryAssetLockList(uid int64)[]*AssetLock{
+	res := gDBAsset.Query("select * from user_asset_lock where uid = ? and end > ?",uid,utils.GetTimestamp13())
+	if res == nil {
+		return nil
+	}
+	return convAssetLockList(res)
+}
+
+func QueryAssetLock(id int64)*AssetLock{
+	res,err := gDBAsset.QueryRow("select * from user_asset_lock where id = ?",id)
+	if err != nil {
+		logger.Error("query asset lock error",err.Error())
+		return nil
+	}
+	return convAssetLock(res)
+}
+
+func convAssetLock(al map[string]string)*AssetLock{
+	if al == nil {
+		return nil
+	}
+	alres := AssetLock{
+		Id:       utils.Str2Int64(al["id"]),
+		Uid:      utils.Str2Int64(al["uid"]),
+		ValueInt: utils.Str2Int64(al["value"]),
+		Month:    utils.Str2Int(al["month"]),
+		Hashrate: utils.Str2Int(al["hashrate"]),
+		Begin:    utils.Str2Int64(al["begin"]),
+		End:      utils.Str2Int64(al["end"]),
+	}
+	alres.Value = utils.LVTintToFloatStr(alres.ValueInt)
+	return &alres
+}
+
+func convAssetLockList(list []map[string]string)[]*AssetLock{
+	listRes := make([]*AssetLock,0)
+	for _,v := range list {
+		listRes = append(listRes,convAssetLock(v))
+	}
+	return listRes
+}
+
+
+
+
+func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,int){
+	ts := utils.TXIDToTimeStamp13(txid)
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//锁定记录
+	to := config.GetConfig().PenaltyMoneyAccountUid
+	tx.Exec("select * from user_asset where uid in (?,?) for update", assetLock.Uid,to)
+
+	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
+	if !CheckAssetLimeted(assetLock.Uid, tx) {
+		tx.Rollback()
+		return false, constants.TRANS_ERR_ASSET_LIMITED
+	}
+
+	//修改资产数据
+	//锁仓算力大于500时 给500
+	updSql := `update
+					user_asset
+			   set
+			   		balance = balance - ?
+			   		locked = locked - ?,
+			   		lastmodify = ?
+			   where
+			   		uid = ?`
+	updParams := []interface{}{
+		penaltyMoney,
+		assetLock.ValueInt,
+		ts,
+		assetLock.Uid,
+	}
+	info1, err1 := tx.Exec(updSql, updParams...)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", assetLock.Uid, "")
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	//增加目标的balance to为系统配置账户
+	info2, err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?", assetLock.ValueInt, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+
+
+	_,err = tx.Exec("delete from user_asset_lock where id = ?",assetLock.Id)
+	if err != nil {
+		logger.Error("create asset lock error",err.Error())
+		tx.Rollback()
+		return false,constants.TRANS_ERR_SYS
+	}
+
+
+	//修改资产解冻之后，要重新计算应该有的hashrate
+	var hr int
+	row := tx.QueryRow("select sum(hashreat) from user_asset_lock where uid = ?",assetLock.Uid)
+
+	err = row.Scan(&hr)
+	if err != nil {
+		logger.Error("query asset lock hashrate error",err.Error())
+		tx.Rollback()
+		return false,constants.TRANS_ERR_SYS
+	}
+	if hr > constants.ASSET_LOCK_MAX_VALUE {
+		hr = constants.ASSET_LOCK_MAX_VALUE
+	}
+
+	_,err = tx.Exec("update user_asset set lock_hr = ? where uid = ?",hr,assetLock.Uid)
+	if err != nil {
+		logger.Error("sql error ", err1.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//加入交易记录，不成功的话回滚并返回系统错误
+	txh := &DTTXHistory{
+		Id:     txid,
+		Status: constants.TX_STATUS_DEFAULT,
+		Type:   constants.TX_TYPE_PENALTY_MONEY,
+		From:   assetLock.Uid,
+		To:     config.GetConfig().PenaltyMoneyAccountUid,
+		Value:  assetLock.ValueInt,
+		Ts:     ts,
+		Code:   constants.TX_CODE_SUCC,
+		Remark: assetLock,
+	}
+	err = InsertCommited(txh)
+	if err != nil {
+		logger.Error("insert mongo  error ", err1.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		logger.Error("mysql commit  error ", err1.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	return true, constants.TRANS_ERR_SUCC
 }

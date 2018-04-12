@@ -86,6 +86,7 @@ type Configuration struct {
 	Captcha                captcha
 	MaxActivityRewardValue int
 	CautionMoneyIds        []int64
+	PenaltyMoneyAccountUid int64
 }
 
 // configuration data

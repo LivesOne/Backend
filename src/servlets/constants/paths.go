@@ -86,4 +86,10 @@ const (
 	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
 
 	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
+
+	ASSET_LOGK_LIST = "/asset/v1/lock/list"
+
+	ASSET_LOCK_CREATE = "/asset/v1/lock/create"
+
+	ASSET_LOCK_REMOVE = "/asset/v1/lock/remove"
 )
