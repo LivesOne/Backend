@@ -157,7 +157,7 @@ func decodeAssetLockSecret(secret, key, iv string,secretPtr interface{}) error {
 		return err
 	}
 	logger.Debug("base64 and aes decode secret ", secJson)
-	err = json.Unmarshal([]byte(secJson), secret)
+	err = json.Unmarshal([]byte(secJson), secretPtr)
 	if err != nil {
 		logger.Error("json Unmarshal error ", err.Error())
 		return err
