@@ -66,6 +66,11 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 		return
 	}
 
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
 	uid := utils.Str2Int64(uidString)
 
 	balance, err := common.QueryBalance(uid)

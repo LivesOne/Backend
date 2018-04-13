@@ -56,6 +56,11 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		return
 	}
 
+	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		logger.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))

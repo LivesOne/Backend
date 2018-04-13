@@ -88,6 +88,11 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
 	uid := utils.Str2Int64(uidString)
 
 	requestData := transHistoryRequest{} // request body

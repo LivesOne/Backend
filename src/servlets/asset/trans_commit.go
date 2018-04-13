@@ -74,6 +74,12 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
+
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
 	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)

@@ -88,6 +88,11 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
+
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
 	secret := decodeSecret(requestData.Param.Secret, key, iv)

@@ -49,6 +49,12 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 	}
+
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
 	uid := utils.Str2Int64(uidString)
 	account, err := common.GetAccountByUID(uidString)
 	if err != nil {

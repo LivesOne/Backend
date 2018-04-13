@@ -6,6 +6,7 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils/logger"
+	"utils"
 )
 
 type profileResponse struct {
@@ -33,10 +34,15 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	uid, errT := token.GetUID(header.TokenHash)
+	uid,aesKey,_, errT := token.GetAll(header.TokenHash)
 	if (errT != constants.ERR_INT_OK) || (len(uid) != constants.LEN_uid) {
 		logger.Info("get user profile: get uid from token cache failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 

@@ -58,6 +58,11 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		logger.Info("bind phone: read user info error:", err)
 		return
 	}
+	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
 	uid := utils.Str2Int64(uidString)
 
 	if len(aesKey) != constants.AES_totalLen {
