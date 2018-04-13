@@ -292,7 +292,7 @@ func CreateAssetLock(assetLock *AssetLock)(bool,int){
 					user_asset
 			   set
 			   		locked = locked + ?,
-			   		lock_hr = case when (lock_hr + ? > ? ) then ? else (lock_hr + ?),
+			   		lock_hr = (case when (lock_hr + ? > ? ) then ? else (lock_hr + ?) end ),
 			   		lastmodify = ?
 			   where
 			   		uid = ?`
@@ -405,7 +405,7 @@ func execRemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64,tx *
 	updSql := `update
 					user_asset
 			   set
-			   		balance = balance - ?
+			   		balance = balance - ?,
 			   		locked = locked - ?,
 			   		lastmodify = ?
 			   where
