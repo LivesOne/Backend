@@ -24,7 +24,7 @@ type lockRemoveSecret struct {
 }
 
 type resData struct {
-	Cost string
+	Cost string `json:"cost"`
 }
 func (lc *lockRemoveSecret)Valid()bool{
 	return len(lc.Id)>0&&
