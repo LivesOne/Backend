@@ -76,8 +76,11 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
 	}
+	if !utils.SignValid(aesKey,httpHeader.Signature,httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
-
 	secret := new(lockRemoveSecret)
 	err :=	decodeAssetLockSecret(requestData.Param.Secret, key, iv,secret)
 

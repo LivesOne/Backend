@@ -74,6 +74,12 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
+	if !utils.SignValid(aesKey,httpHeader.Signature,httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
+
 	requestData := new(lockCreateReqData)
 
 	if !common.ParseHttpBodyParams(request, requestData) {

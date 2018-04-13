@@ -5,7 +5,6 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"strconv"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -77,7 +76,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	if handler.isSignValid(aesKey, header.Signature, header.Timestamp) == false {
+	if utils.SignValid(aesKey, header.Signature, header.Timestamp) == false {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
@@ -234,25 +233,7 @@ func (handler *loginHandler) checkRequestParams(header *common.HeaderParams, log
 	return true
 }
 
-func (handler *loginHandler) isSignValid(aeskey, signature string, timestamp int64) bool {
 
-	// signature := handler.header.Signature
-
-	if len(signature) < 1 {
-		return false
-	}
-
-	tmp := aeskey + strconv.FormatInt(timestamp, 10)
-	hash := utils.Sha256(tmp)
-
-	if signature == hash {
-		logger.Info("login: verify header signature successful", signature, string(hash[:]))
-	} else {
-		logger.Info("login: verify header signature failed:", signature, string(hash[:]))
-	}
-
-	return signature == hash
-}
 
 func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, error) {
 

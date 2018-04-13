@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 	"math"
+	"utils/logger"
 )
 
 const (
@@ -154,4 +155,25 @@ func TimestampToTxid(ts, iv int64) int64 {
 
 func Round(f float64)int{
 	return int(math.Floor(f+0.5))
+}
+
+
+func SignValid(aeskey, signature string, timestamp int64) bool {
+
+	// signature := handler.header.Signature
+
+	if len(signature) < 1 {
+		return false
+	}
+
+	tmp := aeskey + strconv.FormatInt(timestamp, 10)
+	hash := Sha256(tmp)
+
+	if signature == hash {
+		logger.Info("login: verify header signature successful", signature, string(hash[:]))
+	} else {
+		logger.Info("login: verify header signature failed:", signature, string(hash[:]))
+	}
+
+	return signature == hash
 }
