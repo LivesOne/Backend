@@ -20,3 +20,10 @@ type (
 		ValueInt int64  `json:"-" bson:"value"`
 	}
 )
+
+
+func (al *AssetLock)IsOk()bool{
+	return al.Month>0&&
+			al.ValueInt >0
+
+}

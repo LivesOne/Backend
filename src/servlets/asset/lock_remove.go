@@ -119,6 +119,11 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 
+	if !al.IsOk(){
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
 	if ok,e := common.RemoveAssetLock(txid,al,penaltyMoney);ok {
 		response.Data = resData{
 			Cost: utils.LVTintToFloatStr(penaltyMoney),
