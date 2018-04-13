@@ -493,7 +493,7 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 		Type:   constants.TX_TYPE_PENALTY_MONEY,
 		From:   assetLock.Uid,
 		To:     config.GetConfig().PenaltyMoneyAccountUid,
-		Value:  assetLock.ValueInt,
+		Value:  penaltyMoney,
 		Ts:     ts,
 		Code:   constants.TX_CODE_SUCC,
 		Remark: assetLock,

@@ -53,7 +53,7 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 
 	uid := utils.Str2Int64(uidString)
 
-	
+
 	response.Data = lockListResData{
 		Records: common.QueryAssetLockList(uid),
 	}
