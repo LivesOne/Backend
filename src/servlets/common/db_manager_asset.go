@@ -453,7 +453,7 @@ func execRemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64,tx *
 
 	//修改资产解冻之后，要重新计算应该有的hashrate
 	var hr int
-	row := tx.QueryRow("select sum(hashreat) from user_asset_lock where uid = ?",assetLock.Uid)
+	row := tx.QueryRow("select sum(hashrate) from user_asset_lock where uid = ?",assetLock.Uid)
 
 	err = row.Scan(&hr)
 	if err != nil {

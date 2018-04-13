@@ -26,7 +26,10 @@ type lockRemoveSecret struct {
 type resData struct {
 	Cost string
 }
-
+func (lc *lockRemoveSecret)Valid()bool{
+	return len(lc.Id)>0&&
+		len(lc.Pwd) >0
+}
 // sendVCodeHandler
 type lockRemoveHandler struct {
 	//header      *common.HeaderParams // request header param
@@ -83,6 +86,12 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
+	if !secret.Valid() {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 
 	pwd := secret.Pwd
 	if !common.CheckPaymentPwd(uid, pwd) {

@@ -24,6 +24,12 @@ type lockCreateSecret struct {
 	Pwd   string `json:"pwd"`
 }
 
+func (lc *lockCreateSecret)Valid()bool{
+	return len(lc.Value)>0&&
+			lc.Month >0 &&
+			len(lc.Pwd) >0
+}
+
 // sendVCodeHandler
 type lockCreateHandler struct {
 	//header      *common.HeaderParams // request header param
@@ -83,6 +89,12 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
+	if !secret.Valid() {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 
 	uid := utils.Str2Int64(uidString)
 
