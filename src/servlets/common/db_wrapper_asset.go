@@ -10,13 +10,13 @@ type (
 
 	AssetLock struct {
 		Id       int64  `json:"-" bson:"id"`
-		IdStr string 	`json:"id"`
+		IdStr string 	`json:"id" bson:"-"`
 		Uid      int64  `json:"uid" bson:"uid"`
-		Value    string `json:"value" bson:"value"`
+		Value    string `json:"value" bson:"-"`
 		Month    int    `json:"month" bson:"month"`
 		Hashrate int    `json:"hashrate" bson:"hashrate"`
 		Begin    int64  `json:"begin" bson:"begin"`
 		End      int64  `json:"end" bson:"end"`
-		ValueInt int64  `json:"-"`
+		ValueInt int64  `json:"-" bson:"value"`
 	}
 )
