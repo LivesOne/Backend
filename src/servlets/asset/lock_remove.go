@@ -19,7 +19,7 @@ type lockRemoveParam struct {
 }
 
 type lockRemoveSecret struct {
-	Id  int64  `json:"id"`
+	Id  string  `json:"id"`
 	Pwd string `json:"pwd"`
 }
 
@@ -90,7 +90,9 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	al := common.QueryAssetLock(secret.Id)
+	assetLockId := utils.Str2Int64(secret.Id)
+
+	al := common.QueryAssetLock(assetLockId)
 
 	if al == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
