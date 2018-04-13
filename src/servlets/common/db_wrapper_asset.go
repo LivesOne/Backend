@@ -9,7 +9,8 @@ type (
 	}
 
 	AssetLock struct {
-		Id       int64  `json:"id" bson:"id"`
+		Id       int64  `json:"-" bson:"id"`
+		IdStr string 	`json:"id"`
 		Uid      int64  `json:"uid" bson:"uid"`
 		Value    string `json:"value" bson:"value"`
 		Month    int    `json:"month" bson:"month"`

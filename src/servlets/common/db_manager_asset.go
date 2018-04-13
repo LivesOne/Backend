@@ -342,6 +342,7 @@ func CreateAssetLock(assetLock *AssetLock)(bool,int){
 	}
 	tx.Commit()
 	assetLock.Id = id
+	assetLock.IdStr = utils.Int642Str(id)
 	return true, constants.TRANS_ERR_SUCC
 }
 
@@ -377,6 +378,7 @@ func convAssetLock(al map[string]string)*AssetLock{
 		End:      utils.Str2Int64(al["end"]),
 	}
 	alres.Value = utils.LVTintToFloatStr(alres.ValueInt)
+	alres.IdStr = utils.Int642Str(alres.Id)
 	return &alres
 }
 
