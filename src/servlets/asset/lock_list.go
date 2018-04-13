@@ -9,6 +9,9 @@ import (
 	"utils/logger"
 )
 
+type lockListResData struct {
+	Records []*common.AssetLock `json:"records"`
+}
 
 // sendVCodeHandler
 type lockListHandler struct {
@@ -50,6 +53,9 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 
 	uid := utils.Str2Int64(uidString)
 
-	response.Data = common.QueryAssetLockList(uid)
+	
+	response.Data = lockListResData{
+		Records: common.QueryAssetLockList(uid),
+	}
 
 }
