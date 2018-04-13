@@ -157,5 +157,6 @@ func CalculationPenaltyMoney(al *common.AssetLock)int64{
 	//L=（m/T）*0.5*S
 	//计算后得出的lvt数为float 需要转换成数据库存储的格式
 	l := utils.NamorFloatToLVTint(m/t*a*s)
+	logger.Info("m",m,"t",t,"a",a,"s",s,"m/t*a*s",l)
 	return l
 }
