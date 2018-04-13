@@ -389,22 +389,14 @@ func convAssetLockList(list []map[string]string)[]*AssetLock{
 }
 
 
-
-
-func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,int){
-	ts := utils.TXIDToTimeStamp13(txid)
-	tx, err := gDBAsset.Begin()
-	if err != nil {
-		logger.Error("db pool begin error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
-	}
+func execRemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64,tx *sql.Tx)(bool,int){
 	//锁定记录
+	ts := utils.TXIDToTimeStamp13(txid)
 	to := config.GetConfig().PenaltyMoneyAccountUid
 	tx.Exec("select * from user_asset where uid in (?,?) for update", assetLock.Uid,to)
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
 	if !CheckAssetLimeted(assetLock.Uid, tx) {
-		tx.Rollback()
 		return false, constants.TRANS_ERR_ASSET_LIMITED
 	}
 
@@ -424,17 +416,15 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 		ts,
 		assetLock.Uid,
 	}
-	info1, err1 := tx.Exec(updSql, updParams...)
-	if err1 != nil {
-		logger.Error("sql error ", err1.Error())
-		tx.Rollback()
+	info1, err := tx.Exec(updSql, updParams...)
+	if err != nil {
+		logger.Error("sql error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
 	rsa, _ := info1.RowsAffected()
 	if rsa == 0 {
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", assetLock.Uid, "")
-		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 
@@ -442,14 +432,12 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 	info2, err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?", assetLock.ValueInt, ts, to)
 	if err2 != nil {
 		logger.Error("sql error ", err2.Error())
-		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
 	rsa, _ = info2.RowsAffected()
 	if rsa == 0 {
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
-		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 
@@ -457,7 +445,6 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 	_,err = tx.Exec("delete from user_asset_lock where id = ?",assetLock.Id)
 	if err != nil {
 		logger.Error("create asset lock error",err.Error())
-		tx.Rollback()
 		return false,constants.TRANS_ERR_SYS
 	}
 
@@ -469,7 +456,6 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 	err = row.Scan(&hr)
 	if err != nil {
 		logger.Error("query asset lock hashrate error",err.Error())
-		tx.Rollback()
 		return false,constants.TRANS_ERR_SYS
 	}
 	if hr > constants.ASSET_LOCK_MAX_VALUE {
@@ -478,10 +464,26 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 
 	_,err = tx.Exec("update user_asset set lock_hr = ? where uid = ?",hr,assetLock.Uid)
 	if err != nil {
-		logger.Error("sql error ", err1.Error())
-		tx.Rollback()
+		logger.Error("sql error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
+	return true,constants.TRANS_ERR_SUCC
+}
+
+func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,int){
+	ts := utils.TXIDToTimeStamp13(txid)
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+
+	if ok,e := execRemoveAssetLock(txid,assetLock,penaltyMoney,tx);!ok{
+		tx.Rollback()
+		return false,e
+	}
+
 	//加入交易记录，不成功的话回滚并返回系统错误
 	txh := &DTTXHistory{
 		Id:     txid,
@@ -496,14 +498,14 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 	}
 	err = InsertCommited(txh)
 	if err != nil {
-		logger.Error("insert mongo  error ", err1.Error())
+		logger.Error("insert mongo  error ", err.Error())
 		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		logger.Error("mysql commit  error ", err1.Error())
+		logger.Error("mysql commit  error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
 
