@@ -27,7 +27,8 @@ type lockCreateSecret struct {
 func (lc *lockCreateSecret)Valid()bool{
 	return len(lc.Value)>0&&
 			lc.Month >0 &&
-			len(lc.Pwd) >0
+			len(lc.Pwd) >0 &&
+			utils.Str2Int(lc.Value)>0
 }
 
 // sendVCodeHandler
