@@ -20,6 +20,7 @@ type balanceRequest struct {
 
 type balanceResData struct {
 	Balance string `json:"balance"`
+	Locked string `json:"locked"`
 }
 
 // sendVCodeHandler
@@ -73,12 +74,13 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
-	balance, err := common.QueryBalance(uid)
+	balance,locked, err := common.QueryBalance(uid)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = balanceResData{
 			Balance: utils.LVTintToFloatStr(balance),
+			Locked: utils.LVTintToFloatStr(locked),
 		}
 	}
 

@@ -64,16 +64,16 @@ func QueryReward(uid int64) (*Reward, error) {
 
 }
 
-func QueryBalance(uid int64) (int64, error) {
-	row, err := gDBAsset.QueryRow("select balance from user_asset where uid = ?", uid)
+func QueryBalance(uid int64) (int64,int64, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked from user_asset where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"]), nil
+		return utils.Str2Int64(row["balance"]),utils.Str2Int64(row["locked"]), nil
 	}
-	return 0, err
+	return 0,0, err
 }
 
 func TransAccountLvt(txid, from, to, value int64) (bool, int) {
