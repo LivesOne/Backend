@@ -348,7 +348,7 @@ func CreateAssetLock(assetLock *AssetLock)(bool,int){
 
 
 func QueryAssetLockList(uid int64)[]*AssetLock{
-	res := gDBAsset.Query("select * from user_asset_lock where uid = ? order by id desc",uid,utils.GetTimestamp13())
+	res := gDBAsset.Query("select * from user_asset_lock where uid = ? order by id desc",uid)
 	if res == nil {
 		return nil
 	}
