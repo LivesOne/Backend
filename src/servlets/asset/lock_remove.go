@@ -15,6 +15,7 @@ type lockRemoveReqData struct {
 }
 
 type lockRemoveParam struct {
+	AuthType int    `json:"auth_type"`
 	Secret string `json:"secret"`
 }
 
@@ -97,8 +98,19 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 
 	pwd := secret.Pwd
-	if !common.CheckPaymentPwd(uid, pwd) {
-		response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
+	switch requestData.Param.AuthType {
+	case constants.AUTH_TYPE_LOGIN_PWD:
+		if !common.CheckLoginPwd(uid, pwd) {
+			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+			return
+		}
+	case constants.AUTH_TYPE_PAYMENT_PWD:
+		if !common.CheckPaymentPwd(uid, pwd) {
+			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
+			return
+		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 

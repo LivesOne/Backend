@@ -149,6 +149,9 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	}
 
 	txid := common.GenerateTxID()
