@@ -169,11 +169,13 @@ func SignValid(aeskey, signature string, timestamp int64) bool {
 	tmp := aeskey + strconv.FormatInt(timestamp, 10)
 	hash := Sha256(tmp)
 
-	if signature == hash {
-		logger.Info("login: verify header signature successful", signature, string(hash[:]))
+	res := signature == hash
+
+	if res {
+		logger.Info("verify header signature successful", signature, string(hash[:]))
 	} else {
-		logger.Info("login: verify header signature failed:", signature, string(hash[:]))
+		logger.Info("verify header signature failed:", signature, string(hash[:]))
 	}
 
-	return signature == hash
+	return res
 }
