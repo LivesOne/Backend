@@ -363,7 +363,48 @@ func CheckWXIdExists(wxid string)bool{
 	return utils.Str2Int(row["c"])>0
 }
 
-func SetWxId(uid int64,wxid string) error {
-	_, err := gDbUser.Exec("insert into account_extend (uid,wxid,update_time) values (?,?,?)", uid, wxid,utils.GetTimestamp13())
+func InitAccountExtend(uid int64)error{
+	_, err := gDbUser.Exec("insert ignore into account_extend (uid,update_time) values (?,?)", uid, utils.GetTimestamp13())
 	return err
+}
+
+func SetWxId(uid int64,wxOpenid,wxUnionid string) (int64,error) {
+	sql := "update account_extend set wx_openid = ?,wx_unionid = ?,update_time = ? where uid = ? and wx_openid is null and wx_unionid is null"
+	res, err := gDbUser.Exec(sql, wxOpenid,wxUnionid,utils.GetTimestamp13(), uid)
+	if err != nil {
+		return 0,err
+	}
+	return res.RowsAffected()
+}
+
+func CheckBindWx(uid int64)bool{
+	sql := `
+		select
+			a.country as c,
+			ae.wx_openid as openid,
+			ae.wx_unionid as unionid
+		from
+			account as a
+		left join
+			account_extend as ae
+		on
+			a.uid = ae.uid
+		where
+			a.uid = ?
+	`
+	row,err := gDbUser.QueryRow(sql,uid)
+	if err != nil {
+		logger.Error("query bind info error",err.Error())
+		return false
+	}
+	if utils.Str2Int(row["c"]) != 86 {
+		return true
+	}
+	if id,ok := row["openid"];ok{
+		return len(id)>0
+	}
+	if id,ok := row["unionid"];ok{
+		return len(id)>0
+	}
+	return false
 }

@@ -90,20 +90,29 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 	}
 
 	if ok,res := common.AuthWX(secret.Code);ok {
-		if common.CheckWXIdExists(res.Openid) {
-			response.SetResponseBase(constants.RC_DUP_WX_ID)
+
+		err := common.InitAccountExtend(uid)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
-		if err := common.SetWxId(uid,res.Openid);err != nil {
-			if db_factory.CheckDuplicateByColumn(err,"openid") ||
-				db_factory.CheckDuplicateByColumn(err,"unionid"){
+
+		r, err := common.SetWxId(uid,res.Openid,res.Unionid)
+		if err != nil {
+			if db_factory.CheckDuplicateByColumn(err,"wx_openid") ||
+				db_factory.CheckDuplicateByColumn(err,"wx_unionid"){
 				response.SetResponseBase(constants.RC_DUP_WX_ID)
 				return
 			} else {
-				
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				return
 			}
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
+		} else {
+			//r ==0 没有有效记录被修改
+			if r == 0 {
+				response.SetResponseBase(constants.RC_DUP_BIND_WX)
+				return
+			}
 		}
 	} else {
 		response.SetResponseBase(constants.RC_INVALID_WX_CODE)

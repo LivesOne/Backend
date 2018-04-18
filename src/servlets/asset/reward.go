@@ -20,6 +20,7 @@ type rewardResData struct {
 	Total     string `json:"total"`
 	Yesterday string `json:"yesterday"`
 	Ts        int64  `json:"ts"`
+	Days      int    `json:"days"`
 }
 
 // sendVCodeHandler
@@ -80,6 +81,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 		Total:     utils.LVTintToFloatStr(re.Total),
 		Yesterday: yesterday,
 		Ts:        t,
+		Days:      re.Days,
 	}
 
 }

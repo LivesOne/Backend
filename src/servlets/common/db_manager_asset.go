@@ -11,6 +11,7 @@ import (
 	_ "utils/config"
 	"utils/db_factory"
 	"utils/logger"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -46,7 +47,7 @@ func QueryReward(uid int64) (*Reward, error) {
 	if uid == 0 {
 		return nil, errors.New("uid is zero")
 	}
-	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify from user_reward where uid = ?", uid)
+	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify,days from user_reward where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 		return nil, err
@@ -58,6 +59,7 @@ func QueryReward(uid int64) (*Reward, error) {
 		resReward.Total = utils.Str2Int64(row["total"])
 		resReward.Yesterday = utils.Str2Int64(row["lastday"])
 		resReward.Lastmodify = utils.Str2Int64(row["lastmodify"])
+		resReward.Days = utils.Str2Int(row["days"])
 
 	}
 	return resReward, err
@@ -531,4 +533,14 @@ func QueryHashRateByUid(uid int64)(int,int64){
 		return 0,0
 	}
 	return utils.Str2Int(row["lock_hr"]),utils.Str2Int64(row["lastmodify"])
+}
+
+
+func QueryCountMinerByTs(uid int64)int{
+	row,err := gDBAsset.QueryRow("select days from user_reward where uid = ?",uid)
+	if err != nil {
+		logger.Error("query reward days error",err.Error())
+		return 0
+	}
+	return utils.Str2Int(row["days"])
 }

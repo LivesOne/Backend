@@ -38,6 +38,7 @@ var (
 	RC_USER_LEVEL_LIMIT     = Error{20012, "level limit"}
 	RC_INVALID_WX_CODE      = Error{20013, "invalid code"}
 	RC_DUP_WX_ID            = Error{20014, "duplicate weixin id"}
+	RC_DUP_BIND_WX          = Error{20015, "duplicate bind weixin"}
 
 	RC_ACCOUNT_ACCESS_LIMITED       = Error{21001, "account access limited"}
 	RC_INSUFFICIENT_BALANCE         = Error{21002, "insufficient balance"}
