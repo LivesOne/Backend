@@ -127,6 +127,8 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 	penaltyMoney := CalculationPenaltyMoney(al)
 
+	logger.Info("query asset lock ",utils.ToJSON(al))
+
 	txid := common.GenerateTxID()
 
 	if txid == -1 {
