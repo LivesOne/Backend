@@ -9,6 +9,7 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	"utils/vcode"
+	"utils/config"
 )
 
 type bindPhoneParam struct {
@@ -90,8 +91,21 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	if !common.CheckLoginPwd(uid, secret.Pwd) {
+	account, err := common.GetAccountByUID(uidString)
+	if err != nil {
+		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD);
+		return
+	}
+	// check login password
+	pwd := utils.Sha256(secret.Pwd + uidString)
+	if account.LoginPassword != pwd {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+		return
+	}
+	// check privilege
+	limit := config.GetLimitByLevel(account.Level)
+	if len(account.Phone) > 0 && limit.ChangePhone == false {
+		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
 		return
 	}
 

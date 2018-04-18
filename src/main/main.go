@@ -47,6 +47,7 @@ func initialize(cfgPath string) {
 
 	config.LoadConfig(cfgPath, cfgDir)
 	fmt.Println("init config over file path ", cfgPath)
+	config.LoadLevelConfig(cfgDir, config.GetConfig().UserLevelConfig)
 	logger.InitLogger(cfgDir, config.GetConfig().LogConfig)
 	logger.Info("server initialize.....")
 }
