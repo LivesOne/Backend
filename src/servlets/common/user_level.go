@@ -3,6 +3,7 @@ package common
 import (
 	"utils/logger"
 	"utils"
+	"utils/config"
 )
 
 
@@ -123,4 +124,11 @@ func upThree(acc *Account)(bool,int){
 
 	}
 	return false,acc.Level
+}
+
+
+func CanNotBeTo(uid int64)bool{
+	level := GetTransUserLevel(uid)
+	limit := config.GetLimitByLevel(level)
+	return !limit.TransferTo
 }
