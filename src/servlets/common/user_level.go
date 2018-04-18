@@ -127,8 +127,8 @@ func upThree(acc *Account)(bool,int){
 }
 
 
-func CanNotBeTo(uid int64)bool{
+func CanBeTo(uid int64)bool{
 	level := GetTransUserLevel(uid)
 	limit := config.GetLimitByLevel(level)
-	return !limit.TransferTo
+	return limit.TransferTo
 }

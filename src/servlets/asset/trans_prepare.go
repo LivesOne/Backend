@@ -111,7 +111,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	to := utils.Str2Int64(secret.To)
 
 	//不能给自己转账，不能转无效用户
-	if from == to || !common.ExistsUID(to) ||common.CanNotBeTo(to) {
+	if from == to || !common.ExistsUID(to) || !common.CanBeTo(to) {
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
