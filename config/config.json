@@ -78,7 +78,12 @@
       {"Number":3, "Min":10},
       {"Number":5, "Min":60}
     ],
-    "PenaltyMoneyAccountUid":123
+    "PenaltyMoneyAccountUid":123,
+    "WXAuth":{
+        "Url":"https://api.weixin.qq.com/sns/oauth2/access_token",
+        "Appid":"",
+        "Secret":""
+    }
 
 
 }

@@ -1,95 +1,54 @@
 package lvthttp
 
 import (
-	"encoding/json"
-	"errors"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"net/url"
-	"time"
 	"utils/logger"
+	"github.com/levigross/grequests"
+	"strings"
+	"errors"
+	"utils"
 )
 
-var (
-	client *HttpClien
-)
-
-func init() {
-	client = NewDefaultHttpClient()
-}
-func dialTimeout(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, time.Second*POST_REMOTE_TIMEOUT)
-}
-func NewHttpClient(keepAlives bool, timeout time.Duration) *HttpClien {
-	c := HttpClien{
-		transport: &http.Transport{
-			MaxIdleConns:        1000,
-			MaxIdleConnsPerHost: 1000,
-			Dial:                dialTimeout,
-			DisableKeepAlives:   !keepAlives, //为true时会在 body.Close()时关闭连接,不然close的时候也不会关闭链接
-		},
-		httpTimeout: timeout,
-	}
-	c.build()
-	return &c
-}
-
-func NewDefaultHttpClient() *HttpClien {
-	return NewHttpClient(true, time.Second*POST_REMOTE_TIMEOUT)
-}
-
-func toJson(t interface{}) string {
-	jsonByte, err := json.Marshal(t)
-	if err != nil {
-		logger.Error("json parse err ", err.Error())
-		return ""
-	}
-	return string(jsonByte)
-}
-
-func map2UrlValues(p map[string]string) url.Values {
-	if len(p) > 0 {
-		uv := url.Values{}
-		for i, v := range p {
-			uv.Add(i, v)
-		}
-		return uv
-	}
-	return nil
-}
-
-func read(resp *http.Response) (string, error) {
-	if resp == nil {
-		return "", nil
-	}
-	body := resp.Body
-	defer body.Close()
-	res, err := ioutil.ReadAll(body)
-	if err != nil {
-		logger.Info("ParseHttpBodyParams: read http body error : ", err)
-		return "", err
-	}
-	respStr := string(res)
-	if !checkHttpStatus(resp.StatusCode) {
-		return respStr, errors.New("http status " + resp.Status)
-	}
-	return respStr, nil
-}
-
-func checkHttpStatus(status int) bool {
-	return status >= 200 && status < 300
-}
 
 //发起post请求
-func JsonPost(url string, params interface{}) (resBody string, e error) {
-	return client.JsonPost(url, params)
+func JsonPost(url string, params interface{}) (string, error) {
+	ro := &grequests.RequestOptions{
+		JSON: params,
+	}
+	logger.Info("http post url [",url,"] param :",utils.ToJSON(params))
+	resp, err := grequests.Post(url,ro)
+	if err != nil {
+		logger.Error("http error",err.Error())
+		return "",err
+	}
+	return getRes(resp)
 }
 
-func FormPost(url string, params map[string]string) (resBody string, e error) {
-	return client.FormPost(url, params)
+func FormPost(url string, params map[string]string) (string, error) {
+	ro := &grequests.RequestOptions{
+		Params: params,
+	}
+	resp, err := grequests.Post(url,ro)
+	if err != nil {
+		return "",err
+	}
+	return getRes(resp)
 }
 
-func Do(req *http.Request) (*http.Response, error) {
-	return client.Do(req)
+func Get(url string,params map[string]string) (string, error) {
+	ro := &grequests.RequestOptions{
+		Params: params,
+	}
+	resp, err := grequests.Get(url,ro)
+	if err != nil {
+		return "",err
+	}
+	return getRes(resp)
+}
+
+func getRes(resp *grequests.Response)(string,error){
+	if resp.Ok {
+		r := strings.TrimSpace(resp.String())
+		return r,nil
+	}
+	return "",errors.New("http req faild")
 }

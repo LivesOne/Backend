@@ -56,14 +56,15 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		return
 	}
 
-	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
-		response.SetResponseBase(constants.RC_INVALID_SIGN)
-		return
-	}
+
 
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		logger.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))
+		return
+	}
+	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 	// fmt.Println("modify user profile: 333", aesKey)
@@ -72,7 +73,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	secret := new(profileSecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	// fmt.Println("modify user profile: 444", iv, key)
-	err := DecryptSecret(requestData.Param.Secret, key, iv, &secret)
+	err := DecryptSecret(requestData.Param.Secret, key, iv, secret)
 	// fmt.Println("modify user profile: 555", utils.ToJSONIndent(secret), err)
 	if err != constants.RC_OK {
 		response.SetResponseBase(err)

@@ -299,6 +299,11 @@ func SetAssetStatus(uid int64, status int) error {
 	return err
 }
 
+func SetUserLevel(uid int64, level int) error {
+	_, err := gDbUser.Exec("update account set level = ? where uid = ?", level, uid)
+	return err
+}
+
 func CheckLoginPwd(uid int64, pwdInDB string) bool {
 	row, err := gDbUser.QueryRow("select login_password from account where uid = ? ", uid)
 	if err != nil {
@@ -346,4 +351,19 @@ func convRowMap2Account(row map[string]string) *Account {
 func isNum(s string) bool {
 	r, _ := regexp.Compile("[0-9]*")
 	return r.MatchString(s)
+}
+
+
+func CheckWXIdExists(wxid string)bool{
+	row,err := gDbUser.QueryRow("select count(1) as c from account_extend where wxid = ?",wxid)
+	if err != nil {
+		logger.Error("query account_extend error",err.Error())
+		return false
+	}
+	return utils.Str2Int(row["c"])>0
+}
+
+func SetWxId(uid int64,wxid string) error {
+	_, err := gDbUser.Exec("insert into account_extend (uid,wxid,update_time) values (?,?,?)", uid, wxid,utils.GetTimestamp13())
+	return err
 }

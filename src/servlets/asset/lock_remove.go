@@ -117,11 +117,13 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 	assetLockId := utils.Str2Int64(secret.Id)
 
 	al := common.QueryAssetLock(assetLockId)
-
-	if al == nil {
+	//校验锁仓记录是否可以被提前解锁
+	//month > 0 value > 0 end > curr_timestamp
+	if al == nil || !al.IsOk(){
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
 
 	penaltyMoney := CalculationPenaltyMoney(al)
 
@@ -133,11 +135,6 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-
-	if !al.IsOk(){
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
-	}
 
 	if ok,e := common.RemoveAssetLock(txid,al,penaltyMoney);ok {
 		response.Data = resData{

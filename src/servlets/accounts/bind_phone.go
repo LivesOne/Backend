@@ -75,7 +75,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	secretString := requestData.Param.Secret
 	secret := new(phoneSecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
-	if err := DecryptSecret(secretString, key, iv, &secret); err != constants.RC_OK {
+	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
 		logger.Info("bind phone: Decrypt Secret error:", err)
 		return

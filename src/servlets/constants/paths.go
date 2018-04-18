@@ -71,6 +71,9 @@ const (
 
 	ACCOUNT_SET_STATUS = "/user/v1/account/set_status"
 
+	ACCOUNT_UPGRADE = "/user/v1/profile/upgrade"
+
+	ACCOUNT_BIND_WX = "/user/v1/profile/bind_wx"
 	// Contacts Sync APIs
 
 	//Assets Management APIs
@@ -92,4 +95,6 @@ const (
 	ASSET_LOCK_CREATE = "/asset/v1/lock/create"
 
 	ASSET_LOCK_REMOVE = "/asset/v1/lock/remove"
+
+	ASSET_LOCK_HR = "/asset/v1/lock/hashrate"
 )

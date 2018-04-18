@@ -34,6 +34,10 @@ var (
 	RC_PHONE_NOT_MATCH      = Error{20008, "phone not match"}
 	RC_ACCOUNT_LIMITED      = Error{20009, "account limited"}
 	RC_ACCOUNT_TEMP_LIMITED = Error{20010, "account temporary limited"}
+	RC_UPGRAD_FAILED        = Error{20011, "upgrade failed"}
+	RC_USER_LEVEL_LIMIT     = Error{20012, "level limit"}
+	RC_INVALID_WX_CODE      = Error{20013, "invalid code"}
+	RC_DUP_WX_ID            = Error{20014, "duplicate weixin id"}
 
 	RC_ACCOUNT_ACCESS_LIMITED       = Error{21001, "account access limited"}
 	RC_INSUFFICIENT_BALANCE         = Error{21002, "insufficient balance"}

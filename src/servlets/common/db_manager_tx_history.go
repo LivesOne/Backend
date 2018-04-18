@@ -179,3 +179,20 @@ func QueryCommitted(query interface{}, limit int) []DTTXHistory {
 	logger.Debug("query res ", utils.ToJSONIndent(res))
 	return res
 }
+
+func QueryCountMinerByTs(ts int64)int{
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(txdbc.DBDatabase).C(COMMITED)
+	query := bson.M{
+		"type":constants.TX_TYPE_REWARD,
+		"_id":bson.M{
+			"&gt":utils.TimestampToTxid(ts,0),
+		},
+	}
+	count,err := collection.Find(query).Count()
+	if err != nil {
+		logger.Error("query mongo tx error",err.Error())
+	}
+	return count
+}

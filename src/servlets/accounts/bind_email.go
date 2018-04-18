@@ -65,7 +65,7 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	secretString := requestData.Param.Secret
 	secret := new(mailSecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
-	if err := DecryptSecret(secretString, key, iv, &secret); err != constants.RC_OK {
+	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
 	}
 

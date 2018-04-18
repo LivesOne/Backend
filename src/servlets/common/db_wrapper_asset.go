@@ -1,5 +1,7 @@
 package common
 
+import "utils"
+
 type (
 	Reward struct {
 		Total      int64 `json:"total"`
@@ -24,6 +26,7 @@ type (
 
 func (al *AssetLock)IsOk()bool{
 	return al.Month>0&&
-			al.ValueInt >0
+		   al.ValueInt >0 &&
+		   al.End > utils.GetTimestamp13()
 
 }

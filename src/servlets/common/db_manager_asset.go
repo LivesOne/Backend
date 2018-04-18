@@ -260,7 +260,7 @@ func ckeckBalance(uid int64,value int64, tx *sql.Tx)bool{
 	var locked int64
 	row := tx.QueryRow("select balance,locked from user_asset where uid  = ?", uid)
 	row.Scan(&balance,&locked)
-	return balance > 0 && (balance-locked) > value
+	return balance > 0 && (balance-locked) >= value
 }
 
 func CreateAssetLock(assetLock *AssetLock)(bool,int){
@@ -512,4 +512,23 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 	}
 
 	return true, constants.TRANS_ERR_SUCC
+}
+
+
+func QuerySumLockAsset(uid int64)(int,int64){
+	row ,err := gDBAsset.QueryRow("select sum(month) as month,sum(value) as value from user_asset_lock where uid = ?",uid)
+	if err != nil {
+		logger.Error("query user asset lock error",err.Error())
+		return 0,0
+	}
+	return utils.Str2Int(row["month"]),utils.Str2Int64(row["value"])
+}
+
+func QueryHashRateByUid(uid int64)(int,int64){
+	row ,err := gDBAsset.QueryRow("select lock_hr,lastmodify from user_asset where uid = ?",uid)
+	if err != nil {
+		logger.Error("query user asset lock error",err.Error())
+		return 0,0
+	}
+	return utils.Str2Int(row["lock_hr"]),utils.Str2Int64(row["lastmodify"])
 }

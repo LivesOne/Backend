@@ -15,4 +15,5 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_LOCK_CREATE, &lockCreateHandler{})
 	server.RegisterHandler(constants.ASSET_LOCK_REMOVE, &lockRemoveHandler{})
 	server.RegisterHandler(constants.ASSET_LOGK_LIST, &lockListHandler{})
+	server.RegisterHandler(constants.ASSET_LOCK_HR, &hashrateHandler{})
 }
