@@ -40,7 +40,6 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 			RC:  constants.RC_OK.Rc,
 			Msg: constants.RC_OK.Msg,
 		},
-		Data: 0, // data expire Int 失效时间，单位秒
 	}
 	defer common.FlushJSONData2Client(response, writer)
 

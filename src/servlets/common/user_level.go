@@ -7,7 +7,7 @@ import (
 
 
 const (
-	BASE_MINER_TIMESTAMP = 1525132800000
+	BASE_MINER_TIMESTAMP = 1525219200000
 )
 
 func UserUpgrade(uid string)(bool,int){
