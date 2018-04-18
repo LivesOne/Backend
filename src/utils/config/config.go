@@ -88,6 +88,7 @@ type Configuration struct {
 	SmsUpValidateSvrAddr string
 	// log相关
 	LogConfig              string
+	UserLevelConfig        string
 	Captcha                captcha
 	MaxActivityRewardValue int
 	CautionMoneyIds        []int64

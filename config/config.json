@@ -2,6 +2,7 @@
     "ServerAddr" : ":8080",
 
     "PrivKey" : "rsa_private_key.pem",
+    "UserLevelConfig" : "user_level.json",
     "LogConfig": "l4g.xml",
     "MaxActivityRewardValue":100,
     "AppIDs" :
