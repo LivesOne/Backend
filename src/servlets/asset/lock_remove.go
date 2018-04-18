@@ -116,7 +116,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 	assetLockId := utils.Str2Int64(secret.Id)
 
-	al := common.QueryAssetLock(assetLockId)
+	al := common.QueryAssetLock(assetLockId,uid)
 	//校验锁仓记录是否可以被提前解锁
 	//month > 0 value > 0 end > curr_timestamp
 	if al == nil || !al.IsOk(){

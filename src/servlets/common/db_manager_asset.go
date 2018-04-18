@@ -355,8 +355,8 @@ func QueryAssetLockList(uid int64)[]*AssetLock{
 	return convAssetLockList(res)
 }
 
-func QueryAssetLock(id int64)*AssetLock{
-	res,err := gDBAsset.QueryRow("select * from user_asset_lock where id = ?",id)
+func QueryAssetLock(id,uid int64)*AssetLock{
+	res,err := gDBAsset.QueryRow("select * from user_asset_lock where id = ? and uid = ?",id,uid)
 	if err != nil {
 		logger.Error("query asset lock error",err.Error())
 		return nil
@@ -453,7 +453,7 @@ func execRemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64,tx *
 
 	//修改资产解冻之后，要重新计算应该有的hashrate
 	var hr int
-	row := tx.QueryRow("select sum(hashrate) from user_asset_lock where uid = ?",assetLock.Uid)
+	row := tx.QueryRow("select  if(sum(hashrate) is null,0,sum(hashrate)) as hr from user_asset_lock where uid = ?",assetLock.Uid)
 
 	err = row.Scan(&hr)
 	if err != nil {
