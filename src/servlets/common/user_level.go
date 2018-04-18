@@ -43,9 +43,11 @@ func upZero(acc *Account)(bool,int){
 		// check miner days
 		if QueryCountMinerByTs(acc.UID) > 3 {
 			// set level up
-			err := SetUserLevel(acc.UID,1)
+			level := 1
+			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				return true,1
+				SetUserLevel(acc.UID,level)
+				return true,level
 			}
 		}
 
@@ -65,9 +67,11 @@ func upOne(acc *Account)(bool,int){
 		lvt := utils.CONV_LVT * int64(1000)
 		if m,v := QuerySumLockAsset(acc.UID);m >= 3 && v >= lvt {
 			// set level up
-			err := SetUserLevel(acc.UID,2)
+			level := 2
+			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				return true,2
+				SetUserLevel(acc.UID,level)
+				return true,level
 			}
 		}
 
@@ -86,9 +90,11 @@ func upTwo(acc *Account)(bool,int){
 		lvt := utils.CONV_LVT * int64(50000)
 		if m,v := QuerySumLockAsset(acc.UID);m >= 3 && v >= lvt {
 			// set level up
-			err := SetUserLevel(acc.UID,3)
+			level := 3
+			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				return true,3
+				SetUserLevel(acc.UID,level)
+				return true,level
 			}
 		}
 
@@ -107,9 +113,11 @@ func upThree(acc *Account)(bool,int){
 		lvt := utils.CONV_LVT * int64(200000)
 		if m,v := QuerySumLockAsset(acc.UID);m >= 3 && v >= lvt {
 			// set level up
-			err := SetUserLevel(acc.UID,3)
+			level := 4
+			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				return true,4
+				SetUserLevel(acc.UID,level)
+				return true,level
 			}
 		}
 

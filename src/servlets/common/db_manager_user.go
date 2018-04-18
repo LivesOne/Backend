@@ -408,3 +408,12 @@ func CheckBindWx(uid int64)bool{
 	}
 	return false
 }
+
+func GetUserLevel(uid int64)int{
+	row,err := gDbUser.QueryRow("select level from account where uid = ?",uid)
+	if err != nil || row == nil{
+		return -1
+	}
+	return utils.Str2Int(row["level"])
+}
+

@@ -3,15 +3,12 @@ package common
 import (
 	"database/sql"
 	"errors"
-	_ "fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
 	"utils"
 	"utils/config"
-	_ "utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (

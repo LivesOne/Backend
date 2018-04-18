@@ -12,6 +12,7 @@ const (
 	DAILY_COMMIT_KEY_PROXY         = "tl:dc:"
 	DAILY_TOTAL_TRANSFER_KEY_PROXY = "tl:dt:"
 	USER_TRANS_KEY_PROXY           = "tx:uid:"
+	USER_LEVEL_KEY_PROXY           = "tx:ul:"
 	TS                             = 1000
 	DAY_S                          = 24 * 3600
 	DAY_30                         = DAY_S * 30
@@ -59,22 +60,42 @@ func checkLimit(key string, limit int, incrFlag bool) (bool, constants.Error) {
 	return true, constants.RC_OK
 }
 
+
+
 func CheckPrepareLimit(lvtUid int64, level int) (bool, constants.Error) {
 	key := DAILY_PREPARE_KEY_PROXY + utils.Int642Str(lvtUid)
-	limit := getCFG(level)
-	if limit == nil {
-		return false, constants.RC_TOO_MANY_REQ
+	var limit int
+	//交易员等级为0的话，去校验用户等级
+	if level == 0 {
+		userLevel := GetTransUserLevel(lvtUid)
+		limitConfig := config.GetLimitByLevel(userLevel)
+		limit = limitConfig.DailyPrepareAccess
+	}else{
+		limitConfig := getCFG(level)
+		if limitConfig == nil {
+			return false, constants.RC_TOO_MANY_REQ
+		}
+		limit = limitConfig.DailyPrepareAccess
 	}
-	return checkLimit(key, limit.DailyPrepareAccess, true)
+	return checkLimit(key, limit, true)
 }
 
 func CheckCommitLimit(lvtUid int64, level int) (bool, constants.Error) {
 	key := DAILY_COMMIT_KEY_PROXY + utils.Int642Str(lvtUid)
-	limit := getCFG(level)
-	if limit == nil {
-		return false, constants.RC_TOO_MANY_REQ
+	var limit int
+	//交易员等级为0的话，去校验用户等级
+	if level == 0 {
+		userLevel := GetTransUserLevel(lvtUid)
+		limitConfig := config.GetLimitByLevel(userLevel)
+		limit = limitConfig.DailyCommitAccess
+	}else{
+		limitConfig := getCFG(level)
+		if limitConfig == nil {
+			return false, constants.RC_TOO_MANY_REQ
+		}
+		limit = limitConfig.DailyCommitAccess
 	}
-	return checkLimit(key, limit.DailyCommitAccess, false)
+	return checkLimit(key, limit, false)
 }
 
 func checkTotalTransfer(lvtUid, amount int64, limit *config.TransferLimit) (bool, constants.Error) {
@@ -101,6 +122,29 @@ func checkTotalTransfer(lvtUid, amount int64, limit *config.TransferLimit) (bool
 	return true, constants.RC_OK
 }
 
+func checkTotalTransferByUserLevel(lvtUid, amount int64, limit *config.UserLevelLimit) (bool, constants.Error) {
+	key := DAILY_TOTAL_TRANSFER_KEY_PROXY + utils.Int642Str(lvtUid)
+	t, e := ttl(key)
+	if e != nil {
+		logger.Error("ttl error ", e.Error())
+		return false, constants.RC_SYSTEM_ERR
+	}
+	if t < 0 {
+		setAndExpire(key, 0, getTime())
+	} else {
+		total, err := rdsGet(key)
+		if err != nil {
+			logger.Error("redis get error ", err.Error())
+			return false, constants.RC_SYSTEM_ERR
+		}
+		if (limit.DailyAmountMax > -1) && (amount+int64(total)) > (limit.DailyAmountMax*LVT_CONV) {
+			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
+		}
+
+	}
+	return true, constants.RC_OK
+}
+
 func checkSingleAmount(amount int64, limit *config.TransferLimit) (bool, constants.Error) {
 
 	if limit.SingleAmountMax > -1 && amount > (limit.SingleAmountMax*LVT_CONV) {
@@ -112,15 +156,36 @@ func checkSingleAmount(amount int64, limit *config.TransferLimit) (bool, constan
 	return true, constants.RC_OK
 }
 
+func checkSingleAmountByUserLevel(amount int64, limit *config.UserLevelLimit) (bool, constants.Error) {
+
+	if limit.SingleAmountMax > -1 && amount > (limit.SingleAmountMax*LVT_CONV) {
+		return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
+	}
+	if limit.SingleAmountMin > -1 && amount < (limit.SingleAmountMin*LVT_CONV) {
+		return false, constants.RC_TRANS_AMOUNT_TOO_LITTLE
+	}
+	return true, constants.RC_OK
+}
+
 func CheckAmount(lvtUid, amount int64, level int) (bool, constants.Error) {
-	limit := getCFG(level)
-	if limit == nil {
-		return false, constants.RC_TOO_MANY_REQ
+	//交易员等级为0的话，去校验用户等级
+	if level == 0 {
+		userLevel := GetTransUserLevel(lvtUid)
+		limit := config.GetLimitByLevel(userLevel)
+		if f, e := checkSingleAmountByUserLevel(amount, limit); !f {
+			return false, e
+		}
+		return checkTotalTransferByUserLevel(lvtUid, amount, limit)
+	} else {
+		limit := getCFG(level)
+		if limit == nil {
+			return false, constants.RC_TOO_MANY_REQ
+		}
+		if f, e := checkSingleAmount(amount, limit); !f {
+			return false, e
+		}
+		return checkTotalTransfer(lvtUid, amount, limit)
 	}
-	if f, e := checkSingleAmount(amount, limit); !f {
-		return false, e
-	}
-	return checkTotalTransfer(lvtUid, amount, limit)
 }
 
 func SetTotalTransfer(lvtUid, amount int64) {
@@ -156,4 +221,33 @@ func GetTransLevel(uid int64) int {
 		}
 	}
 	return userTransLevel
+}
+
+func GetTransUserLevel(uid int64) int {
+	key := USER_LEVEL_KEY_PROXY + utils.Int642Str(uid)
+	t, err := ttl(key)
+	if err != nil {
+		return 0
+	}
+	var userLevel = 0
+	var e error = nil
+	if t < 0 {
+		userLevel = GetUserLevel(uid)
+		if userLevel > -1 {
+			setAndExpire(key, userLevel, DAY_30)
+		}
+	} else {
+		userLevel, e = rdsGet(key)
+		if e != nil {
+			logger.Error("get redis error")
+			return 0
+		}
+	}
+	return userLevel
+}
+
+
+func SetTransUserLevel(uid int64,userLevel int){
+	key := USER_LEVEL_KEY_PROXY + utils.Int642Str(uid)
+	setAndExpire(key, userLevel, DAY_30)
 }
