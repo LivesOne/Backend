@@ -47,7 +47,7 @@ func upZero(acc *Account)(bool,int){
 			level := 1
 			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				SetUserLevel(acc.UID,level)
+				SetTransUserLevel(acc.UID,level)
 				return true,level
 			}
 		}
@@ -71,7 +71,7 @@ func upOne(acc *Account)(bool,int){
 			level := 2
 			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				SetUserLevel(acc.UID,level)
+				SetTransUserLevel(acc.UID,level)
 				return true,level
 			}
 		}
@@ -94,7 +94,7 @@ func upTwo(acc *Account)(bool,int){
 			level := 3
 			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				SetUserLevel(acc.UID,level)
+				SetTransUserLevel(acc.UID,level)
 				return true,level
 			}
 		}
@@ -117,7 +117,7 @@ func upThree(acc *Account)(bool,int){
 			level := 4
 			err := SetUserLevel(acc.UID,level)
 			if err == nil {
-				SetUserLevel(acc.UID,level)
+				SetTransUserLevel(acc.UID,level)
 				return true,level
 			}
 		}
