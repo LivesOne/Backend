@@ -45,8 +45,8 @@
     },
   
     "SmsSvrAddr":"http://10.100.13.6:8045",
-    "MailSvrAddr":"http://10.0.5.248:8080/vcode",
-    "ImgSvrAddr":"http://10.0.5.248:8080/vcode",
+    "MailSvrAddr":"http://10.0.5.248:9080/vcode",
+    "ImgSvrAddr":"http://10.0.5.248:9080/vcode",
     "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
     "TransferLimit" : {
         "0":{

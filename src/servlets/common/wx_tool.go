@@ -34,7 +34,7 @@ func AuthWX(code string)(bool,*wxRes){
 		logger.Error("http req error",err.Error())
 		return false,nil
 	}
-
+	logger.Info("wx http res ",resBody)
 	res := new(wxRes)
 	if err = utils.FromJson(resBody,res);err != nil {
 		logger.Error("json parse error",err.Error(),"res body",resBody)
