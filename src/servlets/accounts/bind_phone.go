@@ -104,7 +104,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 	// check privilege
 	limit := config.GetLimitByLevel(account.Level)
-	if len(account.Phone) > 0 && limit.ChangePhone == false {
+	if len(account.Phone) > 0 && limit.ChangePhone() == false {
 		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
 		return
 	}

@@ -69,7 +69,7 @@ func CheckPrepareLimit(lvtUid int64, level int) (bool, constants.Error) {
 	if level == 0 {
 		userLevel := GetTransUserLevel(lvtUid)
 		limitConfig := config.GetLimitByLevel(userLevel)
-		limit = limitConfig.DailyPrepareAccess
+		limit = limitConfig.DailyPrepareAccess()
 	}else{
 		limitConfig := getCFG(level)
 		if limitConfig == nil {
@@ -87,7 +87,7 @@ func CheckCommitLimit(lvtUid int64, level int) (bool, constants.Error) {
 	if level == 0 {
 		userLevel := GetTransUserLevel(lvtUid)
 		limitConfig := config.GetLimitByLevel(userLevel)
-		limit = limitConfig.DailyCommitAccess
+		limit = limitConfig.DailyCommitAccess()
 	}else{
 		limitConfig := getCFG(level)
 		if limitConfig == nil {
@@ -137,7 +137,7 @@ func checkTotalTransferByUserLevel(lvtUid, amount int64, limit *config.UserLevel
 			logger.Error("redis get error ", err.Error())
 			return false, constants.RC_SYSTEM_ERR
 		}
-		if (limit.DailyAmountMax > -1) && (amount+int64(total)) > (limit.DailyAmountMax*LVT_CONV) {
+		if (limit.DailyAmountMax() > -1) && (amount+int64(total)) > (limit.DailyAmountMax()*LVT_CONV) {
 			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 
@@ -158,10 +158,10 @@ func checkSingleAmount(amount int64, limit *config.TransferLimit) (bool, constan
 
 func checkSingleAmountByUserLevel(amount int64, limit *config.UserLevelLimit) (bool, constants.Error) {
 
-	if limit.SingleAmountMax > -1 && amount > (limit.SingleAmountMax*LVT_CONV) {
+	if limit.SingleAmountMax() > -1 && amount > (limit.SingleAmountMax()*LVT_CONV) {
 		return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
-	if limit.SingleAmountMin > -1 && amount < (limit.SingleAmountMin*LVT_CONV) {
+	if limit.SingleAmountMin() > -1 && amount < (limit.SingleAmountMin()*LVT_CONV) {
 		return false, constants.RC_TRANS_AMOUNT_TOO_LITTLE
 	}
 	return true, constants.RC_OK
