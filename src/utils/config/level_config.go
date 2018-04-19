@@ -10,6 +10,53 @@ import (
 const USER_LEVEL_NUM = 5
 
 type UserLevelLimit struct {
+	changePhone			bool
+	lockAsset			bool
+	transferTo			bool
+	singleAmountMin		int64
+	singleAmountMax		int64
+	dailyAmountMax		int64
+	dailyPrepareAccess	int
+	dailyCommitAccess	int
+}
+
+func (limit *UserLevelLimit)ChangePhone() bool {
+	return limit.changePhone
+}
+
+func (limit *UserLevelLimit)LockAsset() bool {
+	return limit.lockAsset
+}
+
+func (limit *UserLevelLimit)TransferTo() bool {
+	return limit.transferTo
+}
+
+func (limit *UserLevelLimit)SingleAmountMin() int64 {
+	return limit.singleAmountMin
+}
+
+func (limit *UserLevelLimit)SingleAmountMax() int64 {
+	return limit.singleAmountMax
+}
+
+func (limit *UserLevelLimit)DailyAmountMax() int64 {
+	return limit.dailyAmountMax
+}
+
+func (limit *UserLevelLimit)DailyPrepareAccess() int {
+	return limit.dailyPrepareAccess
+}
+
+func (limit *UserLevelLimit)DailyCommitAccess() int {
+	return limit.dailyCommitAccess
+}
+
+type UserLevelConfig struct {
+	LimitMap map[int]UserLevelLimit
+}
+
+type UserLevelLimitInternal struct {
 	ChangePhone			bool
 	LockAsset			bool
 	TransferTo			bool
@@ -20,20 +67,20 @@ type UserLevelLimit struct {
 	DailyCommitAccess	int
 }
 
-type UserLevelConfig struct {
-	UserLevelLimit map[int]UserLevelLimit
+type UserLevelConfigInternal struct {
+	LimitMap map[int]UserLevelLimitInternal		`json:"UserLevelLimit"`
 }
 
 var gUserLevelConfig UserLevelConfig
 var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit {
-	ChangePhone:false,
-	LockAsset:false,
-	TransferTo:false,
-	SingleAmountMin:0,
-	SingleAmountMax:0,
-	DailyAmountMax:0,
-	DailyPrepareAccess:0,
-	DailyCommitAccess:0,
+	changePhone:false,
+	lockAsset:false,
+	transferTo:false,
+	singleAmountMin:0,
+	singleAmountMax:0,
+	dailyAmountMax:0,
+	dailyPrepareAccess:0,
+	dailyCommitAccess:0,
 }
 
 /*func GetLevelConfig() *UserLevelConfig {
@@ -43,37 +90,51 @@ var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit {
 func LoadLevelConfig(dir string, cfgName string) error {
 	basePath := filepath.Join(dir, cfgName)
 	fmt.Println("init level config over file path ", basePath)
-	err := utils.ReadJSONFile(basePath, &gUserLevelConfig)
+	var config UserLevelConfigInternal
+	err := utils.ReadJSONFile(basePath, &config)
 	if err != nil {
 		fmt.Println("read user level limit file error ", err)
 		panic(err)
 	}
 
-	if gUserLevelConfig.isValid() == false {
+	if config.isValid() == false {
 		err := errors.New("user level limit item not integrity")
 		fmt.Println("user level limit item not integrity\n", err)
-		fmt.Println("json str --- >", utils.ToJSONIndent(gUserLevelConfig))
+		fmt.Println("json str --- >", utils.ToJSONIndent(config))
 		panic(err)
 	}
 
+	gUserLevelConfig.LimitMap = make(map[int]UserLevelLimit)
+	for level, v := range config.LimitMap {
+		fmt.Println(level, v)
+		gUserLevelConfig.LimitMap[level] = UserLevelLimit{
+			changePhone:v.ChangePhone,
+			lockAsset:v.LockAsset,
+			transferTo:v.TransferTo,
+			singleAmountMin:v.SingleAmountMin,
+			singleAmountMax:v.SingleAmountMax,
+			dailyAmountMax:v.DailyAmountMax,
+			dailyPrepareAccess:v.DailyPrepareAccess,
+			dailyCommitAccess:v.DailyCommitAccess,
+		}
+	}
 	return nil
 }
 
 func GetLimitByLevel(level int) *UserLevelLimit {
-	if lim, ok := gUserLevelConfig.UserLevelLimit[level]; ok {
+	if lim, ok := gUserLevelConfig.LimitMap[level]; ok {
 		return &lim
 	}
 	return &gUserLevelLimitDefault
 }
 
-func (cfg *UserLevelConfig) isValid() bool {
-	if len(cfg.UserLevelLimit) < USER_LEVEL_NUM {
+func (cfg *UserLevelConfigInternal) isValid() bool {
+	if len(cfg.LimitMap) < USER_LEVEL_NUM {
 		fmt.Println("level is not enough");
 		return false
 	}
 
-	for level, v := range cfg.UserLevelLimit {
-		fmt.Println(level, v)
+	for level := range cfg.LimitMap {
 		if level < 0 || level >= USER_LEVEL_NUM {
 			return false
 		}

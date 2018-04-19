@@ -128,12 +128,12 @@ func upThree(acc *Account)(bool,int){
 
 
 func CanBeTo(uid int64)bool{
-	return getUserLimit(uid).TransferTo
+	return getUserLimit(uid).TransferTo()
 }
 
 
 func CanLockAsset(uid int64)bool{
-	return getUserLimit(uid).LockAsset
+	return getUserLimit(uid).LockAsset()
 }
 
 func getUserLimit(uid int64)*config.UserLevelLimit{
