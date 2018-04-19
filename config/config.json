@@ -44,7 +44,7 @@
         "DBDatabase" : "db_livesone_tx_history"
     },
   
-    "SmsSvrAddr":"http://10.100.13.6:8045",
+    "SmsSvrAddr":"http://10.0.5.248:9099",
     "MailSvrAddr":"http://10.0.5.248:9080/vcode",
     "ImgSvrAddr":"http://10.0.5.248:9080/vcode",
     "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
