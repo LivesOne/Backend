@@ -7,6 +7,9 @@ import (
 )
 
 
+const (
+	LOCK_ASSET_MONTH = 3
+)
 
 
 func UserUpgrade(uid string)(bool,int){
@@ -66,7 +69,7 @@ func upOne(acc *Account)(bool,int){
 	if CheckBindWx(acc.UID) && QueryCountMinerByTs(acc.UID) > 7 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(1000)
-		if m,v := QuerySumLockAsset(acc.UID);m >= 3 && v >= lvt {
+		if v := QuerySumLockAsset(acc.UID,LOCK_ASSET_MONTH); v >= lvt {
 			// set level up
 			level := 2
 			err := SetUserLevel(acc.UID,level)
@@ -89,7 +92,7 @@ func upTwo(acc *Account)(bool,int){
 	if QueryCountMinerByTs(acc.UID) > 30 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(50000)
-		if m,v := QuerySumLockAsset(acc.UID);m >= 3 && v >= lvt {
+		if v := QuerySumLockAsset(acc.UID,LOCK_ASSET_MONTH); v >= lvt {
 			// set level up
 			level := 3
 			err := SetUserLevel(acc.UID,level)
@@ -112,7 +115,7 @@ func upThree(acc *Account)(bool,int){
 	if QueryCountMinerByTs(acc.UID) > 100 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(200000)
-		if m,v := QuerySumLockAsset(acc.UID);m >= 3 && v >= lvt {
+		if v := QuerySumLockAsset(acc.UID,LOCK_ASSET_MONTH); v >= lvt {
 			// set level up
 			level := 4
 			err := SetUserLevel(acc.UID,level)

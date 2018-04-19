@@ -514,13 +514,13 @@ func RemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64)(bool,in
 }
 
 
-func QuerySumLockAsset(uid int64)(int,int64){
-	row ,err := gDBAsset.QueryRow("select sum(month) as month,sum(value) as value from user_asset_lock where uid = ?",uid)
+func QuerySumLockAsset(uid int64,month int)(int64){
+	row ,err := gDBAsset.QueryRow("select if(sum(value) is null,0,sum(value)) as value from user_asset_lock where uid = ? and month >= ?",uid,month)
 	if err != nil {
 		logger.Error("query user asset lock error",err.Error())
-		return 0,0
+		return 0
 	}
-	return utils.Str2Int(row["month"]),utils.Str2Int64(row["value"])
+	return utils.Str2Int64(row["value"])
 }
 
 func QueryHashRateByUid(uid int64)(int,int64){
