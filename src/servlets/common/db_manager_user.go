@@ -421,7 +421,7 @@ func CheckBindWXByUid(uid int64,country int)bool{
 	if country != 86 {
 		return false
 	}
-	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid from account where uid = ?",uid)
+	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid from account_extend where uid = ?",uid)
 	if err != nil || row == nil{
 		return false
 	}
