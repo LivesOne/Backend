@@ -18,7 +18,6 @@ type (
 		UpdateTime      int64  `json:"update_time"`
 		RegisterType    int    `json:"_r,omitempty"`
 		Level           int    `json:"level"`
-		TraderLevel     int    `json:"trader_level"`
 		Status          int    `json:"-"`
 	}
 

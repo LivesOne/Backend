@@ -417,3 +417,13 @@ func GetUserLevel(uid int64)int{
 	return utils.Str2Int(row["level"])
 }
 
+func CheckBindWXByUid(uid int64,country int)bool{
+	if country != 86 {
+		return false
+	}
+	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid from account where uid = ?",uid)
+	if err != nil || row == nil{
+		return false
+	}
+	return len(row["wx_openid"])>0&&len(row["wx_unionid"])>0
+}

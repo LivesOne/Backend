@@ -5,13 +5,15 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"utils/logger"
 	"utils"
+	"utils/logger"
 )
 
 type profileResponse struct {
 	common.Account
-	Have_pay_pwd bool `json:"have_pay_pwd"`
+	HavePayPwd  bool `json:"have_pay_pwd"`
+	TraderLevel int  `json:"trader_level"`
+	BindWx      bool `json:"bind_wx"`
 }
 
 // getProfileHandler
@@ -34,7 +36,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	uid,aesKey,_, errT := token.GetAll(header.TokenHash)
+	uid, aesKey, _, errT := token.GetAll(header.TokenHash)
 	if (errT != constants.ERR_INT_OK) || (len(uid) != constants.LEN_uid) {
 		logger.Info("get user profile: get uid from token cache failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -53,11 +55,12 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	profile := profileResponse{
-		Have_pay_pwd: (len(account.PaymentPassword) > 0),
-	}
 	//提前获取交易等级
-	account.TraderLevel = common.GetUserAssetTranslevelByUid(account.UID)
+	profile := profileResponse{
+		HavePayPwd:  (len(account.PaymentPassword) > 0),
+		TraderLevel: common.GetUserAssetTranslevelByUid(account.UID),
+		BindWx:common.CheckBindWXByUid(account.UID,account.Country),
+	}
 
 	account.ID = 0
 	account.UID = 0

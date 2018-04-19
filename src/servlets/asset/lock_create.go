@@ -150,7 +150,7 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 	} else {
 		switch e {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
-			response.SetResponseBase(constants.RC_INSUFFICIENT_BALANCE)
+			response.SetResponseBase(constants.RC_INVALID_LOCK_VALUE)
 		case constants.TRANS_ERR_SYS:
 			response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
 		case constants.TRANS_ERR_ASSET_LIMITED:

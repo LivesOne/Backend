@@ -8,6 +8,7 @@ import (
 	"utils"
 	"utils/db_factory"
 	"utils/logger"
+	"regexp"
 )
 
 type profileSecret struct {
@@ -89,6 +90,11 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// 	return
 	// }
 
+	if !validateNickName(secret.Nickname) {
+		response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
+		return
+	}
+
 	dbErr := common.SetNickname(uid, secret.Nickname)
 	if dbErr != nil {
 		if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
@@ -102,4 +108,14 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		// 	fmt.Println("modify user profile: success")
 	}
 
+}
+
+func validateNickName(name string)bool{
+	l := len(name)
+	if l < 4 || l > 30 {
+		return false
+	}
+	reg := "^[-\u4e00-\u9fa5a-zA-Z0-9_]{4,30}$"
+	ret, _ := regexp.MatchString(reg, name)
+	return ret
 }
