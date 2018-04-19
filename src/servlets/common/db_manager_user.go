@@ -364,7 +364,7 @@ func CheckWXIdExists(wxid string)bool{
 }
 
 func InitAccountExtend(uid int64)error{
-	_, err := gDbUser.Exec("insert ignore into account_extend (uid,update_time) values (?,?)", uid, utils.GetTimestamp13())
+	_, err := gDbUser.Exec("insert ignore into account_extend (uid,wx_openid,wx_unionid,update_time) values (?,null,null,?)", uid, utils.GetTimestamp13())
 	return err
 }
 
