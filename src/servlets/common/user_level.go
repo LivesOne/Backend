@@ -148,6 +148,6 @@ func CheckCreditScore(uid int64,score int)bool{
 func getUserLimit(uid int64)*config.UserLevelLimit{
 	level := GetTransUserLevel(uid)
 	limit := config.GetLimitByLevel(level)
-	logger.Info("user level",level,"limit",utils.ToJSON(limit))
+	logger.Info("user level",level,"limit",utils.ToJSON(*limit))
 	return limit
 }
