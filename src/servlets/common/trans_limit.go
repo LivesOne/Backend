@@ -239,6 +239,7 @@ func GetTransUserLevel(uid int64) int {
 		}
 	} else {
 		userLevel, e = rdsGet(key)
+		logger.Info("rdsGet key",key,"value ",userLevel)
 		if e != nil {
 			logger.Error("get redis error")
 			return 0
