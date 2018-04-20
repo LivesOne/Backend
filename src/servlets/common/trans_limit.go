@@ -234,6 +234,7 @@ func GetTransUserLevel(uid int64) int {
 	var e error = nil
 	if t < 0 {
 		userLevel = GetUserLevel(uid)
+		logger.Info("key",key,"t ",t,userLevel)
 		if userLevel > -1 {
 			setAndExpire(key, userLevel, DAY_30)
 		}
