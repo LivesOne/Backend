@@ -11,9 +11,9 @@ import (
 
 type profileResponse struct {
 	common.Account
-	HavePayPwd  bool `json:"have_pay_pwd"`
-	TraderLevel int  `json:"trader_level"`
-	BindWx      bool `json:"bind_wx"`
+	HavePayPwd bool `json:"have_pay_pwd"`
+	TransLevel int  `json:"trans_level"`
+	BindWx     bool `json:"bind_wx"`
 }
 
 // getProfileHandler
@@ -57,9 +57,9 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 
 	//提前获取交易等级
 	profile := profileResponse{
-		HavePayPwd:  (len(account.PaymentPassword) > 0),
-		TraderLevel: common.GetUserAssetTranslevelByUid(account.UID),
-		BindWx:common.CheckBindWXByUid(account.UID,account.Country),
+		HavePayPwd: (len(account.PaymentPassword) > 0),
+		TransLevel: common.GetUserAssetTranslevelByUid(account.UID),
+		BindWx:     common.CheckBindWXByUid(account.UID, account.Country),
 	}
 
 	account.ID = 0
