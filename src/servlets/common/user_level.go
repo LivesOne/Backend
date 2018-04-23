@@ -132,6 +132,9 @@ func upThree(acc *Account)(bool,int){
 
 
 func CanBeTo(uid int64)bool{
+	if config.GetConfig().CautionMoneyIdsExist(uid) {
+		return true
+	}
 	return getUserLimit(uid).TransferTo()
 }
 
