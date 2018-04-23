@@ -74,6 +74,8 @@ const (
 	ACCOUNT_UPGRADE = "/user/v1/profile/upgrade"
 
 	ACCOUNT_BIND_WX = "/user/v1/profile/bind_wx"
+
+	ACCOUNT_PROFILE_USERINFO = "/user/v1/profile/userinfo"
 	// Contacts Sync APIs
 
 	//Assets Management APIs
