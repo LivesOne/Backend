@@ -46,7 +46,7 @@ func upZero(acc *Account)(bool,int){
 	// check base info
 	if len(acc.Nickname)>0 && len(acc.PaymentPassword) > 0 && len(acc.Phone) >0 {
 		// check miner days
-		if QueryCountMinerByTs(acc.UID) > 3 && CheckCreditScore(acc.UID,DEF_SCORE){
+		if QueryCountMinerByUid(acc.UID) >= 3 && CheckCreditScore(acc.UID,DEF_SCORE){
 			// set level up
 			level := 1
 			err := SetUserLevel(acc.UID,level)
@@ -67,7 +67,7 @@ func upZero(acc *Account)(bool,int){
  */
 func upOne(acc *Account)(bool,int){
 	// check miner days and bind wxid
-	if CheckCreditScore(acc.UID,DEF_SCORE) && CheckBindWx(acc.UID) && QueryCountMinerByTs(acc.UID) > 7 {
+	if CheckCreditScore(acc.UID,DEF_SCORE) && CheckBindWx(acc.UID) && QueryCountMinerByUid(acc.UID) >= 7 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(1000)
 		if v := QuerySumLockAsset(acc.UID,LOCK_ASSET_MONTH); v >= lvt {
@@ -90,7 +90,7 @@ func upOne(acc *Account)(bool,int){
  */
 func upTwo(acc *Account)(bool,int){
 	// check miner days
-	if QueryCountMinerByTs(acc.UID) > 30 && CheckCreditScore(acc.UID,DEF_SCORE){
+	if QueryCountMinerByUid(acc.UID) >= 30 && CheckCreditScore(acc.UID,DEF_SCORE){
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(50000)
 		if v := QuerySumLockAsset(acc.UID,LOCK_ASSET_MONTH); v >= lvt {
@@ -113,7 +113,7 @@ func upTwo(acc *Account)(bool,int){
  */
 func upThree(acc *Account)(bool,int){
 	// check miner days
-	if QueryCountMinerByTs(acc.UID) > 100 && CheckCreditScore(acc.UID,DEF_SCORE){
+	if QueryCountMinerByUid(acc.UID) >= 100 && CheckCreditScore(acc.UID,DEF_SCORE){
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(200000)
 		if v := QuerySumLockAsset(acc.UID,LOCK_ASSET_MONTH); v >= lvt {

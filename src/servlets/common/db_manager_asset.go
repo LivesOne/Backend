@@ -533,7 +533,7 @@ func QueryHashRateByUid(uid int64)(int,int64){
 }
 
 
-func QueryCountMinerByTs(uid int64)int{
+func QueryCountMinerByUid(uid int64)int{
 	row,err := gDBAsset.QueryRow("select days from user_reward where uid = ?",uid)
 	if err != nil {
 		logger.Error("query reward days error",err.Error())
