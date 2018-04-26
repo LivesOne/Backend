@@ -337,6 +337,7 @@ func CreateAssetLock(assetLock *AssetLock)(bool,int){
 
 
 	if ok,code := updLockAssetHashRate(assetLock.Uid,tx);!ok {
+		tx.Rollback()
 		return ok,code
 	}
 	tx.Commit()
@@ -560,7 +561,7 @@ func QuerySumLockAsset(uid int64,month int)(int64){
 
 func QueryHashRateByUid(uid int64)(int){
 
-	sql := `select sum(t.h) as sh from (
+	sql := `select if(sum(t.h)) is null,0,sum(t.h)) as sh from (
 				select uh1.hashrate as h from user_hashrate as uh1 where uh1.uid = ? and uh1.end = 0
 				union all
 				select uh2.hashrate as h from user_hashrate as uh2 where uh2.uid = ? and uh2.end >= ?
@@ -592,4 +593,16 @@ func QueryCountMinerByUid(uid int64)int{
 		return 0
 	}
 	return utils.Str2Int(row["days"])
+}
+
+
+func checkHashrateExists(uid int64,hrType int)bool{
+	row ,err := gDBAsset.QueryRow("select count(1) as c from user_hashrate where uid = ? and type = ? and end >= ?",uid,hrType,utils.GetTimestamp13())
+	if err != nil {
+		return true
+	}
+	if utils.Str2Int(row["c"])>0 {
+		return true
+	}
+	return false
 }

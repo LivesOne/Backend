@@ -85,7 +85,8 @@
         "Appid":"",
         "Secret":""
     },
-    "BindActive":"bind_active.json"
+    "BindActive":"bind_active.json",
+    "AuthTelegramUrl":"http://tg-callback.lives.one/code/v1/verify"
 
 
 }

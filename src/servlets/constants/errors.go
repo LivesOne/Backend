@@ -36,10 +36,13 @@ var (
 	RC_ACCOUNT_TEMP_LIMITED    = Error{20010, "account temporary limited"}
 	RC_UPGRAD_FAILED           = Error{20011, "upgrade failed"}
 	RC_USER_LEVEL_LIMIT        = Error{20012, "level limit"}
-	RC_INVALID_WX_CODE         = Error{20013, "invalid code"}
+	RC_INVALID_WX_CODE         = Error{20013, "invalid wx code"}
 	RC_DUP_WX_ID               = Error{20014, "duplicate weixin id"}
 	RC_DUP_BIND_WX             = Error{20015, "duplicate bind weixin"}
 	RC_INVALID_NICKNAME_FORMAT = Error{20016, "invalid nickname format"}
+	RC_INVALID_TG_CODE         = Error{20017, "invalid telegram code"}
+	RC_DUP_TG_ID               = Error{20018, "duplicate telegram id"}
+	RC_DUP_BIND_TG             = Error{20019, "duplicate bind telegram"}
 
 	RC_ACCOUNT_ACCESS_LIMITED       = Error{21001, "account access limited"}
 	RC_INSUFFICIENT_BALANCE         = Error{21002, "insufficient balance"}

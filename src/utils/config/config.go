@@ -54,10 +54,11 @@ type LoginPwdErrCntLimit struct {
 }
 
 type WXAuth struct {
-	Url string
-	Appid string
+	Url    string
+	Appid  string
 	Secret string
 }
+
 // Configuration holds all config data
 type Configuration struct {
 	ServerAddr string //"[ip]:port"
@@ -93,8 +94,9 @@ type Configuration struct {
 	MaxActivityRewardValue int
 	CautionMoneyIds        []int64
 	PenaltyMoneyAccountUid int64
-	WXAuth WXAuth
-	BindActive string
+	WXAuth                 WXAuth
+	BindActive             string
+	AuthTelegramUrl        string
 }
 
 // configuration data

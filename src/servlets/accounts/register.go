@@ -24,7 +24,8 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_CHECK_ACCOUNT, &checkAccountHandler{})
 	//server.RegisterHandler(constants.ACCOUNT_SET_STATUS, &setStatusHandler{})
 	server.RegisterHandler(constants.ACCOUNT_UPGRADE, &upgradeHandler{})
-	server.RegisterHandler(constants.ACCOUNT_BIND_WX, &bindWXHandler{})
 	server.RegisterHandler(constants.ACCOUNT_PROFILE_USERINFO, &userinfoHandler{})
+	server.RegisterHandler(constants.ACCOUNT_BIND_WX, &bindWXHandler{})
+	server.RegisterHandler(constants.ACCOUNT_BIND_TG, &bindTGHandler{})
 
 }

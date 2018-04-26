@@ -19,7 +19,8 @@ const (
 func AddBindActiveHashRateByWX(uid int64){
 	ts := utils.GetTimestamp13()
 	limit := config.GetBindActive()
-	if checkActiveTime(uid,ts,limit) {
+	//校验时间符合逻辑并且没有绑定算力加成
+	if checkActiveTime(uid,ts,limit) && !checkUserIsActive(uid) {
 		end := (int64(limit.HashRateActiveMonth) * constants.ASSET_LOCK_MONTH_TIMESTAMP) + ts
 		updHashRate(uid,limit.BindWXActiveHashRate,USER_HASHRATE_TYPE_BIND_WX,ts,end,nil)
 	}
@@ -29,7 +30,8 @@ func AddBindActiveHashRateByWX(uid int64){
 func AddBindActiveHashRateByTG(uid int64){
 	ts := utils.GetTimestamp13()
 	limit := config.GetBindActive()
-	if checkActiveTime(uid,ts,limit) {
+	//校验时间符合逻辑并且没有绑定算力加成
+	if checkActiveTime(uid,ts,limit)  && !checkUserIsActive(uid){
 		end := (int64(limit.HashRateActiveMonth) * constants.ASSET_LOCK_MONTH_TIMESTAMP) + ts
 		updHashRate(uid,limit.BindWXActiveHashRate,USER_HASHRATE_TYPE_BIND_TG,ts,end,nil)
 	}
@@ -48,6 +50,18 @@ func checkActiveTime(uid,ts int64,limit *config.BindActive)bool{
 		if ts - userRegisterTs <= limit.RegisterTimeActive {
 			return true
 		}
+	}
+	return false
+}
+
+
+
+func checkUserIsActive(uid int64)bool{
+	if checkHashrateExists(uid,USER_HASHRATE_TYPE_BIND_WX){
+		return true
+	}
+	if checkHashrateExists(uid,USER_HASHRATE_TYPE_BIND_TG){
+		return true
 	}
 	return false
 }
