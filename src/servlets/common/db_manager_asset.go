@@ -561,7 +561,7 @@ func QuerySumLockAsset(uid int64,month int)(int64){
 
 func QueryHashRateByUid(uid int64)(int){
 
-	sql := `select if(sum(t.h)) is null,0,sum(t.h)) as sh from (
+	sql := `select if(sum(t.h) is null,0,sum(t.h)) as sh from (
 				select uh1.hashrate as h from user_hashrate as uh1 where uh1.uid = ? and uh1.end = 0
 				union all
 				select uh2.hashrate as h from user_hashrate as uh2 where uh2.uid = ? and uh2.end >= ?
