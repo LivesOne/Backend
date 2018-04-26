@@ -98,5 +98,4 @@ const (
 
 	ASSET_LOCK_REMOVE = "/asset/v1/lock/remove"
 
-	ASSET_LOCK_HR = "/asset/v1/lock/hashrate"
 )

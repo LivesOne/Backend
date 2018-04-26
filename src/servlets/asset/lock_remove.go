@@ -147,7 +147,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
 			response.SetResponseBase(constants.RC_INSUFFICIENT_BALANCE)
 		case constants.TRANS_ERR_SYS:
-			response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		case constants.TRANS_ERR_ASSET_LIMITED:
 			response.SetResponseBase(constants.RC_ACCOUNT_ACCESS_LIMITED)
 		}

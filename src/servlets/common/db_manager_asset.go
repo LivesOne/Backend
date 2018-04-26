@@ -291,16 +291,11 @@ func CreateAssetLock(assetLock *AssetLock)(bool,int){
 					user_asset
 			   set
 			   		locked = locked + ?,
-			   		lock_hr = (case when (lock_hr + ? > ? ) then ? else (lock_hr + ?) end ),
 			   		lastmodify = ?
 			   where
 			   		uid = ?`
 	updParams := []interface{}{
 		assetLock.ValueInt,
-		assetLock.Hashrate,
-		constants.ASSET_LOCK_MAX_VALUE,
-		constants.ASSET_LOCK_MAX_VALUE,
-		assetLock.Hashrate,
 		assetLock.Begin,
 		assetLock.Uid,
 	}
@@ -339,6 +334,11 @@ func CreateAssetLock(assetLock *AssetLock)(bool,int){
 		tx.Rollback()
 		return false,constants.TRANS_ERR_SYS
 	}
+
+
+	if ok,code := updLockAssetHashRate(assetLock.Uid,tx);!ok {
+		return ok,code
+	}
 	tx.Commit()
 	assetLock.Id = id
 	assetLock.IdStr = utils.Int642Str(id)
@@ -352,6 +352,56 @@ func QueryAssetLockList(uid int64)[]*AssetLock{
 		return nil
 	}
 	return convAssetLockList(res)
+}
+
+func updLockAssetHashRate(uid int64,tx *sql.Tx)(bool,int){
+	//锁仓有所变动之后，要重新计算应该有的hashrate
+	var hr int
+	row := tx.QueryRow("select  if(sum(hashrate) is null,0,sum(hashrate)) as hr from user_asset_lock where uid = ?",uid)
+
+	err := row.Scan(&hr)
+	if err != nil {
+		logger.Error("query asset lock hashrate error",err.Error())
+		return false,constants.TRANS_ERR_SYS
+	}
+	if hr > constants.ASSET_LOCK_MAX_VALUE {
+		hr = constants.ASSET_LOCK_MAX_VALUE
+	}
+	return updHashRate(uid,hr,USER_HASHRATE_TYPE_LOCK_ASSET,0,0,tx)
+}
+
+func updHashRate(uid int64,hr,hrType int,begin,end int64,tx *sql.Tx)(bool,int){
+	if tx == nil {
+		var err error
+		tx,err = gDBAsset.Begin()
+		if err != nil {
+			logger.Error("begin tx error ", err.Error())
+			return false, constants.TRANS_ERR_SYS
+		}
+		defer tx.Commit()
+	}
+
+
+	ra,err := tx.Exec("update user_hashrate set hashrate = ?,begin = ? , end = ? where uid = ? and type = ?",hr,begin,end,uid,hrType)
+	if err != nil {
+		logger.Error("sql error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	count,err := ra.RowsAffected()
+	if err != nil {
+		logger.Error("sql error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//修改条数为0  初始化
+	if count == 0 {
+		_,err = tx.Exec("insert into user_hashrate(type,uid,hashrate,begin,end) values (?,?,?,?,?)",hrType,uid,hr,begin,end)
+		if err != nil {
+			logger.Error("sql error ", err.Error())
+			return false, constants.TRANS_ERR_SYS
+		}
+	}
+	return true,constants.TRANS_ERR_SUCC
 }
 
 func QueryAssetLock(id,uid int64)*AssetLock{
@@ -450,23 +500,8 @@ func execRemoveAssetLock(txid int64,assetLock *AssetLock,penaltyMoney int64,tx *
 	}
 
 
-	//修改资产解冻之后，要重新计算应该有的hashrate
-	var hr int
-	row := tx.QueryRow("select  if(sum(hashrate) is null,0,sum(hashrate)) as hr from user_asset_lock where uid = ?",assetLock.Uid)
-
-	err = row.Scan(&hr)
-	if err != nil {
-		logger.Error("query asset lock hashrate error",err.Error())
-		return false,constants.TRANS_ERR_SYS
-	}
-	if hr > constants.ASSET_LOCK_MAX_VALUE {
-		hr = constants.ASSET_LOCK_MAX_VALUE
-	}
-
-	_,err = tx.Exec("update user_asset set lock_hr = ? where uid = ?",hr,assetLock.Uid)
-	if err != nil {
-		logger.Error("sql error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
+	if ok,code := updLockAssetHashRate(assetLock.Uid,tx);!ok {
+		return ok,code
 	}
 	return true,constants.TRANS_ERR_SUCC
 }
@@ -523,13 +558,30 @@ func QuerySumLockAsset(uid int64,month int)(int64){
 	return utils.Str2Int64(row["value"])
 }
 
-func QueryHashRateByUid(uid int64)(int,int64){
-	row ,err := gDBAsset.QueryRow("select lock_hr,lastmodify from user_asset where uid = ?",uid)
-	if err != nil {
-		logger.Error("query user asset lock error",err.Error())
-		return 0,0
+func QueryHashRateByUid(uid int64)(int){
+
+	sql := `select sum(t.h) as sh from (
+				select uh1.hashrate as h from user_hashrate as uh1 where uh1.uid = ? and uh1.end = 0
+				union all
+				select uh2.hashrate as h from user_hashrate as uh2 where uh2.uid = ? and uh2.end >= ?
+			) as t
+			`
+
+	params := []interface{}{
+		uid,
+		uid,
+		utils.GetTimestamp13(),
 	}
-	return utils.Str2Int(row["lock_hr"]),utils.Str2Int64(row["lastmodify"])
+
+	row ,err := gDBAsset.QueryRow(sql,params...)
+
+	if  err != nil || row == nil {
+		if err != nil {
+			logger.Error("query user asset lock error",err.Error())
+		}
+		return 0
+	}
+	return utils.Str2Int(row["sh"])
 }
 
 

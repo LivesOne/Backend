@@ -112,6 +112,9 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 			if r == 0 {
 				response.SetResponseBase(constants.RC_DUP_BIND_WX)
 				return
+			} else {
+				//绑定微信成功，加算力,内部识别，加不加，加多少
+				common.AddBindActiveHashRateByWX(uid)
 			}
 		}
 	} else {

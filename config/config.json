@@ -20,18 +20,18 @@
     "User" : 
     {
         "MaxConn" : 10,
-        "DBHost" : "10.100.15.96:3306",
-        "DBUser" : "lvt_serv",
-        "DBUserPwd" : "U9D$WHTo",
+        "DBHost" : "10.100.14.243:3306",
+        "DBUser" : "root",
+        "DBUserPwd" : "maxthon",
         "DBDatabase" : "livesone_user"
     },
 
     "Asset" : 
     {
         "MaxConn" : 10,
-        "DBHost" : "10.100.15.96:3306",
-        "DBUser" : "lvt_serv",
-        "DBUserPwd" : "U9D$WHTo",
+        "DBHost" : "10.100.14.243:3306",
+        "DBUser" : "root",
+        "DBUserPwd" : "maxthon",
         "DBDatabase" : "livesone_asset"
     },
 
@@ -84,7 +84,8 @@
         "Url":"https://api.weixin.qq.com/sns/oauth2/access_token",
         "Appid":"",
         "Secret":""
-    }
+    },
+    "BindActive":"bind_active.json"
 
 
 }

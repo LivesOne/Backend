@@ -364,7 +364,7 @@ func CheckWXIdExists(wxid string)bool{
 }
 
 func InitAccountExtend(uid int64)error{
-	_, err := gDbUser.Exec("insert ignore into account_extend (uid,wx_openid,wx_unionid,update_time) values (?,null,null,?)", uid, utils.GetTimestamp13())
+	_, err := gDbUser.Exec("insert ignore into account_extend (uid,wx_openid,wx_unionid,tg_id,update_time) values (?,null,null,null,?)", uid, utils.GetTimestamp13())
 	return err
 }
 
@@ -376,6 +376,16 @@ func SetWxId(uid int64,wxOpenid,wxUnionid string) (int64,error) {
 	}
 	return res.RowsAffected()
 }
+
+func SetTGId(uid int64,tgId string) (int64,error) {
+	sql := "update account_extend set tg_id = ?,update_time = ? where uid = ? and tg_id is null"
+	res, err := gDbUser.Exec(sql, tgId,utils.GetTimestamp13(), uid)
+	if err != nil {
+		return 0,err
+	}
+	return res.RowsAffected()
+}
+
 
 func CheckBindWx(uid int64)bool{
 	sql := `
@@ -439,4 +449,12 @@ func GetUserCreditScore(uid int64)int{
 		return 70
 	}
 	return utils.Str2Int(row["credit_score"])
+}
+
+func GetUserRegisterTime(uid int64)int64{
+	row,err := gDbUser.QueryRow("select register_time from acount where uid = ?",uid)
+	if err != nil || row == nil {
+		return 0
+	}
+	return utils.Str2Int64(row["register_time"])
 }

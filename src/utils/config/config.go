@@ -94,6 +94,7 @@ type Configuration struct {
 	CautionMoneyIds        []int64
 	PenaltyMoneyAccountUid int64
 	WXAuth WXAuth
+	BindActive string
 }
 
 // configuration data

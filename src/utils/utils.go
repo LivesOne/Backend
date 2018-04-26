@@ -81,6 +81,14 @@ func GetTimestamp13() int64 {
 	return GetTimestamp13ByTime(time.Now())
 }
 
+func GetTimestamp10() int64 {
+	return GetTimestamp10ByTime(time.Now())
+}
+
+func GetTimestamp10ByTime(t time.Time) int64 {
+	return t.Unix()
+}
+
 func GetTimestamp13ByTime(t time.Time) int64 {
 	return t.UnixNano() / 1000000
 }

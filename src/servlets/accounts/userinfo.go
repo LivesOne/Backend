@@ -18,6 +18,8 @@ type userinfoRequest struct {
 type userinfoResData struct {
 	Level    int    `json:"level"`
 	NickName string `json:"nick_name"`
+	Hashrate int    `json:"hashrate"`
+	Ts       int64  `json:"ts"`
 }
 
 // sendVCodeHandler
@@ -51,7 +53,7 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
-	acc,err := common.GetAccountByUID(requestData.Param.Uid)
+	acc, err := common.GetAccountByUID(requestData.Param.Uid)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
@@ -59,6 +61,8 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 	response.Data = userinfoResData{
 		Level:    acc.Level,
 		NickName: acc.Nickname,
+		Ts:       acc.UpdateTime,
+		Hashrate: common.QueryHashRateByUid(acc.UID),
 	}
 
 }
