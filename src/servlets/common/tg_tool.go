@@ -18,10 +18,13 @@ type (
 		LvtUid string `json:"lvt_uid"`
 		Code   string `json:"code"`
 	}
+	tgResData struct {
+		Lvt string `json:"lvt"`
+		Telegram string `json:"telegram"`
+	}
 	tgRes struct {
-		Rc   int    `json:"rc"`
-		Msg  string `json:"msg"`
-		TgId string `json:"tg_id"`
+		Base *BaseResp `json:"base"`
+		Data *tgResData `json:"data"`
 	}
 )
 
@@ -39,5 +42,8 @@ func AuthTG(lvtUid, code string) (bool, *tgRes) {
 	if err != nil {
 		return false, nil
 	}
-	return res.Rc == 0, res
+	if res.Base == nil || res.Data == nil {
+		return false,nil
+	}
+	return res.Base.RC == 0, res
 }

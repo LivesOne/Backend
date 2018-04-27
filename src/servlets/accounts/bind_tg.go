@@ -100,7 +100,7 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 			return
 		}
 
-		r, err := common.SetTGId(uid,res.TgId)
+		r, err := common.SetTGId(uid,res.Data.Telegram)
 		if err != nil {
 			if db_factory.CheckDuplicateByColumn(err,"tg_id"){
 				response.SetResponseBase(constants.RC_DUP_TG_ID)
