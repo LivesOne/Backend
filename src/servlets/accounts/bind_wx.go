@@ -22,6 +22,10 @@ type bindWXRequest struct {
 	Param bindWXParam `json:"param"`
 }
 
+type bindWXResData struct {
+	Awarded bool `json:"awarded"`
+}
+
 // bindWXHandler
 type bindWXHandler struct {
 }
@@ -114,7 +118,9 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 				return
 			} else {
 				//绑定微信成功，加算力,内部识别，加不加，加多少
-				common.AddBindActiveHashRateByWX(uid)
+				response.Data = bindWXResData{
+					Awarded: common.AddBindActiveHashRateByWX(uid),
+				}
 			}
 		}
 	} else {

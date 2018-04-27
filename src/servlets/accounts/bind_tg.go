@@ -21,6 +21,9 @@ type bindTGParam struct {
 type bindTGRequest struct {
 	Param bindTGParam `json:"param"`
 }
+type bindTGResData struct {
+	Awarded bool `json:"awarded"`
+}
 
 // bindTGHandler
 type bindTGHandler struct {
@@ -113,7 +116,9 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 				return
 			} else {
 				//绑定Telegram成功，加算力,内部识别，加不加，加多少
-				common.AddBindActiveHashRateByTG(uid)
+				response.Data = bindTGResData{
+					Awarded: common.AddBindActiveHashRateByTG(uid),
+				}
 			}
 		}
 	} else {

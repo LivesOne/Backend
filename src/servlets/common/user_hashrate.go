@@ -16,26 +16,28 @@ const (
 
 
 
-func AddBindActiveHashRateByWX(uid int64){
+func AddBindActiveHashRateByWX(uid int64)bool{
 	ts := utils.GetTimestamp13()
 	limit := config.GetBindActive()
 	//校验时间符合逻辑并且没有绑定算力加成
 	if checkActiveTime(uid,ts,limit) && !checkUserIsActive(uid) {
 		end := (int64(limit.HashRateActiveMonth) * constants.ASSET_LOCK_MONTH_TIMESTAMP) + ts
 		updHashRate(uid,limit.BindWXActiveHashRate,USER_HASHRATE_TYPE_BIND_WX,ts,end,nil)
+		return true
 	}
-
+	return false
 }
 
-func AddBindActiveHashRateByTG(uid int64){
+func AddBindActiveHashRateByTG(uid int64)bool{
 	ts := utils.GetTimestamp13()
 	limit := config.GetBindActive()
 	//校验时间符合逻辑并且没有绑定算力加成
 	if checkActiveTime(uid,ts,limit)  && !checkUserIsActive(uid){
 		end := (int64(limit.HashRateActiveMonth) * constants.ASSET_LOCK_MONTH_TIMESTAMP) + ts
 		updHashRate(uid,limit.BindWXActiveHashRate,USER_HASHRATE_TYPE_BIND_TG,ts,end,nil)
+		return true
 	}
-
+	return false
 }
 
 
