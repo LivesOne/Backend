@@ -427,16 +427,16 @@ func GetUserLevel(uid int64)int{
 	return utils.Str2Int(row["level"])
 }
 
-func CheckBindWXByUidAndCreditScore(uid int64,country int)(bool,int){
-	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid,credit_score from account_extend where uid = ?",uid)
+func CheckBindWXByUidAndCreditScore(uid int64,country int)(bool,bool,int){
+	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?",uid)
 	if err != nil {
-		return false,0
+		return false,false,0
 	}
 	if row == nil {
 		InitAccountExtend(uid)
-		return false,70
+		return false,false,70
 	}
-	return len(row["wx_openid"])>0&&len(row["wx_unionid"])>0,utils.Str2Int(row["credit_score"])
+	return len(row["wx_openid"])>0&&len(row["wx_unionid"])>0,len(row["tg_id"])>0,utils.Str2Int(row["credit_score"])
 }
 
 func GetUserCreditScore(uid int64)int{

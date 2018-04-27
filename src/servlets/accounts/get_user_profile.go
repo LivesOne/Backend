@@ -11,10 +11,11 @@ import (
 
 type profileResponse struct {
 	common.Account
-	HavePayPwd bool `json:"have_pay_pwd"`
-	TransLevel int  `json:"trans_level"`
-	BindWx     bool `json:"bind_wx"`
-	CreditScore     int `json:"credit_score"`
+	HavePayPwd  bool `json:"have_pay_pwd"`
+	TransLevel  int  `json:"trans_level"`
+	BindWx      bool `json:"bind_wx"`
+	CreditScore int  `json:"credit_score"`
+	BindTg      bool `json:"bind_tg"`
 }
 
 // getProfileHandler
@@ -56,13 +57,14 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	bindWx,creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
+	bindWx, bindTg, creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
 	//提前获取交易等级
 	profile := profileResponse{
-		HavePayPwd: (len(account.PaymentPassword) > 0),
-		TransLevel: common.GetUserAssetTranslevelByUid(account.UID),
-		BindWx:bindWx,
-		CreditScore:creditScore,
+		HavePayPwd:  (len(account.PaymentPassword) > 0),
+		TransLevel:  common.GetUserAssetTranslevelByUid(account.UID),
+		BindWx:      bindWx,
+		CreditScore: creditScore,
+		BindTg:      bindTg,
 	}
 
 	account.ID = 0
