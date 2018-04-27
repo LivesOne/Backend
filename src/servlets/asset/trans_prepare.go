@@ -118,9 +118,10 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	txType := requestData.Param.TxType
 
-	if txType == constants.TX_TYPE_TRANS {
-
-		//非系统账号才校验额度
+	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
+	switch txType {
+	case constants.TX_TYPE_TRANS:
+		//目标账号非系统账号才校验额度
 		if !config.GetConfig().CautionMoneyIdsExist(to) {
 			//金额校验不通过，删除pending
 			level := common.GetTransLevel(from)
@@ -134,8 +135,25 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 				return
 			}
 		}
+	case constants.TX_TYPE_ACTIVITY_REWARD://如果是活动领取，需要校验转出者的id
+		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
+			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
+			return
+		}
 
+		if !common.CheckTansTypeFromUid(from, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+	case constants.TX_TYPE_BUY:
+		//直接放行
+	case constants.TX_TYPE_REFUND:
+		//直接放行
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	}
+
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
@@ -160,27 +178,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		logger.Error("txid is -1  ")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
-	}
-
-	//交易类型 只支持，红包，转账 不支持私募，工资
-	if txType != constants.TX_TYPE_TRANS &&
-		//txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
-		txType != constants.TX_TYPE_ACTIVITY_REWARD {
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
-	//如果是活动领取，需要校验转出者的id
-	if txType == constants.TX_TYPE_ACTIVITY_REWARD {
-
-		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
-			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
-			return
-		}
-
-		if !common.CheckTansTypeFromUid(from, txType) {
-			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-			return
-		}
 	}
 
 	txh := common.DTTXHistory{
