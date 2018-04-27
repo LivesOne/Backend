@@ -4,6 +4,7 @@ import (
 	"utils"
 	"utils/lvthttp"
 	"utils/config"
+	"utils/logger"
 )
 
 //valid protocol
@@ -35,6 +36,7 @@ func AuthTG(lvtUid, code string) (bool, *tgRes) {
 	}
 	resStr, err := lvthttp.JsonPost(config.GetConfig().AuthTelegramUrl, reqParam)
 	if err != nil {
+		logger.Error("http request error",err.Error())
 		return false, nil
 	}
 	res := new(tgRes)
