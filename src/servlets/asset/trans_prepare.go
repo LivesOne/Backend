@@ -111,7 +111,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	to := utils.Str2Int64(secret.To)
 
 	//不能给自己转账，不能转无效用户
-	if from == to || !common.ExistsUID(to) || !common.CanBeTo(to) {
+	if from == to || !common.ExistsUID(to){
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
@@ -121,8 +121,18 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
 	switch txType {
 	case constants.TX_TYPE_TRANS:
+
+
+
 		//目标账号非系统账号才校验额度
 		if !config.GetConfig().CautionMoneyIdsExist(to) {
+
+			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限
+			if !common.CanBeTo(to) {
+				response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
+				return
+			}
+
 			//金额校验不通过，删除pending
 			level := common.GetTransLevel(from)
 			if f, e := common.CheckAmount(from, utils.FloatStrToLVTint(secret.Value), level); !f {
