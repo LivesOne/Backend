@@ -15,7 +15,7 @@ import (
 
 type (
 	tgReq struct {
-		LvtUid string `json:"lvt_uid"`
+		LvtUid string `json:"lvt"`
 		Code   string `json:"code"`
 	}
 	tgResData struct {
