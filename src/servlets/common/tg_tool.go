@@ -4,6 +4,7 @@ import (
 	"utils"
 	"utils/lvthttp"
 	"utils/config"
+	"utils/logger"
 )
 
 //valid protocol
@@ -37,6 +38,7 @@ func AuthTG(lvtUid, code string) (bool, *tgRes) {
 	if err != nil {
 		return false, nil
 	}
+	logger.Info("res",resStr)
 	res := new(tgRes)
 	err = utils.FromJson(resStr, res)
 	if err != nil {
