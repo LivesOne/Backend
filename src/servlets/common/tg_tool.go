@@ -4,7 +4,6 @@ import (
 	"utils"
 	"utils/lvthttp"
 	"utils/config"
-	"utils/logger"
 )
 
 //valid protocol
