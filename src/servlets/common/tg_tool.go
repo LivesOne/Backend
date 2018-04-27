@@ -38,13 +38,12 @@ func AuthTG(lvtUid, code string) (bool, *tgRes) {
 	if err != nil {
 		return false, nil
 	}
-	logger.Info("res",resStr)
 	res := new(tgRes)
 	err = utils.FromJson(resStr, res)
 	if err != nil {
 		return false, nil
 	}
-	if res.Base == nil || res.Data == nil {
+	if res.Base == nil {
 		return false,nil
 	}
 	return res.Base.RC == 0, res
