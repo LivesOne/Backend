@@ -127,8 +127,9 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		//目标账号非系统账号才校验额度
 		if !config.GetConfig().CautionMoneyIdsExist(to) {
 
-			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限
-			if !common.CanBeTo(to) {
+			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
+			transLevelOfTo := common.GetTransLevel(to)
+			if transLevelOfTo == 0 && !common.CanBeTo(to) {
 				response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 				return
 			}
