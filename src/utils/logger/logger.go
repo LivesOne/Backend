@@ -5,6 +5,7 @@ import (
 	"github.com/alecthomas/log4go"
 	"os"
 	"path/filepath"
+	"github.com/google/uuid"
 )
 
 // InitLogger
@@ -47,4 +48,48 @@ func Info(v ...interface{}) {
 
 func Warn(v ...interface{}) {
 	log4go.Warn(v)
+}
+
+
+type LvtLogger struct {
+	LogId string
+	infos []interface{}
+	LogNow bool
+}
+
+func NewLvtLogger(logNow bool)*LvtLogger{
+	l := new(LvtLogger)
+	l.infos = make([]interface{},0)
+	l.LogNow = logNow
+	l.LogId = uuid.New().String()
+	return l
+}
+
+func (l *LvtLogger)Debug(v ...interface{}) {
+	if l.LogNow {
+		Debug(l.LogId,v)
+	}
+	l.infos = append(l.infos,v...)
+}
+
+func (l *LvtLogger)Info(v ...interface{}) {
+	if l.LogNow {
+		Info(l.LogId,v)
+	}
+	l.infos = append(l.infos,v...)
+	fmt.Println(l.infos)
+}
+
+func (l *LvtLogger)Warn(v ...interface{}) {
+	Warn(l.LogId,v)
+}
+
+func (l *LvtLogger)Error(v ...interface{}) {
+	Error(l.LogId,v)
+}
+
+func (l *LvtLogger)InfoAll() {
+	logInfo := []interface{}{l.LogId}
+	logInfo = append(logInfo,l.infos...)
+	Info(logInfo)
 }
