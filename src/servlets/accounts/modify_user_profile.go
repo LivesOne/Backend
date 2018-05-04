@@ -32,7 +32,7 @@ func (handler *modifyUserProfileHandler) Method() string {
 }
 
 func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-	log := logger.NewLvtLogger(false)
+	log := logger.NewLvtLogger(true)
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 	defer log.InfoAll()

@@ -67,36 +67,39 @@ func NewLvtLogger(logNow bool)*LvtLogger{
 	l.LogId = uuid.New().String()
 	if _, file, _, ok := runtime.Caller(1);ok{
 		fs := strings.Split(file,"/")
-		l.infos = append(l.infos,fs[len(fs)-1])
+		l.infos = append(l.infos,"file : "+fs[len(fs)-1])
 	}
 	return l
 }
 
 func (l *LvtLogger)Debug(v ...interface{}) {
 	if l.LogNow {
-		Debug(append([]interface{}{l.LogId},v...)...)
+		i := append([]interface{}{l.LogId},v...)
+		Debug(i...)
 	}
 	l.infos = append(l.infos,v...)
 }
 
 func (l *LvtLogger)Info(v ...interface{}) {
 	if l.LogNow {
-		Info(append([]interface{}{l.LogId},v...)...)
+		i := append([]interface{}{l.LogId},v...)
+		Info(i...)
 	}
 	l.infos = append(l.infos,v...)
-	fmt.Println(l.infos)
 }
 
 func (l *LvtLogger)Warn(v ...interface{}) {
 	if l.LogNow {
-		Warn(append([]interface{}{l.LogId},v...)...)
+		i := append([]interface{}{l.LogId},v...)
+		Warn(i...)
 	}
 	l.infos = append(l.infos,v...)
 }
 
 func (l *LvtLogger)Error(v ...interface{}) {
 	if l.LogNow {
-		Error(append([]interface{}{l.LogId},v...)...)
+		i := append([]interface{}{l.LogId},v...)
+		Error(i...)
 	}
 	l.infos = append(l.infos,v...)
 }
