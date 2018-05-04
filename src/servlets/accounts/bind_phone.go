@@ -38,7 +38,8 @@ func (handler *bindPhoneHandler) Method() string {
 }
 
 func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
@@ -47,7 +48,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	common.ParseHttpBodyParams(request, requestData)
 
 	if handler.checkRequestParams(header, requestData) == false {
-		logger.Info("bind phone: check param error")
+		log.Info("bind phone: check param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -56,7 +57,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
-		logger.Info("bind phone: read user info error:", err)
+		log.Info("bind phone: read user info error:", err)
 		return
 	}
 	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
@@ -68,7 +69,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		logger.Info("bind phone: read aes key from db error, length of aes key is:", len(aesKey))
+		log.Info("bind phone: read aes key from db error, length of aes key is:", len(aesKey))
 		return
 	}
 
@@ -78,7 +79,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
-		logger.Info("bind phone: Decrypt Secret error:", err)
+		log.Info("bind phone: Decrypt Secret error:", err)
 		return
 	}
 
@@ -86,7 +87,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	ok, c := vcode.ValidateSmsAndCallVCode(
 		secret.Phone, secret.Country, requestData.Param.VCode, 0, 0)
 	if ok == false {
-		logger.Info("bind phone: validate sms and call vcode failed")
+		log.Info("bind phone: validate sms and call vcode failed")
 		response.SetResponseBase(vcode.ConvSmsErr(c))
 		return
 	}
@@ -115,10 +116,10 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		// if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
 		// 	db_factory.CheckDuplicateByColumn(dbErr, "phone") {
 		if db_factory.CheckDuplicateByColumn(dbErr, "mobile") {
-			logger.Info("bind phone: check phone duplicate error, dupped", dbErr)
+			log.Info("bind phone: check phone duplicate error, dupped", dbErr)
 			response.SetResponseBase(constants.RC_DUP_PHONE)
 		} else {
-			logger.Info("bind phone: check phone duplicate error, other error", dbErr)
+			log.Info("bind phone: check phone duplicate error, other error", dbErr)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 	}

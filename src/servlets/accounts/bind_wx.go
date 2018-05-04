@@ -35,7 +35,8 @@ func (handler *bindWXHandler) Method() string {
 }
 
 func (handler *bindWXHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
@@ -45,7 +46,7 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 	// fmt.Println("modify user profile: 111 \n", utils.ToJSONIndent(header), utils.ToJSONIndent(requestData))
 	// request params check
 	if !header.IsValid() {
-		logger.Info("modify user profile: invalid request param")
+		log.Info("modify user profile: invalid request param")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
 	// fmt.Println("modify user profile: 22222222 \n", utils.ToJSONIndent(header), utils.ToJSONIndent(requestData))
@@ -54,13 +55,13 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
-		logger.Info("modify user profile: read user info error:", err)
+		log.Info("modify user profile: read user info error:", err)
 		return
 	}
 
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		logger.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))
+		log.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))
 		return
 	}
 
@@ -78,7 +79,7 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		logger.Info("bind phone: read aes key from db error, length of aes key is:", len(aesKey))
+		log.Info("bind phone: read aes key from db error, length of aes key is:", len(aesKey))
 		return
 	}
 
@@ -89,7 +90,7 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
-		logger.Info("bind wx: Decrypt Secret error:", err)
+		log.Info("bind wx: Decrypt Secret error:", err)
 		return
 	}
 
