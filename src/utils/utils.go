@@ -190,7 +190,7 @@ func SignValid(aeskey, signature string, timestamp int64) bool {
 
 
 func GetTs13(ts int64)int64{
-	if ts > 10000000000 {
+	if ts > 1000000000 && ts < 2000000000 {
 		return ts *1000
 	}
 	return ts

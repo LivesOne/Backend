@@ -60,7 +60,7 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	
+
 
 
 	response.Data = userinfoResData{
