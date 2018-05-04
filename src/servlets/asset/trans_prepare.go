@@ -48,7 +48,7 @@ func (handler *transPrepareHandler) Method() string {
 }
 
 func (handler *transPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-	log := logger.NewLvtLogger(false)
+	log := logger.NewLvtLogger(true)
 	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{

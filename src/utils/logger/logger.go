@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"github.com/google/uuid"
+	"runtime"
 )
 
 // InitLogger
@@ -53,8 +54,9 @@ func Warn(v ...interface{}) {
 
 type LvtLogger struct {
 	LogId string
-	infos []interface{}
 	LogNow bool
+	infos []interface{}
+
 }
 
 func NewLvtLogger(logNow bool)*LvtLogger{
@@ -62,6 +64,9 @@ func NewLvtLogger(logNow bool)*LvtLogger{
 	l.infos = make([]interface{},0)
 	l.LogNow = logNow
 	l.LogId = uuid.New().String()
+	if _, file, _, ok := runtime.Caller(1);ok{
+		l.infos = append(l.infos,file)
+	}
 	return l
 }
 
@@ -81,15 +86,19 @@ func (l *LvtLogger)Info(v ...interface{}) {
 }
 
 func (l *LvtLogger)Warn(v ...interface{}) {
-	Warn(l.LogId,v)
+	if l.LogNow {
+		Warn(l.LogId,v)
+	}
+	l.infos = append(l.infos,v...)
 }
 
 func (l *LvtLogger)Error(v ...interface{}) {
-	Error(l.LogId,v)
+	if l.LogNow {
+		Error(l.LogId,v)
+	}
+	l.infos = append(l.infos,v...)
 }
 
 func (l *LvtLogger)InfoAll() {
-	logInfo := []interface{}{l.LogId}
-	logInfo = append(logInfo,l.infos...)
-	Info(logInfo)
+	Info(l.infos...)
 }
