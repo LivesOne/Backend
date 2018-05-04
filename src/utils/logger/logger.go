@@ -74,14 +74,14 @@ func NewLvtLogger(logNow bool)*LvtLogger{
 
 func (l *LvtLogger)Debug(v ...interface{}) {
 	if l.LogNow {
-		Debug(l.LogId,v)
+		Debug(append([]interface{}{l.LogId},v...))
 	}
 	l.infos = append(l.infos,v...)
 }
 
 func (l *LvtLogger)Info(v ...interface{}) {
 	if l.LogNow {
-		Info(l.LogId,v)
+		Info(append([]interface{}{l.LogId},v...))
 	}
 	l.infos = append(l.infos,v...)
 	fmt.Println(l.infos)
@@ -89,14 +89,14 @@ func (l *LvtLogger)Info(v ...interface{}) {
 
 func (l *LvtLogger)Warn(v ...interface{}) {
 	if l.LogNow {
-		Warn(l.LogId,v)
+		Warn(append([]interface{}{l.LogId},v...))
 	}
 	l.infos = append(l.infos,v...)
 }
 
 func (l *LvtLogger)Error(v ...interface{}) {
 	if l.LogNow {
-		Error(l.LogId,v)
+		Error(append([]interface{}{l.LogId},v...))
 	}
 	l.infos = append(l.infos,v...)
 }
