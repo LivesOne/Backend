@@ -73,6 +73,11 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
+	if acc == nil   {
+		log.Error("can not find user by uid:",param.Uid)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 
 	response.Data = userinfoResData{
