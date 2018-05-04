@@ -24,7 +24,8 @@ func (handler *lockListHandler) Method() string {
 }
 
 func (handler *lockListHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -38,7 +39,7 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset lockList: request param error")
+		log.Info("asset lockList: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -46,7 +47,7 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset lockList: get info from cache error:", err)
+		log.Info("asset lockList: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}

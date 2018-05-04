@@ -58,7 +58,8 @@ func (handler *transHistoryHandler) Method() string {
 }
 
 func (handler *transHistoryHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -70,7 +71,7 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset transHistory: request param error")
+		log.Info("asset transHistory: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -78,12 +79,12 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset transHistory: get info from cache error:", err)
+		log.Info("asset transHistory: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset transHistory: get aeskey from cache error:", len(aesKey))
+		log.Info("asset transHistory: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -114,7 +115,7 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 		}
 	}
 
-	logger.Debug(c)
+	log.Debug(c)
 	//query record
 	//查新c+1条记录，如果len > c 说明more = 1
 	records := common.QueryCommitted(q, c+1)

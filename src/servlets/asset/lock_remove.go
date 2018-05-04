@@ -42,7 +42,8 @@ func (handler *lockRemoveHandler) Method() string {
 }
 
 func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -56,7 +57,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset lockRemove: request param error")
+		log.Info("asset lockRemove: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -64,7 +65,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset lockRemove: get info from cache error:", err)
+		log.Info("asset lockRemove: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
@@ -86,7 +87,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 	err :=	decodeAssetLockSecret(requestData.Param.Secret, key, iv,secret)
 
 	if err != nil {
-		logger.Error("decode secret error",err.Error())
+		log.Error("decode secret error",err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -127,12 +128,12 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 	penaltyMoney := CalculationPenaltyMoney(al)
 
-	logger.Info("query asset lock ",utils.ToJSON(al))
+	log.Info("query asset lock ",utils.ToJSON(al))
 
 	txid := common.GenerateTxID()
 
 	if txid == -1 {
-		logger.Error("txid is -1  ")
+		log.Error("txid is -1  ")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}

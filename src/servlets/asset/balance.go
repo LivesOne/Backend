@@ -34,7 +34,8 @@ func (handler *balanceHandler) Method() string {
 }
 
 func (handler *balanceHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -48,7 +49,7 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset balance: request param error")
+		log.Info("asset balance: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -56,12 +57,12 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset balance: get info from cache error:", err)
+		log.Info("asset balance: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset balance: get aeskey from cache error:", len(aesKey))
+		log.Info("asset balance: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}

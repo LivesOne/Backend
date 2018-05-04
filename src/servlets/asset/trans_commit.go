@@ -34,7 +34,8 @@ func (handler *transCommitHandler) Method() string {
 }
 
 func (handler *transCommitHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -57,7 +58,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset trans commited: request param error")
+		log.Info("asset trans commited: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -65,12 +66,12 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	// 判断用户身份
 	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset trans commited: get info from cache error:", err)
+		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset trans commited: get aeskey from cache error:", len(aesKey))
+		log.Info("asset trans commited: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -84,7 +85,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
 	if err != nil {
-		logger.Error("aes decrypt error ", err.Error())
+		log.Error("aes decrypt error ", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}

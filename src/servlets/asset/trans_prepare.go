@@ -48,7 +48,8 @@ func (handler *transPrepareHandler) Method() string {
 }
 
 func (handler *transPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(false)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -71,7 +72,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset trans prepare: request param error")
+		log.Info("asset trans prepare: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -79,12 +80,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset trans prepare: get info from cache error:", err)
+		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset trans prepare: get aeskey from cache error:", len(aesKey))
+		log.Info("asset trans prepare: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -186,7 +187,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	txid := common.GenerateTxID()
 
 	if txid == -1 {
-		logger.Error("txid is -1  ")
+		log.Error("txid is -1  ")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -203,7 +204,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 	err := common.InsertPending(&txh)
 	if err != nil {
-		logger.Error("insert mongo db error ", err.Error())
+		log.Error("insert mongo db error ", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = transPrepareResData{
