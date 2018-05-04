@@ -16,10 +16,11 @@ type userinfoRequest struct {
 }
 
 type userinfoResData struct {
-	Level    int    `json:"level"`
-	NickName string `json:"nick_name"`
-	Hashrate int    `json:"hashrate"`
-	Ts       int64  `json:"ts"`
+	Level        int    `json:"level"`
+	NickName     string `json:"nick_name"`
+	Hashrate     int    `json:"hashrate"`
+	RegisterTime int64  `json:"register_time"`
+	Ts           int64  `json:"ts"`
 }
 
 // sendVCodeHandler
@@ -59,10 +60,11 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 	response.Data = userinfoResData{
-		Level:    acc.Level,
-		NickName: acc.Nickname,
-		Ts:       acc.UpdateTime,
-		Hashrate: common.QueryHashRateByUid(acc.UID),
+		RegisterTime: acc.RegisterTime,
+		Level:        acc.Level,
+		NickName:     acc.Nickname,
+		Ts:           acc.UpdateTime,
+		Hashrate:     common.QueryHashRateByUid(acc.UID),
 	}
 
 }
