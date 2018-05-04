@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"github.com/google/uuid"
 	"runtime"
+	"strings"
 )
 
 // InitLogger
@@ -65,7 +66,8 @@ func NewLvtLogger(logNow bool)*LvtLogger{
 	l.LogNow = logNow
 	l.LogId = uuid.New().String()
 	if _, file, _, ok := runtime.Caller(1);ok{
-		l.infos = append(l.infos,file)
+		fs := strings.Split(file,"/")
+		l.infos = append(l.infos,fs[len(fs)-1])
 	}
 	return l
 }
