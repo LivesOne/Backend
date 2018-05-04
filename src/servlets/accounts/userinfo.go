@@ -5,6 +5,8 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils"
+	"database/sql"
+	"utils/logger"
 )
 
 type userinfoParam struct {
@@ -35,7 +37,8 @@ func (handler *userinfoHandler) Method() string {
 }
 
 func (handler *userinfoHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(true)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -51,18 +54,21 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 	base := requestData.Base
 
 	if base == nil || !base.App.IsValid() {
+		log.Error("validate base is failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 	param := requestData.Param
 
 	if param == nil || len(param.Uid) == 0  {
+		log.Error("validate param is failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	acc, err := common.GetAccountByUID(param.Uid)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows{
+		log.Error("sql error",err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
