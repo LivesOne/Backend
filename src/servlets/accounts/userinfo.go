@@ -54,8 +54,14 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+	param := requestData.Param
 
-	acc, err := common.GetAccountByUID(requestData.Param.Uid)
+	if param == nil || len(param.Uid) == 0  {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	acc, err := common.GetAccountByUID(param.Uid)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
