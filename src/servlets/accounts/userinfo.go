@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"utils"
 )
 
 type userinfoParam struct {
@@ -59,8 +60,11 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
+	
+
+
 	response.Data = userinfoResData{
-		RegisterTime: acc.RegisterTime,
+		RegisterTime: utils.GetTs13(acc.RegisterTime),
 		Level:        acc.Level,
 		NickName:     acc.Nickname,
 		Ts:           acc.UpdateTime,
