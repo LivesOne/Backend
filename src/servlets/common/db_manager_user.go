@@ -9,6 +9,7 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	"servlets/constants"
+	"database/sql"
 )
 
 //var gDbUser *sql.DB
@@ -206,9 +207,10 @@ func GetAccountByUID(uid string) (*Account, error) {
 	// logger.Info("GetAccountByUID:--------------------------", row, len(row), err)
 	if err != nil {
 		logger.Error(err)
+		return nil,err
 	}
 	if len(row) < 1 {
-		return nil, errors.New("no record for:" + uid)
+		return nil, sql.ErrNoRows
 	}
 	return convRowMap2Account(row), err
 }

@@ -67,7 +67,7 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	acc, err := common.GetAccountByUID(param.Uid)
-	if err != nil && err != sql.ErrNoRows{
+	if err != nil && err != sql.{
 		log.Error("sql error",err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
