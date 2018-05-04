@@ -117,7 +117,7 @@ func validateNickName(name string)bool{
 	if l < 4 || l > 30 {
 		return false
 	}
-	reg := "[-\u4e00-\u9fa5a-zA-Z0-9_]"
+	reg := "^[-\u4e00-\u9fa5a-zA-Z0-9_]{2,30}$"
 	ret, _ := regexp.MatchString(reg, name)
 	return ret
 }
