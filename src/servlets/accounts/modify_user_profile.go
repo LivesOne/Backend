@@ -91,6 +91,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// }
 
 	if !validateNickName(secret.Nickname) {
+		log.Error("validate nickname failed")
 		response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
 		return
 	}
