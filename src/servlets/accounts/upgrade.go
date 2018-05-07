@@ -8,6 +8,18 @@ import (
 	"servlets/token"
 )
 
+type upgradeSecret struct {
+	WxCode string `json:"wx_code"`
+}
+
+type upgradeParam struct {
+	Secret string `json:"secret"`
+}
+
+type upgradeRequest struct {
+	Param upgradeParam `json:"param"`
+}
+
 type upgradeResData struct {
 	Level int `json:"level"`
 }
@@ -47,6 +59,50 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
+
+
+	requestData := new(upgradeRequest)
+
+	if  !common.ParseHttpBodyParams(request, requestData) {
+		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
+		return
+	}
+
+
+
+	// 解码 secret 参数
+	secretString := requestData.Param.Secret
+	secret := new(upgradeSecret)
+	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
+	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
+		response.SetResponseBase(err)
+		return
+	}
+
+	if len(secret.WxCode) > 0 {
+		// 微信二次验证
+		uid := utils.Str2Int64(uidString)
+		//未绑定返回验升级失败
+		openId,unionId,_ := common.GetUserExtendByUid(uid)
+		if len(openId) == 0 || len(unionId) == 0 {
+			response.SetResponseBase(constants.RC_UPGRAD_FAILED)
+			return
+		}
+		//微信认证并比对id
+		if ok,res := common.AuthWX(secret.WxCode);ok {
+			if res.Unionid != unionId || res.Openid != openId {
+				response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
+				return
+			}
+		} else {
+			response.SetResponseBase(constants.RC_INVALID_WX_CODE)
+			return
+		}
+
+	}
+
+
+
 
 
 	if ok,level := common.UserUpgrade(uidString);ok {

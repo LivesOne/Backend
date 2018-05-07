@@ -43,6 +43,7 @@ var (
 	RC_INVALID_TG_CODE         = Error{20017, "invalid telegram code"}
 	RC_DUP_TG_ID               = Error{20018, "duplicate telegram id"}
 	RC_DUP_BIND_TG             = Error{20019, "duplicate bind telegram"}
+	RC_WX_SEC_AUTH_FAILED      = Error{20020, "weixin auth faild"}
 
 	RC_ACCOUNT_ACCESS_LIMITED       = Error{21001, "account access limited"}
 	RC_INSUFFICIENT_BALANCE         = Error{21002, "insufficient balance"}

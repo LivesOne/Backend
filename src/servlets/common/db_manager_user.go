@@ -460,3 +460,15 @@ func GetUserRegisterTime(uid int64)int64{
 	}
 	return utils.Str2Int64(row["register_time"])
 }
+
+func GetUserExtendByUid(uid int64)(string,string,int){
+	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?",uid)
+	if err != nil {
+		return "","",0
+	}
+	if row == nil {
+		InitAccountExtend(uid)
+		return "","",70
+	}
+	return row["wx_openid"],row["wx_unionid"],utils.Str2Int(row["credit_score"])
+}

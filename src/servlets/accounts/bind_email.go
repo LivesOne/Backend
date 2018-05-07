@@ -41,7 +41,7 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 
 	httpHeader := common.ParseHttpHeaderParams(request)
 	requestData := new(bindEMailRequest)
-	common.ParseHttpBodyParams(request, &requestData)
+	common.ParseHttpBodyParams(request, requestData)
 
 	if httpHeader.Timestamp < 1 {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -67,6 +67,7 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
+		return
 	}
 
 	if !utils.IsValidEmailAddr(secret.Email) {
