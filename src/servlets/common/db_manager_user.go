@@ -409,7 +409,8 @@ func CheckBindWx(uid int64)bool{
 		logger.Error("query bind info error",err.Error())
 		return false
 	}
-	if utils.Str2Int(row["c"]) != 86 {
+	ac := utils.Str2Int(row["c"])
+	if ac != 86 && ac != 852 && ac != 853 && ac != 886  {
 		return true
 	}
 	if id,ok := row["openid"];ok{
