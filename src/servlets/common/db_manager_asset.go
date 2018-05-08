@@ -387,7 +387,7 @@ func updHashRate(uid int64,hr,hrType int,begin,end int64,tx *sql.Tx)(bool,int){
 	var hrId int64
 
 	err := hrc.Scan(&hrId)
-	if err != nil {
+	if err != nil && err != sql.ErrNoRows {
 		logger.Error("sql error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
@@ -405,7 +405,7 @@ func updHashRate(uid int64,hr,hrType int,begin,end int64,tx *sql.Tx)(bool,int){
 			return false, constants.TRANS_ERR_SYS
 		}
 	}
-	
+
 	return true,constants.TRANS_ERR_SUCC
 }
 
