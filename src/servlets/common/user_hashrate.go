@@ -4,6 +4,7 @@ import (
 	"utils"
 	"utils/config"
 	"servlets/constants"
+	"utils/logger"
 )
 
 const (
@@ -49,6 +50,7 @@ func checkActiveTime(uid,ts int64,limit *config.BindActive)bool{
 		//数据库中存储到秒
 		userRegisterTs := GetUserRegisterTime(uid) * 1000
 
+		logger.Warn("check bind time ts",ts,"userRegisterTs",userRegisterTs,"RegisterTimeActive",limit.RegisterTimeActive)
 		if ts - userRegisterTs <= limit.RegisterTimeActive {
 			return true
 		}
