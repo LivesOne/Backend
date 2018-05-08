@@ -87,6 +87,10 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 			//微信认证并比对id
 			if ok,res := common.AuthWX(secret.WxCode);ok {
 				if res.Unionid != unionId || res.Openid != openId {
+
+					//二次验证不通过扣10分
+					common.DeductionCreditScore(uid,10)
+
 					response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
 					return
 				}

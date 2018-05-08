@@ -473,3 +473,13 @@ func GetUserExtendByUid(uid int64)(string,string,int){
 	}
 	return row["wx_openid"],row["wx_unionid"],utils.Str2Int(row["credit_score"])
 }
+
+
+func DeductionCreditScore(uid int64,score int)bool{
+	_,err := gDbUser.Exec("update set credit_score = credit_score - ? where uid ?",score,uid)
+	if err != nil {
+		logger.Error("DeductionCreditScore failed",err.Error())
+		return false
+	}
+	return true
+}
