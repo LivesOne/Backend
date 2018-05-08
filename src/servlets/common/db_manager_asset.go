@@ -382,26 +382,30 @@ func updHashRate(uid int64,hr,hrType int,begin,end int64,tx *sql.Tx)(bool,int){
 		defer tx.Commit()
 	}
 
+	hrc := tx.QueryRow("select id from user_hashrate where uid = ? and type = ? for update",uid,hrType)
 
-	ra,err := tx.Exec("update user_hashrate set hashrate = ?,begin = ? , end = ? where uid = ? and type = ?",hr,begin,end,uid,hrType)
+	var hrId int64
+
+	err := hrc.Scan(&hrId)
 	if err != nil {
 		logger.Error("sql error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
 
-	count,err := ra.RowsAffected()
-	if err != nil {
-		logger.Error("sql error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
-	}
-	//修改条数为0  初始化
-	if count == 0 {
+	if hrId > 0 {
+		_,err := tx.Exec("update user_hashrate set hashrate = ?,begin = ? , end = ? where id = ?",hr,begin,end,hrId)
+		if err != nil {
+			logger.Error("sql error ", err.Error())
+			return false, constants.TRANS_ERR_SYS
+		}
+	} else {
 		_,err = tx.Exec("insert into user_hashrate(type,uid,hashrate,begin,end) values (?,?,?,?,?)",hrType,uid,hr,begin,end)
 		if err != nil {
 			logger.Error("sql error ", err.Error())
 			return false, constants.TRANS_ERR_SYS
 		}
 	}
+	
 	return true,constants.TRANS_ERR_SUCC
 }
 
@@ -562,7 +566,7 @@ func QuerySumLockAsset(uid int64,month int)(int64){
 func QueryHashRateByUid(uid int64)(int){
 
 	sql := `select if(sum(t.h) is null,0,sum(t.h)) as sh from (
-				select uh1.hashrate as h from user_hashrate as uh1 where uh1.uid = ? and uh1.end = 0
+				select max(uh1.hashrate) as h from user_hashrate as uh1 where uh1.uid = ? and uh1.end = 0 group by uh1.type
 				union all
 				select uh2.hashrate as h from user_hashrate as uh2 where uh2.uid = ? and uh2.end >= ?
 			) as t
