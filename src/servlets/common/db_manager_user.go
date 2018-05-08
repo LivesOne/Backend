@@ -476,7 +476,7 @@ func GetUserExtendByUid(uid int64)(string,string,int){
 
 
 func DeductionCreditScore(uid int64,score int)bool{
-	_,err := gDbUser.Exec("update set credit_score = credit_score - ? where uid ?",score,uid)
+	_,err := gDbUser.Exec("update set credit_score = credit_score - ? where uid = ?",score,uid)
 	if err != nil {
 		logger.Error("DeductionCreditScore failed",err.Error())
 		return false
