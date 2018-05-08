@@ -455,7 +455,7 @@ func GetUserCreditScore(uid int64)int{
 }
 
 func GetUserRegisterTime(uid int64)int64{
-	row,err := gDbUser.QueryRow("select register_time from acount where uid = ?",uid)
+	row,err := gDbUser.QueryRow("select register_time from account where uid = ?",uid)
 	if err != nil || row == nil {
 		return 0
 	}
