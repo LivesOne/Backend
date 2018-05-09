@@ -10,12 +10,17 @@ import (
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"utils/vcode"
+	"database/sql"
 )
 
 type transPrepareParam struct {
-	TxType   int    `json:"tx_type"`
-	AuthType int    `json:"auth_type"`
-	Secret   string `json:"secret"`
+	TxType    int    `json:"tx_type"`
+	AuthType  int    `json:"auth_type"`
+	VcodeType int    `json:"vcode_type"`
+	VcodeId   string `json:"vcode_id"`
+	Vcode     string `json:"vcode"`
+	Secret    string `json:"secret"`
 }
 
 type transPrepareSecret struct {
@@ -94,6 +99,42 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
+
+	// vcodeType 大于0的时候开启短信验证 1下行，2上行
+	if requestData.Param.VcodeType > 0 {
+		acc,err := common.GetAccountByUID(uidString)
+		if err != nil && err != sql.ErrNoRows{
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		switch requestData.Param.VcodeType {
+		case 1:
+			if ok ,errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF);!ok {
+				log.Info("validate sms code failed")
+				response.SetResponseBase(vcode.ConvSmsErr(errCode))
+				return
+			}
+		case 2:
+			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode);!ok{
+				log.Info("validate up sms code failed")
+				response.SetResponseBase(resErr)
+				return
+			}
+		default:
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+	}
+
+
+
+
+
+
+
+
+
+
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
 	secret := decodeSecret(requestData.Param.Secret, key, iv)
@@ -112,7 +153,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	to := utils.Str2Int64(secret.To)
 
 	//不能给自己转账，不能转无效用户
-	if from == to || !common.ExistsUID(to){
+	if from == to || !common.ExistsUID(to) {
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
@@ -122,8 +163,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
 	switch txType {
 	case constants.TX_TYPE_TRANS:
-
-
 
 		//目标账号非系统账号才校验额度
 		if !config.GetConfig().CautionMoneyIdsExist(to) {
@@ -147,7 +186,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 				return
 			}
 		}
-	case constants.TX_TYPE_ACTIVITY_REWARD://如果是活动领取，需要校验转出者的id
+	case constants.TX_TYPE_ACTIVITY_REWARD: //如果是活动领取，需要校验转出者的id
 		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
 			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
 			return
@@ -165,7 +204,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
