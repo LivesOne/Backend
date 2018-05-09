@@ -48,7 +48,8 @@ func (handler *transPrepareHandler) Method() string {
 }
 
 func (handler *transPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(true)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -71,7 +72,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset trans prepare: request param error")
+		log.Info("asset trans prepare: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -79,13 +80,18 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset trans prepare: get info from cache error:", err)
+		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset trans prepare: get aeskey from cache error:", len(aesKey))
+		log.Info("asset trans prepare: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
@@ -106,27 +112,59 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	to := utils.Str2Int64(secret.To)
 
 	//不能给自己转账，不能转无效用户
-	if from == to || !common.ExistsUID(to) {
+	if from == to || !common.ExistsUID(to){
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
 
 	txType := requestData.Param.TxType
 
-	if txType == constants.TX_TYPE_TRANS {
-		//金额校验不通过，删除pending
-		if f,e := common.CheckAmount(from,utils.FloatStrToLVTint(secret.Value));!f {
-			response.SetResponseBase(e)
-			return
+	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
+	switch txType {
+	case constants.TX_TYPE_TRANS:
+
+
+
+		//目标账号非系统账号才校验额度
+		if !config.GetConfig().CautionMoneyIdsExist(to) {
+
+			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
+			transLevelOfTo := common.GetTransLevel(to)
+			if transLevelOfTo == 0 && !common.CanBeTo(to) {
+				response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
+				return
+			}
+
+			//金额校验不通过，删除pending
+			level := common.GetTransLevel(from)
+			if f, e := common.CheckAmount(from, utils.FloatStrToLVTint(secret.Value), level); !f {
+				response.SetResponseBase(e)
+				return
+			}
+			//校验用户的交易限制
+			if f, e := common.CheckPrepareLimit(from, level); !f {
+				response.SetResponseBase(e)
+				return
+			}
 		}
-		//校验用户的交易限制
-		if f,e := common.CheckPrepareLimit(from);!f{
-			response.SetResponseBase(e)
+	case constants.TX_TYPE_ACTIVITY_REWARD://如果是活动领取，需要校验转出者的id
+		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
+			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
 			return
 		}
 
+		if !common.CheckTansTypeFromUid(from, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+	case constants.TX_TYPE_BUY:
+		//直接放行
+	case constants.TX_TYPE_REFUND:
+		//直接放行
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	}
-
 
 
 	pwd := secret.Pwd
@@ -141,35 +179,17 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	}
 
 	txid := common.GenerateTxID()
 
 	if txid == -1 {
-		logger.Error("txid is -1  ")
+		log.Error("txid is -1  ")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
-	}
-
-	//交易类型 只支持，红包，转账 不支持私募，工资
-	if txType != constants.TX_TYPE_TRANS &&
-		//txType != constants.TX_TYPE_PRIVATE_PLACEMENT &&
-		txType != constants.TX_TYPE_ACTIVITY_REWARD {
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
-	//如果是活动领取，需要校验转出者的id
-	if txType == constants.TX_TYPE_ACTIVITY_REWARD {
-
-		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
-			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
-			return
-		}
-
-		if !common.CheckTansTypeFromUid(from, txType) {
-			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-			return
-		}
 	}
 
 	txh := common.DTTXHistory{
@@ -184,7 +204,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 	err := common.InsertPending(&txh)
 	if err != nil {
-		logger.Error("insert mongo db error ", err.Error())
+		log.Error("insert mongo db error ", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = transPrepareResData{

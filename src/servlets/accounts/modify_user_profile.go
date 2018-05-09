@@ -8,6 +8,7 @@ import (
 	"utils"
 	"utils/db_factory"
 	"utils/logger"
+	"regexp"
 )
 
 type profileSecret struct {
@@ -31,10 +32,10 @@ func (handler *modifyUserProfileHandler) Method() string {
 }
 
 func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(true)
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
-
+	defer log.InfoAll()
 	requestData := modifyProfileRequest{}
 	common.ParseHttpBodyParams(request, &requestData)
 	header := common.ParseHttpHeaderParams(request)
@@ -42,7 +43,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// fmt.Println("modify user profile: 111 \n", utils.ToJSONIndent(header), utils.ToJSONIndent(requestData))
 	// request params check
 	if !header.IsValid() || (len(requestData.Param.Secret) < 1) {
-		logger.Info("modify user profile: invalid request param")
+		log.Info("modify user profile: invalid request param")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
 	// fmt.Println("modify user profile: 22222222 \n", utils.ToJSONIndent(header), utils.ToJSONIndent(requestData))
@@ -52,13 +53,19 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
-		logger.Info("modify user profile: read user info error:", err)
+		log.Info("modify user profile: read user info error:", err)
 		return
 	}
 
+
+
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		logger.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))
+		log.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))
+		return
+	}
+	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 	// fmt.Println("modify user profile: 333", aesKey)
@@ -67,11 +74,11 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	secret := new(profileSecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	// fmt.Println("modify user profile: 444", iv, key)
-	err := DecryptSecret(requestData.Param.Secret, key, iv, &secret)
+	err := DecryptSecret(requestData.Param.Secret, key, iv, secret)
 	// fmt.Println("modify user profile: 555", utils.ToJSONIndent(secret), err)
 	if err != constants.RC_OK {
 		response.SetResponseBase(err)
-		logger.Info("modify user profile: Decrypt Secret error:", err)
+		log.Info("modify user profile: Decrypt Secret error:", err)
 		return
 	}
 
@@ -83,17 +90,34 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// 	return
 	// }
 
+	if !validateNickName(secret.Nickname) {
+		log.Error("validate nickname failed")
+		response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
+		return
+	}
+
 	dbErr := common.SetNickname(uid, secret.Nickname)
 	if dbErr != nil {
 		if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
-			logger.Info("modify user profile: duplicate nickname", dbErr)
+			log.Info("modify user profile: duplicate nickname", dbErr)
 			response.SetResponseBase(constants.RC_DUP_NICKNAME)
 		} else {
-			logger.Info("modify user profile : save nickname to db error:", dbErr)
+			log.Info("modify user profile : save nickname to db error:", dbErr)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 		// } else {
 		// 	fmt.Println("modify user profile: success")
 	}
+	log.Info("modify user profile success")
 
+}
+
+func validateNickName(name string)bool{
+	l := len(name)
+	if l < 4 || l > 30 {
+		return false
+	}
+	reg := "^[-\u4e00-\u9fa5a-zA-Z0-9_]{2,30}$"
+	ret, _ := regexp.MatchString(reg, name)
+	return ret
 }

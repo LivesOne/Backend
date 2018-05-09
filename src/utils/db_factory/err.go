@@ -1099,9 +1099,9 @@ func (me *MySqlError) build(err error) {
 	//errRegexp := regexp.MustCompile(`Error (\d+)\w*\'(\w+)\'\w*'(\w+)\'`)
 	//mcs := errRegexp.FindStringSubmatch(me.Descrption)
 	me.Code = matchErrCode(me.Descrption)
-	me.Value,me.Key = matchErrEntity(me.Descrption)
-	logger.Error("error msg :",me.Descrption)
-	logger.Error("catch mysql error code :",me.Code," key :",me.Key," value : ",me.Value)
+	me.Value, me.Key = matchErrEntity(me.Descrption)
+	logger.Error("error msg :", me.Descrption)
+	logger.Error("catch mysql error code :", me.Code, " key :", me.Key, " value : ", me.Value)
 }
 
 func parseErrCode(err error) *MySqlError {
@@ -1110,25 +1110,24 @@ func parseErrCode(err error) *MySqlError {
 	return me
 }
 
-
-func matchErrCode(errStr string)int {
+func matchErrCode(errStr string) int {
 	errRegexp := regexp.MustCompile(`Error (\d+):.*`)
 	mcs := errRegexp.FindStringSubmatch(errStr)
-	if len(mcs) == 2{
+	if len(mcs) == 2 {
 		return utils.Str2Int(mcs[1])
-	}else{
+	} else {
 		return 0
 	}
 
 }
 
-func matchErrEntity(errStr string)(string,string) {
+func matchErrEntity(errStr string) (string, string) {
 	errRegexp := regexp.MustCompile(`.*\'(.+)\'.*\'(.+)\'$`)
 	mcs := errRegexp.FindStringSubmatch(errStr)
-	if len(mcs) == 3{
-		return mcs[1],mcs[2]
-	}else{
-		return "",""
+	if len(mcs) == 3 {
+		return mcs[1], mcs[2]
+	} else {
+		return "", ""
 	}
 
 }
@@ -1142,11 +1141,11 @@ func CheckDuplicate(err error) (bool, *MySqlError) {
 	}
 }
 
-func CheckDuplicateByColumn(err error,column string) (bool) {
+func CheckDuplicateByColumn(err error, column string) bool {
 	me := parseErrCode(err)
 	if me.Code == ER_DUP_ENTRY && me.Key == column {
 		return true
-	}else {
+	} else {
 		return false
 	}
 }

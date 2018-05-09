@@ -1,0 +1,54 @@
+{
+  "UserLevelLimit" : {
+    "0":{
+      "ChangePhone": false,
+      "LockAsset": false,
+      "TransferTo": false,
+      "SingleAmountMin": 0,
+      "SingleAmountMax": 0,
+      "DailyAmountMax": 0,
+      "DailyPrepareAccess": 0,
+      "DailyCommitAccess": 0
+    },
+    "1":{
+      "ChangePhone": true,
+      "LockAsset": true,
+      "TransferTo": true,
+      "SingleAmountMin": 0,
+      "SingleAmountMax": 0,
+      "DailyAmountMax": 0,
+      "DailyPrepareAccess": 0,
+      "DailyCommitAccess": 0
+    },
+    "2":{
+      "ChangePhone": true,
+      "LockAsset": true,
+      "TransferTo": true,
+      "SingleAmountMin": 10,
+      "SingleAmountMax": 2000,
+      "DailyAmountMax": 2000,
+      "DailyPrepareAccess": 3,
+      "DailyCommitAccess": 2
+    },
+    "3":{
+      "ChangePhone": true,
+      "LockAsset": true,
+      "TransferTo": true,
+      "SingleAmountMin": 10,
+      "SingleAmountMax": 5000,
+      "DailyAmountMax": 5000,
+      "DailyPrepareAccess": 7,
+      "DailyCommitAccess": 5
+    },
+    "4":{
+      "ChangePhone": true,
+      "LockAsset": true,
+      "TransferTo": true,
+      "SingleAmountMin": 10,
+      "SingleAmountMax": 10000,
+      "DailyAmountMax": 10000,
+      "DailyPrepareAccess": 14,
+      "DailyCommitAccess": 10
+    }
+  }
+}

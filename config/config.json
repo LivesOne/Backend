@@ -2,6 +2,7 @@
     "ServerAddr" : ":8080",
 
     "PrivKey" : "rsa_private_key.pem",
+    "UserLevelConfig" : "user_level.json",
     "LogConfig": "l4g.xml",
     "MaxActivityRewardValue":100,
     "AppIDs" :
@@ -19,18 +20,18 @@
     "User" : 
     {
         "MaxConn" : 10,
-        "DBHost" : "10.100.15.96:3306",
-        "DBUser" : "lvt_serv",
-        "DBUserPwd" : "U9D$WHTo",
+        "DBHost" : "10.100.14.243:3306",
+        "DBUser" : "root",
+        "DBUserPwd" : "maxthon",
         "DBDatabase" : "livesone_user"
     },
 
     "Asset" : 
     {
         "MaxConn" : 10,
-        "DBHost" : "10.100.15.96:3306",
-        "DBUser" : "lvt_serv",
-        "DBUserPwd" : "U9D$WHTo",
+        "DBHost" : "10.100.14.243:3306",
+        "DBUser" : "root",
+        "DBUserPwd" : "maxthon",
         "DBDatabase" : "livesone_asset"
     },
 
@@ -43,22 +44,77 @@
         "DBDatabase" : "db_livesone_tx_history"
     },
   
-    "SmsSvrAddr":"http://10.100.13.6:8045",
-    "MailSvrAddr":"http://10.0.5.248:8080/vcode",
-    "ImgSvrAddr":"http://10.0.5.248:8080/vcode",
-    "TransferLimit" :
-    {
-        "SingleAmountMin": 10,
-        "SingleAmountMax": 20000,
-        "DailyAmountMax": 20000,
-        "DailyPrepareAccess": 25,
-        "DailyCommitAccess": 20
+    "SmsSvrAddr":"http://10.0.5.248:9099",
+    "MailSvrAddr":"http://10.0.5.248:9080/vcode",
+    "ImgSvrAddr":"http://10.0.5.248:9080/vcode",
+    "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
+    "TransferLimit" : {
+        "0":{
+            "SingleAmountMin": 10,
+            "SingleAmountMax": 20000,
+            "DailyAmountMax": 20000,
+            "DailyPrepareAccess": 25,
+            "DailyCommitAccess": 20
+        },
+        "1":{
+            "SingleAmountMin": 10,
+            "SingleAmountMax": 20000,
+            "DailyAmountMax": 20000,
+            "DailyPrepareAccess": 25,
+            "DailyCommitAccess": 20
+        },
+        "2":{
+            "SingleAmountMin": 10,
+            "SingleAmountMax": 2000000,
+            "DailyAmountMax": 2000000,
+            "DailyPrepareAccess": 25,
+            "DailyCommitAccess": 20
+        },
+        "3":{
+            "SingleAmountMin": 10,
+            "SingleAmountMax": 2000000,
+            "DailyAmountMax": 2000000,
+            "DailyPrepareAccess": 25,
+            "DailyCommitAccess": 20
+        },
+        "4":{
+            "SingleAmountMin": 10,
+            "SingleAmountMax": 2000000,
+            "DailyAmountMax": 2000000,
+            "DailyPrepareAccess": 25,
+            "DailyCommitAccess": 20
+        },
+        "255":{
+            "SingleAmountMin": -1,
+            "SingleAmountMax": -1,
+            "DailyAmountMax": -1,
+            "DailyPrepareAccess": -1,
+            "DailyCommitAccess": -1
+        }
     },
+
     "Captcha":{
         "Url":"http://c.dun.163yun.com/api/v2/verify",
         "Id":"",
         "SecretId":"",
         "SecretKey":""
-    }
-   
+    },
+    "CautionMoneyIds" :[
+        199432559,
+        181270929
+    ],
+    "LoginPwdErrCntLimit": [
+      {"Number":3, "Min":10},
+      {"Number":5, "Min":60}
+    ],
+    "PenaltyMoneyAccountUid":181270929,
+    "WXAuth":{
+        "Url":"https://api.weixin.qq.com/sns/oauth2/access_token",
+        "Appid":"",
+        "Secret":""
+    },
+    "BindActive":"bind_active.json",
+    "AuthTelegramUrl":"http://tg-callback.lives.one/code/v1/verify"
+
+
 }

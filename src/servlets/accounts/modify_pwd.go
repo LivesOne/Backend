@@ -68,6 +68,12 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
+
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
 	// 解码 secret 参数
 	// secretString := requestData.Param.Secret
 	secret := new(modifySecret)

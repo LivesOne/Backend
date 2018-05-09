@@ -13,8 +13,8 @@ const (
 
 	// Account Register
 	// http method : POST
-	ACCOUNT_REGISTER = "/user/v1/account/register"
-
+	ACCOUNT_REGISTER         = "/user/v1/account/register"
+	ACCOUNT_REGISTER_UPVCODE = "/user/v1/account/register_upvcode"
 	// Account login
 	// http method : POST
 	ACCOUNT_LOGIN = "/user/v1/account/login"
@@ -71,6 +71,13 @@ const (
 
 	ACCOUNT_SET_STATUS = "/user/v1/account/set_status"
 
+	ACCOUNT_UPGRADE = "/user/v1/profile/upgrade"
+
+	ACCOUNT_BIND_WX = "/user/v1/profile/bind_wx"
+
+	ACCOUNT_BIND_TG= "/user/v1/profile/bind_tg"
+
+	ACCOUNT_PROFILE_USERINFO = "/user/v1/profile/userinfo"
 	// Contacts Sync APIs
 
 	//Assets Management APIs
@@ -86,4 +93,11 @@ const (
 	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
 
 	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
+
+	ASSET_LOGK_LIST = "/asset/v1/lock/list"
+
+	ASSET_LOCK_CREATE = "/asset/v1/lock/create"
+
+	ASSET_LOCK_REMOVE = "/asset/v1/lock/remove"
+
 )

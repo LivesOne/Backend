@@ -5,7 +5,6 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"strconv"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -42,7 +41,11 @@ type responseLogin struct {
 }
 
 type limitedRes struct {
-	Uid string `json:"uid"`
+	Uid       string `json:"uid"`
+}
+
+type tmpLimitedRes struct {
+	LimitTime int    `json:"limit_time"`
 }
 
 // loginHandler implements the "Echo message" interface
@@ -73,7 +76,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	if handler.isSignValid(aesKey, header.Signature, header.Timestamp) == false {
+	if utils.SignValid(aesKey, header.Signature, header.Timestamp) == false {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
@@ -103,29 +106,49 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	var account *common.Account = nil
 	for _, act := range accountList {
 		// if handler.checkUserPassword(account.LoginPassword, aesKey, loginData.Param.PWD, account.UIDString) == false {
+
+		//登陆封锁
+		if limited, expire := common.CheckUserInLoginLimit(act.UID); limited {
+			//返回临时登陆受限
+			response.SetResponseBase(constants.RC_ACCOUNT_TEMP_LIMITED)
+			response.Data = tmpLimitedRes{
+				LimitTime: expire,
+			}
+			return
+		}
+
 		if handler.checkUserPassword(act.LoginPassword, aesKey, loginData.Param.PWD, act.UIDString) {
 			account = act
+			//登陆成功， 清理缓存限制计数
+			common.ClearUserLimitNum(act.UID)
 			break
 		}
 	}
+
 	if account == nil {
 		// no account match the login information
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+
+		// 限制++acc
+		// 识别数量决定是否限制
+		// 多个+
+		for _, acc := range accountList {
+			if ok,time := common.AddWrongPwd(acc.UID);ok {
+				response.Data = tmpLimitedRes{
+					LimitTime: time,
+				}
+			}
+		}
 		return
 	}
 
-
-
-	if !common.CheckUserLoginLimited(account.UID) {
+	if account.Status == constants.USER_LIMITED_UNLOGIN {
 		response.SetResponseBase(constants.RC_ACCOUNT_LIMITED)
 		response.Data = limitedRes{
 			Uid: utils.Int642Str(account.UID),
 		}
 		return
 	}
-
-
-
 
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)
@@ -210,25 +233,7 @@ func (handler *loginHandler) checkRequestParams(header *common.HeaderParams, log
 	return true
 }
 
-func (handler *loginHandler) isSignValid(aeskey, signature string, timestamp int64) bool {
 
-	// signature := handler.header.Signature
-
-	if len(signature) < 1 {
-		return false
-	}
-
-	tmp := aeskey + strconv.FormatInt(timestamp, 10)
-	hash := utils.Sha256(tmp)
-
-	if signature == hash {
-		logger.Info("login: verify header signature successful", signature, string(hash[:]))
-	} else {
-		logger.Info("login: verify header signature failed:", signature, string(hash[:]))
-	}
-
-	return signature == hash
-}
 
 func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, error) {
 

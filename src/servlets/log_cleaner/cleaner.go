@@ -1,29 +1,27 @@
 package log_cleaner
 
 import (
-	"servlets/common"
 	"gopkg.in/mgo.v2/bson"
-	"utils"
+	"servlets/common"
 	"servlets/constants"
+	"utils"
 	"utils/logger"
 )
 
 const (
-
 	T_S_120 = 120 * 1000
 
 	T_S_60 = 60 * 1000
-
 )
 
-func cleanerPending()bool{
+func cleanerPending() bool {
 	mts := utils.GetTimestamp13()
 	query := bson.M{
-		"_id":bson.M{
-			"$lt":utils.TimestampToTxid(mts,T_S_60),
+		"_id": bson.M{
+			"$lt": utils.TimestampToTxid(mts, T_S_60),
 		},
 	}
-	pd := common.FindTopPending(query,1)
+	pd := common.FindTopPending(query, 1)
 	//拿到数据
 	if pd != nil && pd.Id > 0 {
 		//反解析txid里面的时间戳
@@ -42,7 +40,7 @@ func cleanerPending()bool{
 					if common.CheckDup(err) {
 						common.DeletePendingByInfo(pd)
 					} else {
-						logger.Error("insert mongo failed error ",err.Error())
+						logger.Error("insert mongo failed error ", err.Error())
 					}
 				}
 			}
@@ -55,4 +53,3 @@ func cleanerPending()bool{
 	}
 	return false
 }
-

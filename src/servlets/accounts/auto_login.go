@@ -5,7 +5,6 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"strconv"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -66,7 +65,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
-	if handler.isSignValid(aesKey, header.Signature, header.Timestamp) == false {
+	if utils.SignValid(aesKey, header.Signature, header.Timestamp) == false {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
@@ -83,7 +82,6 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 		return
 	}
-
 
 	const expire int64 = 24 * 3600
 	errT := token.Update(header.TokenHash, aesKey, expire)
@@ -123,24 +121,6 @@ func (handler *autoLoginHandler) checkRequestParams(header *common.HeaderParams,
 	return true
 }
 
-func (handler *autoLoginHandler) isSignValid(aeskey, signature string, timestamp int64) bool {
-
-	if len(signature) < 1 {
-		logger.Info("autologin: no signature info")
-		return false
-	}
-
-	tmp := aeskey + strconv.FormatInt(timestamp, 10)
-	hash := utils.Sha256(tmp)
-
-	if signature == hash {
-		logger.Info("autologin: verify header signature successful", signature, string(hash[:]))
-	} else {
-		logger.Info("autologin: verify header signature failed:", signature, string(hash[:]))
-	}
-
-	return signature == hash
-}
 
 func (handler *autoLoginHandler) getUID(aeskey, tokenHash, paramToken string) string {
 

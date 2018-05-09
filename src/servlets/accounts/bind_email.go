@@ -41,7 +41,7 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 
 	httpHeader := common.ParseHttpHeaderParams(request)
 	requestData := new(bindEMailRequest)
-	common.ParseHttpBodyParams(request, &requestData)
+	common.ParseHttpBodyParams(request, requestData)
 
 	if httpHeader.Timestamp < 1 {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -54,14 +54,20 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(err)
 		return
 	}
+
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
 	uid := utils.Str2Int64(uidString)
 
 	// 解码 secret 参数
 	secretString := requestData.Param.Secret
 	secret := new(mailSecret)
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
-	if err := DecryptSecret(secretString, key, iv, &secret); err != constants.RC_OK {
+	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
+		return
 	}
 
 	if !utils.IsValidEmailAddr(secret.Email) {
@@ -77,7 +83,7 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	if !common.CheckLoginPwd(uid,secret.Pwd){
+	if !common.CheckLoginPwd(uid, secret.Pwd) {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}

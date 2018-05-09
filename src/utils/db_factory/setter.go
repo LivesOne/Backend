@@ -25,7 +25,7 @@ func (m DBPool) QueryRow(query string, args ...interface{}) (map[string]string, 
 	rows, err := m.currDB.Query(query, args...)
 	if err != nil {
 		log.Error("query error ", err.Error())
-		return nil,err
+		return nil, err
 	}
 	defer rows.Close()
 	if rows.Next() {

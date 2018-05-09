@@ -52,7 +52,6 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 			RC:  constants.RC_OK.Rc,
 			Msg: constants.RC_OK.Msg,
 		},
-		Data: 0, // data expire Int 失效时间，单位秒
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
@@ -140,11 +139,11 @@ func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 	} else if param.Action == "reset" {
 		switch param.Type {
 		case MESSAGE, CALL:
-			if !common.ExistsPhone(param.Country, param.Phone) {
+			if common.CheckResetPhone(param.Country, param.Phone) {
 				return false, constants.RC_INVALID_ACCOUNT
 			}
 		case EMAIL:
-			if !common.ExistsEmail(param.EMail) {
+			if common.CheckResetEmail(param.EMail) {
 				return false, constants.RC_INVALID_ACCOUNT
 			}
 		default:

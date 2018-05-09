@@ -41,36 +41,39 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	if handler.checkToken(header.TokenHash, logoutData.Param.Token) == false {
+
+
+	// retrive the original token from cache
+	_, aesKey, tokenCache, errT := token.GetAll(header.TokenHash)
+	if (errT != constants.ERR_INT_OK) || (len(aesKey) != constants.AES_totalLen) {
+		logger.Info("logout: get token from cache failed: ", errT, len(aesKey))
+
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 		return
 	}
 
-	errT := token.Del(header.TokenHash)
+	iv := aesKey[:constants.AES_ivLen]
+	key := aesKey[constants.AES_ivLen:]
+	tokenOriginal, err := utils.AesDecrypt(logoutData.Param.Token, string(key), string(iv))
+	// tokenTmp := utils.Base64Decode(tokenUpload)
+	// tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
+	if (err != nil) || (tokenOriginal != tokenCache) {
+		logger.Info("logout: parse token failed:", err)
+
+		response.SetResponseBase(constants.RC_INVALID_TOKEN)
+		return
+	}
+
+
+	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
+	errT = token.Del(header.TokenHash)
 	if errT != constants.ERR_INT_OK {
 		logger.Info("logout: remove token failed:", errT)
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 	}
 }
 
-func (handler *logoutHandler) checkToken(headerTokenHash, paramToken string) bool {
-
-	// retrive the original token from cache
-	_, aesKey, tokenCache, errT := token.GetAll(headerTokenHash)
-	if (errT != constants.ERR_INT_OK) || (len(aesKey) != constants.AES_totalLen) {
-		logger.Info("logout: get token from cache failed: ", errT, len(aesKey))
-		return false
-	}
-
-	iv := aesKey[:constants.AES_ivLen]
-	key := aesKey[constants.AES_ivLen:]
-	tokenOriginal, err := utils.AesDecrypt(paramToken, string(key), string(iv))
-	// tokenTmp := utils.Base64Decode(tokenUpload)
-	// tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
-	if (err != nil) || (tokenOriginal != tokenCache) {
-		logger.Info("logout: parse token failed:", err)
-		return false
-	}
-
-	return true
-}

@@ -2,13 +2,14 @@ package common
 
 import (
 	"errors"
+	_ "github.com/go-sql-driver/mysql"
+	"regexp"
+	"utils"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"regexp"
-	"utils"
-	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
+	"database/sql"
 )
 
 //var gDbUser *sql.DB
@@ -41,7 +42,7 @@ func UserDbInit() error {
 	}
 	gDbUser = db_factory.NewDataSource(facConfig_user)
 	if gDbUser.IsConn() {
-		logger.Debug("connection ",db_config_user.DBHost,db_config_user.DBDatabase,"database successful")
+		logger.Debug("connection ", db_config_user.DBHost, db_config_user.DBDatabase, "database successful")
 	} else {
 		logger.Error(gDbUser.Err())
 		return gDbUser.Err()
@@ -66,12 +67,41 @@ func ExistsEmail(email string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
+func CheckUserLoginLimited(uid int64)bool{
+	row, err := gDbUser.QueryRow("select status from account where uid = ? ", uid)
+	if err != nil || row == nil {
+		logger.Error("query err ", err.Error())
+		return false
+	}
+	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
+}
+
 func ExistsPhone(country int, phone string) bool {
 	row, _ := gDbUser.QueryRow("select count(1) as c from account where country = ? and phone = ? limit 1", country, phone)
 	if row == nil {
 		return false
 	}
 	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckResetPhone(country int, phone string)bool{
+	row, err := gDbUser.QueryRow("select uid from account where country = ? and phone = ? limit 1", country, phone)
+	if err != nil || row == nil {
+		return true
+	}
+	uid := utils.Str2Int64(row["uid"])
+	flag,_ := CheckUserInLoginLimit(uid)
+	return flag
+}
+
+func CheckResetEmail(email string) bool{
+	row, err := gDbUser.QueryRow("select uid from account where email = ? limit 1", email)
+	if err != nil || row == nil {
+		return true
+	}
+	uid := utils.Str2Int64(row["uid"])
+	flag,_ := CheckUserInLoginLimit(uid)
+	return flag
 }
 
 func GetAssetByUid(uid int64) (int64, int) {
@@ -177,9 +207,10 @@ func GetAccountByUID(uid string) (*Account, error) {
 	// logger.Info("GetAccountByUID:--------------------------", row, len(row), err)
 	if err != nil {
 		logger.Error(err)
+		return nil,err
 	}
 	if len(row) < 1 {
-		return nil, errors.New("no record for:" + uid)
+		return nil, sql.ErrNoRows
 	}
 	return convRowMap2Account(row), err
 }
@@ -219,11 +250,11 @@ func GetAccountListByPhoneOnly(phone string) ([](*Account), error) {
 }
 
 func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
-	if len(condition) ==0 || !isNum(condition) {
-		return nil,errors.New("condition"+condition+" is Wrongful ")
+	if len(condition) == 0 || !isNum(condition) {
+		return nil, errors.New("condition" + condition + " is Wrongful ")
 	}
 	sql := "select * from account where uid = ? union all select * from account where phone = ?"
-	uid,phone := utils.Str2Int64(condition), condition
+	uid, phone := utils.Str2Int64(condition), condition
 
 	rows := gDbUser.Query(sql, uid, phone)
 	// logger.Info("GetAccountListByPhoneOrUID:--------------------------", rows, len(rows))
@@ -235,7 +266,7 @@ func GetAccountListByPhoneOrUID(condition string) ([](*Account), error) {
 	//for idx := len(rows) - 1; idx > -1; idx-- {
 	//	accounts[idx] = convRowMap2Account(rows[idx])
 	//}
-	for i,v := range rows {
+	for i, v := range rows {
 		accounts[i] = convRowMap2Account(v)
 	}
 	return accounts, nil
@@ -270,6 +301,11 @@ func SetAssetStatus(uid int64, status int) error {
 	return err
 }
 
+func SetUserLevel(uid int64, level int) error {
+	_, err := gDbUser.Exec("update account set level = ? where uid = ?", level, uid)
+	return err
+}
+
 func CheckLoginPwd(uid int64, pwdInDB string) bool {
 	row, err := gDbUser.QueryRow("select login_password from account where uid = ? ", uid)
 	if err != nil {
@@ -288,24 +324,6 @@ func CheckPaymentPwd(uid int64, pwdInDB string) bool {
 	}
 	pwd := utils.Sha256(pwdInDB + utils.Int642Str(uid))
 	return pwd == row["payment_password"]
-}
-
-func CheckUserLoginLimited(uid int64)bool{
-	row, err := gDbUser.QueryRow("select status from account where uid = ? ", uid)
-	if err != nil || row == nil {
-		logger.Error("query err ", err.Error())
-		return false
-	}
-	return utils.Str2Int(row["status"]) == constants.USER_LIMITED_DEF
-}
-
-func GetUserLevel(uid int64)int{
-	row, err := gDbUser.QueryRow("select level from account where uid = ? ", uid)
-	if err != nil || row == nil {
-		logger.Error("query err ", err.Error())
-		return 0
-	}
-	return utils.Str2Int(row["level"])
 }
 
 func convRowMap2Account(row map[string]string) *Account {
@@ -327,11 +345,141 @@ func convRowMap2Account(row map[string]string) *Account {
 		account.LoginPassword = row["login_password"]
 		account.PaymentPassword = row["payment_password"]
 		account.Level = utils.Str2Int(row["level"])
+		account.Status = utils.Str2Int(row["status"])
 		return account
 	}
 	return nil
 }
-func isNum(s string)bool{
+func isNum(s string) bool {
 	r, _ := regexp.Compile("[0-9]*")
 	return r.MatchString(s)
+}
+
+
+func CheckWXIdExists(wxid string)bool{
+	row,err := gDbUser.QueryRow("select count(1) as c from account_extend where wxid = ?",wxid)
+	if err != nil {
+		logger.Error("query account_extend error",err.Error())
+		return false
+	}
+	return utils.Str2Int(row["c"])>0
+}
+
+func InitAccountExtend(uid int64)error{
+	_, err := gDbUser.Exec("insert ignore into account_extend (uid,wx_openid,wx_unionid,tg_id,update_time) values (?,null,null,null,?)", uid, utils.GetTimestamp13())
+	return err
+}
+
+func SetWxId(uid int64,wxOpenid,wxUnionid string) (int64,error) {
+	sql := "update account_extend set wx_openid = ?,wx_unionid = ?,update_time = ? where uid = ? and wx_openid is null and wx_unionid is null"
+	res, err := gDbUser.Exec(sql, wxOpenid,wxUnionid,utils.GetTimestamp13(), uid)
+	if err != nil {
+		return 0,err
+	}
+	return res.RowsAffected()
+}
+
+func SetTGId(uid int64,tgId string) (int64,error) {
+	sql := "update account_extend set tg_id = ?,update_time = ? where uid = ? and tg_id is null"
+	res, err := gDbUser.Exec(sql, tgId,utils.GetTimestamp13(), uid)
+	if err != nil {
+		return 0,err
+	}
+	return res.RowsAffected()
+}
+
+
+func CheckBindWx(uid int64)bool{
+	sql := `
+		select
+			a.country as c,
+			ae.wx_openid as openid,
+			ae.wx_unionid as unionid
+		from
+			account as a
+		left join
+			account_extend as ae
+		on
+			a.uid = ae.uid
+		where
+			a.uid = ?
+	`
+	row,err := gDbUser.QueryRow(sql,uid)
+	if err != nil {
+		logger.Error("query bind info error",err.Error())
+		return false
+	}
+	ac := utils.Str2Int(row["c"])
+	if ac != 86 && ac != 852 && ac != 853 && ac != 886  {
+		return true
+	}
+	if id,ok := row["openid"];ok{
+		return len(id)>0
+	}
+	if id,ok := row["unionid"];ok{
+		return len(id)>0
+	}
+	return false
+}
+
+func GetUserLevel(uid int64)int{
+	row,err := gDbUser.QueryRow("select level from account where uid = ?",uid)
+	if err != nil || row == nil{
+		return -1
+	}
+	return utils.Str2Int(row["level"])
+}
+
+func CheckBindWXByUidAndCreditScore(uid int64,country int)(bool,bool,int){
+	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?",uid)
+	if err != nil {
+		return false,false,0
+	}
+	if row == nil {
+		InitAccountExtend(uid)
+		return false,false,70
+	}
+	return len(row["wx_openid"])>0&&len(row["wx_unionid"])>0,len(row["tg_id"])>0,utils.Str2Int(row["credit_score"])
+}
+
+func GetUserCreditScore(uid int64)int{
+	row,err := gDbUser.QueryRow("select credit_score from account_extend where uid = ?",uid)
+	if err != nil {
+		return 0
+	}
+	if row == nil {
+		InitAccountExtend(uid)
+		return 70
+	}
+	return utils.Str2Int(row["credit_score"])
+}
+
+func GetUserRegisterTime(uid int64)int64{
+	row,err := gDbUser.QueryRow("select register_time from account where uid = ?",uid)
+	if err != nil || row == nil {
+		return 0
+	}
+	return utils.Str2Int64(row["register_time"])
+}
+
+func GetUserExtendByUid(uid int64)(string,string,int){
+	row,err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?",uid)
+	if err != nil {
+		return "","",0
+	}
+	if row == nil {
+		InitAccountExtend(uid)
+		return "","",70
+	}
+	return row["wx_openid"],row["wx_unionid"],utils.Str2Int(row["credit_score"])
+}
+
+
+func DeductionCreditScore(uid int64,score int)bool{
+	_,err := gDbUser.Exec("update account_extend set credit_score = credit_score - ? where uid = ?",score,uid)
+	if err != nil {
+		logger.Error("DeductionCreditScore failed",err.Error())
+		return false
+	}
+	return true
 }

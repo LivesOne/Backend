@@ -17,9 +17,10 @@ type rewardRequest struct {
 }
 
 type rewardResData struct {
-	Total      string `json:"total"`
-	Yesterday  string `json:"yesterday"`
-	Ts int64  `json:"ts"`
+	Total     string `json:"total"`
+	Yesterday string `json:"yesterday"`
+	Ts        int64  `json:"ts"`
+	Days      int    `json:"days"`
 }
 
 // sendVCodeHandler
@@ -39,7 +40,6 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 			RC:  constants.RC_OK.Rc,
 			Msg: constants.RC_OK.Msg,
 		},
-		Data: 0, // data expire Int 失效时间，单位秒
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
@@ -61,7 +61,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	re,err := common.QueryReward(intUid)
+	re, err := common.QueryReward(intUid)
 
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -78,9 +78,10 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 		yesterday = utils.LVTintToFloatStr(re.Yesterday)
 	}
 	response.Data = rewardResData{
-		Total:      utils.LVTintToFloatStr(re.Total),
-		Yesterday:  yesterday,
-		Ts: t,
+		Total:     utils.LVTintToFloatStr(re.Total),
+		Yesterday: yesterday,
+		Ts:        t,
+		Days:      re.Days,
 	}
 
 }

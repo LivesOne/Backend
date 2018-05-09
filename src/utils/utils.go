@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"math"
+	"utils/logger"
 )
 
 const (
@@ -75,10 +77,16 @@ func IsDigit(str string) bool {
 	return ret
 }
 
-
-
 func GetTimestamp13() int64 {
 	return GetTimestamp13ByTime(time.Now())
+}
+
+func GetTimestamp10() int64 {
+	return GetTimestamp10ByTime(time.Now())
+}
+
+func GetTimestamp10ByTime(t time.Time) int64 {
+	return t.Unix()
 }
 
 func GetTimestamp13ByTime(t time.Time) int64 {
@@ -123,6 +131,14 @@ func FloatStrToLVTint(lvt string) int64 {
 	return int64(Str2Float64(lvt) * CONV_LVT)
 }
 
+func LVTintToNamorInt(lvt int64)int{
+	return int(lvt/CONV_LVT)
+}
+
+func NamorFloatToLVTint(nlvt float64)int64{
+	return int64(nlvt*CONV_LVT)
+}
+
 func Str2Float64(str string) float64 {
 	fs, _ := strconv.ParseFloat(str, 64)
 	return fs
@@ -134,12 +150,48 @@ func TXIDToTimeStamp13(txid int64) int64 {
 	return tagTs
 }
 
-func GetFormatDateNow()string{
+func GetFormatDateNow() string {
 	return time.Now().UTC().Format("2006-01-02 15:04:05")
 }
 
-func TimestampToTxid(ts,iv int64)int64{
+func TimestampToTxid(ts, iv int64) int64 {
 	delta := ts - iv - constants.BASE_TIMESTAMP
 	tstx := (delta << 22) & 0x7FFFFFFFFFC00000
 	return tstx
+}
+
+
+func Round(f float64)int{
+	return int(math.Floor(f+0.5))
+}
+
+
+func SignValid(aeskey, signature string, timestamp int64) bool {
+
+	// signature := handler.header.Signature
+
+	if len(signature) < 1 {
+		return false
+	}
+
+	tmp := aeskey + strconv.FormatInt(timestamp, 10)
+	hash := Sha256(tmp)
+
+	res := signature == hash
+
+	if res {
+		logger.Info("verify header signature successful", signature, string(hash[:]))
+	} else {
+		logger.Info("verify header signature failed:", signature, string(hash[:]))
+	}
+
+	return res
+}
+
+
+func GetTs13(ts int64)int64{
+	if ts > 1000000000 && ts < 2000000000 {
+		return ts *1000
+	}
+	return ts
 }

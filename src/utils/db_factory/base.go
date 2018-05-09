@@ -19,7 +19,7 @@ type Config struct {
 type DBPool struct {
 	currDB *sql.DB
 	isConn bool
-	err error
+	err    error
 }
 
 func NewDataSource(config Config) *DBPool {
@@ -40,7 +40,7 @@ func initDb(config Config) *DBPool {
 		log.Error("cannot conn db", err.Error())
 		return &DBPool{
 			isConn: false,
-			err:err,
+			err:    err,
 		}
 	} else {
 		db.SetMaxOpenConns(config.MaxConn)
@@ -72,4 +72,3 @@ func parseRow(r *sql.Rows) map[string]string {
 	}
 	return item
 }
-

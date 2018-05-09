@@ -5,12 +5,17 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
+	"utils"
 	"utils/logger"
 )
 
 type profileResponse struct {
 	common.Account
-	Have_pay_pwd bool `json:"have_pay_pwd"`
+	HavePayPwd  bool `json:"have_pay_pwd"`
+	TransLevel  int  `json:"trans_level"`
+	BindWx      bool `json:"bind_wx"`
+	CreditScore int  `json:"credit_score"`
+	BindTg      bool `json:"bind_tg"`
 }
 
 // getProfileHandler
@@ -33,10 +38,15 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	uid, errT := token.GetUID(header.TokenHash)
+	uid, aesKey, _, errT := token.GetAll(header.TokenHash)
 	if (errT != constants.ERR_INT_OK) || (len(uid) != constants.LEN_uid) {
 		logger.Info("get user profile: get uid from token cache failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 
@@ -47,8 +57,14 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
+	bindWx, bindTg, creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
+	//提前获取交易等级
 	profile := profileResponse{
-		Have_pay_pwd: (len(account.PaymentPassword) > 0),
+		HavePayPwd:  (len(account.PaymentPassword) > 0),
+		TransLevel:  common.GetUserAssetTranslevelByUid(account.UID),
+		BindWx:      bindWx,
+		CreditScore: creditScore,
+		BindTg:      bindTg,
 	}
 
 	account.ID = 0
@@ -57,7 +73,6 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.PaymentPassword = ""
 	account.From = ""
 	account.RegisterType = 0
-
 	profile.Account = *account
 
 	response.Data = profile

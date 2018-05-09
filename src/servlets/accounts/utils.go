@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 	"utils"
+	"utils/logger"
 )
 
 func DecryptSecret(secret string, key string, iv string, instance interface{}) constants.Error {
@@ -14,6 +15,7 @@ func DecryptSecret(secret string, key string, iv string, instance interface{}) c
 	if err != nil {
 		return constants.RC_PARAM_ERR
 	}
+	logger.Info("Decrypt Secret str ",dataStr)
 	if err := json.Unmarshal([]byte(dataStr), instance); err != nil {
 		return constants.RC_PARAM_ERR
 	}
@@ -34,7 +36,6 @@ func TokenErr2RcErr(tokenErr int) constants.Error {
 		return constants.RC_SYSTEM_ERR
 	}
 }
-
 
 // 生成 request 所需的 signature
 func GenerateSig(hash string) (string, constants.Error) {

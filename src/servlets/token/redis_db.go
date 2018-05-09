@@ -88,7 +88,7 @@ func (r *RedisDB) Delete(hash string) int {
 func (r *RedisDB) getField(hash string, field string) (string, int) {
 	conn := common.GetRedisConn()
 	if conn == nil {
-		return "",constants.ERR_INT_TK_DB
+		return "", constants.ERR_INT_TK_DB
 	}
 	defer conn.Close()
 
@@ -118,12 +118,12 @@ func (r *RedisDB) GetToken(hash string) (string, int) {
 func (r *RedisDB) GetAll(hash string) (uid, key, token string, ret int) {
 	conn := common.GetRedisConn()
 	if conn == nil {
-		return "","","",constants.ERR_INT_TK_DB
+		return "", "", "", constants.ERR_INT_TK_DB
 	}
 	defer conn.Close()
 
 	reply, err := redis.StringMap(conn.Do("HGETALL", "tk:"+hash))
-	logger.Debug("token map --->",reply)
+	logger.Debug("token map --->", reply)
 	if err != nil {
 		// logger.Info("------------------------, read cache error:", err)
 		return "", "", "", constants.ERR_INT_TK_DB

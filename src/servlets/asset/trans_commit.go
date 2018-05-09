@@ -6,6 +6,7 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/config"
 	"utils/logger"
 )
 
@@ -33,7 +34,8 @@ func (handler *transCommitHandler) Method() string {
 }
 
 func (handler *transCommitHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(true)
+	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -47,18 +49,16 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	common.ParseHttpBodyParams(request, &requestData)
 
-
 	if requestData.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-
 	httpHeader := common.ParseHttpHeaderParams(request)
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		logger.Info("asset trans commited: request param error")
+		log.Info("asset trans commited: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -66,21 +66,26 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	// 判断用户身份
 	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("asset trans commited: get info from cache error:", err)
+		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
 	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("asset trans commited: get aeskey from cache error:", len(aesKey))
+		log.Info("asset trans commited: get aeskey from cache error:", len(aesKey))
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+
+	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
 	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
 	if err != nil {
-		logger.Error("aes decrypt error ", err.Error())
+		log.Error("aes decrypt error ", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -89,7 +94,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
 	//修改原pending 并返回修改之前的值 如果status 是默认值0 继续  不是就停止
-	perPending,flag := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
+	perPending, flag := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
@@ -98,20 +103,17 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	// 只有转账进行限制
 	if perPending.Type == constants.TX_TYPE_TRANS {
-		//交易次数校验不通过，删除pending
-		if f,e := common.CheckCommitLimit(perPending.From);!f {
-			common.DeletePendingByInfo(perPending)
-			response.SetResponseBase(e)
-			return
+		//非系统账号才进行限额校验
+		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+			level := common.GetTransLevel(perPending.From)
+			//交易次数校验不通过，删除pending
+			if f, e := common.CheckCommitLimit(perPending.From, level); !f {
+				common.DeletePendingByInfo(perPending)
+				response.SetResponseBase(e)
+				return
+			}
 		}
-
-
-
 	}
-
-
-
-
 
 	//txid 时间戳检测
 
@@ -141,7 +143,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	//	response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 	//	return
 	//}
-	f,c := common.TransAccountLvt(txid, perPending.From, perPending.To, perPending.Value)
+	f, c := common.TransAccountLvt(txid, perPending.From, perPending.To, perPending.Value)
 	if f {
 		//成功 插入commited
 		err := common.InsertCommited(perPending)
@@ -152,7 +154,10 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 			if perPending.Type == constants.TX_TYPE_TRANS {
 				//common.RemoveTXID(txid)
-				common.SetTotalTransfer(perPending.From,perPending.Value)
+				if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+					common.SetTotalTransfer(perPending.From, perPending.Value)
+				}
+
 			}
 		}
 

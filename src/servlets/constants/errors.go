@@ -15,23 +15,35 @@ var (
 	RC_TOO_MANY_REQ = Error{4, "too many request"}
 	RC_IP_LIMITED   = Error{5, "ip limited"}
 
-	RC_INVALID_APPID   = Error{10001, "invalid appid"}
-	RC_INVALID_PUB_KEY = Error{10002, "invalid public key"}
-	RC_INVALID_SIGN    = Error{10003, "invalid signature"}
-	RC_INVALID_TOKEN   = Error{10004, "invalid token"}
-	RC_INVALID_VCODE   = Error{10005, "invalid verification code"}
-	RC_VCODE_EXPIRE    = Error{10006, "verification code expire"}
-	RC_PUBLIC_EXPIRE   = Error{10007, "server public key expire"}
+	RC_INVALID_APPID    = Error{10001, "invalid appid"}
+	RC_INVALID_PUB_KEY  = Error{10002, "invalid public key"}
+	RC_INVALID_SIGN     = Error{10003, "invalid signature"}
+	RC_INVALID_TOKEN    = Error{10004, "invalid token"}
+	RC_INVALID_VCODE    = Error{10005, "invalid verification code"}
+	RC_VCODE_EXPIRE     = Error{10006, "verification code expire"}
+	RC_PUBLIC_EXPIRE    = Error{10007, "server public key expire"}
+	RC_VCODE_NOT_EXISTS = Error{10008, "verification code not exists"}
 
-	RC_DUP_EMAIL           = Error{20001, "duplicate email"}
-	RC_DUP_PHONE           = Error{20002, "duplicate phone"}
-	RC_DUP_NICKNAME        = Error{20003, "duplicate nickname"}
-	RC_INVALID_ACCOUNT     = Error{20004, "invalid account"}
-	RC_INVALID_LOGIN_PWD   = Error{20005, "invalid login password"}
-	RC_INVALID_PAYMENT_PWD = Error{20006, "invalid payment password"}
-	RC_EMAIL_NOT_MATCH     = Error{20007, "email not match"}
-	RC_PHONE_NOT_MATCH     = Error{20008, "phone not match"}
-	RC_ACCOUNT_LIMITED     = Error{20009, "account limited"}
+	RC_DUP_EMAIL               = Error{20001, "duplicate email"}
+	RC_DUP_PHONE               = Error{20002, "duplicate phone"}
+	RC_DUP_NICKNAME            = Error{20003, "duplicate nickname"}
+	RC_INVALID_ACCOUNT         = Error{20004, "invalid account"}
+	RC_INVALID_LOGIN_PWD       = Error{20005, "invalid login password"}
+	RC_INVALID_PAYMENT_PWD     = Error{20006, "invalid payment password"}
+	RC_EMAIL_NOT_MATCH         = Error{20007, "email not match"}
+	RC_PHONE_NOT_MATCH         = Error{20008, "phone not match"}
+	RC_ACCOUNT_LIMITED         = Error{20009, "account limited"}
+	RC_ACCOUNT_TEMP_LIMITED    = Error{20010, "account temporary limited"}
+	RC_UPGRAD_FAILED           = Error{20011, "upgrade failed"}
+	RC_USER_LEVEL_LIMIT        = Error{20012, "level limit"}
+	RC_INVALID_WX_CODE         = Error{20013, "invalid wx code"}
+	RC_DUP_WX_ID               = Error{20014, "duplicate weixin id"}
+	RC_DUP_BIND_WX             = Error{20015, "duplicate bind weixin"}
+	RC_INVALID_NICKNAME_FORMAT = Error{20016, "invalid nickname format"}
+	RC_INVALID_TG_CODE         = Error{20017, "invalid telegram code"}
+	RC_DUP_TG_ID               = Error{20018, "duplicate telegram id"}
+	RC_DUP_BIND_TG             = Error{20019, "duplicate bind telegram"}
+	RC_WX_SEC_AUTH_FAILED      = Error{20020, "weixin auth faild"}
 
 	RC_ACCOUNT_ACCESS_LIMITED       = Error{21001, "account access limited"}
 	RC_INSUFFICIENT_BALANCE         = Error{21002, "insufficient balance"}
@@ -42,6 +54,8 @@ var (
 	RC_INVALID_TXID                 = Error{21007, "invalid txid"}
 	RC_TRANS_AMOUNT_TOO_LITTLE      = Error{21008, "transaction amount too little"}
 	RC_TRANS_AMOUNT_EXCEEDING_LIMIT = Error{21009, "transaction amount exceeding limit"}
+	RC_INVALID_LOCK_VALUE           = Error{21010, "invalid lock value"}
+	RC_INVALID_LOCK_ID              = Error{21011, "invalid lock id"}
 
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
