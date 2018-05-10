@@ -41,7 +41,6 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 			RC:  constants.RC_OK.Rc,
 			Msg: constants.RC_OK.Msg,
 		},
-		Data: 0,
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
