@@ -69,6 +69,8 @@ const (
 
 	ACCOUNT_CHECK_ACCOUNT = "/user/v1/account/check"
 
+	ACCOUNT_CHECK_ACCOUNT_MODIFY_PWD = "/user/v1/account/check/modify_pwd"
+
 	ACCOUNT_SET_STATUS = "/user/v1/account/set_status"
 
 	ACCOUNT_UPGRADE = "/user/v1/profile/upgrade"
