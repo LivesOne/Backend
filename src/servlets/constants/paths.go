@@ -102,4 +102,6 @@ const (
 
 	ASSET_LOCK_REMOVE = "/asset/v1/lock/remove"
 
+	ASSET_LOCK_UPGRADE = "/asset/v1/lock/upgrade"
+
 )

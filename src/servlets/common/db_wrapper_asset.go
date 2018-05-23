@@ -1,6 +1,10 @@
 package common
 
 import "utils"
+const (
+	ASSET_LOCK_TYPE_NOR = 0
+	ASSET_LOCK_TYPE_DRAW = 1
+)
 
 type (
 	Reward struct {
@@ -14,6 +18,7 @@ type (
 	AssetLock struct {
 		Id       int64  `json:"-" bson:"id"`
 		IdStr    string `json:"id" bson:"-"`
+		Type     int    `json:"type" bson:"type"`
 		Uid      int64  `json:"uid" bson:"uid"`
 		Value    string `json:"value" bson:"-"`
 		Month    int    `json:"month" bson:"month"`

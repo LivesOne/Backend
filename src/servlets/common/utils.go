@@ -13,6 +13,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	"strings"
+	"io/ioutil"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -66,32 +67,20 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 		return true
 	}
 
-	var bodyparam string
-	var bodyTmp []byte = make([]byte, request.ContentLength)
-	// logger.Info("bodyparam: ", len(bodyparam), cap(bodyparam))
-	for {
-		count, err := request.Body.Read(bodyTmp)
-		if count > 0 {
-			bodyparam += string(bodyTmp[:count])
-		}
-		if err == io.EOF {
-			break
-		}
-		// request.Body.Read(bodyparam)
-		if err != nil {
-			logger.Info("ParseHttpBodyParams: read http body error : ", err)
-			return false
-		}
+	bodyBytes ,err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		logger.Info("ParseHttpBodyParams: read http body error : ", err)
+		return false
 	}
 
-	logger.Info("ParseHttpBodyParams: read http body: ", bodyparam)
+	logger.Info("ParseHttpBodyParams: read http body: ", string(bodyBytes))
 
-	err := json.Unmarshal([]byte(bodyparam), body)
+	err = json.Unmarshal(bodyBytes, body)
 	if err != nil {
 		logger.Info("ParseHttpBodyParams: parse body param error: ", err)
 		return false
 	}
-	logger.Info("ParseHttpBodyParams: read http request body success:\n", utils.ToJSONIndent(body))
+	logger.Info("ParseHttpBodyParams: read http request body success:", utils.ToJSON(body))
 
 	return true
 }
