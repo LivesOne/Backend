@@ -17,12 +17,12 @@ const (
 	ACCOUNT_NOT_EXISTS = 2
 )
 
-type checkAccountModifyPwdRequest struct {
+type checkWithVcodeRequest struct {
 	Base  *common.BaseInfo            `json:"base"`
-	Param *checkAccountModifyPwdParam `json:"param"`
+	Param *checkWithVcodeParam `json:"param"`
 }
 
-type checkAccountModifyPwdParam struct {
+type checkWithVcodeParam struct {
 	ImgId    string `json:"img_id"`
 	ImgVcode string `json:"img_vcode"`
 	Type     int    `json:"type"`
@@ -32,20 +32,20 @@ type checkAccountModifyPwdParam struct {
 	Uid      string `json:"uid"`
 }
 
-type checkAccountModifyPwdResponse struct {
+type checkWithVcodeResponse struct {
 	Exists int    `json:"exists"`
 	Uid    string `json:"uid"`
 	Status int    `json:"status"`
 }
 
-type checkAccountModifypwdHandler struct {
+type checkWithVcodeHandler struct {
 }
 
-func (handler *checkAccountModifypwdHandler) Method() string {
+func (handler *checkWithVcodeHandler) Method() string {
 	return http.MethodPost
 }
 
-func (handler *checkAccountModifypwdHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+func (handler *checkWithVcodeHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
 			RC:  constants.RC_OK.Rc,
@@ -56,7 +56,7 @@ func (handler *checkAccountModifypwdHandler) Handle(request *http.Request, write
 	defer common.FlushJSONData2Client(response, writer)
 
 	header := common.ParseHttpHeaderParams(request)
-	data := checkAccountModifyPwdRequest{}
+	data := checkWithVcodeRequest{}
 	common.ParseHttpBodyParams(request, &data)
 
 	if checkAccountRequestParams(header, &data) == false {
@@ -72,7 +72,7 @@ func (handler *checkAccountModifypwdHandler) Handle(request *http.Request, write
 	succFlag, code := vcode.ValidateImgVCode(data.Param.ImgId, data.Param.ImgVcode)
 	//logger.Debug("succFlag:" + strconv.FormatBool(succFlag) + ",code:" + utils.Int2Str(code))
 	if succFlag {
-		resData := checkAccountModifyPwdResponse{Exists: ACCOUNT_NOT_EXISTS}
+		resData := checkWithVcodeResponse{Exists: ACCOUNT_NOT_EXISTS}
 
 		switch data.Param.Type {
 		case CHECK_TYPE_OF_PHONE:
@@ -96,7 +96,7 @@ func (handler *checkAccountModifypwdHandler) Handle(request *http.Request, write
 	}
 }
 
-func checkAccountRequestParams(header *common.HeaderParams, data *checkAccountModifyPwdRequest) bool {
+func checkAccountRequestParams(header *common.HeaderParams, data *checkWithVcodeRequest) bool {
 	if header.Timestamp < 1 {
 		logger.Info("register user: no timestamp")
 		return false

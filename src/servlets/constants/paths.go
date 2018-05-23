@@ -69,7 +69,7 @@ const (
 
 	ACCOUNT_CHECK_ACCOUNT = "/user/v1/account/check"
 
-	ACCOUNT_CHECK_ACCOUNT_MODIFY_PWD = "/user/v1/account/check/modify_pwd"
+	CHECK_WITH_VCODE = "/user/v1/account/check_with_vcode"
 
 	ACCOUNT_SET_STATUS = "/user/v1/account/set_status"
 
