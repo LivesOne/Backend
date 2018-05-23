@@ -107,6 +107,11 @@ func checkAccountRequestParams(header *common.HeaderParams, data *checkWithVcode
 		return false
 	}
 
+	if data.Param.Type != CHECK_TYPE_OF_EMAIL && data.Param.Type != CHECK_TYPE_OF_PHONE {
+		logger.Info("check user: type invalid")
+		return false
+	}
+
 	if data.Param.Type == CHECK_TYPE_OF_EMAIL && (utils.IsValidEmailAddr(data.Param.EMail) == false) {
 		logger.Info("check account: email info invalid")
 		return false
