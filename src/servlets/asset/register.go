@@ -16,4 +16,5 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_LOCK_REMOVE, &lockRemoveHandler{})
 	server.RegisterHandler(constants.ASSET_LOGK_LIST, &lockListHandler{})
 	server.RegisterHandler(constants.ASSET_LOCK_UPGRADE, &lockUpgradeHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_QUOTA, &withdrawQuotaHandler{})
 }

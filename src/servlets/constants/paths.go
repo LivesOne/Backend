@@ -104,4 +104,6 @@ const (
 
 	ASSET_LOCK_UPGRADE = "/asset/v1/lock/upgrade"
 
+	ASSET_WITHDRAWAL_QUOTA = "/asset/v1/withdrawal/quota/query"
+
 )

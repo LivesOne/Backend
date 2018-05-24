@@ -1,8 +1,9 @@
 package common
 
 import "utils"
+
 const (
-	ASSET_LOCK_TYPE_NOR = 0
+	ASSET_LOCK_TYPE_NOR  = 0
 	ASSET_LOCK_TYPE_DRAW = 1
 )
 
@@ -26,6 +27,13 @@ type (
 		Begin    int64  `json:"begin" bson:"begin"`
 		End      int64  `json:"end" bson:"end"`
 		ValueInt int64  `json:"-" bson:"value"`
+	}
+
+	UserWithdrawalQuota struct {
+		Day       int   `json:"day"`
+		Month     int   `json:"month"`
+		Casual    int   `json:"casual"`
+		DayExpend int64 `json:"dayExpend"`
 	}
 )
 

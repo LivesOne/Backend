@@ -9,10 +9,13 @@ import (
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
+	"time"
 )
 
 const (
-	CONV_LVT = 10000 * 10000
+	CONV_LVT          = 10000 * 10000
+	DAY_QUOTA_TYPE    = 0
+	CASUAL_QUOTA_TYPE = 1
 )
 
 //var gDBAsset *sql.DB
@@ -369,8 +372,6 @@ func UpgradeAssetLock(assetLock *AssetLock) (bool, int) {
 		return false, constants.TRANS_ERR_ASSET_LIMITED
 	}
 
-
-
 	sql := "insert into user_asset_lock (uid,value,month,hashrate,begin,end,type) values (?,?,?,?,?,?,?)"
 	sql = `
 		update user_asset_lock set
@@ -666,4 +667,114 @@ func checkHashrateExists(uid int64, hrType int) bool {
 		return true
 	}
 	return false
+}
+
+func GetUserWithdrawalQuotaByUid(uid int64) *UserWithdrawalQuota {
+	row, err := gDBAsset.QueryRow("SELECT uid,`day`,`month`,casual,day_expend FROM user_withdrawal_quota where uid = ?", uid)
+
+	if err != nil {
+		logger.Error("query user withdraw quota error", err.Error())
+		return nil
+	}
+
+	if row == nil {
+		return nil
+	}
+
+	return convUserWithdrawalQuota(row)
+}
+
+func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
+	if al == nil {
+		return nil
+	}
+	alres := UserWithdrawalQuota{
+		Day:       utils.Str2Int(al["day"]),
+		Month:     utils.Str2Int(al["month"]),
+		Casual:    utils.Str2Int(al["month"]),
+		DayExpend: utils.Str2Int64(al["day_expend"]),
+	}
+	return &alres
+}
+
+func CreateUserWithdrawalQuota(uid int64, day int, month int) (sql.Result, error) {
+	sql := "insert ignore into user_withdrawal_quota(uid, `day`, `month`, casual, day_expend, last_expend, last_income) values(?, ?, ?, ?, ?, ?, ?) "
+	return gDBAsset.Exec(sql, uid, day, month, 0, 0, time.Now().Unix(), 0)
+
+}
+
+func ResetDayQuota(uid int64, dayQuota int) bool {
+	sql := "update user_withdrawal_quota set `day` = ? where uid = ?"
+	result, err := gDBAsset.Exec(sql, dayQuota, uid)
+	if err != nil {
+		logger.Error("重置月额度错误" + err.Error())
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected > 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func ResetMonthQuota(uid int64, monthQuota int) bool {
+	sql := "update user_withdrawal_quota set `month` = ? where uid = ?"
+	result, err := gDBAsset.Exec(sql, monthQuota, uid)
+	if err != nil {
+		logger.Error("重置月额度错误" + err.Error())
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected > 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func ExpendUserWithdrawalQuota(uid int64, expendQuota int, quotaType int) (bool, error) {
+	if expendQuota <= 0 && quotaType > 0 {
+		return false, errors.New("expend quota must greater than 0")
+	}
+
+	if quotaType != DAY_QUOTA_TYPE && quotaType != CASUAL_QUOTA_TYPE {
+
+	}
+
+	if quotaType == DAY_QUOTA_TYPE {
+		sql := "update user_withdrawal_quota set day = day - ?,month = month - ?,day_expend = ?,last_expend = ? where uid = ? and day > ? and month > ?"
+		result, err := gDBAsset.Exec(sql, expendQuota, expendQuota, time.Now().Unix(), time.Now().Unix(), uid, expendQuota, expendQuota)
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected > 0 {
+			return true, nil
+		} else {
+			return false, err
+		}
+	}
+	if quotaType != CASUAL_QUOTA_TYPE {
+		sql := "update user_withdrawal_quota set casual = casual - ?,last_expend = ? where uid = ? and casual > ?"
+		result, err := gDBAsset.Exec(sql, expendQuota, time.Now().Unix(), uid, expendQuota)
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected > 0 {
+			return true, nil
+		} else {
+			return false, err
+		}
+	}
+	return false, errors.New("record not exist")
+
+}
+
+func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int) (bool, error) {
+	if incomeCasual > 0 {
+		sql := "update user_withdrawal_quota set casual = casual + ?,last_expend = ? where uid = ?"
+		result, err := gDBAsset.Exec(sql, incomeCasual, time.Now().Unix(), uid, incomeCasual)
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected > 0 {
+			return true, nil
+		} else {
+			return false, err
+		}
+	}
+	return false, errors.New("income casual quota must greater then 0")
 }
