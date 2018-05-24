@@ -18,8 +18,8 @@ type UserLevelLimit struct {
 	dailyAmountMax         int64
 	dailyPrepareAccess     int
 	dailyCommitAccess      int
-	dailyWithdrawalQuota   int
-	monthlyWithdrawalQuota int
+	dailyWithdrawalQuota   int64
+	monthlyWithdrawalQuota int64
 }
 
 func (limit *UserLevelLimit) ChangePhone() bool {
@@ -54,11 +54,11 @@ func (limit *UserLevelLimit) DailyCommitAccess() int {
 	return limit.dailyCommitAccess
 }
 
-func (limit *UserLevelLimit) DailyWithdrawalQuota() int {
+func (limit *UserLevelLimit) DailyWithdrawalQuota() int64 {
 	return limit.dailyWithdrawalQuota
 }
 
-func (limit *UserLevelLimit) MonthlyWithdrawalQuota() int {
+func (limit *UserLevelLimit) MonthlyWithdrawalQuota() int64 {
 	return limit.monthlyWithdrawalQuota
 }
 
@@ -75,8 +75,8 @@ type UserLevelLimitInternal struct {
 	DailyAmountMax         int64
 	DailyPrepareAccess     int
 	DailyCommitAccess      int
-	DailyWithdrawalQuota   int
-	MonthlyWithdrawalQuota int
+	DailyWithdrawalQuota   int64
+	MonthlyWithdrawalQuota int64
 }
 
 type UserLevelConfigInternal struct {

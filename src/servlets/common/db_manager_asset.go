@@ -730,21 +730,21 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 		return nil
 	}
 	alres := UserWithdrawalQuota{
-		Day:       utils.Str2Int(al["day"]),
-		Month:     utils.Str2Int(al["month"]),
-		Casual:    utils.Str2Int(al["month"]),
+		Day:       utils.Str2Int64(al["day"]),
+		Month:     utils.Str2Int64(al["month"]),
+		Casual:    utils.Str2Int64(al["month"]),
 		DayExpend: utils.Str2Int64(al["day_expend"]),
 	}
 	return &alres
 }
 
-func CreateUserWithdrawalQuota(uid int64, day int, month int) (sql.Result, error) {
+func CreateUserWithdrawalQuota(uid int64, day int64, month int64) (sql.Result, error) {
 	sql := "insert ignore into user_withdrawal_quota(uid, `day`, `month`, casual, day_expend, last_expend, last_income) values(?, ?, ?, ?, ?, ?, ?) "
 	return gDBAsset.Exec(sql, uid, day, month, 0, 0, time.Now().Unix(), 0)
 
 }
 
-func ResetDayQuota(uid int64, dayQuota int) bool {
+func ResetDayQuota(uid int64, dayQuota int64) bool {
 	sql := "update user_withdrawal_quota set `day` = ? where uid = ?"
 	result, err := gDBAsset.Exec(sql, dayQuota, uid)
 	if err != nil {
@@ -758,7 +758,7 @@ func ResetDayQuota(uid int64, dayQuota int) bool {
 	}
 }
 
-func ResetMonthQuota(uid int64, monthQuota int) bool {
+func ResetMonthQuota(uid int64, monthQuota int64) bool {
 	sql := "update user_withdrawal_quota set `month` = ? where uid = ?"
 	result, err := gDBAsset.Exec(sql, monthQuota, uid)
 	if err != nil {
@@ -773,7 +773,7 @@ func ResetMonthQuota(uid int64, monthQuota int) bool {
 	}
 }
 
-func ExpendUserWithdrawalQuota(uid int64, expendQuota int, quotaType int) (bool, error) {
+func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (bool, error) {
 	if expendQuota <= 0 && quotaType > 0 {
 		return false, errors.New("expend quota must greater than 0")
 	}
