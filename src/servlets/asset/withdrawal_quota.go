@@ -20,11 +20,10 @@ type withdrawQuotaParams struct {
 //}
 
 type withdrawQuotaResponse struct {
-	Day int64 `json:"day"`
-	Month int64 `json:"month"`
-	Casual int64 `json:"casual"`
+	Day    string `json:"day"`
+	Month  string `json:"month"`
+	Casual string `json:"casual"`
 }
-
 
 type withdrawQuotaHandler struct {
 }
@@ -59,32 +58,24 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 		userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
 		level := common.GetTransUserLevel(uid)
 		limitConfig := config.GetLimitByLevel(level)
-		//log.Info("current user:" + requestData.Uid + ",level:" + utils.Int2Str(level) + ",daily quota:" + utils.Int2Str(limitConfig.DailyWithdrawalQuota()) + ",monthly quota:" + utils.Int2Str(limitConfig.MonthlyWithdrawalQuota()))
 		if userWithdrawalQuota == nil {
-		//	result,err := common.CreateUserWithdrawalQuota(uid, limitConfig.DailyWithdrawalQuota(), limitConfig.MonthlyWithdrawalQuota())
-		//	row,_ := result.RowsAffected()
-		//	if err != nil || row <= 0 {
-		//		log.Error("insert user withdrawal quota error for user:" + requestData.Uid)
-		//		return
-		//	}
 			userWithdrawalQuota = common.InitUserWithdrawal(uid)
 		}
-
 
 		dayExpend := userWithdrawalQuota.DayExpend
 		utils.IsToday(dayExpend, time.Now().Unix())
 
 		if dayExpend > 0 && !utils.IsToday(dayExpend, time.Now().Unix()) {
-			if common.ResetDayQuota(uid, limitConfig.DailyWithdrawalQuota()) && time.Now().Day() == 1 {
-				common.ResetMonthQuota(uid, limitConfig.DailyWithdrawalQuota())
+			if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) && time.Now().Day() == 1 {
+				common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
 			}
 			userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 		}
 
 		resData := withdrawQuotaResponse{
-			Day: userWithdrawalQuota.Day,
-			Month: userWithdrawalQuota.Month,
-			Casual: userWithdrawalQuota.Casual,
+			Day:    utils.LVTintToFloatStr(userWithdrawalQuota.Day),
+			Month:  utils.LVTintToFloatStr(userWithdrawalQuota.Month),
+			Casual: utils.LVTintToFloatStr(userWithdrawalQuota.Casual),
 		}
 		response.Data = resData
 	}
