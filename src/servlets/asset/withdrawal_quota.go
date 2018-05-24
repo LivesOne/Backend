@@ -59,15 +59,15 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 		userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
 		level := common.GetTransUserLevel(uid)
 		limitConfig := config.GetLimitByLevel(level)
-		log.Info("current user:" + requestData.Uid + ",level:" + utils.Int2Str(level) + ",daily quota:" + utils.Int2Str(limitConfig.DailyWithdrawalQuota()) + ",monthly quota:" + utils.Int2Str(limitConfig.MonthlyWithdrawalQuota()))
+		//log.Info("current user:" + requestData.Uid + ",level:" + utils.Int2Str(level) + ",daily quota:" + utils.Int2Str(limitConfig.DailyWithdrawalQuota()) + ",monthly quota:" + utils.Int2Str(limitConfig.MonthlyWithdrawalQuota()))
 		if userWithdrawalQuota == nil {
-			result,err := common.CreateUserWithdrawalQuota(uid, limitConfig.DailyWithdrawalQuota(), limitConfig.MonthlyWithdrawalQuota())
-			row,_ := result.RowsAffected()
-			if err != nil || row <= 0 {
-				log.Error("insert user withdrawal quota error for user:" + requestData.Uid)
-				return
-			}
-			userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
+		//	result,err := common.CreateUserWithdrawalQuota(uid, limitConfig.DailyWithdrawalQuota(), limitConfig.MonthlyWithdrawalQuota())
+		//	row,_ := result.RowsAffected()
+		//	if err != nil || row <= 0 {
+		//		log.Error("insert user withdrawal quota error for user:" + requestData.Uid)
+		//		return
+		//	}
+			userWithdrawalQuota = common.InitUserWithdrawal(uid)
 		}
 
 

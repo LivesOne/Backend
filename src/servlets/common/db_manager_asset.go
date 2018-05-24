@@ -10,6 +10,7 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	"time"
+	sqlBase "database/sql"
 )
 
 const (
@@ -345,7 +346,10 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 	assetLock.Id = id
 	assetLock.IdStr = utils.Int642Str(id)
 	if assetLock.Type == ASSET_LOCK_TYPE_DRAW {
-		//TODO 临时提币额度
+		if ok,err := IncomeUserWithdrawalCasualQuota(assetLock.Uid,100);!ok && err == sqlBase.ErrNoRows{
+			InitUserWithdrawal(assetLock.Uid)
+			IncomeUserWithdrawalCasualQuota(assetLock.Uid,100)
+		}
 	}
 	return true, constants.TRANS_ERR_SUCC
 }
@@ -769,12 +773,35 @@ func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int) (bool, error) 
 	if incomeCasual > 0 {
 		sql := "update user_withdrawal_quota set casual = casual + ?,last_expend = ? where uid = ?"
 		result, err := gDBAsset.Exec(sql, incomeCasual, time.Now().Unix(), uid, incomeCasual)
+		if err != nil {
+			logger.Error("exec sql error",sql)
+			return false, err
+		}
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
 			return true, nil
 		} else {
-			return false, err
+			return false, sqlBase.ErrNoRows
 		}
 	}
 	return false, errors.New("income casual quota must greater then 0")
 }
+
+
+func InitUserWithdrawal(uid int64)*UserWithdrawalQuota{
+	level := GetTransUserLevel(uid)
+	limitConfig := config.GetLimitByLevel(level)
+	result,err := CreateUserWithdrawalQuota(uid, limitConfig.DailyWithdrawalQuota(), limitConfig.MonthlyWithdrawalQuota())
+	row,_ := result.RowsAffected()
+	if err != nil || row <= 0 {
+		logger.Error("insert user withdrawal quota error for user:" , uid)
+		return nil
+	}
+	return &UserWithdrawalQuota{
+		Day:       limitConfig.DailyWithdrawalQuota(),
+		Month:     limitConfig.MonthlyWithdrawalQuota(),
+		Casual:    0,
+		DayExpend: 0,
+	}
+}
+
