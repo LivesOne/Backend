@@ -15,6 +15,13 @@ func TestWithdrawQuotaHandler_Handle(t *testing.T) {
 	var url = "http://localhost:8080/asset/v1/withdrawal/quota/query"
 	post := "{\"uid\":\"133902136\"}"
 	var jsonStr = []byte(post)
+	testParams := make([]map[string]string, 5)
+	testParams[0] = map[string]string{"uid" : "", "daily" : "", "monthly" : ""}
+	testParams[1] = map[string]string{"uid" : "", "daily" : "", "monthly" : ""}
+	testParams[2] = map[string]string{"uid" : "", "daily" : "", "monthly" : ""}
+	testParams[3] = map[string]string{"uid" : "", "daily" : "", "monthly" : ""}
+	testParams[4] = map[string]string{"uid" : "", "daily" : "", "monthly" : ""}
+
 
 	t.Log("Given the need to test query withdrawal quota different params.")
 	{

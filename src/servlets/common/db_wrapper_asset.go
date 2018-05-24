@@ -30,9 +30,9 @@ type (
 	}
 
 	UserWithdrawalQuota struct {
-		Day       int   `json:"day"`
-		Month     int   `json:"month"`
-		Casual    int   `json:"casual"`
+		Day       int64 `json:"day"`
+		Month     int64 `json:"month"`
+		Casual    int64 `json:"casual"`
 		DayExpend int64 `json:"dayExpend"`
 	}
 )
