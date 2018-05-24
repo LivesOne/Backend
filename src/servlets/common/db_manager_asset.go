@@ -342,15 +342,33 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 		tx.Rollback()
 		return ok, code
 	}
+	if assetLock.Type == ASSET_LOCK_TYPE_DRAW {
+
+		incomeCasual := int64(0)
+		switch assetLock.Month {
+		case 6:
+			incomeCasual = assetLock.ValueInt/2
+		case 12:
+			incomeCasual = assetLock.ValueInt
+		default:
+			tx.Rollback()
+			return false, constants.TRANS_ERR_SYS
+		}
+
+		if wr := InitUserWithdrawal(assetLock.Uid);wr != nil {
+			if ok,_ := IncomeUserWithdrawalCasualQuota(assetLock.Uid,incomeCasual);!ok{
+				tx.Rollback()
+				return false, constants.TRANS_ERR_SYS
+			}
+		} else {
+			tx.Rollback()
+			return false, constants.TRANS_ERR_SYS
+		}
+
+	}
 	tx.Commit()
 	assetLock.Id = id
 	assetLock.IdStr = utils.Int642Str(id)
-	if assetLock.Type == ASSET_LOCK_TYPE_DRAW {
-		if ok,err := IncomeUserWithdrawalCasualQuota(assetLock.Uid,100);!ok && err == sqlBase.ErrNoRows{
-			InitUserWithdrawal(assetLock.Uid)
-			IncomeUserWithdrawalCasualQuota(assetLock.Uid,100)
-		}
-	}
 	return true, constants.TRANS_ERR_SUCC
 }
 
@@ -410,7 +428,26 @@ func UpgradeAssetLock(assetLock *AssetLock) (bool, int) {
 		return ok, code
 	}
 
-	//TODO 临时提币额度
+	incomeCasual := int64(0)
+	switch assetLock.Month {
+	case 6:
+		incomeCasual = assetLock.ValueInt/2
+	case 12:
+		incomeCasual = assetLock.ValueInt
+	default:
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	if wr := InitUserWithdrawal(assetLock.Uid);wr != nil {
+		if ok,_ := IncomeUserWithdrawalCasualQuota(assetLock.Uid,incomeCasual);!ok{
+			tx.Rollback()
+			return false, constants.TRANS_ERR_SYS
+		}
+	} else {
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
 	tx.Commit()
 	return true, constants.TRANS_ERR_SUCC
 }
@@ -769,7 +806,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int, quotaType int) (bool,
 
 }
 
-func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int) (bool, error) {
+func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int64) (bool, error) {
 	if incomeCasual > 0 {
 		sql := "update user_withdrawal_quota set casual = casual + ?,last_expend = ? where uid = ?"
 		result, err := gDBAsset.Exec(sql, incomeCasual, time.Now().Unix(), uid, incomeCasual)
@@ -791,9 +828,8 @@ func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int) (bool, error) 
 func InitUserWithdrawal(uid int64)*UserWithdrawalQuota{
 	level := GetTransUserLevel(uid)
 	limitConfig := config.GetLimitByLevel(level)
-	result,err := CreateUserWithdrawalQuota(uid, limitConfig.DailyWithdrawalQuota(), limitConfig.MonthlyWithdrawalQuota())
-	row,_ := result.RowsAffected()
-	if err != nil || row <= 0 {
+	_,err := CreateUserWithdrawalQuota(uid, limitConfig.DailyWithdrawalQuota(), limitConfig.MonthlyWithdrawalQuota())
+	if err != nil {
 		logger.Error("insert user withdrawal quota error for user:" , uid)
 		return nil
 	}

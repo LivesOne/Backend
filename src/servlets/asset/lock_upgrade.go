@@ -163,7 +163,7 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 		Type:     common.ASSET_LOCK_TYPE_DRAW,
 	}
 
-	if ok, e := common.CreateAssetLock(assetLock); ok {
+	if ok, e := common.UpgradeAssetLock(assetLock); ok {
 		response.Data = assetLock
 	} else {
 		switch e {
