@@ -126,14 +126,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 
 
-
-
-
-
-
-
-
-
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
 	secret := decodeSecret(requestData.Param.Secret, key, iv)
@@ -221,33 +213,16 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	txid := common.GenerateTxID()
-
-	if txid == -1 {
-		log.Error("txid is -1  ")
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
-	}
-
-	txh := common.DTTXHistory{
-		Id:     txid,
-		Status: constants.TX_STATUS_DEFAULT,
-		Type:   requestData.Param.TxType,
-		From:   from,
-		To:     to,
-		Value:  utils.FloatStrToLVTint(secret.Value),
-		Ts:     utils.TXIDToTimeStamp13(txid),
-		Code:   constants.TX_CODE_SUCC,
-	}
-	err := common.InsertPending(&txh)
-	if err != nil {
-		log.Error("insert mongo db error ", err.Error())
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-	} else {
+	//调用统一提交流程
+	if txid,resErr := common.PrepareLVTTrans(from,to,requestData.Param.TxType,secret.Value);resErr == constants.RC_OK {
 		response.Data = transPrepareResData{
-			Txid: utils.Int642Str(txid),
+			Txid: txid,
 		}
+	} else {
+		response.SetResponseBase(resErr)
 	}
+
+
 
 }
 

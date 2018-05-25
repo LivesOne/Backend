@@ -6,13 +6,10 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/config"
 	"utils/logger"
 )
 
-const (
-	TRANS_TIMEOUT = 10 * 1000
-)
+
 
 type transCommitParam struct {
 	Txid string `json:"txid"`
@@ -89,90 +86,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
-	//获取解密后的txid
-	txid := utils.Str2Int64(txIdStr)
-	uid := utils.Str2Int64(uidStr)
-	//修改原pending 并返回修改之前的值 如果status 是默认值0 继续  不是就停止
-	perPending, flag := common.FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
-	//未查到数据，返回处理中
-	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
-		response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
-		return
-	}
-
-	// 只有转账进行限制
-	if perPending.Type == constants.TX_TYPE_TRANS {
-		//非系统账号才进行限额校验
-		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
-			level := common.GetTransLevel(perPending.From)
-			//交易次数校验不通过，删除pending
-			if f, e := common.CheckCommitLimit(perPending.From, level); !f {
-				common.DeletePendingByInfo(perPending)
-				response.SetResponseBase(e)
-				return
-			}
-		}
-	}
-
-	//txid 时间戳检测
-
-	ts := utils.GetTimestamp13()
-	txid_ts := utils.TXIDToTimeStamp13(txid)
-
-	//暂时写死10秒
-	if ts-txid_ts > TRANS_TIMEOUT {
-		//删除pending
-		common.DeletePendingByInfo(perPending)
-		response.SetResponseBase(constants.RC_TRANS_TIMEOUT)
-		return
-
-	}
-
-	//查到数据 检测状态是否为不为1
-	//if perPending.Status != constants.TX_STATUS_COMMIT {
-
-	//在准备阶段判断to是否存在，不存在的交易 数据不入mongo
-	//判断to是否存在
-	//if common.ExistsUID(perPending.To) {
-
-	//存在就检测资产初始化状况，未初始化的用户给初始化
-	common.CheckAndInitAsset(perPending.To)
-
-	//} else {
-	//	response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
-	//	return
-	//}
-	f, c := common.TransAccountLvt(txid, perPending.From, perPending.To, perPending.Value)
-	if f {
-		//成功 插入commited
-		err := common.InsertCommited(perPending)
-		if common.CheckDup(err) {
-			//删除pending
-			common.DeletePendingByInfo(perPending)
-			//不删除数据库中的txid
-
-			if perPending.Type == constants.TX_TYPE_TRANS {
-				//common.RemoveTXID(txid)
-				if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
-					common.SetTotalTransfer(perPending.From, perPending.Value)
-				}
-
-			}
-		}
-
-	} else {
-		//删除pending
-		common.DeletePendingByInfo(perPending)
-		//失败设置返回信息
-		switch c {
-		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
-			response.SetResponseBase(constants.RC_INSUFFICIENT_BALANCE)
-		case constants.TRANS_ERR_SYS:
-			response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
-		case constants.TRANS_ERR_ASSET_LIMITED:
-			response.SetResponseBase(constants.RC_ACCOUNT_ACCESS_LIMITED)
-		}
-	}
-	//}
+	//调用统一确认交易流程
+	response.SetResponseBase(common.CommitLVTTrans(uidStr,txIdStr))
 
 }

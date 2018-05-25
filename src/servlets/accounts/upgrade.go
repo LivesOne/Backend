@@ -102,7 +102,7 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 					//deductionCreditScore := 10
 					//log.Error("deduction credit score :",deductionCreditScore)
 					//common.DeductionCreditScore(uid,deductionCreditScore)
-					
+
 					response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
 					return
 				}
