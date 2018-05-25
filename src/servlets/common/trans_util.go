@@ -38,6 +38,15 @@ func PrepareLVTTrans(from,to int64,txTpye int,value string)(string,constants.Err
 }
 
 
+func PrepareETHTrans(from,to int64,txTpye int,bizContent map[string]string)(string,constants.Error){
+	txid := GenerateTxID()
+
+
+	return utils.Int642Str(txid),constants.RC_OK
+}
+
+
+
 
 func CommitLVTTrans(uidStr,txIdStr string)constants.Error{
 	txid := utils.Str2Int64(txIdStr)
@@ -104,5 +113,9 @@ func CommitLVTTrans(uidStr,txIdStr string)constants.Error{
 			return constants.RC_ACCOUNT_ACCESS_LIMITED
 		}
 	}
+	return constants.RC_OK
+}
+
+func CommitETHTrans(uidStr,txIdStr string)constants.Error{
 	return constants.RC_OK
 }

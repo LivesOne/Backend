@@ -1,6 +1,7 @@
 package asset
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"servlets/common"
@@ -11,10 +12,9 @@ import (
 	"utils/config"
 	"utils/logger"
 	"utils/vcode"
-	"database/sql"
 )
 
-type transPrepareParam struct {
+type ethTransPrepareParam struct {
 	TxType    int    `json:"tx_type"`
 	AuthType  int    `json:"auth_type"`
 	VcodeType int    `json:"vcode_type"`
@@ -23,36 +23,37 @@ type transPrepareParam struct {
 	Secret    string `json:"secret"`
 }
 
-type transPrepareSecret struct {
-	To    string `json:"to"`
-	Value string `json:"value"`
-	Pwd   string `json:"pwd"`
+type ethTransPrepareSecret struct {
+	To         string            `json:"to"`
+	Value      string            `json:"value"`
+	Pwd        string            `json:"pwd"`
+	BizContent map[string]string `json:"biz_content"`
 }
 
-func (tps *transPrepareSecret) isValid() bool {
-	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Pwd) > 0
+func (tps *ethTransPrepareSecret) isValid() bool {
+	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Pwd) > 0 && tps.BizContent != nil
 }
 
-type transPrepareRequest struct {
-	Base  *common.BaseInfo   `json:"base"`
-	Param *transPrepareParam `json:"param"`
+type ethTransPrepareRequest struct {
+	Base  *common.BaseInfo      `json:"base"`
+	Param *ethTransPrepareParam `json:"param"`
 }
 
-type transPrepareResData struct {
+type ethTransPrepareResData struct {
 	Txid string `json:"txid"`
 }
 
 // sendVCodeHandler
-type transPrepareHandler struct {
+type ethTransPrepareHandler struct {
 	//header      *common.HeaderParams // request header param
 	//requestData *sendVCodeRequest    // request body
 }
 
-func (handler *transPrepareHandler) Method() string {
+func (handler *ethTransPrepareHandler) Method() string {
 	return http.MethodPost
 }
 
-func (handler *transPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 	log := logger.NewLvtLogger(true)
 	defer log.InfoAll()
 	response := &common.ResponseData{
@@ -63,7 +64,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	requestData := transPrepareRequest{} // request body
+	requestData := ethTransPrepareRequest{} // request body
 
 	common.ParseHttpBodyParams(request, &requestData)
 
@@ -101,20 +102,20 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	// vcodeType 大于0的时候开启短信验证 1下行，2上行
 	if requestData.Param.VcodeType > 0 {
-		acc,err := common.GetAccountByUID(uidString)
-		if err != nil && err != sql.ErrNoRows{
+		acc, err := common.GetAccountByUID(uidString)
+		if err != nil && err != sql.ErrNoRows {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
 		switch requestData.Param.VcodeType {
 		case 1:
-			if ok ,errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF);!ok {
+			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
 				log.Info("validate sms code failed")
 				response.SetResponseBase(vcode.ConvSmsErr(errCode))
 				return
 			}
 		case 2:
-			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode);!ok{
+			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode); !ok {
 				log.Info("validate up sms code failed")
 				response.SetResponseBase(resErr)
 				return
@@ -125,17 +126,16 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		}
 	}
 
-
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-	secret := new(transPrepareSecret)
+	secret := new(ethTransPrepareSecret)
 
- 	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv,secret);err != nil {
+	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	if  !secret.isValid() {
+	if !secret.isValid() {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -156,46 +156,13 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	txType := requestData.Param.TxType
 
-	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
+	//交易类型 23 购买提币卡
 	switch txType {
-	case constants.TX_TYPE_TRANS:
-
-		//目标账号非系统账号才校验额度
-		if !config.GetConfig().CautionMoneyIdsExist(to) {
-
-			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
-			transLevelOfTo := common.GetTransLevel(to)
-			if transLevelOfTo == 0 && !common.CanBeTo(to) {
-				response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
-				return
-			}
-
-			//金额校验不通过，删除pending
-			level := common.GetTransLevel(from)
-			if f, e := common.CheckAmount(from, utils.FloatStrToLVTint(secret.Value), level); !f {
-				response.SetResponseBase(e)
-				return
-			}
-			//校验用户的交易限制
-			if f, e := common.CheckPrepareLimit(from, level); !f {
-				response.SetResponseBase(e)
-				return
-			}
-		}
-	case constants.TX_TYPE_ACTIVITY_REWARD: //如果是活动领取，需要校验转出者的id
-		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
-			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
+	case constants.TX_TYPE_BUY_COIN_CARD:
+		if len(secret.BizContent["quota"]) == 0 {
+			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
-
-		if !common.CheckTansTypeFromUid(from, txType) {
-			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-			return
-		}
-	case constants.TX_TYPE_BUY:
-		//直接放行
-	case constants.TX_TYPE_REFUND:
-		//直接放行
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -219,26 +186,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	//调用统一提交流程
-	if txid,resErr := common.PrepareLVTTrans(from,to,requestData.Param.TxType,secret.Value);resErr == constants.RC_OK {
-		response.Data = transPrepareResData{
+	if txid, resErr := common.PrepareETHTrans(from, to, requestData.Param.TxType, secret.BizContent); resErr == constants.RC_OK {
+		response.Data = ethTransPrepareResData{
 			Txid: txid,
 		}
 	} else {
 		response.SetResponseBase(resErr)
 	}
 
-
-
-}
-
-
-func validateValue(value string) bool {
-	if utils.Str2Float64(value) > 0 {
-		index := strings.Index(value, ".")
-		last := value[index+1:]
-		if len(last) <= 8 {
-			return true
-		}
-	}
-	return false
 }

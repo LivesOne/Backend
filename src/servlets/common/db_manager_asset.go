@@ -79,6 +79,18 @@ func QueryBalance(uid int64) (int64, int64, error) {
 	return 0, 0, err
 }
 
+func QueryBalanceEth(uid int64) (int64, int64, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked from user_asset_eth where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), nil
+	}
+	return 0, 0, err
+}
+
 func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
@@ -173,6 +185,12 @@ func CheckAndInitAsset(uid int64) (bool, int) {
 		return false, constants.TRANS_ERR_SYS
 	}
 
+	_, err = InsertAssetEth(uid)
+	if err != nil {
+		logger.Error("init asset eth error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
 	_, err = InsertReward(uid)
 	if err != nil {
 		logger.Error("init reward error ", err.Error())
@@ -209,6 +227,10 @@ func InsertReward(uid int64) (sql.Result, error) {
 
 func InsertAsset(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0)
+}
+func InsertAssetEth(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_asset_eth (uid,balance,lastmodify) values (?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0)
 }
 

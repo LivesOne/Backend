@@ -92,6 +92,10 @@ const (
 
 	ASSET_TRANS_COMMIT = "/asset/v1/trans/commit"
 
+	ASSET_ETH_TRANS_PREPARE = "/asset/v1/trans/eth_prepare"
+
+	ASSET_ETH_TRANS_COMMIT = "/asset/v1/trans/eth_commit"
+
 	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
 
 	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
