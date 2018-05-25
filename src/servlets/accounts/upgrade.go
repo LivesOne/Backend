@@ -98,10 +98,10 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 					log.Error("user check sec wx failed")
 					log.Error("db openId,unionId [",openId,unionId,"]")
 					log.Error("wx result openId,unionId [",res.Openid,res.Unionid,"]")
-					deductionCreditScore := 10
-					log.Error("deduction credit score :",deductionCreditScore)
 					//二次验证不通过扣10分
-					common.DeductionCreditScore(uid,deductionCreditScore)
+					//deductionCreditScore := 10
+					//log.Error("deduction credit score :",deductionCreditScore)
+					//common.DeductionCreditScore(uid,deductionCreditScore)
 					response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
 					return
 				}
