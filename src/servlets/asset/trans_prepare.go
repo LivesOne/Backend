@@ -1,7 +1,6 @@
 package asset
 
 import (
-	"encoding/json"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
