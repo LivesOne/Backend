@@ -13,6 +13,7 @@ import (
 
 type profileSecret struct {
 	Nickname string `json:"nickname"`
+	WalletAddress string `json:"wallet_address"`
 }
 
 type modifyProfileParam struct {
@@ -96,6 +97,8 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		return
 	}
 
+
+
 	dbErr := common.SetNickname(uid, secret.Nickname)
 	if dbErr != nil {
 		if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
@@ -108,6 +111,18 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		// } else {
 		// 	fmt.Println("modify user profile: success")
 	}
+
+	rowsAffected, dbErr := common.SetWalletAddress(uid, secret.WalletAddress)
+	if dbErr != nil {
+		if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
+			log.Info("modify user profile: duplicate wallet_address", dbErr)
+			response.SetResponseBase(constants.RC_DUP_NICKNAME)
+		} else {
+			log.Info("modify user profile : save wallet_address to db error:", dbErr)
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		}
+	}
+
 	log.Info("modify user profile success")
 
 }

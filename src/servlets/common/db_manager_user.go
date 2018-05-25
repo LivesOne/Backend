@@ -483,3 +483,22 @@ func DeductionCreditScore(uid int64,score int)bool{
 	}
 	return true
 }
+
+func GetUserWalletAddressByUid(uid int64) string {
+	res, err := gDBAsset.QueryRow("select wallet_address from user_restrict where uid = ?", uid)
+	if err != nil {
+		logger.Error("cannot get wallet address ", err.Error())
+		return ""
+	}
+	if res == nil {
+		logger.Info("can not find wallet address by uid ", uid)
+		return ""
+	}
+	return res["wallet_address"]
+}
+
+func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
+	result, err := gDbUser.Exec("update account_extend set wallet_address = ? where uid = ? and (select count(1) from account_extend where wallet_address = ?) = 0", walletAddress, uid, walletAddress)
+	rowsAffected, _ := result.RowsAffected()
+	return rowsAffected,err
+}

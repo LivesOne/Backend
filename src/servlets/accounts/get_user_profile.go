@@ -73,6 +73,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.PaymentPassword = ""
 	account.From = ""
 	account.RegisterType = 0
+	account.WalletAddress = common.GetUserWalletAddressByUid(account.UID)
 	profile.Account = *account
 
 	response.Data = profile
