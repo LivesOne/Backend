@@ -828,14 +828,14 @@ func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int64) (bool, error
 func InitUserWithdrawal(uid int64)*UserWithdrawalQuota{
 	level := GetTransUserLevel(uid)
 	limitConfig := config.GetLimitByLevel(level)
-	_,err := CreateUserWithdrawalQuota(uid, limitConfig.DailyWithdrawalQuota(), limitConfig.MonthlyWithdrawalQuota())
+	_,err := CreateUserWithdrawalQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())), utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
 	if err != nil {
 		logger.Error("insert user withdrawal quota error for user:" , uid)
 		return nil
 	}
 	return &UserWithdrawalQuota{
-		Day:       limitConfig.DailyWithdrawalQuota(),
-		Month:     limitConfig.MonthlyWithdrawalQuota(),
+		Day:       utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())),
+		Month:     utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())),
 		Casual:    0,
 		DayExpend: 0,
 	}
