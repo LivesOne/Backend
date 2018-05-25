@@ -112,14 +112,18 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		// 	fmt.Println("modify user profile: success")
 	}
 
-	rowsAffected, dbErr := common.SetWalletAddress(uid, secret.WalletAddress)
-	if dbErr != nil {
-		if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
-			log.Info("modify user profile: duplicate wallet_address", dbErr)
-			response.SetResponseBase(constants.RC_DUP_NICKNAME)
-		} else {
-			log.Info("modify user profile : save wallet_address to db error:", dbErr)
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+	if len(secret.WalletAddress) > 0 {
+		if validateWalletAddress(secret.WalletAddress) {
+			rowsAffected, dbErr := common.SetWalletAddress(uid, secret.WalletAddress)
+			if dbErr != nil {
+				if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
+					log.Info("modify user profile: duplicate wallet_address", dbErr)
+					response.SetResponseBase(constants.RC_DUP_NICKNAME)
+				} else {
+					log.Info("modify user profile : save wallet_address to db error:", dbErr)
+					response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				}
+			}
 		}
 	}
 
@@ -134,5 +138,11 @@ func validateNickName(name string)bool{
 	}
 	reg := "^[-\u4e00-\u9fa5a-zA-Z0-9_]{2,30}$"
 	ret, _ := regexp.MatchString(reg, name)
+	return ret
+}
+
+func validateWalletAddress(walletAddress string) bool {
+	reg := "^http(s)?://.{0,192}$"
+	ret, _ := regexp.MatchString(reg, walletAddress)
 	return ret
 }
