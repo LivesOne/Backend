@@ -9,7 +9,6 @@ import (
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"time"
 	sqlBase "database/sql"
 )
 
@@ -762,7 +761,7 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 
 func CreateUserWithdrawalQuota(uid int64, day int64, month int64) (sql.Result, error) {
 	sql := "insert ignore into user_withdrawal_quota(uid, `day`, `month`, casual, day_expend, last_expend, last_income) values(?, ?, ?, ?, ?, ?, ?) "
-	return gDBAsset.Exec(sql, uid, day, month, 0, 0, time.Now().Unix(), 0)
+	return gDBAsset.Exec(sql, uid, day, month, 0, 0, utils.GetTimestamp13(), 0)
 
 }
 
@@ -806,7 +805,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (boo
 
 	if quotaType == DAY_QUOTA_TYPE {
 		sql := "update user_withdrawal_quota set day = day - ?,month = month - ?,day_expend = ?,last_expend = ? where uid = ? and day > ? and month > ?"
-		result, err := gDBAsset.Exec(sql, expendQuota, expendQuota, time.Now().Unix(), time.Now().Unix(), uid, expendQuota, expendQuota)
+		result, err := gDBAsset.Exec(sql, expendQuota, expendQuota, utils.GetTimestamp13(), utils.GetTimestamp13(), uid, expendQuota, expendQuota)
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
 			return true, nil
@@ -816,7 +815,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (boo
 	}
 	if quotaType != CASUAL_QUOTA_TYPE {
 		sql := "update user_withdrawal_quota set casual = casual - ?,last_expend = ? where uid = ? and casual > ?"
-		result, err := gDBAsset.Exec(sql, expendQuota, time.Now().Unix(), uid, expendQuota)
+		result, err := gDBAsset.Exec(sql, expendQuota, utils.GetTimestamp13(), uid, expendQuota)
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
 			return true, nil
@@ -831,7 +830,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (boo
 func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int64) (bool, error) {
 	if incomeCasual > 0 {
 		sql := "update user_withdrawal_quota set casual = casual + ?,last_expend = ? where uid = ?"
-		result, err := gDBAsset.Exec(sql, incomeCasual, time.Now().Unix(), uid)
+		result, err := gDBAsset.Exec(sql, incomeCasual, utils.GetTimestamp13(), uid)
 		if err != nil {
 			logger.Error("exec sql error",sql)
 			return false, err
