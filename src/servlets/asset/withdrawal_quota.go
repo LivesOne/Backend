@@ -11,15 +11,6 @@ import (
 	"servlets/token"
 )
 
-//type withdrawQuotaParams struct {
-//	Uid string `json:"uid"`
-//}
-
-//type withdrawQuotaRequest struct {
-//	Base  *common.BaseInfo  `json:"base"`
-//	Param *withdrawQuotaParams `json:"param"`
-//}
-
 type withdrawQuotaResponse struct {
 	Day    string `json:"day"`
 	Month  string `json:"month"`
