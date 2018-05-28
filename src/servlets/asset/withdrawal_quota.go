@@ -64,11 +64,10 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 	}
 
 	dayExpend := userWithdrawalQuota.DayExpend
-	utils.IsToday(dayExpend, time.Now().Unix())
 	level := common.GetTransUserLevel(uid)
 	limitConfig := config.GetLimitByLevel(level)
-	if dayExpend > 0 && !utils.IsToday(dayExpend, time.Now().Unix()) {
-		if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) && time.Now().Day() == 1 {
+	if dayExpend == 0 || !utils.IsToday(dayExpend, utils.GetTimestamp13()) {
+		if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) && time.Now().UTC().Day() == 1 {
 			common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
 		}
 		userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
