@@ -171,6 +171,8 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		case constants.TRANS_ERR_ASSET_LIMITED:
 			response.SetResponseBase(constants.RC_ACCOUNT_ACCESS_LIMITED)
+		case constants.TRANS_ERR_PARAM:
+			response.SetResponseBase(constants.RC_PARAM_ERR)
 		}
 	}
 

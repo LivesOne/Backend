@@ -152,19 +152,16 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 	//计算结束时间
 	end := begin + (int64(secret.Month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
 
-	assetLock := &common.AssetLock{
-		Uid:      uid,
-		Value:    al.Value,
-		ValueInt: utils.FloatStrToLVTint(al.Value),
-		Month:    secret.Month,
-		Hashrate: getLockHashrate(secret.Month,al.Value),
-		Begin:    begin,
-		End:      end,
-		Type:     common.ASSET_LOCK_TYPE_DRAW,
-	}
 
-	if ok, e := common.UpgradeAssetLock(assetLock); ok {
-		response.Data = assetLock
+
+	al.Month = secret.Month
+	al.Begin = begin
+	al.End = end
+	al.Type = common.ASSET_LOCK_TYPE_DRAW
+	al.Hashrate = getLockHashrate(secret.Month,al.Value)
+
+	if ok, e := common.UpgradeAssetLock(al); ok {
+		response.Data = al
 	} else {
 		switch e {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
