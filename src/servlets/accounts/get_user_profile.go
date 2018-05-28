@@ -16,6 +16,7 @@ type profileResponse struct {
 	BindWx      bool `json:"bind_wx"`
 	CreditScore int  `json:"credit_score"`
 	BindTg      bool `json:"bind_tg"`
+	WalletAddress   string `json:"wallet_address"`
 }
 
 // getProfileHandler
@@ -65,6 +66,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		BindWx:      bindWx,
 		CreditScore: creditScore,
 		BindTg:      bindTg,
+		WalletAddress : common.GetUserWalletAddressByUid(account.UID),
 	}
 
 	account.ID = 0
@@ -73,7 +75,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.PaymentPassword = ""
 	account.From = ""
 	account.RegisterType = 0
-	account.WalletAddress = common.GetUserWalletAddressByUid(account.UID)
+	//account.WalletAddress = common.GetUserWalletAddressByUid(account.UID)
 	profile.Account = *account
 
 	response.Data = profile

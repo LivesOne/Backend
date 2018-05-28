@@ -19,7 +19,6 @@ type (
 		RegisterType    int    `json:"_r,omitempty"`
 		Level           int    `json:"level"`
 		Status          int    `json:"-"`
-		WalletAddress   string `json:"wallet_address"`
 	}
 
 	Profile struct {
