@@ -58,7 +58,7 @@ var (
 	RC_TRANS_AMOUNT_EXCEEDING_LIMIT = Error{21009, "transaction amount exceeding limit"}
 	RC_INVALID_LOCK_VALUE           = Error{21010, "invalid lock value"}
 	RC_INVALID_LOCK_ID              = Error{21011, "invalid lock id"}
-	RC_WITHDRAWAL_QUOTA_LACK        = Error{21012, "whithdrawal quota lack"}
+	RC_INSUFFICIENT_WITHDRAW_QUOTA  = Error{21012, "insufficient withdraw quota"}
 
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
