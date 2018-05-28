@@ -19,7 +19,7 @@ type lockUpgradeParam struct {
 }
 
 type lockUpgradeSecret struct {
-	Id string `json:"iid"`
+	Id string `json:"id"`
 	Month int    `json:"month"`
 	Pwd   string `json:"pwd"`
 }
