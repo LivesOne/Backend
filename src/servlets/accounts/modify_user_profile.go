@@ -13,7 +13,7 @@ import (
 )
 
 type profileSecret struct {
-	Nickname string `json:"nickname"`
+	Nickname      string `json:"nickname"`
 	WalletAddress string `json:"wallet_address"`
 }
 
@@ -59,8 +59,6 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		return
 	}
 
-
-
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		log.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))
@@ -92,9 +90,6 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// 	return
 	// }
 
-
-
-
 	if len(secret.Nickname) > 0 {
 		if !validateNickName(secret.Nickname) {
 			log.Error("validate nickname failed")
@@ -124,12 +119,14 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 			if dbErr != nil {
 				if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
 					log.Info("modify user profile: duplicate wallet_address", dbErr)
-					response.SetResponseBase(constants.RC_DUP_NICKNAME)
+					response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
 				} else {
 					log.Info("modify user profile : save wallet_address to db error:", dbErr)
 					response.SetResponseBase(constants.RC_SYSTEM_ERR)
 				}
 			}
+		} else {
+			response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
 		}
 	}
 
@@ -137,7 +134,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 
 }
 
-func validateNickName(name string)bool{
+func validateNickName(name string) bool {
 	l := len(name)
 	if l < 4 || l > 30 {
 		return false
