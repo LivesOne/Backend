@@ -76,16 +76,27 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
+	//balance,locked, err := common.QueryBalance(uid)
+	//ethBalance,ethLocked,err2 := common.QueryBalanceEth(uid)
+	//if err != nil || err2 != nil {
+	//	response.SetResponseBase(constants.RC_SYSTEM_ERR)
+	//} else {
+	//	response.Data = balanceResData{
+	//		Balance: utils.LVTintToFloatStr(balance),
+	//		Locked: utils.LVTintToFloatStr(locked),
+	//		EthBalance:utils.LVTintToFloatStr(ethBalance),
+	//		EthLocked:utils.LVTintToFloatStr(ethLocked),
+	//	}
+	//}
+
 	balance,locked, err := common.QueryBalance(uid)
-	ethBalance,ethLocked,err2 := common.QueryBalanceEth(uid)
-	if err != nil || err2 != nil {
+	//ethBalance,ethLocked,err2 := common.QueryBalanceEth(uid)
+	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = balanceResData{
 			Balance: utils.LVTintToFloatStr(balance),
 			Locked: utils.LVTintToFloatStr(locked),
-			EthBalance:utils.LVTintToFloatStr(ethBalance),
-			EthLocked:utils.LVTintToFloatStr(ethLocked),
 		}
 	}
 
