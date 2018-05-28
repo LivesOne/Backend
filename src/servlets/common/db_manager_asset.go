@@ -830,7 +830,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (boo
 
 func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int64) (bool, error) {
 	if incomeCasual > 0 {
-		sql := "update user_withdrawal_quota set casual = casual + ?,last_expend = ? where uid = ?"
+		sql := "update user_withdrawal_quota set casual = casual + ?,last_income = ? where uid = ?"
 		result, err := gDBAsset.Exec(sql, incomeCasual, utils.GetTimestamp13(), uid)
 		if err != nil {
 			logger.Error("exec sql error",sql)
