@@ -457,6 +457,7 @@ func UpgradeAssetLock(assetLock *AssetLock) (bool, int) {
 		incomeCasual = assetLock.ValueInt
 	default:
 		tx.Rollback()
+		logger.Error("month must by 6/12")
 		return false, constants.TRANS_ERR_PARAM
 	}
 
