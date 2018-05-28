@@ -498,7 +498,13 @@ func GetUserWalletAddressByUid(uid int64) string {
 }
 
 func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
-	result, err := gDbUser.Exec("update account_extend set wallet_address = ? where uid = ? and (select count(1) from account_extend where wallet_address = ?) = 0", walletAddress, uid, walletAddress)
+	//result, err := gDbUser.Exec("update account_extend set wallet_address = ? where uid = ? and (select count(1) from account_extend where wallet_address = ?) = 0", walletAddress, uid, walletAddress)
+	result, err := gDbUser.Exec("update account_extend set wallet_address = ? where uid = ?", walletAddress, uid, walletAddress)
+	if err != nil {
+		logger.Error("exec sql error",err.Error())
+		return 0,err
+	}
 	rowsAffected, _ := result.RowsAffected()
 	return rowsAffected,err
+
 }
