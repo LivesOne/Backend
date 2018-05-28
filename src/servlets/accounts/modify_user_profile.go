@@ -9,6 +9,7 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	"regexp"
+	"strings"
 )
 
 type profileSecret struct {
@@ -114,8 +115,12 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		}
 	}
 	if len(secret.WalletAddress) > 0 {
-		if validateWalletAddress(secret.WalletAddress) {
-			rowsAffected, dbErr := common.SetWalletAddress(uid, secret.WalletAddress)
+		walletAddress := strings.ToLower(secret.WalletAddress)
+		if validateWalletAddress(walletAddress) {
+			if !strings.HasPrefix(walletAddress, "0x") {
+				walletAddress = "0x" + walletAddress
+			}
+			rowsAffected, dbErr := common.SetWalletAddress(uid, walletAddress)
 			if dbErr != nil {
 				if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
 					log.Info("modify user profile: duplicate wallet_address", dbErr)
@@ -143,7 +148,7 @@ func validateNickName(name string)bool{
 }
 
 func validateWalletAddress(walletAddress string) bool {
-	reg := "^http(s)?://.{0,192}$"
-	ret, _ := regexp.MatchString(reg, walletAddress)
+	reg := "^(0x)?[0-9a-f]{40}$"
+	ret, _ := regexp.MatchString(reg, strings.ToLower(walletAddress))
 	return ret
 }
