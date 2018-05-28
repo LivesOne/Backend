@@ -20,7 +20,7 @@ type (
 		Id       int64  `json:"-" bson:"id"`
 		IdStr    string `json:"id" bson:"-"`
 		Type     int    `json:"type" bson:"type"`
-		Uid      int64  `json:"uid" bson:"uid"`
+		Uid      int64  `json:"-" bson:"uid"`
 		Value    string `json:"value" bson:"-"`
 		Month    int    `json:"month" bson:"month"`
 		Hashrate int    `json:"hashrate" bson:"hashrate"`
