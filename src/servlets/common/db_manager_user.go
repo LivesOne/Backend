@@ -485,7 +485,7 @@ func DeductionCreditScore(uid int64,score int)bool{
 }
 
 func GetUserWalletAddressByUid(uid int64) string {
-	res, err := gDBAsset.QueryRow("select wallet_address from account_extend where uid = ?", uid)
+	res, err := gDbUser.QueryRow("select wallet_address from account_extend where uid = ?", uid)
 	if err != nil {
 		logger.Error("cannot get wallet address ", err.Error())
 		return ""
