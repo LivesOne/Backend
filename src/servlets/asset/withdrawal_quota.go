@@ -8,11 +8,12 @@ import (
 	"utils/logger"
 	"utils/config"
 	"time"
+	"servlets/token"
 )
 
-type withdrawQuotaParams struct {
-	Uid string `json:"uid"`
-}
+//type withdrawQuotaParams struct {
+//	Uid string `json:"uid"`
+//}
 
 //type withdrawQuotaRequest struct {
 //	Base  *common.BaseInfo  `json:"base"`
@@ -45,38 +46,47 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 
 	defer common.FlushJSONData2Client(response, writer)
 
-	requestData := withdrawQuotaParams{}
-	common.ParseHttpBodyParams(request, &requestData)
+	httpHeader := common.ParseHttpHeaderParams(request)
 
-	if requestData.Uid == "" {
+	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
+		log.Info("asset lockList: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	if len(requestData.Uid) > 0 {
-		uid := utils.Str2Int64(requestData.Uid)
-		userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
-		level := common.GetTransUserLevel(uid)
-		limitConfig := config.GetLimitByLevel(level)
-		if userWithdrawalQuota == nil {
-			userWithdrawalQuota = common.InitUserWithdrawal(uid)
-		}
-
-		dayExpend := userWithdrawalQuota.DayExpend
-		utils.IsToday(dayExpend, time.Now().Unix())
-
-		if dayExpend > 0 && !utils.IsToday(dayExpend, time.Now().Unix()) {
-			if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) && time.Now().Day() == 1 {
-				common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
-			}
-			userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
-		}
-
-		resData := withdrawQuotaResponse{
-			Day:    utils.LVTintToFloatStr(userWithdrawalQuota.Day),
-			Month:  utils.LVTintToFloatStr(userWithdrawalQuota.Month),
-			Casual: utils.LVTintToFloatStr(userWithdrawalQuota.Casual),
-		}
-		response.Data = resData
+	// 判断用户身份
+	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+		log.Info("asset lockList: get info from cache error:", err)
+		response.SetResponseBase(err)
+		return
 	}
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
+		response.SetResponseBase(constants.RC_INVALID_SIGN)
+		return
+	}
+	uid := utils.Str2Int64(uidString)
+
+	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
+	if userWithdrawalQuota == nil {
+		userWithdrawalQuota = common.InitUserWithdrawal(uid)
+	}
+
+	dayExpend := userWithdrawalQuota.DayExpend
+	utils.IsToday(dayExpend, time.Now().Unix())
+	level := common.GetTransUserLevel(uid)
+	limitConfig := config.GetLimitByLevel(level)
+	if dayExpend > 0 && !utils.IsToday(dayExpend, time.Now().Unix()) {
+		if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) && time.Now().Day() == 1 {
+			common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
+		}
+		userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
+	}
+
+	resData := withdrawQuotaResponse{
+		Day:    utils.LVTintToFloatStr(userWithdrawalQuota.Day),
+		Month:  utils.LVTintToFloatStr(userWithdrawalQuota.Month),
+		Casual: utils.LVTintToFloatStr(userWithdrawalQuota.Casual),
+	}
+	response.Data = resData
 }
