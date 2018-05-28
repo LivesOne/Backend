@@ -91,27 +91,28 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// 	return
 	// }
 
-	if !validateNickName(secret.Nickname) {
-		log.Error("validate nickname failed")
-		response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
-		return
-	}
 
 
 
-	dbErr := common.SetNickname(uid, secret.Nickname)
-	if dbErr != nil {
-		if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
-			log.Info("modify user profile: duplicate nickname", dbErr)
-			response.SetResponseBase(constants.RC_DUP_NICKNAME)
-		} else {
-			log.Info("modify user profile : save nickname to db error:", dbErr)
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+	if len(secret.Nickname) > 0 {
+		if !validateNickName(secret.Nickname) {
+			log.Error("validate nickname failed")
+			response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
+			return
 		}
-		// } else {
-		// 	fmt.Println("modify user profile: success")
+		dbErr := common.SetNickname(uid, secret.Nickname)
+		if dbErr != nil {
+			if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
+				log.Info("modify user profile: duplicate nickname", dbErr)
+				response.SetResponseBase(constants.RC_DUP_NICKNAME)
+			} else {
+				log.Info("modify user profile : save nickname to db error:", dbErr)
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			}
+			// } else {
+			// 	fmt.Println("modify user profile: success")
+		}
 	}
-
 	if len(secret.WalletAddress) > 0 {
 		if validateWalletAddress(secret.WalletAddress) {
 			rowsAffected, dbErr := common.SetWalletAddress(uid, secret.WalletAddress)
