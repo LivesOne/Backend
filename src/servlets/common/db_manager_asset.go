@@ -457,7 +457,7 @@ func UpgradeAssetLock(assetLock *AssetLock) (bool, int) {
 		incomeCasual = assetLock.ValueInt
 	default:
 		tx.Rollback()
-		return false, constants.TRANS_ERR_SYS
+		return false, constants.TRANS_ERR_PARAM
 	}
 
 	if wr := InitUserWithdrawal(assetLock.Uid);wr != nil {

@@ -31,6 +31,7 @@ const (
 	TRANS_ERR_SYS                  = 1
 	TRANS_ERR_INSUFFICIENT_BALANCE = 2
 	TRANS_ERR_ASSET_LIMITED        = 3
+	TRANS_ERR_PARAM                = 4
 
 	ASSET_LOCK_MONTH_TIMESTAMP = 30 * 24 * 60 * 60 * 1000
 
