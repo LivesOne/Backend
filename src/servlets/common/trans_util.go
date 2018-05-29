@@ -108,17 +108,86 @@ func CommitLVTTrans(uidStr,txIdStr string)constants.Error{
 	}
 	return constants.RC_OK
 }
-
-func CommitETHTrans(uidStr,txIdStr string)constants.Error{
-	return constants.RC_OK
-}
-
-
-func PrepareETHTrans(from,to int64,txTpye int,bizContent map[string]string)(string,constants.Error){
+func PrepareETHTrans(from int64,valueStr string,txTpye int,bizContent map[string]string)(string,constants.Error){
 	tradeNo := utils.GetTradeNo()
-	if err := InsertTradePending(from,tradeNo,utils.ToJSON(bizContent),txTpye);err != nil {
+	value := utils.FloatStrToLVTint(valueStr)
+	if err := InsertTradePending(from,tradeNo,utils.ToJSON(bizContent),value,txTpye);err != nil {
 		logger.Error("insert trade pending error",err.Error())
 		return "",constants.RC_SYSTEM_ERR
 	}
 	return tradeNo,constants.RC_OK
 }
+func CommitETHTrans(uidStr,tradeNo string)constants.Error{
+
+	uid := utils.Str2Int64(uidStr)
+
+	tp,err := GetTradePendingByTradeNo(tradeNo,uid)
+	if err != nil {
+		return constants.RC_SYSTEM_ERR
+	}
+	if tp == nil {
+		return constants.RC_PARAM_ERR
+	}
+	var (
+		to int64
+		bizContent map[string]string
+	)
+
+	switch tp.Type {
+	case constants.TX_TYPE_BUY_COIN_CARD:
+		to = 181875000 //TODO 手续费收款账号
+		//解析业务数据，拿到具体数值
+		utils.FromJson(tp.BizContent,&bizContent)
+	default:
+		return constants.RC_PARAM_ERR
+	}
+	tx ,err := gDBAsset.Begin()
+	if err != nil {
+		return constants.RC_SYSTEM_ERR
+	}
+	txId,err := EthTransCommit(uid,to,tp.Value,tp.TradeNo,tp.Type,tx)
+	if err != nil {
+		tx.Rollback()
+		return constants.RC_SYSTEM_ERR
+	}
+	quota := utils.FloatStrToLVTint(bizContent["quota"])
+
+	// 用卡记录
+	wcu := &UserWithdrawalCardUse{
+		TradeNo:    tp.TradeNo,
+		Uid:        uid,
+		Quota:      quota,
+		Cost:       tp.Value,
+		CreateTime: utils.TXIDToTimeStamp13(txId),
+	}
+
+	if err = InsertWithdrawalCardUse(wcu,tx);err != nil {
+		tx.Rollback()
+		return constants.RC_SYSTEM_ERR
+	}
+
+	//临时额度
+	if wr := InitUserWithdrawalByTx(uid,tx);wr != nil {
+		if ok,_ := IncomeUserWithdrawalCasualQuotaByTx(uid,quota,tx);!ok{
+			tx.Rollback()
+			return constants.RC_SYSTEM_ERR
+		}
+	} else {
+		tx.Rollback()
+		return constants.RC_SYSTEM_ERR
+	}
+
+	err = DeleteTradePending(tp.TradeNo,uid,tx)
+	if err != nil {
+		tx.Rollback()
+		return constants.RC_SYSTEM_ERR
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return constants.RC_SYSTEM_ERR
+	}
+	return constants.RC_OK
+}
+
+

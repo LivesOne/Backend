@@ -37,7 +37,7 @@ type ethTransPrepareRequest struct {
 }
 
 type ethTransPrepareResData struct {
-	Txid string `json:"txid"`
+	TradeNo string `json:"trade_no"`
 }
 
 // sendVCodeHandler
@@ -183,9 +183,9 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 	}
 
 	//调用统一提交流程
-	if txid, resErr := common.PrepareETHTrans(from, to, requestData.Param.TxType, secret.BizContent); resErr == constants.RC_OK {
+	if tradeNo, resErr := common.PrepareETHTrans(from, secret.Value, requestData.Param.TxType, secret.BizContent); resErr == constants.RC_OK {
 		response.Data = ethTransPrepareResData{
-			Txid: txid,
+			TradeNo: tradeNo,
 		}
 	} else {
 		response.SetResponseBase(resErr)

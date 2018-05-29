@@ -12,7 +12,7 @@ import (
 
 
 type ethTransCommitParam struct {
-	Txid string `json:"txid"`
+	TradeNo string `json:"trade_no"`
 }
 
 type ethTransCommitRequest struct {
@@ -79,7 +79,7 @@ func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.
 
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
+	tradeNo, err := utils.AesDecrypt(requestData.Param.TradeNo, key, iv)
 	if err != nil {
 		log.Error("aes decrypt error ", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -87,6 +87,6 @@ func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.
 	}
 
 	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitETHTrans(uidStr,txIdStr))
+	response.SetResponseBase(common.CommitETHTrans(uidStr,tradeNo))
 
 }

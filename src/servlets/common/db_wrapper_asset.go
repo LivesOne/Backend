@@ -50,6 +50,19 @@ type (
 		Uid        int64  `json:"uid"`
 		BizContent string `json:"biz_content"`
 		Ts         int64  `json:"ts"`
+		Value      int64  `json:"-"`
+		ValueStr   string `json:"value"`
+		Type       int    `json:"type"`
+	}
+	UserWithdrawalCardUse struct {
+		Id         int64  `json:"id"`
+		TradeNo    string `json:"trade_no"`
+		Uid        int64  `json:"uid"`
+		Quota      int64  `json:"-"`
+		QuotaStr   string `json:"quota"`
+		Cost       int64  `json:"-"`
+		CostStr    string `json:"cost"`
+		CreateTime int64  `json:"create_time"`
 	}
 )
 

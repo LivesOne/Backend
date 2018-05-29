@@ -762,9 +762,15 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 }
 
 func CreateUserWithdrawalQuota(uid int64, day int64, month int64) (sql.Result, error) {
+	return CreateUserWithdrawalQuotaByTx(uid,day,month,nil)
+}
+func CreateUserWithdrawalQuotaByTx(uid int64, day int64, month int64,tx *sql.Tx) (sql.Result, error) {
+	if tx == nil {
+		tx,_ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
 	sql := "insert ignore into user_withdrawal_quota(uid, `day`, `month`, casual, day_expend, last_expend, last_income) values(?, ?, ?, ?, ?, ?, ?) "
-	return gDBAsset.Exec(sql, uid, day, month, 0, 0, utils.GetTimestamp13(), 0)
-
+	return tx.Exec(sql, uid, day, month, 0, 0, utils.GetTimestamp13(), 0)
 }
 
 func ResetDayQuota(uid int64, dayQuota int64) bool {
@@ -830,21 +836,27 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (boo
 }
 
 func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int64) (bool, error) {
+	return IncomeUserWithdrawalCasualQuotaByTx(uid,incomeCasual,nil)
+}
+
+func IncomeUserWithdrawalCasualQuotaByTx(uid int64, incomeCasual int64,tx *sql.Tx) (bool, error) {
 	if incomeCasual > 0 {
+		if tx == nil {
+			tx,_ = gDBAsset.Begin()
+			defer tx.Commit()
+		}
 		sql := "update user_withdrawal_quota set casual = casual + ?,last_income = ? where uid = ?"
-		result, err := gDBAsset.Exec(sql, incomeCasual, utils.GetTimestamp13(), uid)
+		result, err := tx.Exec(sql, incomeCasual, utils.GetTimestamp13(), uid)
 		if err != nil {
 			logger.Error("exec sql error",sql)
 			return false, err
 		}
 		rowsAffected, _ := result.RowsAffected()
-		if rowsAffected > 0 {
-			return true, nil
-		} else {
+		if rowsAffected == 0 {
 			return false, sqlBase.ErrNoRows
 		}
 	}
-	return false, errors.New("income casual quota must greater then 0")
+	return true, nil
 }
 
 
@@ -854,6 +866,24 @@ func InitUserWithdrawal(uid int64)*UserWithdrawalQuota{
 	day,month := limitConfig.DailyWithdrawalQuota() * utils.CONV_LVT,
 				 limitConfig.MonthlyWithdrawalQuota() * utils.CONV_LVT
 	_,err := CreateUserWithdrawalQuota(uid, day,month)
+	if err != nil {
+		logger.Error("insert user withdrawal quota error for user:" , uid)
+		return nil
+	}
+	return &UserWithdrawalQuota{
+		Day:       day,
+		Month:     month,
+		Casual:    0,
+		DayExpend: 0,
+	}
+}
+
+func InitUserWithdrawalByTx(uid int64,tx *sql.Tx)*UserWithdrawalQuota{
+	level := GetTransUserLevel(uid)
+	limitConfig := config.GetLimitByLevel(level)
+	day,month := limitConfig.DailyWithdrawalQuota() * utils.CONV_LVT,
+		limitConfig.MonthlyWithdrawalQuota() * utils.CONV_LVT
+	_,err := CreateUserWithdrawalQuotaByTx(uid, day,month,tx)
 	if err != nil {
 		logger.Error("insert user withdrawal quota error for user:" , uid)
 		return nil
@@ -884,8 +914,50 @@ func EthTransCommit(from,to,value int64,tradeNo string,trade_type int,tx *sql.Tx
 }
 
 
-func InsertTradePending(uid int64,tradeNo,bizContent string,tradeType int)error{
-	ts := utils.GetTimestamp13()
-	_,err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,ts) values (?,?,?,?,?)",tradeNo,uid,tradeType,bizContent,ts)
+func InsertTradePending(uid int64,tradeNo,bizContent string,value int64,tradeType int)error{
+	_,err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,value,ts) values (?,?,?,?,?)",tradeNo,uid,tradeType,bizContent,value,utils.GetTimestamp13())
+	return err
+}
+
+
+func GetTradePendingByTradeNo(tradeNo string,uid int64)(*TradePending,error){
+	sql := "select * from trade_pending where trade_no = ? and uid = ?"
+	row,err := gDBAsset.QueryRow(sql,tradeNo,uid)
+	if err != nil {
+		logger.Error("query trade_pending error",err.Error())
+		return nil,err
+	}
+	return ConvTradePending(row),nil
+}
+
+func ConvTradePending(row map[string]string)*TradePending{
+	if row == nil {
+		return  nil
+	}
+	tp := new(TradePending)
+	tp.TradeNo = row["trade_no"]
+	tp.BizContent = row["biz_content"]
+	tp.Uid = utils.Str2Int64(row["uid"])
+	tp.Ts = utils.Str2Int64(row["ts"])
+	tp.Type  = utils.Str2Int(row["type"])
+	tp.Value  = utils.Str2Int64(row["value"])
+	tp.ValueStr  = utils.LVTintToFloatStr(tp.Value)
+	return tp
+}
+
+func DeleteTradePending(tradeNo string,uid int64,tx *sql.Tx)error{
+	_,err := tx.Exec("delete from trade_pending where trade_no = ? and uid = ?",tradeNo,uid)
+	return err
+}
+
+
+func InsertWithdrawalCardUse(wcu *UserWithdrawalCardUse,tx *sql.Tx)error{
+	_,err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time) values (?,?,?,?,?)",
+					wcu.TradeNo,
+					wcu.Uid,
+					wcu.Quota,
+					wcu.Cost,
+					wcu.CreateTime,
+	)
 	return err
 }
