@@ -195,3 +195,25 @@ func GetTs13(ts int64)int64{
 	}
 	return ts
 }
+
+
+
+func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
+	if len(secret) == 0 {
+		return nil
+	}
+	logger.Debug("secret ", secret)
+	secJson, err := AesDecrypt(secret, key, iv)
+	if err != nil {
+		logger.Error("aes decode error ", err.Error())
+		return err
+	}
+	logger.Debug("base64 and aes decode secret ", secJson)
+	err = json.Unmarshal([]byte(secJson), secretPtr)
+	if err != nil {
+		logger.Error("json Unmarshal error ", err.Error())
+		return err
+	}
+	return nil
+
+}

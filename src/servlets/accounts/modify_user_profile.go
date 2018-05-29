@@ -9,10 +9,12 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	"regexp"
+	"strings"
 )
 
 type profileSecret struct {
-	Nickname string `json:"nickname"`
+	Nickname      string `json:"nickname"`
+	WalletAddress string `json:"wallet_address"`
 }
 
 type modifyProfileParam struct {
@@ -57,8 +59,6 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		return
 	}
 
-
-
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		log.Info("modify user profile: read aes key from db error, length of aes key is:", len(aesKey))
@@ -90,34 +90,62 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 	// 	return
 	// }
 
-	if !validateNickName(secret.Nickname) {
-		log.Error("validate nickname failed")
-		response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
-		return
+	if len(secret.Nickname) > 0 {
+		if !validateNickName(secret.Nickname) {
+			log.Error("validate nickname failed")
+			response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
+			return
+		}
+		dbErr := common.SetNickname(uid, secret.Nickname)
+		if dbErr != nil {
+			if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
+				log.Info("modify user profile: duplicate nickname", dbErr)
+				response.SetResponseBase(constants.RC_DUP_NICKNAME)
+			} else {
+				log.Info("modify user profile : save nickname to db error:", dbErr)
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			}
+			// } else {
+			// 	fmt.Println("modify user profile: success")
+		}
+	}
+	if len(secret.WalletAddress) > 0 {
+		walletAddress := strings.ToLower(secret.WalletAddress)
+		if validateWalletAddress(walletAddress) {
+			if !strings.HasPrefix(walletAddress, "0x") {
+				walletAddress = "0x" + walletAddress
+			}
+			rowsAffected, dbErr := common.SetWalletAddress(uid, walletAddress)
+			if dbErr != nil {
+				if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
+					log.Info("modify user profile: duplicate wallet_address", dbErr)
+					response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
+				} else {
+					log.Info("modify user profile : save wallet_address to db error:", dbErr)
+					response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				}
+			}
+		} else {
+			response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
+		}
 	}
 
-	dbErr := common.SetNickname(uid, secret.Nickname)
-	if dbErr != nil {
-		if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
-			log.Info("modify user profile: duplicate nickname", dbErr)
-			response.SetResponseBase(constants.RC_DUP_NICKNAME)
-		} else {
-			log.Info("modify user profile : save nickname to db error:", dbErr)
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		}
-		// } else {
-		// 	fmt.Println("modify user profile: success")
-	}
 	log.Info("modify user profile success")
 
 }
 
-func validateNickName(name string)bool{
+func validateNickName(name string) bool {
 	l := len(name)
 	if l < 4 || l > 30 {
 		return false
 	}
 	reg := "^[-\u4e00-\u9fa5a-zA-Z0-9_]{2,30}$"
 	ret, _ := regexp.MatchString(reg, name)
+	return ret
+}
+
+func validateWalletAddress(walletAddress string) bool {
+	reg := "^(0x)?[0-9a-f]{40}$"
+	ret, _ := regexp.MatchString(reg, strings.ToLower(walletAddress))
 	return ret
 }

@@ -60,7 +60,7 @@ type LvtLogger struct {
 
 }
 
-func NewLvtLogger(logNow bool)*LvtLogger{
+func NewLvtLogger(logNow bool,info ...interface{})*LvtLogger{
 	l := new(LvtLogger)
 	l.infos = make([]interface{},0)
 	l.LogNow = logNow
@@ -68,6 +68,9 @@ func NewLvtLogger(logNow bool)*LvtLogger{
 	if _, file, _, ok := runtime.Caller(1);ok{
 		fs := strings.Split(file,"/")
 		l.infos = append(l.infos,"file : "+fs[len(fs)-1])
+	}
+	if len(info) >0 {
+		l.Info(info...)
 	}
 	return l
 }

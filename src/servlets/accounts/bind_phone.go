@@ -6,16 +6,17 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
 	"utils/vcode"
-	"utils/config"
 )
 
 type bindPhoneParam struct {
-	VCodeId string `json:"vcode_id"`
-	VCode   string `json:"vcode"`
-	Secret  string `json:"secret"`
+	VCodeType int    `json:"vcode_type"`
+	VCodeId   string `json:"vcode_id"`
+	VCode     string `json:"vcode"`
+	Secret    string `json:"secret"`
 }
 
 type bindPhoneRequest struct {
@@ -38,7 +39,7 @@ func (handler *bindPhoneHandler) Method() string {
 }
 
 func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-	log := logger.NewLvtLogger(true)
+	log := logger.NewLvtLogger(true,"bind phone")
 	defer log.InfoAll()
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
@@ -47,17 +48,24 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	requestData := new(bindPhoneRequest)
 	common.ParseHttpBodyParams(request, requestData)
 
-	if handler.checkRequestParams(header, requestData) == false {
-		log.Info("bind phone: check param error")
+
+	//校验参数合法
+	if (header == nil) || !header.IsValid() ||
+		(requestData == nil) ||
+		(len(requestData.Param.Secret) < 1) ||
+		(len(requestData.Param.VCodeId) < 1) ||
+		(len(requestData.Param.VCode) < 1) {
+		log.Error("bind phone: check param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
-		log.Info("bind phone: read user info error:", err)
+		log.Error("bind phone: read user info error:", err)
 		return
 	}
 	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
@@ -69,7 +77,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		log.Info("bind phone: read aes key from db error, length of aes key is:", len(aesKey))
+		log.Error("bind phone: read aes key from db error, length of aes key is:", len(aesKey))
 		return
 	}
 
@@ -79,22 +87,41 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	if err := DecryptSecret(secretString, key, iv, secret); err != constants.RC_OK {
 		response.SetResponseBase(err)
-		log.Info("bind phone: Decrypt Secret error:", err)
+		log.Error("bind phone: Decrypt Secret error:", err)
 		return
 	}
 
-	// 判断手机验证码正确
-	ok, c := vcode.ValidateSmsAndCallVCode(
-		secret.Phone, secret.Country, requestData.Param.VCode, 0, 0)
-	if ok == false {
-		log.Info("bind phone: validate sms and call vcode failed")
-		response.SetResponseBase(vcode.ConvSmsErr(c))
+	//如果这个参数为空，手动重置为下行短信
+	vType:= requestData.Param.VCodeType
+	if vType == 0 {
+		vType = 1
+	}
+
+
+	switch vType {
+	case 1:
+		// 判断手机验证码正确
+		if ok, c := vcode.ValidateSmsAndCallVCode(secret.Phone, secret.Country, requestData.Param.VCode, 0, vcode.FLAG_DEF);!ok {
+			log.Error("bind phone: validate sms and call vcode failed")
+			response.SetResponseBase(vcode.ConvSmsErr(c))
+			return
+		}
+	case 2:
+		if ok, resErr := vcode.ValidateSmsUpVCode(secret.Country, secret.Phone, requestData.Param.VCode); !ok {
+			log.Info("validate up sms code failed")
+			response.SetResponseBase(resErr)
+			return
+		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
+
 
 	account, err := common.GetAccountByUID(uidString)
 	if err != nil {
-		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD);
+		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
 	// check login password
@@ -105,7 +132,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 	// check privilege
 	limit := config.GetLimitByLevel(account.Level)
-	if len(account.Phone) > 0 && limit.ChangePhone() == false {
+	if len(account.Phone) > 0 && !limit.ChangePhone(){
 		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
 		return
 	}
@@ -116,29 +143,12 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		// if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
 		// 	db_factory.CheckDuplicateByColumn(dbErr, "phone") {
 		if db_factory.CheckDuplicateByColumn(dbErr, "mobile") {
-			log.Info("bind phone: check phone duplicate error, dupped", dbErr)
+			log.Error("bind phone: check phone duplicate error, dupped", dbErr)
 			response.SetResponseBase(constants.RC_DUP_PHONE)
 		} else {
-			log.Info("bind phone: check phone duplicate error, other error", dbErr)
+			log.Error("bind phone: check phone duplicate error, other error", dbErr)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 	}
 }
 
-func (handler *bindPhoneHandler) checkRequestParams(header *common.HeaderParams, requestData *bindPhoneRequest) bool {
-
-	if (header == nil) || (header.IsValid() == false) {
-		logger.Info("bind phone: invalid header info")
-		return false
-	}
-
-	if (requestData == nil) ||
-		(len(requestData.Param.Secret) < 1) ||
-		(len(requestData.Param.VCodeId) < 1) ||
-		(len(requestData.Param.VCode) < 1) {
-		logger.Info("bind phone: no enough paramter")
-		return false
-	}
-
-	return true
-}

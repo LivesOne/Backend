@@ -11,11 +11,12 @@ import (
 
 type profileResponse struct {
 	common.Account
-	HavePayPwd  bool `json:"have_pay_pwd"`
-	TransLevel  int  `json:"trans_level"`
-	BindWx      bool `json:"bind_wx"`
-	CreditScore int  `json:"credit_score"`
-	BindTg      bool `json:"bind_tg"`
+	HavePayPwd    bool   `json:"have_pay_pwd"`
+	TransLevel    int    `json:"trans_level"`
+	BindWx        bool   `json:"bind_wx"`
+	CreditScore   int    `json:"credit_score"`
+	BindTg        bool   `json:"bind_tg"`
+	WalletAddress string `json:"wallet_address"`
 }
 
 // getProfileHandler
@@ -60,11 +61,12 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	bindWx, bindTg, creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
 	//提前获取交易等级
 	profile := profileResponse{
-		HavePayPwd:  (len(account.PaymentPassword) > 0),
-		TransLevel:  common.GetUserAssetTranslevelByUid(account.UID),
-		BindWx:      bindWx,
-		CreditScore: creditScore,
-		BindTg:      bindTg,
+		HavePayPwd:    (len(account.PaymentPassword) > 0),
+		TransLevel:    common.GetUserAssetTranslevelByUid(account.UID),
+		BindWx:        bindWx,
+		CreditScore:   creditScore,
+		BindTg:        bindTg,
+		WalletAddress: common.GetUserWalletAddressByUid(account.UID),
 	}
 
 	account.ID = 0
@@ -73,6 +75,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.PaymentPassword = ""
 	account.From = ""
 	account.RegisterType = 0
+	//account.WalletAddress = common.GetUserWalletAddressByUid(account.UID)
 	profile.Account = *account
 
 	response.Data = profile

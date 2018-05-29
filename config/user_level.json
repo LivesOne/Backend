@@ -8,7 +8,9 @@
       "SingleAmountMax": 0,
       "DailyAmountMax": 0,
       "DailyPrepareAccess": 0,
-      "DailyCommitAccess": 0
+      "DailyCommitAccess": 0,
+      "DailyWithdrawalQuota": 0,
+      "MonthlyWithdrawalQuota": 0
     },
     "1":{
       "ChangePhone": true,
@@ -18,7 +20,9 @@
       "SingleAmountMax": 0,
       "DailyAmountMax": 0,
       "DailyPrepareAccess": 0,
-      "DailyCommitAccess": 0
+      "DailyCommitAccess": 0,
+      "DailyWithdrawalQuota": 0,
+      "MonthlyWithdrawalQuota": 0
     },
     "2":{
       "ChangePhone": true,
@@ -28,7 +32,9 @@
       "SingleAmountMax": 2000,
       "DailyAmountMax": 2000,
       "DailyPrepareAccess": 3,
-      "DailyCommitAccess": 2
+      "DailyCommitAccess": 2,
+      "DailyWithdrawalQuota": 200,
+      "MonthlyWithdrawalQuota": 200
     },
     "3":{
       "ChangePhone": true,
@@ -38,7 +44,9 @@
       "SingleAmountMax": 5000,
       "DailyAmountMax": 5000,
       "DailyPrepareAccess": 7,
-      "DailyCommitAccess": 5
+      "DailyCommitAccess": 5,
+      "DailyWithdrawalQuota": 200,
+      "MonthlyWithdrawalQuota": 200
     },
     "4":{
       "ChangePhone": true,
@@ -48,7 +56,9 @@
       "SingleAmountMax": 10000,
       "DailyAmountMax": 10000,
       "DailyPrepareAccess": 14,
-      "DailyCommitAccess": 10
+      "DailyCommitAccess": 10,
+      "DailyWithdrawalQuota": 200,
+      "MonthlyWithdrawalQuota": 200
     }
   }
 }

@@ -10,46 +10,56 @@ import (
 const USER_LEVEL_NUM = 5
 
 type UserLevelLimit struct {
-	changePhone			bool
-	lockAsset			bool
-	transferTo			bool
-	singleAmountMin		int64
-	singleAmountMax		int64
-	dailyAmountMax		int64
-	dailyPrepareAccess	int
-	dailyCommitAccess	int
+	changePhone            bool
+	lockAsset              bool
+	transferTo             bool
+	singleAmountMin        int64
+	singleAmountMax        int64
+	dailyAmountMax         int64
+	dailyPrepareAccess     int
+	dailyCommitAccess      int
+	dailyWithdrawalQuota   int64
+	monthlyWithdrawalQuota int64
 }
 
-func (limit *UserLevelLimit)ChangePhone() bool {
+func (limit *UserLevelLimit) ChangePhone() bool {
 	return limit.changePhone
 }
 
-func (limit *UserLevelLimit)LockAsset() bool {
+func (limit *UserLevelLimit) LockAsset() bool {
 	return limit.lockAsset
 }
 
-func (limit *UserLevelLimit)TransferTo() bool {
+func (limit *UserLevelLimit) TransferTo() bool {
 	return limit.transferTo
 }
 
-func (limit *UserLevelLimit)SingleAmountMin() int64 {
+func (limit *UserLevelLimit) SingleAmountMin() int64 {
 	return limit.singleAmountMin
 }
 
-func (limit *UserLevelLimit)SingleAmountMax() int64 {
+func (limit *UserLevelLimit) SingleAmountMax() int64 {
 	return limit.singleAmountMax
 }
 
-func (limit *UserLevelLimit)DailyAmountMax() int64 {
+func (limit *UserLevelLimit) DailyAmountMax() int64 {
 	return limit.dailyAmountMax
 }
 
-func (limit *UserLevelLimit)DailyPrepareAccess() int {
+func (limit *UserLevelLimit) DailyPrepareAccess() int {
 	return limit.dailyPrepareAccess
 }
 
-func (limit *UserLevelLimit)DailyCommitAccess() int {
+func (limit *UserLevelLimit) DailyCommitAccess() int {
 	return limit.dailyCommitAccess
+}
+
+func (limit *UserLevelLimit) DailyWithdrawalQuota() int64 {
+	return limit.dailyWithdrawalQuota
+}
+
+func (limit *UserLevelLimit) MonthlyWithdrawalQuota() int64 {
+	return limit.monthlyWithdrawalQuota
 }
 
 type UserLevelConfig struct {
@@ -57,30 +67,34 @@ type UserLevelConfig struct {
 }
 
 type UserLevelLimitInternal struct {
-	ChangePhone			bool
-	LockAsset			bool
-	TransferTo			bool
-	SingleAmountMin		int64
-	SingleAmountMax		int64
-	DailyAmountMax		int64
-	DailyPrepareAccess	int
-	DailyCommitAccess	int
+	ChangePhone            bool
+	LockAsset              bool
+	TransferTo             bool
+	SingleAmountMin        int64
+	SingleAmountMax        int64
+	DailyAmountMax         int64
+	DailyPrepareAccess     int
+	DailyCommitAccess      int
+	DailyWithdrawalQuota   int64
+	MonthlyWithdrawalQuota int64
 }
 
 type UserLevelConfigInternal struct {
-	LimitMap map[int]UserLevelLimitInternal		`json:"UserLevelLimit"`
+	LimitMap map[int]UserLevelLimitInternal `json:"UserLevelLimit"`
 }
 
 var gUserLevelConfig UserLevelConfig
-var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit {
-	changePhone:false,
-	lockAsset:false,
-	transferTo:false,
-	singleAmountMin:0,
-	singleAmountMax:0,
-	dailyAmountMax:0,
-	dailyPrepareAccess:0,
-	dailyCommitAccess:0,
+var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit{
+	changePhone:            false,
+	lockAsset:              false,
+	transferTo:             false,
+	singleAmountMin:        0,
+	singleAmountMax:        0,
+	dailyAmountMax:         0,
+	dailyPrepareAccess:     0,
+	dailyCommitAccess:      0,
+	dailyWithdrawalQuota:   0,
+	monthlyWithdrawalQuota: 0,
 }
 
 /*func GetLevelConfig() *UserLevelConfig {
@@ -108,14 +122,16 @@ func LoadLevelConfig(dir string, cfgName string) error {
 	for level, v := range config.LimitMap {
 		fmt.Println(level, v)
 		gUserLevelConfig.LimitMap[level] = UserLevelLimit{
-			changePhone:v.ChangePhone,
-			lockAsset:v.LockAsset,
-			transferTo:v.TransferTo,
-			singleAmountMin:v.SingleAmountMin,
-			singleAmountMax:v.SingleAmountMax,
-			dailyAmountMax:v.DailyAmountMax,
-			dailyPrepareAccess:v.DailyPrepareAccess,
-			dailyCommitAccess:v.DailyCommitAccess,
+			changePhone:            v.ChangePhone,
+			lockAsset:              v.LockAsset,
+			transferTo:             v.TransferTo,
+			singleAmountMin:        v.SingleAmountMin,
+			singleAmountMax:        v.SingleAmountMax,
+			dailyAmountMax:         v.DailyAmountMax,
+			dailyPrepareAccess:     v.DailyPrepareAccess,
+			dailyCommitAccess:      v.DailyCommitAccess,
+			dailyWithdrawalQuota:   v.DailyWithdrawalQuota,
+			monthlyWithdrawalQuota: v.MonthlyWithdrawalQuota,
 		}
 	}
 	return nil

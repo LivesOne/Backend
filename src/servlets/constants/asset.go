@@ -11,6 +11,8 @@ const (
 	TX_TYPE_BUY               = 7
 	TX_TYPE_REFUND            = 9
 
+	TX_TYPE_BUY_COIN_CARD = 23
+
 	TX_STATUS_DEFAULT = 0
 	TX_STATUS_COMMIT  = 1
 
@@ -29,6 +31,7 @@ const (
 	TRANS_ERR_SYS                  = 1
 	TRANS_ERR_INSUFFICIENT_BALANCE = 2
 	TRANS_ERR_ASSET_LIMITED        = 3
+	TRANS_ERR_PARAM                = 4
 
 	ASSET_LOCK_MONTH_TIMESTAMP = 30 * 24 * 60 * 60 * 1000
 

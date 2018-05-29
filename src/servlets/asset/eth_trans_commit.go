@@ -11,26 +11,26 @@ import (
 
 
 
-type transCommitParam struct {
+type ethTransCommitParam struct {
 	Txid string `json:"txid"`
 }
 
-type transCommitRequest struct {
+type ethTransCommitRequest struct {
 	Base  *common.BaseInfo  `json:"base"`
-	Param *transCommitParam `json:"param"`
+	Param *ethTransCommitParam `json:"param"`
 }
 
 // sendVCodeHandler
-type transCommitHandler struct {
+type ethTransCommitHandler struct {
 	//header      *common.HeaderParams // request header param
 	//requestData *sendVCodeRequest    // request body
 }
 
-func (handler *transCommitHandler) Method() string {
+func (handler *ethTransCommitHandler) Method() string {
 	return http.MethodPost
 }
 
-func (handler *transCommitHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 	log := logger.NewLvtLogger(true)
 	defer log.InfoAll()
 	response := &common.ResponseData{
@@ -41,7 +41,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	requestData := transCommitRequest{} // request body
+	requestData := ethTransCommitRequest{} // request body
 
 	common.ParseHttpBodyParams(request, &requestData)
 
@@ -87,6 +87,6 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 	}
 
 	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitLVTTrans(uidStr,txIdStr))
+	response.SetResponseBase(common.CommitETHTrans(uidStr,txIdStr))
 
 }

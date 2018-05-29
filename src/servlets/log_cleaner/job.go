@@ -22,7 +22,7 @@ func startTask() {
 	}
 	//随机3-5秒休眠
 	s := random3To5()
-	logger.Info("sleep task second ", s)
+	//logger.Debug("sleep task second ", s)
 	time.Sleep(time.Duration(s) * time.Second)
 }
 

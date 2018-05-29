@@ -69,6 +69,8 @@ const (
 
 	ACCOUNT_CHECK_ACCOUNT = "/user/v1/account/check"
 
+	CHECK_WITH_VCODE = "/user/v1/account/check_with_vcode"
+
 	ACCOUNT_SET_STATUS = "/user/v1/account/set_status"
 
 	ACCOUNT_UPGRADE = "/user/v1/profile/upgrade"
@@ -90,6 +92,10 @@ const (
 
 	ASSET_TRANS_COMMIT = "/asset/v1/trans/commit"
 
+	ASSET_ETH_TRANS_PREPARE = "/asset/v1/trans/eth_prepare"
+
+	ASSET_ETH_TRANS_COMMIT = "/asset/v1/trans/eth_commit"
+
 	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
 
 	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
@@ -99,5 +105,9 @@ const (
 	ASSET_LOCK_CREATE = "/asset/v1/lock/create"
 
 	ASSET_LOCK_REMOVE = "/asset/v1/lock/remove"
+
+	ASSET_LOCK_UPGRADE = "/asset/v1/lock/upgrade"
+
+	ASSET_WITHDRAWAL_QUOTA = "/asset/v1/withdrawal/quota/query"
 
 )

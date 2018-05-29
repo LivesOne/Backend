@@ -22,8 +22,8 @@ type resetPwdParam struct {
 }
 
 type resetPwdRequest struct {
-	Base  common.BaseInfo `json:"base"`
-	Param resetPwdParam   `json:"param"`
+	Base  *common.BaseInfo `json:"base"`
+	Param *resetPwdParam   `json:"param"`
 }
 
 // resetPwdHandler
@@ -35,7 +35,8 @@ func (handler *resetPwdHandler) Method() string {
 }
 
 func (handler *resetPwdHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-
+	log := logger.NewLvtLogger(true, "reset login pwd")
+	defer log.InfoAll()
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
@@ -43,8 +44,14 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	requestData := resetPwdRequest{}
 	common.ParseHttpBodyParams(request, &requestData)
 
-	if header.IsValidTimestamp() == false {
-		logger.Info("reset password: invalid timestamp")
+	if !header.IsValidTimestamp() {
+		log.Info("reset password: invalid timestamp")
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	param := requestData.Param
+	if param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -52,62 +59,96 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	var account *common.Account
 	var err error
 	// 检查验证码
-	checkType := requestData.Param.Type
-	if checkType == 1 {
-		if utils.IsValidEmailAddr(requestData.Param.EMail) == false {
-			logger.Info("reset password: invalid email address")
+	checkType := param.Type
+	switch checkType {
+	case 1: //邮箱验证
+		if !utils.IsValidEmailAddr(param.EMail) {
+			log.Info("reset password: invalid email address")
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
-		account, err = common.GetAccountByEmail(requestData.Param.EMail)
+		if len(param.VCode) == 0 || len(param.VCodeID) == 0 {
+			log.Info("reset password: vcode is null or vcode_id is null")
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+
+		account, err = common.GetAccountByEmail(param.EMail)
 		if (err != nil) || (account == nil) {
-			logger.Info("reset password: get account info by email failed:", requestData.Param.EMail)
+			log.Info("reset password: get account info by email failed:", param.EMail)
 			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
-		ok, errT := vcode.ValidateMailVCode(
-			requestData.Param.VCodeID, requestData.Param.VCode, account.Email)
-		if ok == false {
-			logger.Info("reset password: verify email vcode failed", errT)
+		if ok, errT := vcode.ValidateMailVCode(param.VCodeID, param.VCode, account.Email); !ok {
+			log.Info("reset password: verify email vcode failed", errT)
 			response.SetResponseBase(vcode.ConvImgErr(errT))
 			return
 		}
 
-	} else if checkType == 2 {
-		if (len(requestData.Param.Phone) < 1) || (requestData.Param.Country < 1) {
-			logger.Info("reset password: invalid phone or country", requestData.Param.Country, requestData.Param.Phone)
+
+	case 2: //短信下行验证
+		if (len(param.Phone) < 1) || (param.Country < 1) {
+			log.Info("reset password: invalid phone or country", param.Country, param.Phone)
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
-		account, err = common.GetAccountByPhone(requestData.Param.Country, requestData.Param.Phone)
+		if len(param.VCode) == 0 || len(param.VCodeID) == 0 {
+			log.Info("reset password: vcode is null or vcode_id is null")
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+		account, err = common.GetAccountByPhone(param.Country, param.Phone)
 		if (err != nil) || (account == nil) {
-			logger.Info("reset password: get account info by phone failed:", requestData.Param.Country, requestData.Param.Phone)
+			log.Info("reset password: get account info by phone failed:", param.Country, param.Phone)
 			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
-		ok, err := vcode.ValidateSmsAndCallVCode(
-			account.Phone, account.Country, requestData.Param.VCode, 0, 0)
-		if ok == false {
+		if ok, err := vcode.ValidateSmsAndCallVCode(account.Phone, account.Country, param.VCode, 0, 0); !ok {
 			e := vcode.ConvSmsErr(err)
-			logger.Info("reset password: verify sms vcode failed", e)
+			log.Info("reset password: verify sms vcode failed", e)
 			response.SetResponseBase(e)
 			return
 		}
 
-	} else {
+	case 3: //短信上行验证
+		if (len(param.Phone) < 1) || (param.Country < 1) {
+			log.Info("reset password: invalid phone or country", param.Country, param.Phone)
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+		if len(param.VCode) == 0 {
+			log.Info("reset password: vcode is null")
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+		account, err = common.GetAccountByPhone(param.Country, param.Phone)
+		if (err != nil) || (account == nil) {
+			log.Info("reset password: get account info by phone failed:", param.Country, param.Phone)
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+		if ok, resErr := vcode.ValidateSmsUpVCode(account.Country, account.Phone, param.VCode); !ok {
+			log.Info("validate up sms code failed")
+			response.SetResponseBase(resErr)
+			return
+		}
+
+	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
+
 	}
 
 	// 解析出“sha256(密码)”
-	privKey, err := config.GetPrivateKey(requestData.Param.Spkv)
+	privKey, err := config.GetPrivateKey(param.Spkv)
 	if (err != nil) || (privKey == nil) {
+		log.Error("can not get private key")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	pwdSha256, err := utils.RsaDecrypt(requestData.Param.PWD, privKey)
+	pwdSha256, err := utils.RsaDecrypt(param.PWD, privKey)
 	if err != nil {
-		logger.Info("reset password: decrypt pwd error:", err)
+		log.Info("reset password: decrypt pwd error:", err)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -117,7 +158,7 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 
 	// save to db
 	if err := common.SetLoginPassword(account.UID, pwdDb); err != nil {
-		logger.Info("reset password: save login pwd in DB error:", err)
+		log.Info("reset password: save login pwd in DB error:", err)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
