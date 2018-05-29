@@ -10,6 +10,7 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	sqlBase "database/sql"
+	"fmt"
 )
 
 const (
@@ -863,3 +864,19 @@ func InitUserWithdrawal(uid int64)*UserWithdrawalQuota{
 	}
 }
 
+
+func EthTransCommit(from,to,value int64,tradeNo string,trade_type int,tx *sql.Tx)(int64,error){
+	if tx == nil {
+		var err error
+		tx,err = gDBAsset.Begin()
+		if err != nil {
+			logger.Error("begin tx error",err.Error())
+			return 0,err
+		}
+		defer tx.Commit()
+	}
+	ts := utils.GetTimestamp13()
+	txid := GenerateTxID()
+	fmt.Println(ts,txid)
+	return txid,nil
+}
