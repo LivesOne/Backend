@@ -145,10 +145,20 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 	if err != nil {
 		return constants.RC_SYSTEM_ERR
 	}
-	txId,err := EthTransCommit(uid,to,tp.Value,tp.TradeNo,tp.Type,tx)
-	if err != nil {
+	txId,e := EthTransCommit(uid,to,tp.Value,tp.TradeNo,tp.Type,tx)
+	if txId <= 0 {
 		tx.Rollback()
-		return constants.RC_SYSTEM_ERR
+		switch e {
+		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
+			return constants.RC_INSUFFICIENT_BALANCE
+		case constants.TRANS_ERR_SYS:
+			return constants.RC_TRANS_IN_PROGRESS
+		case constants.TRANS_ERR_ASSET_LIMITED:
+			return constants.RC_ACCOUNT_ACCESS_LIMITED
+		default:
+			return constants.RC_SYSTEM_ERR
+		}
+
 	}
 	quota := utils.FloatStrToLVTint(bizContent["quota"])
 
@@ -161,7 +171,7 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 		CreateTime: utils.TXIDToTimeStamp13(txId),
 	}
 
-	if err = InsertWithdrawalCardUse(wcu,tx);err != nil {
+	if err = InsertWithdrawalCardUseByTx(wcu,tx);err != nil {
 		tx.Rollback()
 		return constants.RC_SYSTEM_ERR
 	}

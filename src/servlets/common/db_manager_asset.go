@@ -10,7 +10,6 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	sqlBase "database/sql"
-	"fmt"
 )
 
 const (
@@ -283,6 +282,14 @@ func ckeckBalance(uid int64, value int64, tx *sql.Tx) bool {
 	var balance int64
 	var locked int64
 	row := tx.QueryRow("select balance,locked from user_asset where uid  = ?", uid)
+	row.Scan(&balance, &locked)
+	return balance > 0 && (balance-locked) >= value
+}
+
+func ckeckEthBalance(uid int64, value int64, tx *sql.Tx) bool {
+	var balance int64
+	var locked int64
+	row := tx.QueryRow("select balance,locked from user_asset_eth where uid  = ?", uid)
 	row.Scan(&balance, &locked)
 	return balance > 0 && (balance-locked) >= value
 }
@@ -897,20 +904,82 @@ func InitUserWithdrawalByTx(uid int64,tx *sql.Tx)*UserWithdrawalQuota{
 }
 
 
-func EthTransCommit(from,to,value int64,tradeNo string,trade_type int,tx *sql.Tx)(int64,error){
+func EthTransCommit(from,to,value int64,tradeNo string,tradeType int,tx *sql.Tx)(int64,int){
 	if tx == nil {
-		var err error
-		tx,err = gDBAsset.Begin()
-		if err != nil {
-			logger.Error("begin tx error",err.Error())
-			return 0,err
-		}
+		tx,_ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
+
+	//检测资产初始化情况
+	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
+	f, c := CheckAndInitAsset(from)
+	if !f {
+		return 0, c
+	}
 	ts := utils.GetTimestamp13()
+
+	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
+
+
+
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckEthBalance(from, value, tx) {
+		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_eth set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_eth set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+
+
 	txid := GenerateTxID()
-	fmt.Println(ts,txid)
-	return txid,nil
+
+	if txid == -1 {
+		logger.Error("can not get txid")
+		return 0, constants.TRANS_ERR_SYS
+	}
+	info3,err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,form,to,value,ts) values (?,?,?,?,?,?,?)",
+					txid,
+					tradeType,
+					tradeNo,
+					from,
+					to,
+					value,
+					ts,
+	)
+	if err3 != nil {
+		logger.Error("sql error ", err2.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	rsa, _ = info3.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert eth tx history failed")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	return txid, constants.TRANS_ERR_SUCC
 }
 
 
@@ -950,8 +1019,14 @@ func DeleteTradePending(tradeNo string,uid int64,tx *sql.Tx)error{
 	return err
 }
 
-
-func InsertWithdrawalCardUse(wcu *UserWithdrawalCardUse,tx *sql.Tx)error{
+func InsertWithdrawalCardUse(wcu *UserWithdrawalCardUse)error{
+	return InsertWithdrawalCardUseByTx(wcu,nil)
+}
+func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse,tx *sql.Tx)error{
+	if tx == nil {
+		tx,_ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
 	_,err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time) values (?,?,?,?,?)",
 					wcu.TradeNo,
 					wcu.Uid,
