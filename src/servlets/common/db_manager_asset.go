@@ -882,3 +882,10 @@ func EthTransCommit(from,to,value int64,tradeNo string,trade_type int,tx *sql.Tx
 	fmt.Println(ts,txid)
 	return txid,nil
 }
+
+
+func InsertTradePending(uid int64,tradeNo,bizContent string,tradeType int)error{
+	ts := utils.GetTimestamp13()
+	_,err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,ts) values (?,?,?,?,?)",tradeNo,uid,tradeType,bizContent,ts)
+	return err
+}

@@ -35,6 +35,22 @@ type (
 		Casual    int64 `json:"casual"`
 		DayExpend int64 `json:"dayExpend"`
 	}
+
+	EthTxHistyr struct {
+		Txid    int64  `json:"txid"`
+		Type    int    `json:"type"`
+		TradeNo string `json:"trade_no"`
+		From    int64  `json:"from"`
+		To      int64  `json:"to"`
+		Value   int64  `json:"value"`
+		Ts      int64  `json:"ts"`
+	}
+	TradePending struct {
+		TradeNo    string `json:"trade_no"`
+		Uid        int64  `json:"uid"`
+		BizContent string `json:"biz_content"`
+		Ts         int64  `json:"ts"`
+	}
 )
 
 func (al *AssetLock) IsOk() bool {
