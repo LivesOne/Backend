@@ -1036,3 +1036,27 @@ func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse,tx *sql.Tx)error{
 	)
 	return err
 }
+
+func CheckEthPending(tradeNo string)bool{
+	row,err := gDBAsset.QueryRow("select count(1) as c from trade_pending where trade_no = ?",tradeNo)
+	if err != nil {
+		logger.Error("query db error",err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckEthHistory(tradeNo string)bool{
+	row,err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where trade_no = ?",tradeNo)
+	if err != nil {
+		logger.Error("query db error",err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
