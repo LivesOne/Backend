@@ -13,6 +13,7 @@ import (
 	"time"
 	"math"
 	"utils/logger"
+	"github.com/google/uuid"
 )
 
 const (
@@ -216,4 +217,8 @@ func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 	}
 	return nil
 
+}
+
+func GetTradeNo()string{
+	return uuid.New().String()
 }
