@@ -97,6 +97,7 @@ type Configuration struct {
 	WXAuth                 WXAuth
 	BindActive             string
 	AuthTelegramUrl        string
+	WithdrawalConfig       string
 }
 
 // configuration data

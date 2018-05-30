@@ -936,8 +936,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	if flag {
 		timestamp := utils.GetTimestamp13()
 		txid_lvt := GenerateTxID()
-		//TODO to 收款账户uid
-		toLvt := int64(-1)
+		toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
 		transLvtResult, e := WithdrawAccountLvt(txid_lvt, uid, toLvt, tradeNo, amount)
 		if !transLvtResult {
 			tx.Rollback()
@@ -953,8 +952,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			}
 		}
 
-		//TODO toEth eth手续费收款账户
-		toEth := int64(-1)
+		toEth := config.GetWithdrawalConfig().EthAcceptAccount
 		txid_eth, e := EthTransCommit(uid, toEth, amount, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
 		if txid_eth <= 0 {
 			tx.Rollback()
