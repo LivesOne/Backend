@@ -1,7 +1,6 @@
 package asset
 
 import (
-	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"

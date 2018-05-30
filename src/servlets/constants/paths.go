@@ -98,6 +98,8 @@ const (
 
 	ASSET_ETH_TRANS_RESULT = "/asset/v1/trans/eth_result"
 
+	ASSET_ETH_TRANS_HISTORY = "/asset/v1/trans/eth_history"
+
 	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
 
 	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
