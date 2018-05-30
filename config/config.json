@@ -4,6 +4,7 @@
     "PrivKey" : "rsa_private_key.pem",
     "UserLevelConfig" : "user_level.json",
     "LogConfig": "l4g.xml",
+    "WithdrawalConfig": "withdrawal.json",
     "MaxActivityRewardValue":100,
     "AppIDs" :
     [
