@@ -11,6 +11,7 @@ import (
 	"utils/logger"
 	sqlBase "database/sql"
 	"time"
+	"encoding/json"
 )
 
 const (
@@ -931,13 +932,14 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	tradeNo := utils.GetTradeNo()
+	//TODO 确定两个参数取值
+	tradeNo := GenerateTradeNo(1, 1)
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
 	if flag {
 		timestamp := utils.GetTimestamp13()
 		txid_lvt := GenerateTxID()
 		toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
-		transLvtResult, e := WithdrawAccountLvt(txid_lvt, uid, toLvt, tradeNo, amount)
+		transLvtResult, e := WithdrawAccountLvt(txid_lvt, uid, toLvt, tradeNo, amount, timestamp)
 		if !transLvtResult {
 			tx.Rollback()
 			switch e {
@@ -976,6 +978,26 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 
 		tx.Commit()
+
+		//同步至mongo
+		go func() {
+			txh := &DTTXHistory{
+				Id:      txid_lvt,
+				TradeNo: tradeNo,
+				Type:    constants.TX_TYPE_WITHDRAW_LVT,
+				From:    uid,
+				To:      toLvt,
+				Value:   amount,
+				Ts:      timestamp,
+			}
+			err = InsertCommited(txh)
+			if err != nil {
+				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
+				b, _ := json.Marshal(txh)
+				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, b)
+			}
+		}()
+
 		return tradeNo, constants.RC_OK
 	} else {
 		tx.Rollback()
@@ -985,14 +1007,48 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 }
 
-func WithdrawAccountLvt(txid int64, from int64, to int64, tradeNo string, value int64) (bool, int) {
+func DeleteTxhistoryLvtTmpByTxid(txid int64)  {
+	gDBAsset.Exec("delete from tx_history_lvt_tmp where txid= ? ", txid)
+}
+func QueryTxhistoryLvtTmpByTimie(ts int64) []*DTTXHistory {
+	results := gDBAsset.Query("select * from tx_history_lvt_tmp where ts < ?", ts)
+	if results == nil {
+		return nil
+	}
+	return convDTTXHistoryList(results)
+}
+
+func convDTTXHistoryList(list []map[string]string) []*DTTXHistory {
+	listRes := make([]*DTTXHistory, 0)
+	for _, v := range list {
+		listRes = append(listRes, convDTTXHistoryRequest(v))
+	}
+	return listRes
+}
+
+func convDTTXHistoryRequest(al map[string]string) *DTTXHistory {
+	if al == nil {
+		return nil
+	}
+	alres := DTTXHistory{
+		Id:      utils.Str2Int64(al["txid"]),
+		Type:    utils.Str2Int(al["type"]),
+		TradeNo: al["trade_no"],
+		From:    utils.Str2Int64(al["from"]),
+		To:      utils.Str2Int64(al["to"]),
+		Value:   utils.Str2Int64(al["value"]),
+		Ts:      utils.Str2Int64(al["ts"]),
+	}
+	return &alres
+}
+
+func WithdrawAccountLvt(txid int64, from int64, to int64, tradeNo string, value int64, ts int64) (bool, int) {
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
 	f, c := CheckAndInitAsset(from)
 	if !f {
 		return f, c
 	}
-	ts := utils.GetTimestamp13()
 
 	tx, err := gDBAsset.Begin()
 	if err != nil {
@@ -1050,7 +1106,7 @@ func WithdrawAccountLvt(txid int64, from int64, to int64, tradeNo string, value 
 		return false, constants.TRANS_ERR_SYS
 	}
 
-	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txid, constants.TX_TYPE_WITHDRAW_LVT, tradeNo, from, to, value, utils.GetTimestamp13())
+	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txid, constants.TX_TYPE_WITHDRAW_LVT, tradeNo, from, to, value, ts)
 	if err3 != nil {
 		logger.Error("query error ", err.Error())
 	}
@@ -1302,29 +1358,28 @@ func CheckEthHistory(tradeNo string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
-
-func QueryEthTxHistory(uid int64,txid string,tradeType int,begin,end int64,max int)[]map[string]string{
+func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, max int) []map[string]string {
 	sql := "select * from tx_history_eth where uid = ?"
 	params := []interface{}{uid}
 	if len(txid) > 0 {
 		sql += " and txid = ?"
-		params = append(params,utils.Str2Int64(txid))
-	}else{
+		params = append(params, utils.Str2Int64(txid))
+	} else {
 		if tradeType > 0 {
 			sql += " and type = ?"
-			params = append(params,tradeType)
+			params = append(params, tradeType)
 		}
 		if begin > 0 {
 			sql += " and begin >= ?"
-			params = append(params,begin)
+			params = append(params, begin)
 		}
 		if end > 0 {
 			sql += " and end <= ?"
-			params = append(params,end)
+			params = append(params, end)
 		}
 	}
 	sql += " limit ?"
-	params = append(params,max)
-	rows := gDBAsset.Query(sql,params...)
+	params = append(params, max)
+	rows := gDBAsset.Query(sql, params...)
 	return rows
 }
