@@ -47,18 +47,19 @@ var (
 	RC_INVALID_WALLET_ADDRESS_FORMAT = Error{20021, "invalid wallet address format"}
 	RC_DUP_WALLET_ADDRESS            = Error{20022, "duplicate wallet address"}
 
-	RC_ACCOUNT_ACCESS_LIMITED       = Error{21001, "account access limited"}
-	RC_INSUFFICIENT_BALANCE         = Error{21002, "insufficient balance"}
-	RC_INVALID_OBJECT_ACCOUNT       = Error{21003, "invalid object account"}
-	RC_TRANS_AUTH_FAILED            = Error{21004, "transaction authentication failed"}
-	RC_TRANS_IN_PROGRESS            = Error{21005, "transaction in progress"}
-	RC_TRANS_TIMEOUT                = Error{21006, "transaction timeout"}
-	RC_INVALID_TXID                 = Error{21007, "invalid txid"}
-	RC_TRANS_AMOUNT_TOO_LITTLE      = Error{21008, "transaction amount too little"}
-	RC_TRANS_AMOUNT_EXCEEDING_LIMIT = Error{21009, "transaction amount exceeding limit"}
-	RC_INVALID_LOCK_VALUE           = Error{21010, "invalid lock value"}
-	RC_INVALID_LOCK_ID              = Error{21011, "invalid lock id"}
-	RC_INSUFFICIENT_WITHDRAW_QUOTA  = Error{21012, "insufficient withdraw quota"}
+	RC_ACCOUNT_ACCESS_LIMITED         = Error{21001, "account access limited"}
+	RC_INSUFFICIENT_BALANCE           = Error{21002, "insufficient balance"}
+	RC_INVALID_OBJECT_ACCOUNT         = Error{21003, "invalid object account"}
+	RC_TRANS_AUTH_FAILED              = Error{21004, "transaction authentication failed"}
+	RC_TRANS_IN_PROGRESS              = Error{21005, "transaction in progress"}
+	RC_TRANS_TIMEOUT                  = Error{21006, "transaction timeout"}
+	RC_INVALID_TXID                   = Error{21007, "invalid txid"}
+	RC_TRANS_AMOUNT_TOO_LITTLE        = Error{21008, "transaction amount too little"}
+	RC_TRANS_AMOUNT_EXCEEDING_LIMIT   = Error{21009, "transaction amount exceeding limit"}
+	RC_INVALID_LOCK_VALUE             = Error{21010, "invalid lock value"}
+	RC_INVALID_LOCK_ID                = Error{21011, "invalid lock id"}
+	RC_INSUFFICIENT_WITHDRAW_QUOTA    = Error{21012, "insufficient withdraw quota"}
+	RC_HAS_UNFINISHED_WITHDRAWAL_TASK = Error{21013, "has unfinished withdrawal task"}
 
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
