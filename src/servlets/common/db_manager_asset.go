@@ -931,7 +931,9 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	tradeNo := utils.GetTradeNo()
+	tradeNo := GenerateTradeNo(quotaType,quotaType)//TODO 修改
+
+
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
 	if flag {
 		timestamp := utils.GetTimestamp13()
@@ -1326,5 +1328,11 @@ func QueryEthTxHistory(uid int64,txid string,tradeType int,begin,end int64,max i
 	sql += " limit ?"
 	params = append(params,max)
 	rows := gDBAsset.Query(sql,params...)
+	return rows
+}
+
+
+func GetUserWithdrawCardByUid(uid int64)[]map[string]string{
+	rows := gDBAsset.Query("select * from withdrawal_card where owner_uid = ?",uid)
 	return rows
 }
