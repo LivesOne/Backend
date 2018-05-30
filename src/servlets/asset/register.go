@@ -25,5 +25,7 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_WITHDRAWAL_REQUEST, &withdrawRequestHandler{})
 	server.RegisterHandler(constants.ASSET_WITHDRAWAL_CARD_LIST, &withdrawCardListHandler{})
 	server.RegisterHandler(constants.ASSET_WITHDRAWAL_CARD_USE, &withdrawCardUseHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_CARD_USE_LIST, &withdrawCardUseListHandler{})
+
 
 }

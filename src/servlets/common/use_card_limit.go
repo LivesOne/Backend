@@ -24,7 +24,7 @@ func CheckUserCardLimit(uid int64)(bool, constants.Error){
 			return false, constants.RC_SYSTEM_ERR
 		}
 		if c >= 5 {
-			return false, constants.RC_USE_CARD_LIMIT
+			return false, constants.RC_TOO_MANY_REQ
 		}
 	}
 	return true,constants.RC_OK

@@ -1392,6 +1392,11 @@ func GetUserWithdrawCardByUid(uid int64) []map[string]string {
 	return rows
 }
 
+func GetUserWithdrawCardUseByUid(uid int64) []map[string]string {
+	rows := gDBAsset.Query("select * from user_withdrawal_card_use where uid = ?", uid)
+	return rows
+}
+
 func GetUserWithdrawCardByPwd(pwd string) *UserWithdrawCard {
 	if row, err := gDBAsset.QueryRow("select * from withdrawal_card where password = ?", pwd); err != nil {
 		logger.Error("get user withdraw card failed", err.Error())

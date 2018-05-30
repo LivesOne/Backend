@@ -95,6 +95,15 @@ func (handler *withdrawCardUseHandler) Handle(request *http.Request, writer http
 
 
 	if card := common.GetUserWithdrawCardByPwd(password);card != nil {
+			ts := utils.GetTimestamp13()
+			if card.ExpireTime < ts {
+				response.SetResponseBase(constants.RC_USE_CARD_EXPIRE)
+				return
+			}
+			if card.Status == constants.WITHDRAW_CARD_STATUS_USE {
+				response.SetResponseBase(constants.RC_USE_CARD_ALREADY_USED)
+				return
+			}
 			if err := common.UseWithdrawCard(card,uid);err != nil {
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			}

@@ -60,8 +60,9 @@ var (
 	RC_INVALID_LOCK_ID                = Error{21011, "invalid lock id"}
 	RC_INSUFFICIENT_WITHDRAW_QUOTA    = Error{21012, "insufficient withdraw quota"}
 	RC_HAS_UNFINISHED_WITHDRAWAL_TASK = Error{21013, "has unfinished withdrawal task"}
-	RC_USE_CARD_FAILED = Error{21013, "has unfinished withdrawal task"}
-	RC_USE_CARD_LIMIT = Error{21013, "has unfinished withdrawal task"}
+	RC_USE_CARD_FAILED                = Error{21014, "invalid withdrawal card password"}
+	RC_USE_CARD_ALREADY_USED          = Error{21015, "withdrawal card already used"}
+	RC_USE_CARD_EXPIRE                = Error{21016, "withdrawal card expired"}
 
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
