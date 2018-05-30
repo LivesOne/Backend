@@ -1060,3 +1060,30 @@ func CheckEthHistory(tradeNo string)bool{
 	}
 	return utils.Str2Int(row["c"]) > 0
 }
+
+
+func QueryEthTxHistory(uid int64,txid string,tradeType int,begin,end int64,max int)[]map[string]string{
+	sql := "select * from tx_history_eth where uid = ?"
+	params := []interface{}{uid}
+	if len(txid) > 0 {
+		sql += " and txid = ?"
+		params = append(params,utils.Str2Int64(txid))
+	}else{
+		if tradeType > 0 {
+			sql += " and type = ?"
+			params = append(params,tradeType)
+		}
+		if begin > 0 {
+			sql += " and begin >= ?"
+			params = append(params,begin)
+		}
+		if end > 0 {
+			sql += " and end <= ?"
+			params = append(params,end)
+		}
+	}
+	sql += " limit ?"
+	params = append(params,max)
+	rows := gDBAsset.Query(sql,params...)
+	return rows
+}
