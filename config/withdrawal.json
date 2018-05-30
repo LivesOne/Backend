@@ -1,0 +1,6 @@
+{
+	"LvtAcceptAccount": 111111111,
+	"EthAcceptAccount": 122222222,
+	"WithdrawalEthFee": 0.000001,
+	"WithdrawalCardEthUnitPrice": 0.001
+}
