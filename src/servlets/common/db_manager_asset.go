@@ -915,7 +915,7 @@ func QueryWithdrawValueOfCurMonth(uid int64) int64 {
 func Withdraw(uid int64, amount int64, address string, quotaType int) (string, constants.Error) {
 	tx, _ := gDBAsset.Begin()
 
-	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (2,3)", uid)
+	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_FAIL)
 	processingCount := int64(-1)
 	row.Scan(&processingCount)
 	//if errQuery != nil {
@@ -973,6 +973,20 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			logger.Error("add tx_history_lvt_tmp error ", err.Error())
 			flag = false
 		}
+		flag, e := WithdrawAccountLvt(GenerateTxID(), from, to, tradeNo, amount)
+		if !flag {
+			switch e {
+			case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
+				return "", constants.RC_INSUFFICIENT_BALANCE
+			case constants.TRANS_ERR_SYS:
+				return "", constants.RC_TRANS_IN_PROGRESS
+			case constants.TRANS_ERR_ASSET_LIMITED:
+				return "", constants.RC_ACCOUNT_ACCESS_LIMITED
+			default:
+				return "", constants.RC_SYSTEM_ERR
+			}
+			tx.Rollback()
+		}
 		tx.Commit()
 		return tradeNo, constants.RC_OK
 	} else {
@@ -981,6 +995,79 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	}
 
+}
+
+func WithdrawAccountLvt(txid int64, from int64, to int64, tradeNo string, value int64) (bool, int) {
+	//检测资产初始化情况
+	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
+	f, c := CheckAndInitAsset(from)
+	if !f {
+		return f, c
+	}
+	ts := utils.GetTimestamp13()
+
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	tx.Exec("select * from user_asset where uid in (?,?) for update", from, to)
+
+	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
+	if !CheckAssetLimeted(from, tx) {
+		tx.Rollback()
+		return false, constants.TRANS_ERR_ASSET_LIMITED
+	}
+
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckBalance(from, value, tx) {
+		tx.Rollback()
+		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+	//txid 写入数据库
+	_, e := InsertTXID(txid, tx)
+
+	if e != nil {
+		logger.Error("sql error ", e.Error())
+		tx.Rollback()
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txid, constants.TX_TYPE_WITHDRAW_LVT, tradeNo, from, to, value, utils.GetTimestamp13())
+	if err3 != nil {
+		logger.Error("query error ", err.Error())
+	}
+
+	return true, constants.TRANS_ERR_SUCC
 }
 
 func UpdateWithdrawResult(transId int64, result int) bool {
