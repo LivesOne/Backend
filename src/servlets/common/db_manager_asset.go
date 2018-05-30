@@ -996,6 +996,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
 				b, _ := json.Marshal(txh)
 				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, b)
+			} else {
+				DeleteTxhistoryLvtTmpByTxid(txid_lvt)
 			}
 		}()
 
@@ -1050,7 +1052,6 @@ func WithdrawAccountLvt(txid int64, from int64, to int64, tradeNo string, value 
 	if !f {
 		return f, c
 	}
-	ts := utils.GetTimestamp13()
 
 	tx, err := gDBAsset.Begin()
 	if err != nil {
@@ -1223,6 +1224,8 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 	}
 
 	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
+
+	ts := utils.GetTimestamp13()
 
 	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
 	if !ckeckEthBalance(from, value, tx) {

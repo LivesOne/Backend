@@ -12,8 +12,10 @@ import (
 func ListenTxhistoryQueue()  {
 	for  {
 		reply, err := rdsDo("BLPOP", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME)
-		if err != nil {
+		if err == nil {
 			rdsDo("RPUSH", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, reply)
+		} else {
+			time.Sleep(10 * 1e9)
 		}
 
 		var txh DTTXHistory
