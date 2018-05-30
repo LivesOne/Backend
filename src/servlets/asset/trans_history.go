@@ -30,7 +30,7 @@ type transHistoryResData struct {
 }
 
 type transHistoryRecord struct {
-	Txid  int64               `json:"txid"`
+	Txid  string              `json:"txid"`
 	Type  int                 `json:"type"`
 	From  string              `json:"from"`
 	To    string              `json:"to"`
@@ -133,7 +133,7 @@ func buildResData(records []common.DTTXHistory, max int, uid int64) *transHistor
 		}
 		for _, v := range records {
 			r := transHistoryRecord{
-				Txid:  v.Id,
+				Txid:  utils.Int642Str(v.Id),
 				Type:  convType(v.Type, v.To, uid),
 				From:  convUidStr(v.From),
 				To:    convUidStr(v.To),
