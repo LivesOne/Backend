@@ -23,4 +23,6 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_ETH_TRANS_HISTORY, &ethtransHistoryHandler{})
 	server.RegisterHandler(constants.ASSET_WITHDRAWAL_LIST, &withdrawListHandler{})
 	server.RegisterHandler(constants.ASSET_WITHDRAWAL_REQUEST, &withdrawRequestHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_CARD_LIST, &withdrawCardListHandler{})
+
 }
