@@ -912,7 +912,7 @@ func QueryWithdrawValueOfCurMonth(uid int64) int64 {
 	return utils.Str2Int64(result["value"])
 }
 
-func Withdraw(uid int64, amount int64, address string, quotaType int) (bool, constants.Error) {
+func Withdraw(uid int64, amount int64, address string, quotaType int) (string, constants.Error) {
 	tx, _ := gDBAsset.Begin()
 
 	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (2,3)", uid)
@@ -925,7 +925,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (bool, con
 	//}
 	if processingCount > 0 {
 		tx.Rollback()
-		return false, constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
+		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
 	}
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
@@ -940,7 +940,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (bool, con
 		transLvtResult, _ := TransAccountLvt(txid_lvt, uid, to, amount)
 		if !transLvtResult {
 			tx.Rollback()
-			return false, constants.RC_INSUFFICIENT_WITHDRAW_QUOTA
+			return tradeNo, constants.RC_INSUFFICIENT_WITHDRAW_QUOTA
 		}
 		txid_eth := GenerateTxID()
 		//TODO from eth付款账户
@@ -950,13 +950,13 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (bool, con
 			tx.Rollback()
 			switch e {
 			case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
-				return false, constants.RC_INSUFFICIENT_BALANCE
+				return "", constants.RC_INSUFFICIENT_BALANCE
 			case constants.TRANS_ERR_SYS:
-				return false, constants.RC_TRANS_IN_PROGRESS
+				return "", constants.RC_TRANS_IN_PROGRESS
 			case constants.TRANS_ERR_ASSET_LIMITED:
-				return false, constants.RC_ACCOUNT_ACCESS_LIMITED
+				return "", constants.RC_ACCOUNT_ACCESS_LIMITED
 			default:
-				return false, constants.RC_SYSTEM_ERR
+				return "", constants.RC_SYSTEM_ERR
 			}
 
 		}
@@ -974,10 +974,10 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (bool, con
 			flag = false
 		}
 		tx.Commit()
-		return true, constants.RC_OK
+		return tradeNo, constants.RC_OK
 	} else {
 		tx.Rollback()
-		return flag, constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
+		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
 
 	}
 

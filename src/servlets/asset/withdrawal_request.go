@@ -143,5 +143,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			return
 		}
 	}
-	common.Withdraw(uid, withdrawAmount, secret.Address, requestData.QuotaType)
+	tradeNo, err := common.Withdraw(uid, withdrawAmount, secret.Address, requestData.QuotaType)
+	if err.Rc == constants.RC_OK.Rc {
+		response.Data = tradeNo
+	}
 }
