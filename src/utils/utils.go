@@ -13,7 +13,6 @@ import (
 	"time"
 	"math"
 	"utils/logger"
-	"github.com/google/uuid"
 )
 
 const (
@@ -155,6 +154,10 @@ func GetFormatDateNow() string {
 	return time.Now().UTC().Format("2006-01-02 15:04:05")
 }
 
+func GetFormatDateNow14() string {
+	return time.Now().UTC().Format("20060102150405")
+}
+
 func TimestampToTxid(ts, iv int64) int64 {
 	delta := ts - iv - constants.BASE_TIMESTAMP
 	tstx := (delta << 22) & 0x7FFFFFFFFFC00000
@@ -217,8 +220,4 @@ func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 	}
 	return nil
 
-}
-
-func GetTradeNo()string{
-	return uuid.New().String()
 }
