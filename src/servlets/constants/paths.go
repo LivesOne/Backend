@@ -114,4 +114,8 @@ const (
 
 	ASSET_WITHDRAWAL_QUOTA = "/asset/v1/withdrawal/quota/query"
 
+	ASSET_WITHDRAWAL_LIST = "/asset/v1/withdraw/list"
+
+	ASSET_WITHDRAWAL_REQUEST = "/asset/v1/withdraw/request"
+
 )

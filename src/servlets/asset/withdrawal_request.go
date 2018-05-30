@@ -30,10 +30,6 @@ func (wqs *withdrawRequestSecret) isValid() bool {
 	return len(wqs.Address) > 0 && len(wqs.Value) > 0 && len(wqs.Pwd) > 0
 }
 
-type withdrawRequestResponse struct {
-	Txid string `json:"txid"`
-}
-
 type withdrawRequestHandler struct {
 }
 

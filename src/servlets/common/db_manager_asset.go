@@ -917,12 +917,13 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_FAIL)
 	processingCount := int64(-1)
-	row.Scan(&processingCount)
-	//if errQuery != nil {
-	//	logger.Error("query day_expend from user_withdrawal_quota error ")
-	//	tx.Rollback()
-	//	return false, constants.RC_SYSTEM_ERR
-	//}
+	errQuery := row.Scan(&processingCount)
+	if errQuery != nil {
+		logger.Error("query day_expend from user_withdrawal_quota error ")
+		tx.Rollback()
+		return "", constants.RC_SYSTEM_ERR
+	}
+
 	if processingCount > 0 {
 		tx.Rollback()
 		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
@@ -936,16 +937,25 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		timestamp := utils.GetTimestamp13()
 		txid_lvt := GenerateTxID()
 		//TODO to 收款账户uid
-		to := int64(-1)
-		transLvtResult, _ := TransAccountLvt(txid_lvt, uid, to, amount)
+		toLvt := int64(-1)
+		transLvtResult, e := WithdrawAccountLvt(txid_lvt, uid, toLvt, tradeNo, amount)
 		if !transLvtResult {
 			tx.Rollback()
-			return tradeNo, constants.RC_INSUFFICIENT_WITHDRAW_QUOTA
+			switch e {
+			case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
+				return "", constants.RC_INSUFFICIENT_BALANCE
+			case constants.TRANS_ERR_SYS:
+				return "", constants.RC_TRANS_IN_PROGRESS
+			case constants.TRANS_ERR_ASSET_LIMITED:
+				return "", constants.RC_ACCOUNT_ACCESS_LIMITED
+			default:
+				return "", constants.RC_SYSTEM_ERR
+			}
 		}
-		txid_eth := GenerateTxID()
-		//TODO from eth付款账户
-		from := int64(-1)
-		txid_eth, e := EthTransCommit(from, uid, amount, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
+
+		//TODO toEth eth手续费收款账户
+		toEth := int64(-1)
+		txid_eth, e := EthTransCommit(uid, toEth, amount, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
 		if txid_eth <= 0 {
 			tx.Rollback()
 			switch e {
@@ -958,8 +968,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			default:
 				return "", constants.RC_SYSTEM_ERR
 			}
-
 		}
+
 		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status) values(?, ?, ?, ?, ?,?, ?, ?, ?)"
 		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0)
 		if err1 != nil {
@@ -967,26 +977,6 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			flag = false
 		}
 
-		sql = "insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)"
-		_, err3 := tx.Exec(sql, GenerateTxID(), constants.TX_TYPE_WITHDRAW_LVT, tradeNo, address, address, amount, timestamp)
-		if err3 != nil {
-			logger.Error("add tx_history_lvt_tmp error ", err.Error())
-			flag = false
-		}
-		flag, e := WithdrawAccountLvt(GenerateTxID(), from, to, tradeNo, amount)
-		if !flag {
-			switch e {
-			case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
-				return "", constants.RC_INSUFFICIENT_BALANCE
-			case constants.TRANS_ERR_SYS:
-				return "", constants.RC_TRANS_IN_PROGRESS
-			case constants.TRANS_ERR_ASSET_LIMITED:
-				return "", constants.RC_ACCOUNT_ACCESS_LIMITED
-			default:
-				return "", constants.RC_SYSTEM_ERR
-			}
-			tx.Rollback()
-		}
 		tx.Commit()
 		return tradeNo, constants.RC_OK
 	} else {

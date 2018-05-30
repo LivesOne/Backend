@@ -21,4 +21,6 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_ETH_TRANS_COMMIT, &ethTransCommitHandler{})
 	server.RegisterHandler(constants.ASSET_ETH_TRANS_RESULT, &ethtransResultHandler{})
 	server.RegisterHandler(constants.ASSET_ETH_TRANS_HISTORY, &ethtransHistoryHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_LIST, &withdrawListHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_REQUEST, &withdrawRequestHandler{})
 }
