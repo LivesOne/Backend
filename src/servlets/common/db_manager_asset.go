@@ -932,8 +932,9 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	//TODO 确定两个参数取值
-	tradeNo := GenerateTradeNo(1, 1)
+	tradeNo := GenerateTradeNo(quotaType,quotaType)//TODO 修改
+
+
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
 	if flag {
 		timestamp := utils.GetTimestamp13()
@@ -1049,6 +1050,7 @@ func WithdrawAccountLvt(txid int64, from int64, to int64, tradeNo string, value 
 	if !f {
 		return f, c
 	}
+	ts := utils.GetTimestamp13()
 
 	tx, err := gDBAsset.Begin()
 	if err != nil {
@@ -1219,7 +1221,6 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 	if !f {
 		return 0, c
 	}
-	ts := utils.GetTimestamp13()
 
 	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
 
@@ -1358,28 +1359,35 @@ func CheckEthHistory(tradeNo string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
-func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, max int) []map[string]string {
+
+func QueryEthTxHistory(uid int64,txid string,tradeType int,begin,end int64,max int)[]map[string]string{
 	sql := "select * from tx_history_eth where uid = ?"
 	params := []interface{}{uid}
 	if len(txid) > 0 {
 		sql += " and txid = ?"
-		params = append(params, utils.Str2Int64(txid))
-	} else {
+		params = append(params,utils.Str2Int64(txid))
+	}else{
 		if tradeType > 0 {
 			sql += " and type = ?"
-			params = append(params, tradeType)
+			params = append(params,tradeType)
 		}
 		if begin > 0 {
 			sql += " and begin >= ?"
-			params = append(params, begin)
+			params = append(params,begin)
 		}
 		if end > 0 {
 			sql += " and end <= ?"
-			params = append(params, end)
+			params = append(params,end)
 		}
 	}
 	sql += " limit ?"
-	params = append(params, max)
-	rows := gDBAsset.Query(sql, params...)
+	params = append(params,max)
+	rows := gDBAsset.Query(sql,params...)
+	return rows
+}
+
+
+func GetUserWithdrawCardByUid(uid int64)[]map[string]string{
+	rows := gDBAsset.Query("select * from withdrawal_card where owner_uid = ?",uid)
 	return rows
 }

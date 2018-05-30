@@ -79,6 +79,20 @@ type (
 		UpdateTime int64  `json:"update_time"`
 		Status     int    `json:"status"`
 	}
+
+	UserWithdrawCard struct {
+		Id string `json:"id"`
+		Password string `json:"password"`
+		TradeNo string `json:"trade_no"`
+		OwnerUid int64 `json:"owner_uid"`
+		Quota string `json:"quota"`
+		CreateTime int64 `json:"create_time"`
+		ExpireTime int64 `json:"expire_time"`
+		Cost string `json:"cost"`
+		GetTime int64 `json:"get_time"`
+		UseTime int64 `json:"use_time"`
+		Status int `json:"status"`
+	}
 )
 
 func (al *AssetLock) IsOk() bool {

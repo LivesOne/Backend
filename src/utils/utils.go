@@ -13,6 +13,7 @@ import (
 	"time"
 	"math"
 	"utils/logger"
+	"github.com/shopspring/decimal"
 )
 
 const (
@@ -124,19 +125,30 @@ func Timestamp13ToDate(timestamp int64) time.Time {
 }
 
 func LVTintToFloatStr(lvt int64) string {
-	return strconv.FormatFloat((float64(lvt) / CONV_LVT), 'f', 8, 64)
+	d2 := decimal.New(lvt,0).Div(decimal.NewFromFloat(CONV_LVT))
+	return d2.StringFixed(8)
 }
 
 func FloatStrToLVTint(lvt string) int64 {
-	return int64(Str2Float64(lvt) * CONV_LVT)
+
+	d2,err := decimal.NewFromString(lvt)
+	if err != nil {
+		logger.Error("decimal conv folat error",err.Error())
+		return 0
+	}
+	d3 := d2.Mul(decimal.NewFromFloat(CONV_LVT))
+
+	return d3.IntPart()
 }
 
 func LVTintToNamorInt(lvt int64)int{
-	return int(lvt/CONV_LVT)
+	d := decimal.New(lvt,0).Div(decimal.NewFromFloat(CONV_LVT))
+	return int(d.IntPart())
 }
 
 func NamorFloatToLVTint(nlvt float64)int64{
-	return int64(nlvt*CONV_LVT)
+	d := decimal.NewFromFloat(nlvt).Mul(decimal.NewFromFloat(CONV_LVT))
+	return d.IntPart()
 }
 
 func Str2Float64(str string) float64 {

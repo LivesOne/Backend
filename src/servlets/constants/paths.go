@@ -118,4 +118,9 @@ const (
 
 	ASSET_WITHDRAWAL_REQUEST = "/asset/v1/withdraw/request"
 
+	ASSET_WITHDRAWAL_CARD_LIST = "/asset/v1/withdraw/card/list"
+
+	ASSET_WITHDRAWAL_CARD_USE = "/asset/v1/withdraw/card/use"
+
+	ASSET_WITHDRAWAL_CARD_USE_LIST = "/asset/v1/withdraw/card/use_list"
 )

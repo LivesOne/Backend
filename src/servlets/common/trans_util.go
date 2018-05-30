@@ -109,7 +109,7 @@ func CommitLVTTrans(uidStr,txIdStr string)constants.Error{
 	return constants.RC_OK
 }
 func PrepareETHTrans(from int64,valueStr string,txTpye int,bizContent map[string]string)(string,constants.Error){
-	tradeNo := utils.GetTradeNo()
+	tradeNo := GenerateTradeNo(txTpye,txTpye)//TODO 修改
 	value := utils.FloatStrToLVTint(valueStr)
 	if err := InsertTradePending(from,tradeNo,utils.ToJSON(bizContent),value,txTpye);err != nil {
 		logger.Error("insert trade pending error",err.Error())
@@ -135,10 +135,12 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 	//识别类型进行操作
 	switch tp.Type {
 	case constants.TX_TYPE_BUY_COIN_CARD:
-		to = 181875000 //TODO 手续费收款账号
-		//解析业务数据，拿到具体数值
-		utils.FromJson(tp.BizContent,&bizContent)
+		to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
 	default:
+		return constants.RC_PARAM_ERR
+	}
+	//解析业务数据，拿到具体数值
+	if je := utils.FromJson(tp.BizContent,&bizContent);je != nil {
 		return constants.RC_PARAM_ERR
 	}
 	tx ,err := gDBAsset.Begin()
