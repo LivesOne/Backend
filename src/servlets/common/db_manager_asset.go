@@ -2,11 +2,9 @@ package common
 
 import (
 	"database/sql"
-	sqlBase "database/sql"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
-	"time"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
