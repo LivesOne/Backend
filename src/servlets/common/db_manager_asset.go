@@ -2,15 +2,15 @@ package common
 
 import (
 	"database/sql"
+	sqlBase "database/sql"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
+	"time"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	sqlBase "database/sql"
-	"time"
 )
 
 const (
@@ -931,8 +931,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	tradeNo := GenerateTradeNo(quotaType,quotaType)//TODO 修改
-
+	tradeNo := GenerateTradeNo(quotaType, quotaType) //TODO 修改
 
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
 	if flag {
@@ -1228,7 +1227,7 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 }
 
 func InsertTradePending(uid int64, tradeNo, bizContent string, value int64, tradeType int) error {
-	_, err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,value,ts) values (?,?,?,?,?)", tradeNo, uid, tradeType, bizContent, value, utils.GetTimestamp13())
+	_, err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,value,ts) values (?,?,?,?,?,?)", tradeNo, uid, tradeType, bizContent, value, utils.GetTimestamp13())
 	return err
 }
 
@@ -1304,35 +1303,109 @@ func CheckEthHistory(tradeNo string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
-
-func QueryEthTxHistory(uid int64,txid string,tradeType int,begin,end int64,max int)[]map[string]string{
+func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, max int) []map[string]string {
 	sql := "select * from tx_history_eth where uid = ?"
 	params := []interface{}{uid}
 	if len(txid) > 0 {
 		sql += " and txid = ?"
-		params = append(params,utils.Str2Int64(txid))
-	}else{
+		params = append(params, utils.Str2Int64(txid))
+	} else {
 		if tradeType > 0 {
 			sql += " and type = ?"
-			params = append(params,tradeType)
+			params = append(params, tradeType)
 		}
 		if begin > 0 {
 			sql += " and begin >= ?"
-			params = append(params,begin)
+			params = append(params, begin)
 		}
 		if end > 0 {
 			sql += " and end <= ?"
-			params = append(params,end)
+			params = append(params, end)
 		}
 	}
 	sql += " limit ?"
-	params = append(params,max)
-	rows := gDBAsset.Query(sql,params...)
+	params = append(params, max)
+	rows := gDBAsset.Query(sql, params...)
 	return rows
 }
 
-
-func GetUserWithdrawCardByUid(uid int64)[]map[string]string{
-	rows := gDBAsset.Query("select * from withdrawal_card where owner_uid = ?",uid)
+func GetUserWithdrawCardByUid(uid int64) []map[string]string {
+	rows := gDBAsset.Query("select * from withdrawal_card where owner_uid = ?", uid)
 	return rows
+}
+
+func GetUserWithdrawCardByPwd(pwd string) *UserWithdrawCard {
+	if row, err := gDBAsset.QueryRow("select * from withdrawal_card where password = ?", pwd); err != nil {
+		logger.Error("get user withdraw card failed", err.Error())
+		return nil
+	} else {
+		return convUserWithdrawCard(row)
+	}
+}
+
+func UseWithdrawCard(card *UserWithdrawCard,uid int64)error{
+	tradeNo := GenerateTradeNo(1,1)
+	ts := utils.GetTimestamp13()
+	tx,err := gDBAsset.Begin()
+	if err != nil {
+		return err
+	}
+
+	tx.Exec("select * from withdrawal_card where id = ? for update",card.Id)
+
+	_,err = tx.Exec("update withdrawal_card set status = ?,use_time = ? ,trade_no = ? where id = ?",constants.WITHDRAW_CARD_STATUS_USE,ts,tradeNo,card.Id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	wcu := &UserWithdrawalCardUse{
+		TradeNo:    tradeNo,
+		Uid:        uid,
+		Quota:      card.Quota,
+		Cost:       card.Cost,
+		CreateTime: ts,
+	}
+
+	if err = InsertWithdrawalCardUseByTx(wcu,tx);err != nil {
+		tx.Rollback()
+		return err
+	}
+	//临时额度
+	if wr := InitUserWithdrawalByTx(uid,tx);wr != nil {
+		if ok,err := IncomeUserWithdrawalCasualQuotaByTx(uid,card.Quota,tx);!ok{
+			tx.Rollback()
+			return err
+		}
+	} else {
+		tx.Rollback()
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func convUserWithdrawCard(row map[string]string) *UserWithdrawCard {
+	if len(row) == 0 {
+		return nil
+	}
+	uwc := &UserWithdrawCard{
+		Id:         utils.Str2Int64(row["id"]),
+		Password:   row["password"],
+		TradeNo:    row["trade_no"],
+		OwnerUid:   utils.Str2Int64(row["owner_uid"]),
+		Quota:      utils.Str2Int64(row["quota"]),
+		CreateTime: utils.Str2Int64(row["create_time"]),
+		ExpireTime: utils.Str2Int64(row["expire_time"]),
+		Cost:       utils.Str2Int64(row["cost"]),
+		GetTime:    utils.Str2Int64(row["get_time"]),
+		UseTime:    utils.Str2Int64(row["use_time"]),
+		Status:     utils.Str2Int(row["status"]),
+	}
+
+	return uwc
 }
