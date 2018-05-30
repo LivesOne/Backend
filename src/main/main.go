@@ -62,6 +62,8 @@ func initialize(cfgPath string) {
 
 	go func() {
 		common.ListenTxhistoryQueue()
+	}()
+	go func() {
 		common.PushTxHistoryByTimer()
 	}()
 }
