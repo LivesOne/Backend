@@ -1,6 +1,8 @@
 package common
 
-import "utils"
+import (
+	"utils"
+)
 
 const (
 	ASSET_LOCK_TYPE_NOR  = 0
@@ -63,6 +65,19 @@ type (
 		Cost       int64  `json:"-"`
 		CostStr    string `json:"cost"`
 		CreateTime int64  `json:"create_time"`
+	}
+
+	UserWithdrawalRequest struct {
+		Id         int64  `json:"id"`
+		TradeNo    string `json:"trade_no"`
+		Uid        int64  `json:"uid"`
+		Value      int64  `json:"value"`
+		Address    string `json:"address"`
+		TxidLvt    int64  `json:"txid_lvt"`
+		TxidEth    int64  `json:"txid_eth"`
+		CreateTime int64  `json:"create_time"`
+		UpdateTime int64  `json:"update_time"`
+		Status     int    `json:"status"`
 	}
 )
 

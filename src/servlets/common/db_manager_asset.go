@@ -10,6 +10,7 @@ import (
 	"utils/db_factory"
 	"utils/logger"
 	sqlBase "database/sql"
+	"time"
 )
 
 const (
@@ -376,7 +377,7 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 		incomeCasual := int64(0)
 		switch assetLock.Month {
 		case 6:
-			incomeCasual = assetLock.ValueInt/2
+			incomeCasual = assetLock.ValueInt / 2
 		case 12:
 			incomeCasual = assetLock.ValueInt
 		default:
@@ -384,8 +385,8 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 			return false, constants.TRANS_ERR_PARAM
 		}
 
-		if wr := InitUserWithdrawal(assetLock.Uid);wr != nil {
-			if ok,_ := IncomeUserWithdrawalCasualQuota(assetLock.Uid,incomeCasual);!ok{
+		if wr := InitUserWithdrawal(assetLock.Uid); wr != nil {
+			if ok, _ := IncomeUserWithdrawalCasualQuota(assetLock.Uid, incomeCasual); !ok {
 				tx.Rollback()
 				return false, constants.TRANS_ERR_SYS
 			}
@@ -460,7 +461,7 @@ func UpgradeAssetLock(assetLock *AssetLock) (bool, int) {
 	incomeCasual := int64(0)
 	switch assetLock.Month {
 	case 6:
-		incomeCasual = assetLock.ValueInt/2
+		incomeCasual = assetLock.ValueInt / 2
 	case 12:
 		incomeCasual = assetLock.ValueInt
 	default:
@@ -469,8 +470,8 @@ func UpgradeAssetLock(assetLock *AssetLock) (bool, int) {
 		return false, constants.TRANS_ERR_PARAM
 	}
 
-	if wr := InitUserWithdrawal(assetLock.Uid);wr != nil {
-		if ok,_ := IncomeUserWithdrawalCasualQuota(assetLock.Uid,incomeCasual);!ok{
+	if wr := InitUserWithdrawal(assetLock.Uid); wr != nil {
+		if ok, _ := IncomeUserWithdrawalCasualQuota(assetLock.Uid, incomeCasual); !ok {
 			tx.Rollback()
 			return false, constants.TRANS_ERR_SYS
 		}
@@ -769,11 +770,11 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 }
 
 func CreateUserWithdrawalQuota(uid int64, day int64, month int64) (sql.Result, error) {
-	return CreateUserWithdrawalQuotaByTx(uid,day,month,nil)
+	return CreateUserWithdrawalQuotaByTx(uid, day, month, nil)
 }
-func CreateUserWithdrawalQuotaByTx(uid int64, day int64, month int64,tx *sql.Tx) (sql.Result, error) {
+func CreateUserWithdrawalQuotaByTx(uid int64, day int64, month int64, tx *sql.Tx) (sql.Result, error) {
 	if tx == nil {
-		tx,_ = gDBAsset.Begin()
+		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
 	sql := "insert ignore into user_withdrawal_quota(uid, `day`, `month`, casual, day_expend, last_expend, last_income) values(?, ?, ?, ?, ?, ?, ?) "
@@ -809,7 +810,7 @@ func ResetMonthQuota(uid int64, monthQuota int64) bool {
 	}
 }
 
-func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (bool, error) {
+func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *sql.Tx) (bool, error) {
 	if expendQuota <= 0 && quotaType > 0 {
 		return false, errors.New("expend quota must greater than 0")
 	}
@@ -843,19 +844,19 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int) (boo
 }
 
 func IncomeUserWithdrawalCasualQuota(uid int64, incomeCasual int64) (bool, error) {
-	return IncomeUserWithdrawalCasualQuotaByTx(uid,incomeCasual,nil)
+	return IncomeUserWithdrawalCasualQuotaByTx(uid, incomeCasual, nil)
 }
 
-func IncomeUserWithdrawalCasualQuotaByTx(uid int64, incomeCasual int64,tx *sql.Tx) (bool, error) {
+func IncomeUserWithdrawalCasualQuotaByTx(uid int64, incomeCasual int64, tx *sql.Tx) (bool, error) {
 	if incomeCasual > 0 {
 		if tx == nil {
-			tx,_ = gDBAsset.Begin()
+			tx, _ = gDBAsset.Begin()
 			defer tx.Commit()
 		}
 		sql := "update user_withdrawal_quota set casual = casual + ?,last_income = ? where uid = ?"
 		result, err := tx.Exec(sql, incomeCasual, utils.GetTimestamp13(), uid)
 		if err != nil {
-			logger.Error("exec sql error",sql)
+			logger.Error("exec sql error", sql)
 			return false, err
 		}
 		rowsAffected, _ := result.RowsAffected()
@@ -866,15 +867,14 @@ func IncomeUserWithdrawalCasualQuotaByTx(uid int64, incomeCasual int64,tx *sql.T
 	return true, nil
 }
 
-
-func InitUserWithdrawal(uid int64)*UserWithdrawalQuota{
+func InitUserWithdrawal(uid int64) *UserWithdrawalQuota {
 	level := GetTransUserLevel(uid)
 	limitConfig := config.GetLimitByLevel(level)
-	day,month := limitConfig.DailyWithdrawalQuota() * utils.CONV_LVT,
-				 limitConfig.MonthlyWithdrawalQuota() * utils.CONV_LVT
-	_,err := CreateUserWithdrawalQuota(uid, day,month)
+	day, month := limitConfig.DailyWithdrawalQuota()*utils.CONV_LVT,
+		limitConfig.MonthlyWithdrawalQuota()*utils.CONV_LVT
+	_, err := CreateUserWithdrawalQuota(uid, day, month)
 	if err != nil {
-		logger.Error("insert user withdrawal quota error for user:" , uid)
+		logger.Error("insert user withdrawal quota error for user:", uid)
 		return nil
 	}
 	return &UserWithdrawalQuota{
@@ -885,14 +885,14 @@ func InitUserWithdrawal(uid int64)*UserWithdrawalQuota{
 	}
 }
 
-func InitUserWithdrawalByTx(uid int64,tx *sql.Tx)*UserWithdrawalQuota{
+func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 	level := GetTransUserLevel(uid)
 	limitConfig := config.GetLimitByLevel(level)
-	day,month := limitConfig.DailyWithdrawalQuota() * utils.CONV_LVT,
-		limitConfig.MonthlyWithdrawalQuota() * utils.CONV_LVT
-	_,err := CreateUserWithdrawalQuotaByTx(uid, day,month,tx)
+	day, month := limitConfig.DailyWithdrawalQuota()*utils.CONV_LVT,
+		limitConfig.MonthlyWithdrawalQuota()*utils.CONV_LVT
+	_, err := CreateUserWithdrawalQuotaByTx(uid, day, month, tx)
 	if err != nil {
-		logger.Error("insert user withdrawal quota error for user:" , uid)
+		logger.Error("insert user withdrawal quota error for user:", uid)
 		return nil
 	}
 	return &UserWithdrawalQuota{
@@ -903,10 +903,182 @@ func InitUserWithdrawalByTx(uid int64,tx *sql.Tx)*UserWithdrawalQuota{
 	}
 }
 
+func QueryWithdrawValueOfCurMonth(uid int64) int64 {
+	sql := "select sum(value) from user_withdrawal_request where uid = ? and create_time > ?"
 
-func EthTransCommit(from,to,value int64,tradeNo string,tradeType int,tx *sql.Tx)(int64,int){
+	tm := time.Unix(time.Now().Unix(), 0)
+	tm2, _ := time.Parse("2006-01", tm.Format("2006-01"))
+	result, _ := gDBAsset.QueryRow(sql, uid, utils.GetTimestamp13ByTime(tm2))
+	return utils.Str2Int64(result["value"])
+}
+
+func Withdraw(uid int64, amount int64, address string, quotaType int) (string, constants.Error) {
+	tx, _ := gDBAsset.Begin()
+
+	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (2,3)", uid)
+	processingCount := int64(-1)
+	row.Scan(&processingCount)
+	//if errQuery != nil {
+	//	logger.Error("query day_expend from user_withdrawal_quota error ")
+	//	tx.Rollback()
+	//	return false, constants.RC_SYSTEM_ERR
+	//}
+	if processingCount > 0 {
+		tx.Rollback()
+		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
+	}
+
+	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
+
+	tradeNo := utils.GetTradeNo()
+	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
+	if flag {
+		timestamp := utils.GetTimestamp13()
+		txid_lvt := GenerateTxID()
+		//TODO to 收款账户uid
+		to := int64(-1)
+		transLvtResult, _ := TransAccountLvt(txid_lvt, uid, to, amount)
+		if !transLvtResult {
+			tx.Rollback()
+			return tradeNo, constants.RC_INSUFFICIENT_WITHDRAW_QUOTA
+		}
+		txid_eth := GenerateTxID()
+		//TODO from eth付款账户
+		from := int64(-1)
+		txid_eth, e := EthTransCommit(from, uid, amount, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
+		if txid_eth <= 0 {
+			tx.Rollback()
+			switch e {
+			case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
+				return "", constants.RC_INSUFFICIENT_BALANCE
+			case constants.TRANS_ERR_SYS:
+				return "", constants.RC_TRANS_IN_PROGRESS
+			case constants.TRANS_ERR_ASSET_LIMITED:
+				return "", constants.RC_ACCOUNT_ACCESS_LIMITED
+			default:
+				return "", constants.RC_SYSTEM_ERR
+			}
+
+		}
+		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status) values(?, ?, ?, ?, ?,?, ?, ?, ?)"
+		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0)
+		if err1 != nil {
+			logger.Error("add user_withdrawal_request error ", err.Error())
+			flag = false
+		}
+
+		sql = "insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)"
+		_, err3 := tx.Exec(sql, GenerateTxID(), constants.TX_TYPE_WITHDRAW_LVT, tradeNo, address, address, amount, timestamp)
+		if err3 != nil {
+			logger.Error("add tx_history_lvt_tmp error ", err.Error())
+			flag = false
+		}
+		tx.Commit()
+		return tradeNo, constants.RC_OK
+	} else {
+		tx.Rollback()
+		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
+
+	}
+
+}
+
+func UpdateWithdrawResult(transId int64, result int) bool {
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false
+	}
+
+	var sql = ""
+	if result == constants.USER_WITHDRAWAL_REQUEST_SUCCESS {
+		//todo 更新提币申请状态
+		sql = "update user_withdrawal_request set status = ? where id = ?"
+		result, err := tx.Exec(sql, result, transId)
+		if err != nil {
+			logger.Error("update status in user_withdrawal_request error ", err.Error())
+			tx.Rollback()
+		}
+		rowsAffected, err := result.RowsAffected()
+		if rowsAffected != 1 {
+			logger.Error("update status in user_withdrawal_request error ", err.Error())
+			tx.Rollback()
+		}
+		tx.Commit()
+	} else if result == constants.USER_WITHDRAWAL_REQUEST_FAIL {
+		//RepayUserWithdrawalQuota(uid, repayQuota, quotaType, tx)
+		//TODO 更新提币申请记录状态
+		//TODO 新建反向交易，退还LVT
+	}
+	return true
+}
+
+/**
+ * 退还提币额度
+ */
+func RepayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sql.Tx) (bool, error) {
+	var sql = ""
+	if quotaType == CASUAL_QUOTA_TYPE {
+		sql = "update user_withdrawal_quota set casual = casual + ?,last_expend = ? where uid = ?"
+		result, err := tx.Exec(sql, repayQuota, utils.GetTimestamp13(), uid)
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected > 0 {
+			return true, nil
+		} else {
+			return false, err
+		}
+	}
+
+	result, err := tx.Exec(sql, repayQuota, utils.GetTimestamp13(), uid)
+	if err != nil {
+		logger.Error("exec sql error", sql)
+		return false, err
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected > 0 {
+		return true, nil
+	} else {
+		return false, sqlBase.ErrNoRows
+	}
+}
+
+func QueryWithdrawalList(uid int64) []*UserWithdrawalRequest {
+	sql := "select trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
+	results := gDBAsset.Query(sql, uid)
+	if results == nil {
+		return nil
+	}
+	return convUserWithdrawalRequestList(results)
+}
+
+func convUserWithdrawalRequestList(list []map[string]string) []*UserWithdrawalRequest {
+	listRes := make([]*UserWithdrawalRequest, 0)
+	for _, v := range list {
+		listRes = append(listRes, convUserWithdrawalRequest(v))
+	}
+	return listRes
+}
+
+func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
+	if al == nil {
+		return nil
+	}
+	alres := UserWithdrawalRequest{
+		TradeNo:    al["trade_no"],
+		Uid:        utils.Str2Int64(al["uid"]),
+		Address:    al["address"],
+		TxidLvt:    utils.Str2Int64(al["txid_lvt"]),
+		TxidEth:    utils.Str2Int64(al["txid_eth"]),
+		CreateTime: utils.Str2Int64(al["create_time"]),
+		UpdateTime: utils.Str2Int64(al["update_time"]),
+		Status:     utils.Str2Int(al["status"]),
+	}
+	return &alres
+}
+
+func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
 	if tx == nil {
-		tx,_ = gDBAsset.Begin()
+		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
 
@@ -919,8 +1091,6 @@ func EthTransCommit(from,to,value int64,tradeNo string,tradeType int,tx *sql.Tx)
 	ts := utils.GetTimestamp13()
 
 	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
-
-
 
 	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
 	if !ckeckEthBalance(from, value, tx) {
@@ -952,22 +1122,20 @@ func EthTransCommit(from,to,value int64,tradeNo string,tradeType int,tx *sql.Tx)
 		return 0, constants.TRANS_ERR_SYS
 	}
 
-
-
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("can not get txid")
 		return 0, constants.TRANS_ERR_SYS
 	}
-	info3,err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,form,to,value,ts) values (?,?,?,?,?,?,?)",
-					txid,
-					tradeType,
-					tradeNo,
-					from,
-					to,
-					value,
-					ts,
+	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,form,to,value,ts) values (?,?,?,?,?,?,?)",
+		txid,
+		tradeType,
+		tradeNo,
+		from,
+		to,
+		value,
+		ts,
 	)
 	if err3 != nil {
 		logger.Error("sql error ", err2.Error())
@@ -982,65 +1150,63 @@ func EthTransCommit(from,to,value int64,tradeNo string,tradeType int,tx *sql.Tx)
 	return txid, constants.TRANS_ERR_SUCC
 }
 
-
-func InsertTradePending(uid int64,tradeNo,bizContent string,value int64,tradeType int)error{
-	_,err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,value,ts) values (?,?,?,?,?)",tradeNo,uid,tradeType,bizContent,value,utils.GetTimestamp13())
+func InsertTradePending(uid int64, tradeNo, bizContent string, value int64, tradeType int) error {
+	_, err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,value,ts) values (?,?,?,?,?)", tradeNo, uid, tradeType, bizContent, value, utils.GetTimestamp13())
 	return err
 }
 
-
-func GetTradePendingByTradeNo(tradeNo string,uid int64)(*TradePending,error){
+func GetTradePendingByTradeNo(tradeNo string, uid int64) (*TradePending, error) {
 	sql := "select * from trade_pending where trade_no = ? and uid = ?"
-	row,err := gDBAsset.QueryRow(sql,tradeNo,uid)
+	row, err := gDBAsset.QueryRow(sql, tradeNo, uid)
 	if err != nil {
-		logger.Error("query trade_pending error",err.Error())
-		return nil,err
+		logger.Error("query trade_pending error", err.Error())
+		return nil, err
 	}
-	return ConvTradePending(row),nil
+	return ConvTradePending(row), nil
 }
 
-func ConvTradePending(row map[string]string)*TradePending{
+func ConvTradePending(row map[string]string) *TradePending {
 	if row == nil {
-		return  nil
+		return nil
 	}
 	tp := new(TradePending)
 	tp.TradeNo = row["trade_no"]
 	tp.BizContent = row["biz_content"]
 	tp.Uid = utils.Str2Int64(row["uid"])
 	tp.Ts = utils.Str2Int64(row["ts"])
-	tp.Type  = utils.Str2Int(row["type"])
-	tp.Value  = utils.Str2Int64(row["value"])
-	tp.ValueStr  = utils.LVTintToFloatStr(tp.Value)
+	tp.Type = utils.Str2Int(row["type"])
+	tp.Value = utils.Str2Int64(row["value"])
+	tp.ValueStr = utils.LVTintToFloatStr(tp.Value)
 	return tp
 }
 
-func DeleteTradePending(tradeNo string,uid int64,tx *sql.Tx)error{
-	_,err := tx.Exec("delete from trade_pending where trade_no = ? and uid = ?",tradeNo,uid)
+func DeleteTradePending(tradeNo string, uid int64, tx *sql.Tx) error {
+	_, err := tx.Exec("delete from trade_pending where trade_no = ? and uid = ?", tradeNo, uid)
 	return err
 }
 
-func InsertWithdrawalCardUse(wcu *UserWithdrawalCardUse)error{
-	return InsertWithdrawalCardUseByTx(wcu,nil)
+func InsertWithdrawalCardUse(wcu *UserWithdrawalCardUse) error {
+	return InsertWithdrawalCardUseByTx(wcu, nil)
 }
-func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse,tx *sql.Tx)error{
+func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse, tx *sql.Tx) error {
 	if tx == nil {
-		tx,_ = gDBAsset.Begin()
+		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
-	_,err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time) values (?,?,?,?,?)",
-					wcu.TradeNo,
-					wcu.Uid,
-					wcu.Quota,
-					wcu.Cost,
-					wcu.CreateTime,
+	_, err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time) values (?,?,?,?,?)",
+		wcu.TradeNo,
+		wcu.Uid,
+		wcu.Quota,
+		wcu.Cost,
+		wcu.CreateTime,
 	)
 	return err
 }
 
-func CheckEthPending(tradeNo string)bool{
-	row,err := gDBAsset.QueryRow("select count(1) as c from trade_pending where trade_no = ?",tradeNo)
+func CheckEthPending(tradeNo string) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from trade_pending where trade_no = ?", tradeNo)
 	if err != nil {
-		logger.Error("query db error",err.Error())
+		logger.Error("query db error", err.Error())
 		return false
 	}
 	if row == nil {
@@ -1049,10 +1215,10 @@ func CheckEthPending(tradeNo string)bool{
 	return utils.Str2Int(row["c"]) > 0
 }
 
-func CheckEthHistory(tradeNo string)bool{
-	row,err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where trade_no = ?",tradeNo)
+func CheckEthHistory(tradeNo string) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where trade_no = ?", tradeNo)
 	if err != nil {
-		logger.Error("query db error",err.Error())
+		logger.Error("query db error", err.Error())
 		return false
 	}
 	if row == nil {
