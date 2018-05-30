@@ -38,7 +38,7 @@ type (
 		DayExpend int64 `json:"dayExpend"`
 	}
 
-	EthTxHistyr struct {
+	EthTxHistory struct {
 		Txid    int64  `json:"txid"`
 		Type    int    `json:"type"`
 		TradeNo string `json:"trade_no"`
