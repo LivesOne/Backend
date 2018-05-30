@@ -10,7 +10,6 @@ import (
 	"utils"
 	"utils/config"
 	"utils/logger"
-	"servlets/common"
 )
 
 func main() {
@@ -60,10 +59,10 @@ func initialize(cfgPath string) {
 	fmt.Println(config.GetWithdrawalConfig().EthAcceptAccount)
 	logger.Info("server initialize.....")
 
-	go func() {
-		common.ListenTxhistoryQueue()
-	}()
-	go func() {
-		common.PushTxHistoryByTimer()
-	}()
+	//go func() {
+	//	common.ListenTxhistoryQueue()
+	//}()
+	//go func() {
+	//	common.PushTxHistoryByTimer()
+	//}()
 }
