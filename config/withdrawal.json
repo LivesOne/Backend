@@ -2,5 +2,7 @@
 	"LvtAcceptAccount": 111111111,
 	"EthAcceptAccount": 122222222,
 	"WithdrawalEthFee": 0.000001,
-	"WithdrawalCardEthUnitPrice": 0.001
+	"WithdrawalCardEthUnitPrice": 0.001,
+	"WithdrawalCardEthAcceptAccount": 133333333,
+	"WithdrawalFromAddress": "0x725ca1f501761d3ba02d561d7883baf0ebbf99e0"
 }
