@@ -764,7 +764,7 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 	alres := UserWithdrawalQuota{
 		Day:       utils.Str2Int64(al["day"]),
 		Month:     utils.Str2Int64(al["month"]),
-		Casual:    utils.Str2Int64(al["month"]),
+		Casual:    utils.Str2Int64(al["casual"]),
 		DayExpend: utils.Str2Int64(al["day_expend"]),
 	}
 	return &alres
