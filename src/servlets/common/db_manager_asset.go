@@ -1012,12 +1012,16 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 func DeleteTxhistoryLvtTmpByTxid(txid int64)  {
 	gDBAsset.Exec("delete from tx_history_lvt_tmp where txid= ? ", txid)
 }
+
 func QueryTxhistoryLvtTmpByTimie(ts int64) []*DTTXHistory {
-	results := gDBAsset.Query("select * from tx_history_lvt_tmp where ts < ?", ts)
-	if results == nil {
-		return nil
+	if gDBAsset != nil && gDBAsset.IsConn() {
+		results := gDBAsset.Query("select * from tx_history_lvt_tmp where ts < ?", ts)
+		if results == nil {
+			return nil
+		}
+		return convDTTXHistoryList(results)
 	}
-	return convDTTXHistoryList(results)
+	return nil
 }
 
 func convDTTXHistoryList(list []map[string]string) []*DTTXHistory {
