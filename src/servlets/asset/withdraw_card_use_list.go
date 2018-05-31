@@ -97,7 +97,7 @@ func convRowTowithdrawCardUseListRecord(rows []map[string]string)[]withdrawCardU
 			Quota:    quota,
 			TradeNo:  item["trade_no"],
 			Cost:     cost,
-			UseTime:  utils.Str2Int64(item["use_time"]),
+			UseTime:  utils.Str2Int64(item["create_time"]),
 		}
 		re = append(re,entity)
 	}
