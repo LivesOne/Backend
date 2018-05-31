@@ -9,6 +9,9 @@ import (
 	"utils"
 	"database/sql"
 	"utils/vcode"
+	"utils/config"
+	"strings"
+	"regexp"
 )
 
 type withdrawRequestParams struct {
@@ -119,11 +122,23 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	//if !validateValue(secret.Value) {
-	//	response.SetResponseBase(constants.RC_PARAM_ERR)
-	//	return
-	//}
-	//TODO 检查权限，userLevel中配置
+	if !validateWithdrawalValue(secret.Value) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	if !validateWithdrawalAddress(secret.Address) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+	level := common.GetTransUserLevel(uid)
+	limitConfig := config.GetLimitByLevel(level)
+	if !limitConfig.Withdrawal() {
+		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
+		return
+	}
+	
 	withdrawAmount := utils.Str2Int64(secret.Value)
 	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
 	usedWithdrawalQuotaOfCurMonth := common.QueryWithdrawValueOfCurMonth(uid)
@@ -143,4 +158,27 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = tradeNo
 	}
+}
+
+/*
+ * 验证提币数额
+ */
+func validateWithdrawalValue(value string) bool {
+	if utils.Str2Float64(value) > 0 {
+		index := strings.Index(value, ".")
+		last := value[index+1:]
+		if len(last) <= 8 {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+ * 验证提币目标地址
+ */
+func validateWithdrawalAddress(walletAddress string) bool {
+	reg := "^(0x)?[0-9a-f]{40}$"
+	ret, _ := regexp.MatchString(reg, strings.ToLower(walletAddress))
+	return ret
 }
