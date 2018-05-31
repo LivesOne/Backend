@@ -1377,11 +1377,11 @@ func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, 
 			params = append(params, tradeType)
 		}
 		if begin > 0 {
-			sql += " and `begin` >= ?"
+			sql += " and `ts` >= ?"
 			params = append(params, begin)
 		}
 		if end > 0 {
-			sql += " and `end` <= ?"
+			sql += " and `ts` <= ?"
 			params = append(params, end)
 		}
 	}
