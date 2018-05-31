@@ -155,10 +155,10 @@ func convRowToTxHistoryRecord(rows []map[string]string)[]ethtransHistoryRecord{
 
 
 func validateEthType(t int) bool {
-	if t < constants.TX_TYPE_ALL ||
-		t < constants.TX_TYPE_RECHANGE ||
-		t > constants.TX_TYPE_BUY_COIN_CARD{
-		return false
+	if t == constants.TX_TYPE_ALL ||
+		(t >= constants.TX_TYPE_RECHANGE &&
+		 t <= constants.TX_TYPE_BUY_COIN_CARD){
+		return true
 	}
-	return true
+	return false
 }
