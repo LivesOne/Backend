@@ -13,13 +13,14 @@ import (
 
 
 type withdrawCardUseListResData struct {
-	Cards []withdrawCardUseListRecord `json:"cards"`
+	Cards []withdrawCardUseListRecord `json:"records"`
 }
 
 type withdrawCardUseListRecord struct {
 	Id string `json:"id"`
 	TradeNo string `json:"trade_no"`
 	Txid string `json:"txid"`
+	Type int `json:"type"`
 	Cost string `json:"cost"`
 	Quota string `json:"quota"`
 	UseTime int64 `json:"use_time"`
@@ -92,6 +93,7 @@ func convRowTowithdrawCardUseListRecord(rows []map[string]string)[]withdrawCardU
 		entity := withdrawCardUseListRecord{
 			Id:       item["id"],
 			Txid: 	  item["txid"],
+			Type: 	  utils.Str2Int(item["type"]),
 			Quota:    quota,
 			TradeNo:  item["trade_no"],
 			Cost:     cost,
