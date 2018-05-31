@@ -76,7 +76,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	requestData := withdrawRequestParams{} // request body
 
-	common.ParseHttpBodyParams(request, &requestData)
+	common.ParseHttpBodyParams(request, requestData)
 
 	if requestData.QuotaType != 1 && requestData.QuotaType != 2 {
 		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
