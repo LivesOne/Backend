@@ -1335,12 +1335,13 @@ func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse, tx *sql.Tx) error {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
-	_, err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time) values (?,?,?,?,?)",
+	_, err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time,type) values (?,?,?,?,?,?)",
 		wcu.TradeNo,
 		wcu.Uid,
 		wcu.Quota,
 		wcu.Cost,
 		wcu.CreateTime,
+		wcu.Type,
 	)
 	return err
 }
@@ -1436,6 +1437,7 @@ func UseWithdrawCard(card *UserWithdrawCard,uid int64)error{
 		Quota:      card.Quota,
 		Cost:       card.Cost,
 		CreateTime: ts,
+		Type:constants.WITHDRAW_CARD_TYPE_FULL,
 	}
 
 	if err = InsertWithdrawalCardUseByTx(wcu,tx);err != nil {

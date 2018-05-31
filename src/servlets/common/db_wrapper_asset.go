@@ -65,6 +65,7 @@ type (
 		Cost       int64  `json:"-"`
 		CostStr    string `json:"cost"`
 		CreateTime int64  `json:"create_time"`
+		Type       int    `json:"type"`
 	}
 
 	UserWithdrawalRequest struct {
@@ -81,17 +82,17 @@ type (
 	}
 
 	UserWithdrawCard struct {
-		Id int64 `json:"id"`
-		Password string `json:"password"`
-		TradeNo string `json:"trade_no"`
-		OwnerUid int64 `json:"owner_uid"`
-		Quota int64 `json:"quota"`
-		CreateTime int64 `json:"create_time"`
-		ExpireTime int64 `json:"expire_time"`
-		Cost int64 `json:"cost"`
-		GetTime int64 `json:"get_time"`
-		UseTime int64 `json:"use_time"`
-		Status int `json:"status"`
+		Id         int64  `json:"id"`
+		Password   string `json:"password"`
+		TradeNo    string `json:"trade_no"`
+		OwnerUid   int64  `json:"owner_uid"`
+		Quota      int64  `json:"quota"`
+		CreateTime int64  `json:"create_time"`
+		ExpireTime int64  `json:"expire_time"`
+		Cost       int64  `json:"cost"`
+		GetTime    int64  `json:"get_time"`
+		UseTime    int64  `json:"use_time"`
+		Status     int    `json:"status"`
 	}
 )
 

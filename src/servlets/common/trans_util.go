@@ -189,6 +189,7 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 			Quota:      quota,
 			Cost:       tp.Value,
 			CreateTime: utils.TXIDToTimeStamp13(txId),
+			Type: constants.WITHDRAW_CARD_TYPE_DIV,
 		}
 
 		if err = InsertWithdrawalCardUseByTx(wcu,tx);err != nil {
