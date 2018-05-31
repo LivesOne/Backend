@@ -1362,7 +1362,7 @@ func CheckEthHistory(tradeNo string) bool {
 }
 
 func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, max int) []map[string]string {
-	sql := "select * from tx_history_eth where uid = ?"
+	sql := "select * from tx_history_eth where from = ?"
 	params := []interface{}{uid}
 	if len(txid) > 0 {
 		sql += " and txid = ?"
