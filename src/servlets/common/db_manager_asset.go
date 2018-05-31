@@ -1319,6 +1319,10 @@ func ConvTradePending(row map[string]string) *TradePending {
 }
 
 func DeleteTradePending(tradeNo string, uid int64, tx *sql.Tx) error {
+	if tx == nil {
+		tx,_ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
 	_, err := tx.Exec("delete from trade_pending where trade_no = ? and uid = ?", tradeNo, uid)
 	return err
 }
