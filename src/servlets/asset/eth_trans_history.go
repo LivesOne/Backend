@@ -127,7 +127,7 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 		if recordLen > c {
 			resData.More = 1
 		}
-		resData.Records = convRowToTxHistoryRecord(dbRecord)
+		resData.Records = convRowToTxHistoryRecord(dbRecord[:recordLen-1])
 
 	}
 	response.Data = resData
