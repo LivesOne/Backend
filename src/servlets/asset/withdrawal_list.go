@@ -18,6 +18,10 @@ type withdrawListParams struct {
 	Secret    string `json:"secret"`
 }
 
+type withdrawListResponseData struct {
+	Records []withdrawListResponse `json:"records"`
+} 
+
 type withdrawListResponse struct {
 	Id         int64 `json:"id"`
 	TradeNo    string `json:"trade_no"`
@@ -86,5 +90,7 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 			Status:     userWithdrawalRequest.Status,
 		})
 	}
-	response.Data = withdrawListResponseArray
+	response.Data = &withdrawListResponseData{
+		Records: withdrawListResponseArray,
+	}
 }

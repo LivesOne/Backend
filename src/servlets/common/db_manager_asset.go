@@ -764,7 +764,7 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 	alres := UserWithdrawalQuota{
 		Day:       utils.Str2Int64(al["day"]),
 		Month:     utils.Str2Int64(al["month"]),
-		Casual:    utils.Str2Int64(al["month"]),
+		Casual:    utils.Str2Int64(al["casual"]),
 		DayExpend: utils.Str2Int64(al["day_expend"]),
 	}
 	return &alres
@@ -916,7 +916,7 @@ func QueryWithdrawValueOfCurMonth(uid int64) int64 {
 func Withdraw(uid int64, amount int64, address string, quotaType int) (string, constants.Error) {
 	tx, _ := gDBAsset.Begin()
 
-	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_FAIL)
+	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
 	processingCount := int64(-1)
 	errQuery := row.Scan(&processingCount)
 	if errQuery != nil {
