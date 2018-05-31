@@ -128,6 +128,17 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 	if tp == nil {
 		return constants.RC_PARAM_ERR
 	}
+	ts := utils.GetTimestamp13()
+
+
+	//暂时写死10秒
+	if ts-tp.Ts > TRANS_TIMEOUT {
+		//删除pending
+		DeleteTradePending(tp.TradeNo,uid,nil)
+		return constants.RC_TRANS_TIMEOUT
+	}
+
+
 	var (
 		to int64
 		bizContent map[string]string
