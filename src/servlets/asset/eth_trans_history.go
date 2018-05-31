@@ -124,11 +124,14 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 	}
 	recordLen := len(dbRecord)
 	if recordLen > 0 {
+		var resListRecords []ethtransHistoryRecord
 		if recordLen > c {
 			resData.More = 1
+			resListRecords = convRowToTxHistoryRecord(dbRecord[:c])
+		} else {
+			resListRecords = convRowToTxHistoryRecord(dbRecord)
 		}
-		resData.Records = convRowToTxHistoryRecord(dbRecord[:recordLen-1])
-
+		resData.Records = resListRecords
 	}
 	response.Data = resData
 
