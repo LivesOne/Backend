@@ -132,6 +132,23 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
+	pwd := secret.Pwd
+	switch requestData.AuthType {
+	case constants.AUTH_TYPE_LOGIN_PWD:
+		if !common.CheckLoginPwd(uid, pwd) {
+			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+			return
+		}
+	case constants.AUTH_TYPE_PAYMENT_PWD:
+		if !common.CheckPaymentPwd(uid, pwd) {
+			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
+			return
+		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 	level := common.GetTransUserLevel(uid)
 	limitConfig := config.GetLimitByLevel(level)
 	if !limitConfig.Withdrawal() {
