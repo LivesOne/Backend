@@ -90,8 +90,11 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 	uid := utils.Str2Int64(uidString)
 
 	requestData := new(ethtransHistoryRequest)// request body
-	common.ParseHttpBodyParams(request, requestData)
 
+	if !common.ParseHttpBodyParams(request, requestData) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 	p := requestData.Param
 
 	if p == nil || !validateType(p.Type) {
