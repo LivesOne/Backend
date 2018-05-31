@@ -1262,7 +1262,7 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("can not get txid")
 		return 0, constants.TRANS_ERR_SYS
 	}
-	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,from,to,value,ts) values (?,?,?,?,?,?,?)",
+	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
 		txid,
 		tradeType,
 		tradeNo,
