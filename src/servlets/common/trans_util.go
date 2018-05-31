@@ -139,6 +139,10 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 	default:
 		return constants.RC_PARAM_ERR
 	}
+
+	//存在就检测资产初始化状况，未初始化的用户给初始化
+	CheckAndInitAsset(to)
+
 	//解析业务数据，拿到具体数值
 	if je := utils.FromJson(tp.BizContent,&bizContent);je != nil {
 		return constants.RC_PARAM_ERR
