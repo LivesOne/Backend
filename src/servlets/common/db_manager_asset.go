@@ -1366,22 +1366,22 @@ func CheckEthHistory(tradeNo string) bool {
 }
 
 func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, max int) []map[string]string {
-	sql := "select * from tx_history_eth where uid = ?"
+	sql := "select * from tx_history_eth where `from` = ?"
 	params := []interface{}{uid}
 	if len(txid) > 0 {
 		sql += " and txid = ?"
 		params = append(params, utils.Str2Int64(txid))
 	} else {
 		if tradeType > 0 {
-			sql += " and type = ?"
+			sql += " and `type` = ?"
 			params = append(params, tradeType)
 		}
 		if begin > 0 {
-			sql += " and begin >= ?"
+			sql += " and `ts` >= ?"
 			params = append(params, begin)
 		}
 		if end > 0 {
-			sql += " and end <= ?"
+			sql += " and `ts` <= ?"
 			params = append(params, end)
 		}
 	}
