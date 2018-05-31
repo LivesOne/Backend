@@ -1272,7 +1272,7 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		ts,
 	)
 	if err3 != nil {
-		logger.Error("sql error ", err2.Error())
+		logger.Error("sql error ", err3.Error())
 		return 0, constants.TRANS_ERR_SYS
 	}
 	rsa, _ = info3.RowsAffected()
