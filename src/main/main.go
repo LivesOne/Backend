@@ -55,8 +55,6 @@ func initialize(cfgPath string) {
 	config.LoadWithdrawalConfig(cfgDir, config.GetConfig().WithdrawalConfig)
 	//加载log配置
 	logger.InitLogger(cfgDir, config.GetConfig().LogConfig)
-
-	fmt.Println(config.GetWithdrawalConfig().EthAcceptAccount)
 	logger.Info("server initialize.....")
 
 	//go func() {

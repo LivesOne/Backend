@@ -13,6 +13,7 @@ type UserLevelLimit struct {
 	changePhone            bool
 	lockAsset              bool
 	transferTo             bool
+	withdrawal             bool
 	singleAmountMin        int64
 	singleAmountMax        int64
 	dailyAmountMax         int64
@@ -62,6 +63,10 @@ func (limit *UserLevelLimit) MonthlyWithdrawalQuota() int64 {
 	return limit.monthlyWithdrawalQuota
 }
 
+func (limit *UserLevelLimit) Withdrawal() bool {
+	return limit.withdrawal
+}
+
 type UserLevelConfig struct {
 	LimitMap map[int]UserLevelLimit
 }
@@ -70,6 +75,7 @@ type UserLevelLimitInternal struct {
 	ChangePhone            bool
 	LockAsset              bool
 	TransferTo             bool
+	Withdrawal             bool
 	SingleAmountMin        int64
 	SingleAmountMax        int64
 	DailyAmountMax         int64
@@ -88,6 +94,7 @@ var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit{
 	changePhone:            false,
 	lockAsset:              false,
 	transferTo:             false,
+	withdrawal:             false,
 	singleAmountMin:        0,
 	singleAmountMax:        0,
 	dailyAmountMax:         0,
@@ -125,6 +132,7 @@ func LoadLevelConfig(dir string, cfgName string) error {
 			changePhone:            v.ChangePhone,
 			lockAsset:              v.LockAsset,
 			transferTo:             v.TransferTo,
+			withdrawal:             v.Withdrawal,
 			singleAmountMin:        v.SingleAmountMin,
 			singleAmountMax:        v.SingleAmountMax,
 			dailyAmountMax:         v.DailyAmountMax,
