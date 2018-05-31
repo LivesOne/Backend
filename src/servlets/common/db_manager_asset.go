@@ -1373,15 +1373,15 @@ func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, 
 		params = append(params, utils.Str2Int64(txid))
 	} else {
 		if tradeType > 0 {
-			sql += " and type = ?"
+			sql += " and `type` = ?"
 			params = append(params, tradeType)
 		}
 		if begin > 0 {
-			sql += " and begin >= ?"
+			sql += " and `begin` >= ?"
 			params = append(params, begin)
 		}
 		if end > 0 {
-			sql += " and end <= ?"
+			sql += " and `end` <= ?"
 			params = append(params, end)
 		}
 	}
