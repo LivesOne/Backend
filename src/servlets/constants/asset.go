@@ -11,6 +11,8 @@ const (
 	TX_TYPE_BUY               = 7
 	TX_TYPE_REFUND            = 9
 
+	TX_TYPE_RECHANGE = 21
+	TX_TYPE_WITHDRAW_FEE = 22
 	TX_TYPE_BUY_COIN_CARD = 23
 
 	TX_STATUS_DEFAULT = 0

@@ -97,7 +97,7 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 	}
 	p := requestData.Param
 
-	if p == nil || !validateType(p.Type) {
+	if p == nil || !validateEthType(p.Type) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -151,4 +151,14 @@ func convRowToTxHistoryRecord(rows []map[string]string)[]ethtransHistoryRecord{
 		re = append(re,entity)
 	}
 	return re
+}
+
+
+func validateEthType(t int) bool {
+	if t < constants.TX_TYPE_ALL ||
+		t < constants.TX_TYPE_RECHANGE ||
+		t > constants.TX_TYPE_BUY_COIN_CARD{
+		return false
+	}
+	return true
 }
