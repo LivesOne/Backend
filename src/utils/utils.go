@@ -14,6 +14,7 @@ import (
 	"math"
 	"utils/logger"
 	"github.com/shopspring/decimal"
+	"math/big"
 )
 
 const (
@@ -237,23 +238,16 @@ func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 
 
 func ConvDBValueToChainStr(lvt int64)string{
-	//dbValue := big.NewInt(lvt)
-	//withdrawal := big.NewInt(0).Mul(dbValue,big.NewInt(1e10))
-	//return withdrawal.Text(10)
-	return decimal.New(lvt,0).Mul(decimal.NewFromFloat(DB_CONV_CHAIN_VALUE)).String()
+	dbValue := big.NewInt(lvt)
+	withdrawal := big.NewInt(0).Mul(dbValue,big.NewInt(DB_CONV_CHAIN_VALUE))
+	return withdrawal.Text(10)
 }
 
 func ConvChainStrToDBValue(chainStr string)int64{
-	//chainValue,ok := new(big.Int).SetString(chainStr,10)
-	//if !ok {
-	//	return 0
-	//}
-	//dbValue := big.NewInt(0).Div(chainValue,big.NewInt(1e10))
-	//return dbValue.Int64()
-	d,err := decimal.NewFromString(chainStr)
-	if err != nil {
+	chainValue,ok := new(big.Int).SetString(chainStr,10)
+	if !ok {
 		return 0
 	}
-	d2 := d.Div(decimal.NewFromFloat(DB_CONV_CHAIN_VALUE))
-	return d2.IntPart()
+	dbValue := big.NewInt(0).Div(chainValue,big.NewInt(DB_CONV_CHAIN_VALUE))
+	return dbValue.Int64()
 }
