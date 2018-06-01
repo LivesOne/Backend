@@ -23,6 +23,10 @@ type withdrawRequestParams struct {
 	Secret    string `json:"secret"`
 }
 
+type withdrawRequest struct {
+	Param *withdrawRequestParams
+}
+
 type withdrawRequestSecret struct {
 	Address string `json:"address"`
 	Value   string `json:"value"`
@@ -74,30 +78,30 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 	uid := utils.Str2Int64(uidString)
 
-	requestData := withdrawRequestParams{} // request body
+	requestData := withdrawRequest{} // request body
 
 	common.ParseHttpBodyParams(request, requestData)
 
-	if requestData.QuotaType != 1 && requestData.QuotaType != 2 {
+	if requestData.Param.QuotaType != 1 && requestData.Param.QuotaType != 2 {
 		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
 	}
 
-	if requestData.VcodeType > 0 {
+	if requestData.Param.VcodeType > 0 {
 		acc, err := common.GetAccountByUID(uidString)
 		if err != nil && err != sql.ErrNoRows {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
-		switch requestData.VcodeType {
+		switch requestData.Param.VcodeType {
 		case 1:
-			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Vcode, 3600, vcode.FLAG_DEF); !ok {
+			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
 				log.Info("validate sms code failed")
 				response.SetResponseBase(vcode.ConvSmsErr(errCode))
 				return
 			}
 		case 2:
-			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Vcode); !ok {
+			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode); !ok {
 				log.Info("validate up sms code failed")
 				response.SetResponseBase(resErr)
 				return
@@ -112,7 +116,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	secret := new(withdrawRequestSecret)
 
-	if err := utils.DecodeSecret(requestData.Secret, key, iv, secret); err != nil {
+	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -133,7 +137,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	pwd := secret.Pwd
-	switch requestData.AuthType {
+	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
 		if !common.CheckLoginPwd(uid, pwd) {
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
@@ -159,7 +163,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	withdrawAmount := utils.Str2Int64(secret.Value)
 	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
 	usedWithdrawalQuotaOfCurMonth := common.QueryWithdrawValueOfCurMonth(uid)
-	switch requestData.QuotaType {
+	switch requestData.Param.QuotaType {
 	case 1:
 		if withdrawAmount > userWithdrawalQuota.Day || withdrawAmount > (userWithdrawalQuota.Month - usedWithdrawalQuotaOfCurMonth){
 			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
@@ -171,7 +175,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			return
 		}
 	}
-	tradeNo, err := common.Withdraw(uid, withdrawAmount, secret.Address, requestData.QuotaType)
+	tradeNo, err := common.Withdraw(uid, withdrawAmount, secret.Address, requestData.Param.QuotaType)
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = tradeNo
 	}
