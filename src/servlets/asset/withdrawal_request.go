@@ -206,7 +206,7 @@ func validateWithdrawalValue(value string) bool {
  * 验证提币目标地址
  */
 func validateWithdrawalAddress(walletAddress string) bool {
-	reg := "^(0x)?[0-9a-f]{40}$"
+	reg := "^(0x)?[0-9a-fA-F]{40}$"
 	ret, _ := regexp.MatchString(reg, strings.ToLower(walletAddress))
 	return ret
 }

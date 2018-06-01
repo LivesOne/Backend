@@ -826,6 +826,10 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *
 	if quotaType == DAY_QUOTA_TYPE {
 		sql := "update user_withdrawal_quota set day = day - ?,month = month - ?,day_expend = ?,last_expend = ? where uid = ? and day > ? and month > ?"
 		result, err := gDBAsset.Exec(sql, expendQuota, expendQuota, utils.GetTimestamp13(), utils.GetTimestamp13(), uid, expendQuota, expendQuota)
+		if err != nil {
+			logger.Error("扣除日额度错误", err.Error())
+			return false, err
+		}
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
 			return true, nil
@@ -837,6 +841,10 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *
 	if quotaType != CASUAL_QUOTA_TYPE {
 		sql := "update user_withdrawal_quota set casual = casual - ?,last_expend = ? where uid = ? and casual > ?"
 		result, err := gDBAsset.Exec(sql, expendQuota, utils.GetTimestamp13(), uid, expendQuota)
+		if err != nil {
+			logger.Error("扣除临时额度错误", err.Error())
+			return false, err
+		}
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
 			return true, nil
