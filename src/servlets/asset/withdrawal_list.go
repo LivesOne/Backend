@@ -7,6 +7,8 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"strconv"
+	"utils/config"
 )
 
 type withdrawListParams struct {
@@ -84,7 +86,7 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 			AssetType:  "LVT",
 			Address:    userWithdrawalRequest.Address,
 			Value:      utils.LVTintToFloatStr(userWithdrawalRequest.Value),
-			Fee:        "",
+			Fee:        strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64),
 			CreateTime: userWithdrawalRequest.CreateTime,
 			UpdateTime: userWithdrawalRequest.UpdateTime,
 			Status:     userWithdrawalRequest.Status,

@@ -108,18 +108,18 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 
 	var (
 		ok bool
-		e int
+		e  int
 	)
 
-	if ok,e = TransAccountLvtByTx(txid,from,to,value,tx);ok {
+	if ok, e = TransAccountLvtByTx(txid, from, to, value, tx); ok {
 		tx.Commit()
 	} else {
 		tx.Rollback()
 	}
-	return ok,e
+	return ok, e
 }
 
-func TransAccountLvtByTx(txid, from, to, value int64,tx *sql.Tx) (bool, int){
+func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	tx.Exec("select * from user_asset where uid in (?,?) for update", from, to)
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
@@ -1049,7 +1049,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 }
 
-func DeleteTxhistoryLvtTmpByTxid(txid int64)  {
+func DeleteTxhistoryLvtTmpByTxid(txid int64) {
 	gDBAsset.Exec("delete from tx_history_lvt_tmp where txid= ? ", txid)
 }
 
@@ -1148,7 +1148,7 @@ func RepayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sq
 }
 
 func QueryWithdrawalList(uid int64) []*UserWithdrawalRequest {
-	sql := "select trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
+	sql := "select id,trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
 	results := gDBAsset.Query(sql, uid)
 	if results == nil {
 		return nil
@@ -1169,9 +1169,11 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 		return nil
 	}
 	alres := UserWithdrawalRequest{
+		Id:         utils.Str2Int64(al["id"]),
 		TradeNo:    al["trade_no"],
 		Uid:        utils.Str2Int64(al["uid"]),
 		Address:    al["address"],
+		Value:      utils.Str2Int64(al["value"]),
 		TxidLvt:    utils.Str2Int64(al["txid_lvt"]),
 		TxidEth:    utils.Str2Int64(al["txid_eth"]),
 		CreateTime: utils.Str2Int64(al["create_time"]),
@@ -1294,7 +1296,7 @@ func ConvTradePending(row map[string]string) *TradePending {
 
 func DeleteTradePending(tradeNo string, uid int64, tx *sql.Tx) error {
 	if tx == nil {
-		tx,_ = gDBAsset.Begin()
+		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
 	_, err := tx.Exec("delete from trade_pending where trade_no = ? and uid = ?", tradeNo, uid)
@@ -1389,17 +1391,17 @@ func GetUserWithdrawCardByPwd(pwd string) *UserWithdrawCard {
 	}
 }
 
-func UseWithdrawCard(card *UserWithdrawCard,uid int64)error{
-	tradeNo := GenerateTradeNo(1,1)
+func UseWithdrawCard(card *UserWithdrawCard, uid int64) error {
+	tradeNo := GenerateTradeNo(1, 1)
 	ts := utils.GetTimestamp13()
-	tx,err := gDBAsset.Begin()
+	tx, err := gDBAsset.Begin()
 	if err != nil {
 		return err
 	}
 
-	tx.Exec("select * from withdrawal_card where id = ? for update",card.Id)
+	tx.Exec("select * from withdrawal_card where id = ? for update", card.Id)
 
-	_,err = tx.Exec("update withdrawal_card set status = ?,use_time = ? ,trade_no = ? where id = ?",constants.WITHDRAW_CARD_STATUS_USE,ts,tradeNo,card.Id)
+	_, err = tx.Exec("update withdrawal_card set status = ?,use_time = ? ,trade_no = ? where id = ?", constants.WITHDRAW_CARD_STATUS_USE, ts, tradeNo, card.Id)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -1411,16 +1413,16 @@ func UseWithdrawCard(card *UserWithdrawCard,uid int64)error{
 		Quota:      card.Quota,
 		Cost:       card.Cost,
 		CreateTime: ts,
-		Type:constants.WITHDRAW_CARD_TYPE_FULL,
+		Type:       constants.WITHDRAW_CARD_TYPE_FULL,
 	}
 
-	if err = InsertWithdrawalCardUseByTx(wcu,tx);err != nil {
+	if err = InsertWithdrawalCardUseByTx(wcu, tx); err != nil {
 		tx.Rollback()
 		return err
 	}
 	//临时额度
-	if wr := InitUserWithdrawalByTx(uid,tx);wr != nil {
-		if ok,err := IncomeUserWithdrawalCasualQuotaByTx(uid,card.Quota,tx);!ok{
+	if wr := InitUserWithdrawalByTx(uid, tx); wr != nil {
+		if ok, err := IncomeUserWithdrawalCasualQuotaByTx(uid, card.Quota, tx); !ok {
 			tx.Rollback()
 			return err
 		}
