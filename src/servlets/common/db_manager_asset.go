@@ -1238,10 +1238,10 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
 	logger.Debug("检测资产初始化情况开始")
-	f, c := CheckAndInitAsset(from)
-	if !f {
-		return 0, c
-	}
+	//f, c := CheckAndInitAsset(from)
+	//if !f {
+	//	return 0, c
+	//}
 	logger.Debug("检测资产初始化情况结束")
 	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
 
