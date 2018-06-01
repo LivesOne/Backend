@@ -23,7 +23,7 @@ type withdrawListResponseData struct {
 }
 
 type withdrawListResponse struct {
-	Id         int64  `json:"id"`
+	Id         string  `json:"id"`
 	TradeNo    string `json:"trade_no"`
 	AssetType  string `json:"asset_type"`
 	Address    string `json:"address"`
@@ -32,7 +32,6 @@ type withdrawListResponse struct {
 	CreateTime int64  `json:"create_time"`
 	UpdateTime int64  `json:"update_time"`
 	Status     int    `json:"status"`
-	free       string `json:"free"`
 }
 
 type withdrawListHandler struct {
@@ -80,7 +79,7 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 	withdrawListResponseArray := make([]withdrawListResponse, 0)
 	for _, userWithdrawalRequest := range userWithdrawalRequestArray {
 		withdrawListResponseArray = append(withdrawListResponseArray, withdrawListResponse{
-			Id:         userWithdrawalRequest.Id,
+			Id:         utils.Int642Str(userWithdrawalRequest.Id),
 			TradeNo:    userWithdrawalRequest.TradeNo,
 			AssetType:  "LVT",
 			Address:    userWithdrawalRequest.Address,
