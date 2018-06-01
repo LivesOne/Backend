@@ -12,6 +12,7 @@ import (
 	sqlBase "database/sql"
 	"time"
 	"encoding/json"
+	"strconv"
 )
 
 const (
@@ -824,14 +825,11 @@ func ResetMonthQuota(uid int64, monthQuota int64) bool {
 }
 
 func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *sql.Tx) (bool, error) {
-	logger.Debug("扣除提币额度开始")
 	if expendQuota <= 0 {
-		logger.Debug("扣除提币额度错误")
 		return false, errors.New("expend quota must greater than 0")
 	}
 
 	if quotaType != DAY_QUOTA_TYPE && quotaType != CASUAL_QUOTA_TYPE {
-		logger.Debug("提币额度类型错误")
 		return false, errors.New("expend quota type error")
 	}
 
@@ -839,14 +837,14 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *
 		sql := "update user_withdrawal_quota set day = day - ?,month = month - ?,day_expend = ?,last_expend = ? where uid = ? and day > ? and month > ?"
 		result, err := gDBAsset.Exec(sql, expendQuota, expendQuota, utils.GetTimestamp13(), utils.GetTimestamp13(), uid, expendQuota, expendQuota)
 		if err != nil {
-			logger.Error("扣除日额度错误", err.Error())
+			logger.Error("expend day quota error ", err.Error())
 			return false, err
 		}
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
 			return true, nil
 		} else {
-			logger.Debug("扣除当日额度错误", err.Error())
+			logger.Info("update user withdrawal quota record of day quota miss", err.Error())
 			return false, err
 		}
 	}
@@ -854,18 +852,17 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *
 		sql := "update user_withdrawal_quota set casual = casual - ?,last_expend = ? where uid = ? and casual > ?"
 		result, err := gDBAsset.Exec(sql, expendQuota, utils.GetTimestamp13(), uid, expendQuota)
 		if err != nil {
-			logger.Error("扣除临时额度错误", err.Error())
+			logger.Error("expend casual quota error ", err.Error())
 			return false, err
 		}
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
 			return true, nil
 		} else {
-			logger.Debug("扣除临时额度错误", err.Error())
+			logger.Info("update user withdrawal quota record of casual miss", err.Error())
 			return false, err
 		}
 	}
-	logger.Debug("扣除额度未知错误")
 	return false, errors.New("record not exist")
 
 }
@@ -941,7 +938,7 @@ func QueryWithdrawValueOfCurMonth(uid int64) int64 {
 
 func Withdraw(uid int64, amount int64, address string, quotaType int) (string, constants.Error) {
 	tx, _ := gDBAsset.Begin()
-	logger.Debug("开始提币申请事务")
+
 	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
 	processingCount := int64(-1)
 	errQuery := row.Scan(&processingCount)
@@ -952,7 +949,6 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	}
 
 	if processingCount > 0 {
-		logger.Debug("有处理中的提币申请")
 		tx.Rollback()
 		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
 	}
@@ -963,15 +959,14 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
 	if err != nil {
-		logger.Debug("扣除提币额度错误")
+		logger.Error("expend user withdrawal quota error ", err.Error())
 		return "", constants.RC_PARAM_ERR
 	}
-	logger.Debug("扣除提币额度完成")
+
 	if flag {
 		timestamp := utils.GetTimestamp13()
 		txid_lvt := GenerateTxID()
 		toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
-		logger.Debug("扣除LVT资产开始")
 		transLvtResult, e := TransAccountLvtByTx(txid_lvt, uid, toLvt, amount, tx)
 		if !transLvtResult {
 			tx.Rollback()
@@ -990,8 +985,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		if err3 != nil {
 			logger.Error("query error ", err.Error())
 		}
-		logger.Debug("扣除LVT资产完成")
-		logger.Debug("扣除ETH资产开始")
+
 		toEth := config.GetWithdrawalConfig().EthAcceptAccount
 		txid_eth, e := EthTransCommit(uid, toEth, amount, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
 		if txid_eth <= 0 {
@@ -1007,16 +1001,14 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 				return "", constants.RC_SYSTEM_ERR
 			}
 		}
-		logger.Debug("扣除ETH资产完成")
-		logger.Debug("插入提币申请开始")
 
-		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status) values(?, ?, ?, ?, ?,?, ?, ?, ?)"
-		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0)
+		ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
+		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status,free) values(?, ?, ?, ?, ?,?, ?, ?, ?,?)"
+		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, utils.FloatStrToLVTint(ethFeeString))
 		if err1 != nil {
 			logger.Error("add user_withdrawal_request error ", err.Error())
 			flag = false
 		}
-		logger.Debug("插入提币申请完成")
 		tx.Commit()
 
 		//同步至mongo
@@ -1179,6 +1171,7 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 		CreateTime: utils.Str2Int64(al["create_time"]),
 		UpdateTime: utils.Str2Int64(al["update_time"]),
 		Status:     utils.Str2Int(al["status"]),
+		Free:       utils.Str2Int64(al["free"]),
 	}
 	return &alres
 }
@@ -1189,25 +1182,15 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		defer tx.Commit()
 	}
 
-	//检测资产初始化情况
-	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
-	logger.Debug("检测资产初始化情况开始")
-	//f, c := CheckAndInitAsset(from)
-	//if !f {
-	//	return 0, c
-	//}
-	logger.Debug("检测资产初始化情况结束")
 	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
 
 	ts := utils.GetTimestamp13()
 
 	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
-	logger.Debug("查询转出账户余额开始")
 	if !ckeckEthBalance(from, value, tx) {
 		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
-	logger.Debug("查询转出账户余额结束")
-	logger.Debug("扣除转出方余额开始")
+
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset_eth set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
 	if err1 != nil {
@@ -1220,8 +1203,7 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
 		return 0, constants.TRANS_ERR_SYS
 	}
-	logger.Debug("扣除转出方余额结束")
-	logger.Debug("增加目标方余额开始")
+
 	//增加目标的balance
 	info2, err2 := tx.Exec("update user_asset_eth set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
 	if err2 != nil {
@@ -1234,14 +1216,12 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
 		return 0, constants.TRANS_ERR_SYS
 	}
-	logger.Debug("增加目标方余额结束")
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("can not get txid")
 		return 0, constants.TRANS_ERR_SYS
 	}
-	logger.Debug("插入tx_history_eth开始")
 	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
 		txid,
 		tradeType,
@@ -1260,7 +1240,6 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("insert eth tx history failed")
 		return 0, constants.TRANS_ERR_SYS
 	}
-	logger.Debug("插入tx_history_eth完成")
 	return txid, constants.TRANS_ERR_SUCC
 }
 

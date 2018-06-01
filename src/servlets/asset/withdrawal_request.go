@@ -117,25 +117,21 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	secret := new(withdrawRequestSecret)
 
 	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
-		logger.Debug("解密secret错误")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !secret.isValid() {
-		logger.Debug("验证secret失败", secret.Address, secret.Value, secret.Pwd)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !validateWithdrawalValue(secret.Value) {
-		logger.Debug("验证value失败")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !validateWithdrawalAddress(secret.Address) {
-		logger.Debug("验证address失败")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -183,7 +179,6 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = tradeNo
 	} else {
-		logger.Debug("提币申请失败")
 		response.SetResponseBase(err)
 	}
 }

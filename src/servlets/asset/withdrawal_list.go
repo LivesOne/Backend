@@ -7,8 +7,6 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"strconv"
-	"utils/config"
 )
 
 type withdrawListParams struct {
@@ -22,18 +20,19 @@ type withdrawListParams struct {
 
 type withdrawListResponseData struct {
 	Records []withdrawListResponse `json:"records"`
-} 
+}
 
 type withdrawListResponse struct {
-	Id         int64 `json:"id"`
+	Id         int64  `json:"id"`
 	TradeNo    string `json:"trade_no"`
 	AssetType  string `json:"asset_type"`
 	Address    string `json:"address"`
 	Value      string `json:"value"`
 	Fee        string `json:"fee"`
-	CreateTime int64 `json:"create_time"`
-	UpdateTime int64 `json:"update_time"`
-	Status     int `json:"status"`
+	CreateTime int64  `json:"create_time"`
+	UpdateTime int64  `json:"update_time"`
+	Status     int    `json:"status"`
+	free       string `json:"free"`
 }
 
 type withdrawListHandler struct {
@@ -79,14 +78,14 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 
 	userWithdrawalRequestArray := common.QueryWithdrawalList(uid)
 	withdrawListResponseArray := make([]withdrawListResponse, 0)
-	for _,userWithdrawalRequest := range userWithdrawalRequestArray {
+	for _, userWithdrawalRequest := range userWithdrawalRequestArray {
 		withdrawListResponseArray = append(withdrawListResponseArray, withdrawListResponse{
 			Id:         userWithdrawalRequest.Id,
 			TradeNo:    userWithdrawalRequest.TradeNo,
 			AssetType:  "LVT",
 			Address:    userWithdrawalRequest.Address,
 			Value:      utils.LVTintToFloatStr(userWithdrawalRequest.Value),
-			Fee:        strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64),
+			Fee:        utils.LVTintToFloatStr(userWithdrawalRequest.Free),
 			CreateTime: userWithdrawalRequest.CreateTime,
 			UpdateTime: userWithdrawalRequest.UpdateTime,
 			Status:     userWithdrawalRequest.Status,
