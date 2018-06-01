@@ -175,7 +175,11 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			return
 		}
 	}
-	tradeNo, err := common.Withdraw(uid, withdrawAmount, secret.Address, requestData.Param.QuotaType)
+	address := strings.ToLower(secret.Address)
+	if !strings.HasPrefix(address, "0x") {
+		address = "0x" + address
+	}
+	tradeNo, err := common.Withdraw(uid, withdrawAmount, address, requestData.Param.QuotaType)
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = tradeNo
 	} else {
