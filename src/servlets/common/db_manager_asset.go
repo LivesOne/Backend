@@ -99,13 +99,27 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 	if !f {
 		return f, c
 	}
-	ts := utils.GetTimestamp13()
 
 	tx, err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("db pool begin error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
+
+	var (
+		ok bool
+		e int
+	)
+
+	if ok,e = TransAccountLvtByTx(txid,from,to,value,tx);ok {
+		tx.Commit()
+	} else {
+		tx.Rollback()
+	}
+	return ok,e
+}
+
+func TransAccountLvtByTx(txid, from, to, value int64,tx *sql.Tx) (bool, int){
 	tx.Exec("select * from user_asset where uid in (?,?) for update", from, to)
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
@@ -113,6 +127,7 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_ASSET_LIMITED
 	}
+	ts := utils.GetTimestamp13()
 
 	//查询转出账户余额是否满足需要
 	//var balance int64
@@ -166,9 +181,6 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
-
-	tx.Commit()
-
 	return true, constants.TRANS_ERR_SUCC
 }
 
