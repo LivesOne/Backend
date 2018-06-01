@@ -1140,7 +1140,7 @@ func RepayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sq
 }
 
 func QueryWithdrawalList(uid int64) []*UserWithdrawalRequest {
-	sql := "select id,trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
+	sql := "select id,trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time,free, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
 	results := gDBAsset.Query(sql, uid)
 	if results == nil {
 		return nil
