@@ -1237,20 +1237,23 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
+	logger.Debug("检测资产初始化情况开始")
 	f, c := CheckAndInitAsset(from)
 	if !f {
 		return 0, c
 	}
-
+	logger.Debug("检测资产初始化情况结束")
 	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
 
 	ts := utils.GetTimestamp13()
 
 	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	logger.Debug("查询转出账户余额开始")
 	if !ckeckEthBalance(from, value, tx) {
 		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
-
+	logger.Debug("查询转出账户余额结束")
+	logger.Debug("扣除转出方余额开始")
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset_eth set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
 	if err1 != nil {
@@ -1263,6 +1266,8 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
 		return 0, constants.TRANS_ERR_SYS
 	}
+	logger.Debug("扣除转出方余额结束")
+	logger.Debug("增加目标方余额开始")
 	//增加目标的balance
 	info2, err2 := tx.Exec("update user_asset_eth set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
 	if err2 != nil {
@@ -1275,13 +1280,14 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
 		return 0, constants.TRANS_ERR_SYS
 	}
-
+	logger.Debug("增加目标方余额结束")
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("can not get txid")
 		return 0, constants.TRANS_ERR_SYS
 	}
+	logger.Debug("插入tx_history_eth开始")
 	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
 		txid,
 		tradeType,
@@ -1300,7 +1306,7 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("insert eth tx history failed")
 		return 0, constants.TRANS_ERR_SYS
 	}
-
+	logger.Debug("插入tx_history_eth完成")
 	return txid, constants.TRANS_ERR_SUCC
 }
 
