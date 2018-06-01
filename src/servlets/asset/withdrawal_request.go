@@ -162,15 +162,14 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	
 	withdrawAmount := utils.FloatStrToLVTint(secret.Value)
 	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
-	usedWithdrawalQuotaOfCurMonth := common.QueryWithdrawValueOfCurMonth(uid)
 	switch requestData.Param.QuotaType {
 	case common.DAY_QUOTA_TYPE:
-		if withdrawAmount > userWithdrawalQuota.Day || withdrawAmount > (userWithdrawalQuota.Month - usedWithdrawalQuotaOfCurMonth){
+		if withdrawAmount > userWithdrawalQuota.Day || withdrawAmount > userWithdrawalQuota.Month {
 			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
 			return
 		}
 	case common.CASUAL_QUOTA_TYPE:
-		if withdrawAmount > userWithdrawalQuota.Casual {
+		if withdrawAmount > userWithdrawalQuota.Casual || withdrawAmount > userWithdrawalQuota.Month {
 			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
 			return
 		}
