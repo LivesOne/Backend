@@ -76,7 +76,7 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 	uid := utils.Str2Int64(uidString)
 
 	userWithdrawalRequestArray := common.QueryWithdrawalList(uid)
-	withdrawListResponseArray := make([]withdrawListResponse, len(userWithdrawalRequestArray))
+	withdrawListResponseArray := make([]withdrawListResponse, 0)
 	for _,userWithdrawalRequest := range userWithdrawalRequestArray {
 		withdrawListResponseArray = append(withdrawListResponseArray, withdrawListResponse{
 			Id:         userWithdrawalRequest.Id,
