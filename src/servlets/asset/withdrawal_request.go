@@ -24,7 +24,7 @@ type withdrawRequestParams struct {
 }
 
 type withdrawRequest struct {
-	Param *withdrawRequestParams
+	Param *withdrawRequestParams `json:"param"`
 }
 
 type withdrawRequestSecret struct {
