@@ -20,6 +20,10 @@ type withdrawCardUseRequest struct {
 	Param *withdrawCardUseParam `json:"param"`
 }
 
+type withdrawCardUserResData struct {
+	Quota string `json:"quota"`
+}
+
 // sendVCodeHandler
 type withdrawCardUseHandler struct {
 	//header      *common.HeaderParams // request header param
@@ -106,6 +110,9 @@ func (handler *withdrawCardUseHandler) Handle(request *http.Request, writer http
 			}
 			if err := common.UseWithdrawCard(card,uid);err != nil {
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				response.Data = withdrawCardUserResData{
+					Quota: utils.LVTintToFloatStr(card.Quota),
+				}
 			}
 	} else {
 		common.AddUseCardLimit(uid)
