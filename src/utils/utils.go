@@ -25,7 +25,8 @@ const (
 
 	DayDuration    = 24 * time.Hour
 	TwoDayDuration = 2 * DayDuration
-	CONV_LVT       = 10000 * 10000
+	CONV_LVT       = 1e8
+	DB_CONV_CHAIN_VALUE = 1e10
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -232,4 +233,27 @@ func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 	}
 	return nil
 
+}
+
+
+func ConvDBValueToChainStr(lvt int64)string{
+	//dbValue := big.NewInt(lvt)
+	//withdrawal := big.NewInt(0).Mul(dbValue,big.NewInt(1e10))
+	//return withdrawal.Text(10)
+	return decimal.New(lvt,0).Mul(decimal.NewFromFloat(DB_CONV_CHAIN_VALUE)).String()
+}
+
+func ConvChainStrToDBValue(chainStr string)int64{
+	//chainValue,ok := new(big.Int).SetString(chainStr,10)
+	//if !ok {
+	//	return 0
+	//}
+	//dbValue := big.NewInt(0).Div(chainValue,big.NewInt(1e10))
+	//return dbValue.Int64()
+	d,err := decimal.NewFromString(chainStr)
+	if err != nil {
+		return 0
+	}
+	d2 := d.Div(decimal.NewFromFloat(DB_CONV_CHAIN_VALUE))
+	return d2.IntPart()
 }
