@@ -16,8 +16,8 @@ import (
 
 const (
 	CONV_LVT          = 10000 * 10000
-	DAY_QUOTA_TYPE    = 0
-	CASUAL_QUOTA_TYPE = 1
+	DAY_QUOTA_TYPE    = 1
+	CASUAL_QUOTA_TYPE = 2
 )
 
 //var gDBAsset *sql.DB
@@ -817,7 +817,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *
 	}
 
 	if quotaType != DAY_QUOTA_TYPE && quotaType != CASUAL_QUOTA_TYPE {
-
+		return false, errors.New("expend quota type error")
 	}
 
 	if quotaType == DAY_QUOTA_TYPE {
@@ -935,6 +935,9 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	tradeNo := GenerateTradeNo(quotaType, quotaType) //TODO 修改
 
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
+	if err != nil {
+		return "", constants.RC_PARAM_ERR
+	}
 	if flag {
 		timestamp := utils.GetTimestamp13()
 		txid_lvt := GenerateTxID()
