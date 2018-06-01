@@ -82,7 +82,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	common.ParseHttpBodyParams(request, &requestData)
 
-	if requestData.Param.QuotaType != 1 && requestData.Param.QuotaType != 2 {
+	if requestData.Param.QuotaType != common.DAY_QUOTA_TYPE && requestData.Param.QuotaType != common.CASUAL_QUOTA_TYPE {
 		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
 	}
@@ -117,21 +117,25 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	secret := new(withdrawRequestSecret)
 
 	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
+		logger.Debug("解密secret错误")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !secret.isValid() {
+		logger.Debug("验证secret失败", secret.Address, secret.Value, secret.Pwd)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !validateWithdrawalValue(secret.Value) {
+		logger.Debug("验证value失败")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !validateWithdrawalAddress(secret.Address) {
+		logger.Debug("验证address失败")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -174,14 +178,12 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
 			return
 		}
-	default:
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
 	}
 	tradeNo, err := common.Withdraw(uid, withdrawAmount, secret.Address, requestData.Param.QuotaType)
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = tradeNo
 	} else {
+		logger.Debug("提币申请失败")
 		response.SetResponseBase(err)
 	}
 }
