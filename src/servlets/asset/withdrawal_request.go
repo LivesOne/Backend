@@ -126,10 +126,10 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	//if !validateWithdrawalValue(secret.Value) {
-	//	response.SetResponseBase(constants.RC_PARAM_ERR)
-	//	return
-	//}
+	if !validateWithdrawalValue(secret.Value) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	if !validateWithdrawalAddress(secret.Address) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
