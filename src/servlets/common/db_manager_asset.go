@@ -964,6 +964,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	}
 
 	if flag {
+		ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
+		ethFee := utils.FloatStrToLVTint(ethFeeString)
 		timestamp := utils.GetTimestamp13()
 		txid_lvt := GenerateTxID()
 		toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
@@ -987,7 +989,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 
 		toEth := config.GetWithdrawalConfig().EthAcceptAccount
-		txid_eth, e := EthTransCommit(uid, toEth, amount, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
+		txid_eth, e := EthTransCommit(uid, toEth, ethFee, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
 		if txid_eth <= 0 {
 			tx.Rollback()
 			switch e {
@@ -1002,9 +1004,9 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			}
 		}
 
-		ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
+
 		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status,free) values(?, ?, ?, ?, ?,?, ?, ?, ?,?)"
-		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, utils.FloatStrToLVTint(ethFeeString))
+		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee)
 		if err1 != nil {
 			logger.Error("add user_withdrawal_request error ", err.Error())
 			flag = false
