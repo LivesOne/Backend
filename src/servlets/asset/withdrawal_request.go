@@ -59,9 +59,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	httpHeader := common.ParseHttpHeaderParams(request)
 
-	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		log.Info("asset lockList: request param error")
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+	if !httpHeader.IsValidTokenhash() {
+		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 		return
 	}
 
@@ -76,6 +75,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
+
 	uid := utils.Str2Int64(uidString)
 
 	requestData := withdrawRequest{} // request body
