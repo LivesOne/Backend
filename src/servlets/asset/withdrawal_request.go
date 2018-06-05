@@ -33,6 +33,10 @@ type withdrawRequestSecret struct {
 	Pwd     string `json:"pwd"`
 }
 
+type withdrawRequestResponseData struct {
+	TradeNo string `json:"trade_no"`
+}
+
 func (wqs *withdrawRequestSecret) isValid() bool {
 	return len(wqs.Address) > 0 && len(wqs.Value) > 0 && len(wqs.Pwd) > 0
 }
@@ -59,9 +63,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	httpHeader := common.ParseHttpHeaderParams(request)
 
-	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		log.Info("asset lockList: request param error")
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+	if !httpHeader.IsValidTokenhash() {
+		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 		return
 	}
 
@@ -76,16 +79,12 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
+
 	uid := utils.Str2Int64(uidString)
 
 	requestData := withdrawRequest{} // request body
 
 	common.ParseHttpBodyParams(request, &requestData)
-
-	if requestData.Param.QuotaType != common.DAY_QUOTA_TYPE && requestData.Param.QuotaType != common.CASUAL_QUOTA_TYPE {
-		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
-		return
-	}
 
 	if requestData.Param.VcodeType > 0 {
 		acc, err := common.GetAccountByUID(uidString)
@@ -162,18 +161,20 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	
 	withdrawAmount := utils.FloatStrToLVTint(secret.Value)
 	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
-	usedWithdrawalQuotaOfCurMonth := common.QueryWithdrawValueOfCurMonth(uid)
 	switch requestData.Param.QuotaType {
 	case common.DAY_QUOTA_TYPE:
-		if withdrawAmount > userWithdrawalQuota.Day || withdrawAmount > (userWithdrawalQuota.Month - usedWithdrawalQuotaOfCurMonth){
+		if withdrawAmount > userWithdrawalQuota.Day || withdrawAmount > userWithdrawalQuota.Month {
 			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
 			return
 		}
 	case common.CASUAL_QUOTA_TYPE:
-		if withdrawAmount > userWithdrawalQuota.Casual {
+		if withdrawAmount > userWithdrawalQuota.Casual || withdrawAmount > userWithdrawalQuota.Month {
 			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
 			return
 		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	}
 	address := strings.ToLower(secret.Address)
 	if !strings.HasPrefix(address, "0x") {
@@ -181,7 +182,9 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 	tradeNo, err := common.Withdraw(uid, withdrawAmount, address, requestData.Param.QuotaType)
 	if err.Rc == constants.RC_OK.Rc {
-		response.Data = tradeNo
+		response.Data = withdrawRequestResponseData{
+			TradeNo: tradeNo,
+		}
 	} else {
 		response.SetResponseBase(err)
 	}
