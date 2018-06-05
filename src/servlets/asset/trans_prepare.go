@@ -195,6 +195,10 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		//直接放行
 	case constants.TX_TYPE_REFUND:
 		//直接放行
+	case constants.TX_TYPE_THREAD_IN:
+		//直接放行
+	case constants.TX_TYPE_THREAD_OUT:
+		//直接放行
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
