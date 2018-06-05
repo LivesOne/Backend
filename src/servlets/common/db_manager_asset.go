@@ -1347,7 +1347,7 @@ func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, 
 			params = append(params, end)
 		}
 	}
-	sql += " limit ? order by txid desc"
+	sql += "  order by txid desc limit ?"
 	params = append(params, max)
 	rows := gDBAsset.Query(sql, params...)
 	return rows
