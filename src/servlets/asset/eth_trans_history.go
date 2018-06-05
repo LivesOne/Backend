@@ -9,10 +9,6 @@ import (
 	"utils/logger"
 )
 
-const (
-	MAX_COUNT = 100
-	DEF_COUNT = 20
-)
 
 type ethtransHistoryParam struct {
 	Txid  string `json:"txid"`

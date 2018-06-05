@@ -1345,19 +1345,19 @@ func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, 
 			params = append(params, end)
 		}
 	}
-	sql += " limit ?"
+	sql += " limit ? order by txid desc"
 	params = append(params, max)
 	rows := gDBAsset.Query(sql, params...)
 	return rows
 }
 
 func GetUserWithdrawCardByUid(uid int64) []map[string]string {
-	rows := gDBAsset.Query("select * from withdrawal_card where owner_uid = ?", uid)
+	rows := gDBAsset.Query("select * from withdrawal_card where owner_uid = ? order by get_time desc", uid)
 	return rows
 }
 
 func GetUserWithdrawCardUseByUid(uid int64) []map[string]string {
-	rows := gDBAsset.Query("select * from user_withdrawal_card_use where uid = ?", uid)
+	rows := gDBAsset.Query("select * from user_withdrawal_card_use where uid = ? order by create_time desc", uid)
 	return rows
 }
 

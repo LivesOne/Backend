@@ -11,6 +11,10 @@ import (
 )
 
 
+const (
+	MAX_COUNT = 100
+	DEF_COUNT = 20
+)
 
 type transHistoryParam struct {
 	Txid  string `json:"txid"`
