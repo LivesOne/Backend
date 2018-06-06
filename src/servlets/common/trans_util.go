@@ -109,7 +109,7 @@ func CommitLVTTrans(uidStr,txIdStr string)constants.Error{
 	return constants.RC_OK
 }
 func PrepareETHTrans(from int64,valueStr string,txTpye int,bizContent map[string]string)(string,constants.Error){
-	tradeNo := GenerateTradeNo(txTpye,txTpye)//TODO 修改
+	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE,constants.TRADE_NO_TYPE_BUY_COIN_CARD)//TODO 修改
 	value := utils.FloatStrToLVTint(valueStr)
 	if err := InsertTradePending(from,tradeNo,utils.ToJSON(bizContent),value,txTpye);err != nil {
 		logger.Error("insert trade pending error",err.Error())

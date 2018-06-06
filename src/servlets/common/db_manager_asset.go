@@ -955,7 +955,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	tradeNo := GenerateTradeNo(quotaType, quotaType) //TODO 修改
+	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_WITHDRAW) //TODO 修改
 
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
 	if err != nil {
@@ -1373,7 +1373,7 @@ func GetUserWithdrawCardByPwd(pwd string) *UserWithdrawCard {
 }
 
 func UseWithdrawCard(card *UserWithdrawCard, uid int64) error {
-	tradeNo := GenerateTradeNo(1, 1)
+	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_USE_COIN_CARD)
 	ts := utils.GetTimestamp13()
 	tx, err := gDBAsset.Begin()
 	if err != nil {
