@@ -9,7 +9,7 @@ const (
 	TX_TYPE_RECEIVABLES       = 5
 	TX_TYPE_PENALTY_MONEY     = 6
 	TX_TYPE_BUY               = 7
-	TX_TYPE_REFUND            = 9
+	TX_TYPE_REFUND            = 8
 
 	TX_TYPE_WITHDRAW        = 11
 	TX_TYPE_WITHDRAW_RETURN = 12
