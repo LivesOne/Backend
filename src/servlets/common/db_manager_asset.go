@@ -1391,7 +1391,7 @@ func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, 
 		}
 	}
 
-	sql += "union select * from tx_history_eth where `to` = ?"
+	sql += " union select * from tx_history_eth where `to` = ?"
 	params = append(params,uid)
 	if len(txid) > 0 {
 		sql += " and txid = ?"
