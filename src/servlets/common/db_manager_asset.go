@@ -859,7 +859,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *
 		if rowsAffected > 0 {
 			return true, nil
 		} else {
-			logger.Info("update user withdrawal quota record of casual miss", err.Error())
+			logger.Info("update user withdrawal quota record of casual miss")
 			return false, err
 		}
 	}
