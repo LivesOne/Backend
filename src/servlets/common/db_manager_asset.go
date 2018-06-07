@@ -1005,8 +1005,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 
 
-		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status,free) values(?, ?, ?, ?, ?,?, ?, ?, ?,?)"
-		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee)
+		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, free, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee, quotaType)
 		if err1 != nil {
 			logger.Error("add user_withdrawal_request error ", err.Error())
 			flag = false
