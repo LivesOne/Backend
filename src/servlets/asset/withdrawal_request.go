@@ -196,6 +196,9 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 func validateWithdrawalValue(value string) bool {
 	if utils.Str2Float64(value) > 0 {
 		index := strings.Index(value, ".")
+		if index == -1 {
+			return true
+		}
 		last := value[index+1:]
 		if len(last) <= 8 {
 			return true
