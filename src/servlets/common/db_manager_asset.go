@@ -1347,6 +1347,26 @@ func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, 
 			params = append(params, end)
 		}
 	}
+
+	sql += "union select * from tx_history_eth where `to` = ?"
+	params = append(params,uid)
+	if len(txid) > 0 {
+		sql += " and txid = ?"
+		params = append(params, utils.Str2Int64(txid))
+	} else {
+		if tradeType > 0 {
+			sql += " and `type` = ?"
+			params = append(params, tradeType)
+		}
+		if begin > 0 {
+			sql += " and `ts` >= ?"
+			params = append(params, begin)
+		}
+		if end > 0 {
+			sql += " and `ts` <= ?"
+			params = append(params, end)
+		}
+	}
 	sql += "  order by txid desc limit ?"
 	params = append(params, max)
 	rows := gDBAsset.Query(sql, params...)
