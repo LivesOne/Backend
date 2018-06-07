@@ -1005,8 +1005,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 
 
-		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status,free) values(?, ?, ?, ?, ?,?, ?, ?, ?,?)"
-		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee)
+		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, free, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee, quotaType)
 		if err1 != nil {
 			logger.Error("add user_withdrawal_request error ", err.Error())
 			flag = false
@@ -1082,43 +1082,86 @@ func convDTTXHistoryRequest(al map[string]string) *DTTXHistory {
 	return &alres
 }
 
-func UpdateWithdrawResult(transId int64, result int) bool {
+func repayWithdraw(transId int64) bool {
 	tx, err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("db pool begin error ", err.Error())
 		return false
 	}
 
-	var sql = ""
-	if result == constants.USER_WITHDRAWAL_REQUEST_SUCCESS {
-		//todo 更新提币申请状态
-		sql = "update user_withdrawal_request set status = ? where id = ?"
-		result, err := tx.Exec(sql, result, transId)
-		if err != nil {
-			logger.Error("update status in user_withdrawal_request error ", err.Error())
-			tx.Rollback()
-		}
-		rowsAffected, err := result.RowsAffected()
-		if rowsAffected != 1 {
-			logger.Error("update status in user_withdrawal_request error ", err.Error())
-			tx.Rollback()
-		}
-		tx.Commit()
-	} else if result == constants.USER_WITHDRAWAL_REQUEST_FAIL {
-		//RepayUserWithdrawalQuota(uid, repayQuota, quotaType, tx)
-		//TODO 更新提币申请记录状态
-		//TODO 新建反向交易，退还LVT
+	sql := "select trade_no,uid,`value`,quota_type from user_withdrawal_request where id = ?"
+	row := tx.QueryRow(sql, transId)
+	var trade_no string
+	var uid int64
+	var value int64
+	var quota_type int
+	err = row.Scan(&trade_no, &uid, &value, &quota_type)
+	if err != nil {
+		logger.Error("query user withdraw request error, id : ", transId)
+		tx.Rollback()
+		return false
 	}
+	flag, _ := repayUserWithdrawalQuota(uid, value, quota_type, tx)
+	if !flag {
+		tx.Rollback()
+		return false
+	}
+	fromLvt := config.GetWithdrawalConfig().LvtAcceptAccount
+	txid_lvt := GenerateTxID()
+	timestamp := utils.GetTimestamp13()
+	transLvtResult, _ := TransAccountLvtByTx(txid_lvt, fromLvt, uid, value, tx)
+	if !transLvtResult {
+		tx.Rollback()
+		return false
+	}
+	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txid_lvt, constants.TX_TYPE_WITHDRAW_LVT, trade_no, fromLvt, uid, value, timestamp)
+	if err3 != nil {
+		logger.Error("query error ", err.Error())
+		tx.Rollback()
+		return false
+	}
+	tx.Commit()
+
+	//同步至mongo
+	go func() {
+		txh := &DTTXHistory{
+			Id:      txid_lvt,
+			TradeNo: trade_no,
+			Type:    constants.TX_TYPE_WITHDRAW_LVT,
+			From:    fromLvt,
+			To:      uid,
+			Value:   value,
+			Ts:      timestamp,
+		}
+		err = InsertCommited(txh)
+		if err != nil {
+			logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
+			b, _ := json.Marshal(txh)
+			rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, b)
+		} else {
+			DeleteTxhistoryLvtTmpByTxid(txid_lvt)
+		}
+	}()
 	return true
 }
 
 /**
  * 退还提币额度
  */
-func RepayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sql.Tx) (bool, error) {
-	var sql = ""
+func repayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sql.Tx) (bool, error) {
+	if quotaType != CASUAL_QUOTA_TYPE {
+		return true, nil
+	}
+	var sql = "select `month`, casual user_withdrawal_quota where uid = ?"
+	row := tx.QueryRow(sql, uid)
+	var month int64
+	var casual int64
+	err := row.Scan(&month, &casual)
+	if err != nil {
+		logger.Error("query user quota error， uid : ", uid)
+	}
 	if quotaType == CASUAL_QUOTA_TYPE {
-		sql = "update user_withdrawal_quota set casual = casual + ?,last_expend = ? where uid = ?"
+		sql = "update user_withdrawal_quota set casual = casual + ?, month = month + ?, last_expend = ? where uid = ?"
 		result, err := tx.Exec(sql, repayQuota, utils.GetTimestamp13(), uid)
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected > 0 {
@@ -1128,7 +1171,7 @@ func RepayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sq
 		}
 	}
 
-	result, err := tx.Exec(sql, repayQuota, utils.GetTimestamp13(), uid)
+	result, err := tx.Exec(sql, repayQuota, repayQuota, utils.GetTimestamp13(), uid)
 	if err != nil {
 		logger.Error("exec sql error", sql)
 		return false, err
