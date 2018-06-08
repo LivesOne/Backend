@@ -5,7 +5,7 @@ type (
 		Id      int64       `bson:"_id"`
 		Status  int         `bson:"status"`
 		Type    int         `bson:"type"`
-		TradeNo string      `bson:"trade_no"`
+		TradeNo string      `bson:"trade_no,omitempty"`
 		From    int64       `bson:"from,omitempty"`
 		To      int64       `bson:"to,omitempty"`
 		Value   int64       `bson:"value"`
