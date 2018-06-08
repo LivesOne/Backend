@@ -801,6 +801,7 @@ func ResetDayQuota(uid int64, dayQuota int64) bool {
 	result, err := gDBAsset.Exec(sql, dayQuota, uid)
 	if err != nil {
 		logger.Error("重置月额度错误" + err.Error())
+		return false
 	}
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected > 0 {
@@ -815,6 +816,7 @@ func ResetMonthQuota(uid int64, monthQuota int64) bool {
 	result, err := gDBAsset.Exec(sql, monthQuota, uid)
 	if err != nil {
 		logger.Error("重置月额度错误" + err.Error())
+		return false
 	}
 
 	rowsAffected, _ := result.RowsAffected()
@@ -830,6 +832,7 @@ func UpdateLastLevelOfQuota(uid int64, lastLevel int) bool {
 	result, err := gDBAsset.Exec(sql, lastLevel, uid)
 	if err != nil {
 		logger.Error("更新提币额度last level错误", err.Error())
+		return false
 	}
 
 	rowsAffected, _ := result.RowsAffected()
