@@ -89,7 +89,6 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 						common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
 					}
 				}
-				utils.GetTimestamp13ByTime()
 				userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 			}
 		}
