@@ -863,7 +863,7 @@ func ExpendUserWithdrawalQuota(uid int64, expendQuota int64, quotaType int, tx *
 		if rowsAffected > 0 {
 			return true, nil
 		} else {
-			logger.Info("update user withdrawal quota record of day quota miss", err.Error())
+			logger.Info("update user withdrawal quota record of day quota miss")
 			return false, err
 		}
 	}
@@ -1004,7 +1004,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 		_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txid_lvt, constants.TX_TYPE_WITHDRAW_LVT, tradeNo, uid, toLvt, amount, timestamp)
 		if err3 != nil {
-			logger.Error("query error ", err.Error())
+			logger.Error("insert tx_history_lvt_tmp error ", err3.Error())
 		}
 
 		toEth := config.GetWithdrawalConfig().EthAcceptAccount
@@ -1027,7 +1027,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, free, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee, quotaType)
 		if err1 != nil {
-			logger.Error("add user_withdrawal_request error ", err.Error())
+			logger.Error("add user_withdrawal_request error ", err1.Error())
 			flag = false
 		}
 		tx.Commit()
@@ -1135,7 +1135,7 @@ func repayWithdraw(transId int64) bool {
 	}
 	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txid_lvt, constants.TX_TYPE_WITHDRAW_LVT, trade_no, fromLvt, uid, value, timestamp)
 	if err3 != nil {
-		logger.Error("query error ", err.Error())
+		logger.Error("query error ", err3.Error())
 		tx.Rollback()
 		return false
 	}
