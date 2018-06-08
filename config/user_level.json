@@ -49,8 +49,8 @@
       "DailyAmountMax": 5000,
       "DailyPrepareAccess": 7,
       "DailyCommitAccess": 5,
-      "DailyWithdrawalQuota": 200,
-      "MonthlyWithdrawalQuota": 200
+      "DailyWithdrawalQuota": 300,
+      "MonthlyWithdrawalQuota": 300
     },
     "4":{
       "ChangePhone": true,
@@ -62,8 +62,8 @@
       "DailyAmountMax": 10000,
       "DailyPrepareAccess": 14,
       "DailyCommitAccess": 10,
-      "DailyWithdrawalQuota": 200,
-      "MonthlyWithdrawalQuota": 200
+      "DailyWithdrawalQuota": 400,
+      "MonthlyWithdrawalQuota": 400
     }
   }
 }

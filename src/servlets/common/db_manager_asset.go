@@ -756,7 +756,7 @@ func checkHashrateExists(uid int64, hrType int) bool {
 }
 
 func GetUserWithdrawalQuotaByUid(uid int64) *UserWithdrawalQuota {
-	row, err := gDBAsset.QueryRow("SELECT uid,`day`,`month`,casual,day_expend FROM user_withdrawal_quota where uid = ?", uid)
+	row, err := gDBAsset.QueryRow("SELECT uid,`day`,`month`,casual,day_expend,last_level FROM user_withdrawal_quota where uid = ?", uid)
 
 	if err != nil {
 		logger.Error("query user withdraw quota error", err.Error())
@@ -779,20 +779,21 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 		Month:     utils.Str2Int64(al["month"]),
 		Casual:    utils.Str2Int64(al["casual"]),
 		DayExpend: utils.Str2Int64(al["day_expend"]),
+		LastLevel: utils.Str2Int(al["last_level"]),
 	}
 	return &alres
 }
 
-func CreateUserWithdrawalQuota(uid int64, day int64, month int64) (sql.Result, error) {
-	return CreateUserWithdrawalQuotaByTx(uid, day, month, nil)
+func CreateUserWithdrawalQuota(uid int64, day int64, month int64, lastLevel int) (sql.Result, error) {
+	return CreateUserWithdrawalQuotaByTx(uid, day, month, lastLevel, nil)
 }
-func CreateUserWithdrawalQuotaByTx(uid int64, day int64, month int64, tx *sql.Tx) (sql.Result, error) {
+func CreateUserWithdrawalQuotaByTx(uid int64, day int64, month int64, lastLevel int, tx *sql.Tx) (sql.Result, error) {
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
-	sql := "insert ignore into user_withdrawal_quota(uid, `day`, `month`, casual, day_expend, last_expend, last_income) values(?, ?, ?, ?, ?, ?, ?) "
-	return tx.Exec(sql, uid, day, month, 0, 0, utils.GetTimestamp13(), 0)
+	sql := "insert ignore into user_withdrawal_quota(uid, `day`, `month`, casual, day_expend, last_expend, last_income, last_level) values(?, ?, ?, ?, ?, ?, ?, ?) "
+	return tx.Exec(sql, uid, day, month, 0, 0, utils.GetTimestamp13(), 0, lastLevel)
 }
 
 func ResetDayQuota(uid int64, dayQuota int64) bool {
@@ -814,6 +815,21 @@ func ResetMonthQuota(uid int64, monthQuota int64) bool {
 	result, err := gDBAsset.Exec(sql, monthQuota, uid)
 	if err != nil {
 		logger.Error("重置月额度错误" + err.Error())
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected > 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func UpdateLastLevelOfQuota(uid int64, lastLevel int) bool {
+	sql := "update user_withdrawal_quota set last_level = ? where uid = ?"
+	result, err := gDBAsset.Exec(sql, lastLevel, uid)
+	if err != nil {
+		logger.Error("更新提币额度last level错误", err.Error())
 	}
 
 	rowsAffected, _ := result.RowsAffected()
@@ -896,7 +912,7 @@ func InitUserWithdrawal(uid int64) *UserWithdrawalQuota {
 	limitConfig := config.GetLimitByLevel(level)
 	day, month := limitConfig.DailyWithdrawalQuota()*utils.CONV_LVT,
 		limitConfig.MonthlyWithdrawalQuota()*utils.CONV_LVT
-	_, err := CreateUserWithdrawalQuota(uid, day, month)
+	_, err := CreateUserWithdrawalQuota(uid, day, month, level)
 	if err != nil {
 		logger.Error("insert user withdrawal quota error for user:", uid)
 		return nil
@@ -914,7 +930,7 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 	limitConfig := config.GetLimitByLevel(level)
 	day, month := limitConfig.DailyWithdrawalQuota()*utils.CONV_LVT,
 		limitConfig.MonthlyWithdrawalQuota()*utils.CONV_LVT
-	_, err := CreateUserWithdrawalQuotaByTx(uid, day, month, tx)
+	_, err := CreateUserWithdrawalQuotaByTx(uid, day, month, level, tx)
 	if err != nil {
 		logger.Error("insert user withdrawal quota error for user:", uid)
 		return nil

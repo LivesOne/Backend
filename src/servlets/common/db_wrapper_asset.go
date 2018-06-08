@@ -35,7 +35,8 @@ type (
 		Day       int64 `json:"day"`
 		Month     int64 `json:"month"`
 		Casual    int64 `json:"casual"`
-		DayExpend int64 `json:"dayExpend"`
+		DayExpend int64 `json:"day_expend"`
+		LastLevel int   `json:"last_level"`
 	}
 
 	EthTxHistory struct {
