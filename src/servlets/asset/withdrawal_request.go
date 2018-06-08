@@ -84,7 +84,11 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	requestData := withdrawRequest{} // request body
 
-	common.ParseHttpBodyParams(request, &requestData)
+	parseFlag := common.ParseHttpBodyParams(request, &requestData)
+	if !parseFlag {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	if requestData.Param.VcodeType > 0 {
 		acc, err := common.GetAccountByUID(uidString)

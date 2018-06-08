@@ -74,22 +74,24 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 			currentLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota()))
 			balanceDailyQuota := currentLevelDailyQuota - oldLevelDailyQuota
 			balanceMonthlyQuota := currentLevelMonthlyQuota - oldLevelMonthlyQuota
-			common.ResetDayQuota(uid, balanceDailyQuota + userWithdrawalQuota.Day)
-			common.ResetMonthQuota(uid, balanceMonthlyQuota + userWithdrawalQuota.Month)
+			common.ResetDayQuota(uid, balanceDailyQuota+userWithdrawalQuota.Day)
+			common.ResetMonthQuota(uid, balanceMonthlyQuota+userWithdrawalQuota.Month)
 			common.UpdateLastLevelOfQuota(uid, level)
 			userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 		} else {
 			logger.Debug("用户等级未变化")
 			if dayExpend == 0 || !utils.IsToday(dayExpend, utils.GetTimestamp13()) {
 				logger.Debug("重置日额度")
-				if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) {
-					lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
-					if lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
-						logger.Debug("重置月额度")
-						common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
+				if userWithdrawalQuota.Day != utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())) {
+					if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) {
+						lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
+						if lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
+							logger.Debug("重置月额度")
+							common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
+						}
 					}
+					userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 				}
-				userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 			}
 		}
 	}
