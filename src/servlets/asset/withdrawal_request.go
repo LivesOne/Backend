@@ -161,6 +161,10 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	
 	withdrawAmount := utils.FloatStrToLVTint(secret.Value)
 	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
+	//提币额度表没有记录，进行初始化
+	if userWithdrawalQuota == nil {
+		userWithdrawalQuota = common.InitUserWithdrawal(uid)
+	}
 	switch requestData.Param.QuotaType {
 	case common.DAY_QUOTA_TYPE:
 		if withdrawAmount > userWithdrawalQuota.Day || withdrawAmount > userWithdrawalQuota.Month {
