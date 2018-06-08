@@ -66,7 +66,7 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 		level := common.GetTransUserLevel(uid)
 		limitConfig := config.GetLimitByLevel(level)
 		if level > userWithdrawalQuota.LastLevel {
-			logger.Debug("用户等级提升，原：", userWithdrawalQuota.LastLevel, "现：", level)
+			logger.Debug("用户等级提升，uid:", uid, ",原等级：", userWithdrawalQuota.LastLevel, ",现等级：", level)
 			oldLimitConfig := config.GetLimitByLevel(userWithdrawalQuota.LastLevel)
 			oldLevelDailyQuota := utils.FloatStrToLVTint(utils.Int642Str(oldLimitConfig.DailyWithdrawalQuota()))
 			oldLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(oldLimitConfig.MonthlyWithdrawalQuota()))
@@ -79,16 +79,15 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 			common.UpdateLastLevelOfQuota(uid, level)
 			userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 		} else {
-			logger.Debug("用户等级未变化")
+			logger.Debug("用户等级未变化，uid:", uid)
 			if dayExpend == 0 || !utils.IsToday(dayExpend, utils.GetTimestamp13()) {
-				logger.Debug("重置日额度")
 				if userWithdrawalQuota.Day != utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())) {
-					if common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))) {
-						lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
-						if lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
-							logger.Debug("重置月额度")
-							common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
-						}
+					logger.Debug("重置日额度，uid:", uid, "，原额度：", userWithdrawalQuota.Day, "，重置额度", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
+					common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
+					lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
+					if lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
+						logger.Debug("重置月额度，uid:", uid, "，原额度：", userWithdrawalQuota.Day, "，重置额度", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
+						common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
 					}
 					userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 				}
