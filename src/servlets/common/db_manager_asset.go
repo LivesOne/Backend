@@ -1046,8 +1046,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			err = InsertCommited(txh)
 			if err != nil {
 				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
-				b, _ := json.Marshal(txh)
-				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, b)
+				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
 			} else {
 				DeleteTxhistoryLvtTmpByTxid(txid_lvt)
 			}

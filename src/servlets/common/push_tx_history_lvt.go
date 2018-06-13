@@ -3,50 +3,42 @@ package common
 import (
 	"servlets/constants"
 	"time"
-	"bytes"
-	"encoding/json"
 	"utils/logger"
 	"utils"
+	"github.com/garyburd/redigo/redis"
 )
 
 func ListenTxhistoryQueue()  {
 
 	for  {
-		if redisPool == nil {
+		if redisPool == nil || tSession == nil {
+			logger.Info("push_tx_history_lvt redis/mongo pool not init")
 			time.Sleep(10 * 1e9)
 			continue
 		}
 
-		reply, err := rdsDo("BLPOP", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, 2)
-		if err != nil {
-			logger.Error("blpop error", err.Error())
-		}
+		results, _ := redis.Strings(rdsDo("BLPOP", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME,0))
+		if results != nil && len(results) >= 2 {
+			logger.Debug(len(results))
+			logger.Debug("jsonstr:" , results[0], results[1])
+			txh := new(DTTXHistory)
 
-		if _,ok := reply.([]byte); ok {
-
-			var txh DTTXHistory
-			decoder := json.NewDecoder(bytes.NewReader(reply.([]byte)))
-			if err := decoder.Decode(&txh); err != nil {
-				logger.Error("redis tx history lvt parse error ", err.Error())
-				rdsDo("RPUSH", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, reply)
-			}
-
-			err = InsertCommited(&txh)
-			if err != nil {
-				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
-				rdsDo("RPUSH", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, reply)
+			if err := utils.FromJson(results[1],txh); err == nil {
+				err = InsertCommited(txh)
+				if err != nil {
+					logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
+					rdsDo("RPUSH", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
+				}
 			}
 		}
-
 		time.Sleep(10 * 1e9)
-
 	}
 }
 
 func PushTxHistoryByTimer()  {
 	c := time.Tick(time.Hour * 4)
 	for {
-		if gDBAsset != nil {
+		if gDBAsset != nil && tSession != nil {
 			hour, _ := time.ParseDuration("-1h")
 			before4Hour := time.Now().Add(4 * hour)
 			dTTXHistoryList := QueryTxhistoryLvtTmpByTimie(utils.GetTimestamp13ByTime(before4Hour))
@@ -58,6 +50,10 @@ func PushTxHistoryByTimer()  {
 					}
 				}
 			}
+			c = time.Tick(time.Hour * 4)
+		} else {
+			logger.Info("push_tx_history_lvt mysql pool not init")
+			c = time.Tick(time.Second * 10)
 		}
 
 		<- c
