@@ -1024,11 +1024,13 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 
 
-		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, free, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, fee, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee, quotaType)
 		if err1 != nil {
 			logger.Error("add user_withdrawal_request error ", err1.Error())
+			tx.Rollback()
 			flag = false
+			return "", constants.RC_SYSTEM_ERR
 		}
 		tx.Commit()
 
@@ -1243,6 +1245,20 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
+	}
+
+	row := tx.QueryRow("select count(1) count from user_asset_eth where uid = ?", to)
+	count := -1
+	err := row.Scan(&count)
+	if err != nil {
+		logger.Error("query row error ", err.Error())
+	}
+	if row != nil && count == 0 {
+		sqlStr := "insert ignore into user_asset_eth (uid,balance,lastmodify) values (?,?,?) "
+		_, err1 := tx.Exec(sqlStr, to, 0, 0)
+		if err1 != nil {
+			logger.Error("init user_asset_eth err, uid:", to)
+		}
 	}
 
 	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
