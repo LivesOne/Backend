@@ -977,8 +977,9 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_WITHDRAW) //TODO 修改
 
 	flag, err := ExpendUserWithdrawalQuota(uid, amount, quotaType, tx)
-	if err != nil {
+	if err != nil || !flag {
 		logger.Error("expend user withdrawal quota error ", err.Error())
+		tx.Rollback()
 		return "", constants.RC_PARAM_ERR
 	}
 
