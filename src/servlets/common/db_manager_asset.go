@@ -1024,7 +1024,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 
 
-		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, free, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, fee, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee, quotaType)
 		if err1 != nil {
 			logger.Error("add user_withdrawal_request error ", err1.Error())
@@ -1204,7 +1204,7 @@ func repayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sq
 }
 
 func QueryWithdrawalList(uid int64) []*UserWithdrawalRequest {
-	sql := "select id,trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time,free, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
+	sql := "select id,trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time,fee, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
 	results := gDBAsset.Query(sql, uid)
 	if results == nil {
 		return nil
@@ -1235,7 +1235,7 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 		CreateTime: utils.Str2Int64(al["create_time"]),
 		UpdateTime: utils.Str2Int64(al["update_time"]),
 		Status:     utils.Str2Int(al["status"]),
-		Free:       utils.Str2Int64(al["free"]),
+		Free:       utils.Str2Int64(al["fee"]),
 	}
 	return &alres
 }
