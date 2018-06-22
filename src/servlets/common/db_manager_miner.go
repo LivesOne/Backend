@@ -14,7 +14,7 @@ var minerdbc config.MongoConfig
 const (
 
 	// MGDBPoolMax = 10
-	DT_DEVICE  = "dt_device"
+	DT_DEVICE         = "dt_device"
 	DT_DEVICE_HISTORY = "dt_device_history"
 )
 
@@ -26,7 +26,7 @@ func InitMinerRMongoDB() {
 	var err error
 	tSession, err = mgo.Dial(connStr)
 	if err != nil {
-		logger.Error("connect failed ",err.Error())
+		logger.Error("connect failed ", err.Error())
 		return
 	}
 	tSession.SetPoolLimit(minerdbc.MaxConn)
@@ -51,33 +51,31 @@ func minerCommitDelete(db, c string, id bson.ObjectId) error {
 	return collection.RemoveId(id)
 }
 
-
-
-func QueryMinerBindDevice(query bson.M)([]DtDevice,error){
+func QueryMinerBindDevice(query bson.M) ([]DtDevice, error) {
 	session := tSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := []DtDevice{}
 	err := collection.Find(query).All(&res)
 	if err != nil {
-		logger.Error("query mongo db error",err.Error())
-		return nil,err
+		logger.Error("query mongo db error", err.Error())
+		return nil, err
 	}
-	return res,nil
+	return res, nil
 }
 
-func QueryMinerBindDeviceCount(query bson.M)(int,error){
+func QueryMinerBindDeviceCount(query bson.M) (int, error) {
 	session := tSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
-	count,err := collection.Find(query).Count()
+	count, err := collection.Find(query).Count()
 	if err != nil {
-		logger.Error("query mongo db error",err.Error())
-		return 0,err
+		logger.Error("query mongo db error", err.Error())
+		return 0, err
 	}
-	return count,nil
+	return count, nil
 }
 
-func InsertDeviceBind(device *DtDevice)error{
-	return minerCommonInsert(minerdbc.DBDatabase,DT_DEVICE,device)
+func InsertDeviceBind(device *DtDevice) error {
+	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE, device)
 }

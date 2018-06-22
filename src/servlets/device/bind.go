@@ -1,31 +1,32 @@
 package device
 
 import (
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"utils/logger"
 	"utils"
-	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/mgo.v2"
+	"utils/logger"
 )
 
 type deviceBindParam struct {
-	Mid int `json:"mid"`
-	Appid int `json:"appid"`
-	Plat int `json:"plat"`
-	Did string `json:"did"`
-	Dn string `json:"dn"`
+	Mid       int    `json:"mid"`
+	Appid     int    `json:"appid"`
+	Plat      int    `json:"plat"`
+	Did       string `json:"did"`
+	Dn        string `json:"dn"`
 	OsVersion string `json:"os_version"`
 }
-func (dbp *deviceBindParam)Validate()bool{
-	return dbp.Mid >0 &&dbp.Appid >0 && dbp.Plat > 0 &&
-			len(dbp.Did) >0 && len(dbp.Dn) >0 && len(dbp.OsVersion) >0
+
+func (dbp *deviceBindParam) Validate() bool {
+	return dbp.Mid > 0 && dbp.Appid > 0 && dbp.Plat > 0 &&
+		len(dbp.Did) > 0 && len(dbp.Dn) > 0 && len(dbp.OsVersion) > 0
 }
 
 type deviceBindRequest struct {
-	Base  *common.BaseInfo     `json:"base"`
+	Base  *common.BaseInfo `json:"base"`
 	Param *deviceBindParam `json:"param"`
 }
 
@@ -98,11 +99,11 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	query := bson.M{
-		"uid":uid,
-		"mid":param.Mid,
+		"uid": uid,
+		"mid": param.Mid,
 	}
 
-	devicelist,err := common.QueryMinerBindDevice(query)
+	devicelist, err := common.QueryMinerBindDevice(query)
 
 	if err != nil && err != mgo.ErrNotFound {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -111,7 +112,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 
 	if err != mgo.ErrNotFound {
 		// uid,mid,plat,appid check
-		for _,v := range devicelist {
+		for _, v := range devicelist {
 			if v.Plat != param.Plat {
 				response.SetResponseBase(constants.RC_DEVICE_PLAT_NOT_MATCH)
 				return
@@ -124,9 +125,9 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 	}
 	//  DID check
 	query = bson.M{
-		"did":param.Did,
+		"did": param.Did,
 	}
-	deviceCount,err := common.QueryMinerBindDeviceCount(query)
+	deviceCount, err := common.QueryMinerBindDeviceCount(query)
 	if err != nil && err != mgo.ErrNotFound {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
@@ -138,7 +139,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 
 	// check lock uid,did
 
-	if common.CheckDeviceLockUid(uid)||common.CheckDeviceLockDid(param.Did) {
+	if common.CheckDeviceLockUid(uid) || common.CheckDeviceLockDid(param.Did) {
 		log.Error("bind device uid or did in lock")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
@@ -157,8 +158,8 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		OsVer:  param.OsVersion,
 		BindTs: utils.GetTimestamp13(),
 	}
-	if err := common.InsertDeviceBind(device);err != nil {
-		log.Error("bind device error",err.Error())
+	if err := common.InsertDeviceBind(device); err != nil {
+		log.Error("bind device error", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	}
 	//  unlock

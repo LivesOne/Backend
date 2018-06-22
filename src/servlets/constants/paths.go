@@ -131,5 +131,4 @@ const (
 	DEVICE_DEVICE_INFO = "/user/v1/device/info"
 
 	DEVICE_DEVICE_LIST = "/user/v1/device/list"
-
 )

@@ -7,5 +7,5 @@ import (
 
 func RegisterHandlers() {
 
-	server.RegisterHandler(constants.DEVICE_BIND_DEVICE,new(deviceBindHandler))
+	server.RegisterHandler(constants.DEVICE_BIND_DEVICE, new(deviceBindHandler))
 }

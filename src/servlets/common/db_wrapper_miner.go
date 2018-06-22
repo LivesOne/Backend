@@ -27,11 +27,12 @@ type (
 		OsVer  string        `bson:"os_ver,omitempty"`
 		BindTs int64         `bson:"bind_ts,omitempty"`
 	}
-	DtDeviceHistory struct{
+	DtDeviceHistory struct {
 		DtDevice
 		UnbindTs int64 `bson:"unbind_ts,omitempty"`
 	}
 )
-func (ddh *DtDeviceHistory)Build(dd *DtDevice){
+
+func (ddh *DtDeviceHistory) Build(dd *DtDevice) {
 	ddh.DtDevice = *dd
 }

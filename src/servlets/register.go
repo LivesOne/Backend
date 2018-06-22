@@ -3,9 +3,9 @@ package servlets
 import (
 	"server"
 	"servlets/accounts"
+	"servlets/asset"
 	"servlets/constants"
 	"servlets/device"
-	"servlets/asset"
 )
 
 func RegisterHandlers() {
