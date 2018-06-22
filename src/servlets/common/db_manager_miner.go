@@ -79,3 +79,28 @@ func QueryMinerBindDeviceCount(query bson.M) (int, error) {
 func InsertDeviceBind(device *DtDevice) error {
 	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE, device)
 }
+
+func QueryDevice(uid int64,mid int,did string) (*DtDevice ,error){
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
+	res := new(DtDevice)
+	err := collection.Find(bson.M{"uid":uid,"did":did,"mid":mid}).One(res)
+	if err != nil {
+		logger.Error("query mongo db error", err.Error())
+		return nil, err
+	}
+	return res, nil
+}
+func DeleteDevice(uid int64,mid,appid int,did string) error{
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
+	return collection.Remove(bson.M{"uid":uid,"did":did,"mid":mid,"appid":appid})
+}
+
+func InsertDeviceBindHistory(device *DtDevice) error {
+	ddh := new(DtDeviceHistory)
+	ddh.Build(device)
+	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE_HISTORY, ddh)
+}

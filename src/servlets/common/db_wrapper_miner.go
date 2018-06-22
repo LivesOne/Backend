@@ -1,6 +1,9 @@
 package common
 
-import "gopkg.in/mgo.v2/bson"
+import (
+	"gopkg.in/mgo.v2/bson"
+	"utils"
+)
 
 //"collection": "dt_device",
 //{
@@ -34,5 +37,6 @@ type (
 )
 
 func (ddh *DtDeviceHistory) Build(dd *DtDevice) {
+	ddh.UnbindTs = utils.GetTimestamp13()
 	ddh.DtDevice = *dd
 }
