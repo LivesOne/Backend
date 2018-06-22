@@ -44,6 +44,14 @@
         "DBUserPwd" : "",
         "DBDatabase" : "db_livesone_tx_history"
     },
+    "Miner" :
+    {
+        "MaxConn" : 10,
+        "DBHost" : "10.0.5.248:40000",
+        "DBUser" : "",
+        "DBUserPwd" : "",
+        "DBDatabase" : "miner"
+    },
   
     "SmsSvrAddr":"http://10.0.5.248:9099",
     "MailSvrAddr":"http://10.0.5.248:9080/vcode",

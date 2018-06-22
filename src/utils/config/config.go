@@ -71,6 +71,7 @@ type Configuration struct {
 	// asset db config
 	Asset     DBConfig
 	TxHistory MongoConfig
+	Miner MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制

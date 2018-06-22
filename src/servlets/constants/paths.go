@@ -123,4 +123,13 @@ const (
 	ASSET_WITHDRAWAL_CARD_USE = "/asset/v1/withdraw/card/use"
 
 	ASSET_WITHDRAWAL_CARD_USE_LIST = "/asset/v1/withdraw/card/use_list"
+
+	DEVICE_BIND_DEVICE = "/user/v1/device/bind"
+
+	DEVICE_UNBIND_DEVICE = "/user/v1/device/unbind"
+
+	DEVICE_DEVICE_INFO = "/user/v1/device/info"
+
+	DEVICE_DEVICE_LIST = "/user/v1/device/list"
+
 )

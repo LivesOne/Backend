@@ -58,7 +58,7 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset balance: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -90,17 +90,4 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 	}
 
 }
-func TokenErr2RcErr(tokenErr int) constants.Error {
-	switch tokenErr {
-	case constants.ERR_INT_OK:
-		return constants.RC_OK
-	case constants.ERR_INT_TK_DB:
-		return constants.RC_PARAM_ERR
-	case constants.ERR_INT_TK_DUPLICATE:
-		return constants.RC_PARAM_ERR
-	case constants.ERR_INT_TK_NOTEXISTS:
-		return constants.RC_PARAM_ERR
-	default:
-		return constants.RC_SYSTEM_ERR
-	}
-}
+

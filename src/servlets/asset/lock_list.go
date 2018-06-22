@@ -46,7 +46,7 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset lockList: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return

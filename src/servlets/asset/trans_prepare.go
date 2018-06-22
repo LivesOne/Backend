@@ -82,7 +82,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return

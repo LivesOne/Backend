@@ -232,3 +232,17 @@ func GenerateTradeNo(type_id, subtype_id int) string {
 	trade_no := fmt.Sprintf("%s%02d%03d%03d%02d%04d", datetime_str, ver, type_id, subtype_id, cluster_id, rid)
 	return trade_no
 }
+func TokenErr2RcErr(tokenErr int) constants.Error {
+	switch tokenErr {
+	case constants.ERR_INT_OK:
+		return constants.RC_OK
+	case constants.ERR_INT_TK_DB:
+		return constants.RC_PARAM_ERR
+	case constants.ERR_INT_TK_DUPLICATE:
+		return constants.RC_PARAM_ERR
+	case constants.ERR_INT_TK_NOTEXISTS:
+		return constants.RC_PARAM_ERR
+	default:
+		return constants.RC_SYSTEM_ERR
+	}
+}

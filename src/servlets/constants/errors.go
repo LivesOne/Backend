@@ -64,6 +64,11 @@ var (
 	RC_USE_CARD_ALREADY_USED          = Error{21015, "withdrawal card already used"}
 	RC_USE_CARD_EXPIRE                = Error{21016, "withdrawal card expired"}
 
+	RC_DEVICE_DUP_BIND       = Error{23001, "duplicate bind"}
+	RC_DEVICE_BIND_TOO_SHORT = Error{23002, "bind interval too short"}
+	RC_DEVICE_PLAT_NOT_MATCH = Error{23003, "plat not match"}
+	RC_DEVICE_DUP_APPID      = Error{23004, "duplicate appid"}
+
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
 	// RC_TOKEN_DB                        = Error{20103, "token db not connect"}

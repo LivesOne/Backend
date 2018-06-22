@@ -3,8 +3,9 @@ package servlets
 import (
 	"server"
 	"servlets/accounts"
-	"servlets/asset"
 	"servlets/constants"
+	"servlets/device"
+	"servlets/asset"
 )
 
 func RegisterHandlers() {
@@ -15,4 +16,5 @@ func RegisterHandlers() {
 	// register accounts handlers
 	accounts.RegisterHandlers()
 	asset.RegisterHandlers()
+	device.RegisterHandlers()
 }

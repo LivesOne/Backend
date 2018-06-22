@@ -59,7 +59,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 
 	// 判断用户身份
 	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
