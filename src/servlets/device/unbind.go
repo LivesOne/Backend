@@ -101,6 +101,13 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
+
+	if common.CheckDeviceLockUid(uid) || common.CheckDeviceLockDid(param.Did) {
+		log.Error("unbind device uid or did in lock")
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
 	//  lock uid,did
 	common.DeviceLockUid(uid)
 	common.DeviceLockDid(param.Did)
