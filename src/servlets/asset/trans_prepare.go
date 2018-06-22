@@ -1,6 +1,7 @@
 package asset
 
 import (
+	"database/sql"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
@@ -10,7 +11,6 @@ import (
 	"utils/config"
 	"utils/logger"
 	"utils/vcode"
-	"database/sql"
 )
 
 type transPrepareParam struct {
@@ -100,20 +100,20 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	// vcodeType 大于0的时候开启短信验证 1下行，2上行
 	if requestData.Param.VcodeType > 0 {
-		acc,err := common.GetAccountByUID(uidString)
-		if err != nil && err != sql.ErrNoRows{
+		acc, err := common.GetAccountByUID(uidString)
+		if err != nil && err != sql.ErrNoRows {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
 		switch requestData.Param.VcodeType {
 		case 1:
-			if ok ,errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF);!ok {
+			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
 				log.Info("validate sms code failed")
 				response.SetResponseBase(vcode.ConvSmsErr(errCode))
 				return
 			}
 		case 2:
-			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode);!ok{
+			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode); !ok {
 				log.Info("validate up sms code failed")
 				response.SetResponseBase(resErr)
 				return
@@ -124,17 +124,16 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		}
 	}
 
-
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
 	secret := new(transPrepareSecret)
 
- 	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv,secret);err != nil {
+	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	if  !secret.isValid() {
+	if !secret.isValid() {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -238,7 +237,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	//调用统一提交流程
-	if txid,resErr := common.PrepareLVTTrans(from,to,requestData.Param.TxType,secret.Value);resErr == constants.RC_OK {
+	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value); resErr == constants.RC_OK {
 		response.Data = transPrepareResData{
 			Txid: txid,
 		}
@@ -246,10 +245,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(resErr)
 	}
 
-
-
 }
-
 
 func validateValue(value string) bool {
 	if utils.Str2Float64(value) > 0 {

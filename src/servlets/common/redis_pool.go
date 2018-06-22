@@ -96,7 +96,6 @@ func rdsDel(key string) error {
 	return err
 }
 
-
 func rdsExpire(key string, expire int) error {
 	_, err := rdsDo("EXPIRE", key, expire)
 	return err

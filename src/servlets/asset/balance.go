@@ -19,10 +19,10 @@ type balanceRequest struct {
 }
 
 type balanceResData struct {
-	Balance string `json:"balance"`
-	Locked string `json:"locked"`
+	Balance    string `json:"balance"`
+	Locked     string `json:"locked"`
 	EthBalance string `json:"eth_balance"`
-	EthLocked string `json:"eth_locked"`
+	EthLocked  string `json:"eth_locked"`
 }
 
 // sendVCodeHandler
@@ -76,20 +76,18 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
-	balance,locked, err := common.QueryBalance(uid)
-	ethBalance,ethLocked,err2 := common.QueryBalanceEth(uid)
+	balance, locked, err := common.QueryBalance(uid)
+	ethBalance, ethLocked, err2 := common.QueryBalanceEth(uid)
 	if err != nil || err2 != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = balanceResData{
-			Balance: utils.LVTintToFloatStr(balance),
-			Locked: utils.LVTintToFloatStr(locked),
-			EthBalance:utils.LVTintToFloatStr(ethBalance),
-			EthLocked:utils.LVTintToFloatStr(ethLocked),
+			Balance:    utils.LVTintToFloatStr(balance),
+			Locked:     utils.LVTintToFloatStr(locked),
+			EthBalance: utils.LVTintToFloatStr(ethBalance),
+			EthLocked:  utils.LVTintToFloatStr(ethLocked),
 		}
 	}
-
-
 
 }
 func TokenErr2RcErr(tokenErr int) constants.Error {

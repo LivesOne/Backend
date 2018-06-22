@@ -9,14 +9,12 @@ import (
 	"utils/logger"
 )
 
-
-
 type ethTransCommitParam struct {
 	TradeNo string `json:"trade_no"`
 }
 
 type ethTransCommitRequest struct {
-	Base  *common.BaseInfo  `json:"base"`
+	Base  *common.BaseInfo     `json:"base"`
 	Param *ethTransCommitParam `json:"param"`
 }
 
@@ -87,6 +85,6 @@ func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.
 	}
 
 	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitETHTrans(uidStr,tradeNo))
+	response.SetResponseBase(common.CommitETHTrans(uidStr, tradeNo))
 
 }

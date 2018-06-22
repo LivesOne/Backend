@@ -2,14 +2,14 @@ package accounts
 
 import (
 	"net/http"
+	"regexp"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
+	"strings"
 	"utils"
 	"utils/db_factory"
 	"utils/logger"
-	"regexp"
-	"strings"
 )
 
 type profileSecret struct {

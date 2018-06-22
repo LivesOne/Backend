@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils"
-	"utils/logger"
 	"servlets/token"
 	"time"
+	"utils"
 	"utils/config"
+	"utils/logger"
 )
 
 type withdrawQuotaResponse struct {

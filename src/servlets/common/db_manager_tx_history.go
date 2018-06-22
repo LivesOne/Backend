@@ -179,4 +179,3 @@ func QueryCommitted(query interface{}, limit int) []DTTXHistory {
 	logger.Debug("query res ", utils.ToJSONIndent(res))
 	return res
 }
-

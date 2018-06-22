@@ -3,21 +3,20 @@ package common
 import (
 	"servlets/constants"
 	"utils"
-	"utils/logger"
 	"utils/config"
+	"utils/logger"
 )
-
 
 const (
 	TRANS_TIMEOUT = 10 * 1000
 )
 
-func PrepareLVTTrans(from,to int64,txTpye int,value string)(string,constants.Error){
+func PrepareLVTTrans(from, to int64, txTpye int, value string) (string, constants.Error) {
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("txid is -1  ")
-		return "",constants.RC_SYSTEM_ERR
+		return "", constants.RC_SYSTEM_ERR
 	}
 	txh := DTTXHistory{
 		Id:     txid,
@@ -32,16 +31,12 @@ func PrepareLVTTrans(from,to int64,txTpye int,value string)(string,constants.Err
 	err := InsertPending(&txh)
 	if err != nil {
 		logger.Error("insert mongo db error ", err.Error())
-		return "",constants.RC_SYSTEM_ERR
+		return "", constants.RC_SYSTEM_ERR
 	}
-	return utils.Int642Str(txid),constants.RC_OK
+	return utils.Int642Str(txid), constants.RC_OK
 }
 
-
-
-
-
-func CommitLVTTrans(uidStr,txIdStr string)constants.Error{
+func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
 	perPending, flag := FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
@@ -108,20 +103,20 @@ func CommitLVTTrans(uidStr,txIdStr string)constants.Error{
 	}
 	return constants.RC_OK
 }
-func PrepareETHTrans(from int64,valueStr string,txTpye int,bizContent map[string]string)(string,constants.Error){
-	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE,constants.TRADE_NO_TYPE_BUY_COIN_CARD)//TODO 修改
+func PrepareETHTrans(from int64, valueStr string, txTpye int, bizContent map[string]string) (string, constants.Error) {
+	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_BUY_COIN_CARD) //TODO 修改
 	value := utils.FloatStrToLVTint(valueStr)
-	if err := InsertTradePending(from,tradeNo,utils.ToJSON(bizContent),value,txTpye);err != nil {
-		logger.Error("insert trade pending error",err.Error())
-		return "",constants.RC_SYSTEM_ERR
+	if err := InsertTradePending(from, tradeNo, utils.ToJSON(bizContent), value, txTpye); err != nil {
+		logger.Error("insert trade pending error", err.Error())
+		return "", constants.RC_SYSTEM_ERR
 	}
-	return tradeNo,constants.RC_OK
+	return tradeNo, constants.RC_OK
 }
-func CommitETHTrans(uidStr,tradeNo string)constants.Error{
+func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 
 	uid := utils.Str2Int64(uidStr)
 
-	tp,err := GetTradePendingByTradeNo(tradeNo,uid)
+	tp, err := GetTradePendingByTradeNo(tradeNo, uid)
 	if err != nil {
 		return constants.RC_SYSTEM_ERR
 	}
@@ -130,17 +125,15 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 	}
 	ts := utils.GetTimestamp13()
 
-
 	//暂时写死10秒
 	if ts-tp.Ts > TRANS_TIMEOUT {
 		//删除pending
-		DeleteTradePending(tp.TradeNo,uid,nil)
+		DeleteTradePending(tp.TradeNo, uid, nil)
 		return constants.RC_TRANS_TIMEOUT
 	}
 
-
 	var (
-		to int64
+		to         int64
 		bizContent map[string]string
 	)
 	//识别类型进行操作
@@ -155,14 +148,14 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 	CheckAndInitAsset(to)
 
 	//解析业务数据，拿到具体数值
-	if je := utils.FromJson(tp.BizContent,&bizContent);je != nil {
+	if je := utils.FromJson(tp.BizContent, &bizContent); je != nil {
 		return constants.RC_PARAM_ERR
 	}
-	tx ,err := gDBAsset.Begin()
+	tx, err := gDBAsset.Begin()
 	if err != nil {
 		return constants.RC_SYSTEM_ERR
 	}
-	txId,e := EthTransCommit(uid,to,tp.Value,tp.TradeNo,tp.Type,tx)
+	txId, e := EthTransCommit(uid, to, tp.Value, tp.TradeNo, tp.Type, tx)
 	if txId <= 0 {
 		tx.Rollback()
 		switch e {
@@ -189,16 +182,16 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 			Quota:      quota,
 			Cost:       tp.Value,
 			CreateTime: utils.TXIDToTimeStamp13(txId),
-			Type: constants.WITHDRAW_CARD_TYPE_DIV,
+			Type:       constants.WITHDRAW_CARD_TYPE_DIV,
 		}
 
-		if err = InsertWithdrawalCardUseByTx(wcu,tx);err != nil {
+		if err = InsertWithdrawalCardUseByTx(wcu, tx); err != nil {
 			tx.Rollback()
 			return constants.RC_SYSTEM_ERR
 		}
 		//临时额度
-		if wr := InitUserWithdrawalByTx(uid,tx);wr != nil {
-			if ok,_ := IncomeUserWithdrawalCasualQuotaByTx(uid,quota,tx);!ok{
+		if wr := InitUserWithdrawalByTx(uid, tx); wr != nil {
+			if ok, _ := IncomeUserWithdrawalCasualQuotaByTx(uid, quota, tx); !ok {
 				tx.Rollback()
 				return constants.RC_SYSTEM_ERR
 			}
@@ -211,10 +204,7 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 		return constants.RC_PARAM_ERR
 	}
 
-
-
-
-	err = DeleteTradePending(tp.TradeNo,uid,tx)
+	err = DeleteTradePending(tp.TradeNo, uid, tx)
 	if err != nil {
 		tx.Rollback()
 		return constants.RC_SYSTEM_ERR
@@ -226,5 +216,3 @@ func CommitETHTrans(uidStr,tradeNo string)constants.Error{
 	}
 	return constants.RC_OK
 }
-
-

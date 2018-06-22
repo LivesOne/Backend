@@ -2,15 +2,15 @@ package common
 
 import (
 	"servlets/constants"
-	"utils/logger"
 	"utils"
+	"utils/logger"
 )
 
 const (
-	USE_CARD_KEY_PROXY        = "uc:dl:"
+	USE_CARD_KEY_PROXY = "uc:dl:"
 )
 
-func CheckUserCardLimit(uid int64)(bool, constants.Error){
+func CheckUserCardLimit(uid int64) (bool, constants.Error) {
 	key := USE_CARD_KEY_PROXY + utils.Int642Str(uid)
 	t, e := ttl(key)
 	if e != nil {
@@ -18,7 +18,7 @@ func CheckUserCardLimit(uid int64)(bool, constants.Error){
 		return false, constants.RC_SYSTEM_ERR
 	}
 	if t > 0 {
-		c,e := rdsGet(key)
+		c, e := rdsGet(key)
 		if e != nil {
 			logger.Error("incr error ", e.Error())
 			return false, constants.RC_SYSTEM_ERR
@@ -27,10 +27,10 @@ func CheckUserCardLimit(uid int64)(bool, constants.Error){
 			return false, constants.RC_TOO_MANY_REQ
 		}
 	}
-	return true,constants.RC_OK
+	return true, constants.RC_OK
 }
 
-func AddUseCardLimit(uid int64){
+func AddUseCardLimit(uid int64) {
 	key := USE_CARD_KEY_PROXY + utils.Int642Str(uid)
 	_, e := incr(key)
 	if e != nil {

@@ -47,10 +47,9 @@ func AuthWX(code string) (bool, *wxRes) {
 	}
 
 	if errRes.Errcode > 0 {
-		logger.Error("wx req error",errRes.Errmsg)
+		logger.Error("wx req error", errRes.Errmsg)
 		return false, nil
 	}
-
 
 	res := new(wxRes)
 	if err = utils.FromJson(resBody, res); err != nil {

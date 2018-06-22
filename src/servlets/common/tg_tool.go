@@ -2,9 +2,9 @@ package common
 
 import (
 	"utils"
-	"utils/lvthttp"
 	"utils/config"
 	"utils/logger"
+	"utils/lvthttp"
 )
 
 //valid protocol
@@ -20,11 +20,11 @@ type (
 		Code   string `json:"code"`
 	}
 	tgResData struct {
-		Lvt string `json:"lvt"`
+		Lvt      string `json:"lvt"`
 		Telegram string `json:"telegram"`
 	}
 	tgRes struct {
-		Base *BaseResp `json:"base"`
+		Base *BaseResp  `json:"base"`
 		Data *tgResData `json:"data"`
 	}
 )
@@ -36,7 +36,7 @@ func AuthTG(lvtUid, code string) (bool, *tgRes) {
 	}
 	resStr, err := lvthttp.JsonPost(config.GetConfig().AuthTelegramUrl, reqParam)
 	if err != nil {
-		logger.Error("http request error",err.Error())
+		logger.Error("http request error", err.Error())
 		return false, nil
 	}
 	res := new(tgRes)
@@ -45,7 +45,7 @@ func AuthTG(lvtUid, code string) (bool, *tgRes) {
 		return false, nil
 	}
 	if res.Base == nil {
-		return false,nil
+		return false, nil
 	}
 	return res.Base.RC == 0, res
 }

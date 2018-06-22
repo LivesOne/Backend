@@ -121,7 +121,6 @@ func (handler *autoLoginHandler) checkRequestParams(header *common.HeaderParams,
 	return true
 }
 
-
 func (handler *autoLoginHandler) getUID(aeskey, tokenHash, paramToken string) string {
 
 	// retrive the original token from cache

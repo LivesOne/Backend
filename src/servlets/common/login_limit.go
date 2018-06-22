@@ -1,43 +1,43 @@
 package common
 
 import (
-	"utils"
-	"utils/logger"
-	"utils/config"
 	"math"
+	"utils"
+	"utils/config"
+	"utils/logger"
 )
 
 const (
 	LOGIN_LIMIT_REDIS_PROXY = "login_limit_"
 	PWD_ERR_REDIS_PROXY     = "pwd_err_"
-	MIN_S = 60
+	MIN_S                   = 60
 )
 
-func AddWrongPwd(uid int64) (bool,int){
+func AddWrongPwd(uid int64) (bool, int) {
 	key := PWD_ERR_REDIS_PROXY + utils.Int642Str(uid)
 	inc, err := incr(key)
 	if err != nil {
 		logger.Error("redis incr error", err.Error())
-		return false,0
+		return false, 0
 	}
 	if inc == 1 {
 		rdsExpire(key, DAY_S)
 	}
 
-	c,min := 0,0
+	c, min := 0, 0
 
-	for _,v := range config.GetConfig().LoginPwdErrCntLimit {
+	for _, v := range config.GetConfig().LoginPwdErrCntLimit {
 		if inc >= v.Number && c < v.Number {
 			c = v.Number
 			min = v.Min
 		}
 	}
 
-	if c >0 && min > 0 {
+	if c > 0 && min > 0 {
 		setUserLimt(uid, min*MIN_S)
-		return true,min
+		return true, min
 	}
-	return false,0
+	return false, 0
 }
 
 func CheckUserInLoginLimit(uid int64) (bool, int) {
@@ -51,7 +51,7 @@ func CheckUserInLoginLimit(uid int64) (bool, int) {
 
 	if flag {
 		sec := float64(expire)
-		expire = int(math.Ceil(sec/60))
+		expire = int(math.Ceil(sec / 60))
 	}
 	return flag, expire
 }
@@ -64,11 +64,10 @@ func setUserLimt(uid int64, expire int) {
 	}
 }
 
-
-func ClearUserLimitNum(uid int64){
+func ClearUserLimitNum(uid int64) {
 	key := PWD_ERR_REDIS_PROXY + utils.Int642Str(uid)
 	err := rdsDel(key)
 	if err != nil {
-		logger.Error("redis del error",err.Error())
+		logger.Error("redis del error", err.Error())
 	}
 }

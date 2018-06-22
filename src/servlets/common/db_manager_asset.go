@@ -2,17 +2,17 @@ package common
 
 import (
 	"database/sql"
+	sqlBase "database/sql"
+	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
+	"strconv"
+	"time"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	sqlBase "database/sql"
-	"time"
-	"encoding/json"
-	"strconv"
 )
 
 const (
@@ -1024,7 +1024,6 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			}
 		}
 
-
 		sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, fee, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 		_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txid_lvt, txid_eth, timestamp, timestamp, 0, ethFee, quotaType)
 		if err1 != nil {
@@ -1412,7 +1411,7 @@ func QueryEthTxHistory(uid int64, txid string, tradeType int, begin, end int64, 
 	}
 
 	sql += " union select * from tx_history_eth where `to` = ?"
-	params = append(params,uid)
+	params = append(params, uid)
 	if len(txid) > 0 {
 		sql += " and txid = ?"
 		params = append(params, utils.Str2Int64(txid))

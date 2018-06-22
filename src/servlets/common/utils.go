@@ -11,10 +11,10 @@ import (
 	"utils"
 	"utils/logger"
 
-	"github.com/garyburd/redigo/redis"
-	"strings"
-	"io/ioutil"
 	"fmt"
+	"github.com/garyburd/redigo/redis"
+	"io/ioutil"
+	"strings"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -68,7 +68,7 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 		return true
 	}
 
-	bodyBytes ,err := ioutil.ReadAll(request.Body)
+	bodyBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		logger.Info("ParseHttpBodyParams: read http body error : ", err)
 		return false
@@ -227,7 +227,7 @@ func GenerateTradeNo(type_id, subtype_id int) string {
 		return ""
 	}
 
-	rid = rid%10000
+	rid = rid % 10000
 
 	trade_no := fmt.Sprintf("%s%02d%03d%03d%02d%04d", datetime_str, ver, type_id, subtype_id, cluster_id, rid)
 	return trade_no

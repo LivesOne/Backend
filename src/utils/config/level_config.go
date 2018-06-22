@@ -1,10 +1,10 @@
 package config
 
 import (
-	"path/filepath"
-	"fmt"
-	"utils"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"utils"
 )
 
 const USER_LEVEL_NUM = 5
@@ -154,7 +154,7 @@ func GetLimitByLevel(level int) *UserLevelLimit {
 
 func (cfg *UserLevelConfigInternal) isValid() bool {
 	if len(cfg.LimitMap) < USER_LEVEL_NUM {
-		fmt.Println("level is not enough");
+		fmt.Println("level is not enough")
 		return false
 	}
 

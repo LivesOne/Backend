@@ -9,14 +9,12 @@ import (
 	"utils/logger"
 )
 
-
-
 type withdrawCardUseParam struct {
 	Password string `json:"password"`
 }
 
 type withdrawCardUseRequest struct {
-	Base  *common.BaseInfo  `json:"base"`
+	Base  *common.BaseInfo      `json:"base"`
 	Param *withdrawCardUseParam `json:"param"`
 }
 
@@ -92,40 +90,31 @@ func (handler *withdrawCardUseHandler) Handle(request *http.Request, writer http
 
 	uid := utils.Str2Int64(uidStr)
 
-	if ok,resErr :=common.CheckUserCardLimit(uid);!ok{
+	if ok, resErr := common.CheckUserCardLimit(uid); !ok {
 		response.SetResponseBase(resErr)
 		return
 	}
 
-
-	if card := common.GetUserWithdrawCardByPwd(password);card != nil {
-			ts := utils.GetTimestamp13()
-			if card.ExpireTime > 0 && card.ExpireTime < ts {
-				response.SetResponseBase(constants.RC_USE_CARD_EXPIRE)
-				return
-			}
-			if card.Status == constants.WITHDRAW_CARD_STATUS_USE {
-				response.SetResponseBase(constants.RC_USE_CARD_ALREADY_USED)
-				return
-			}
-			if err := common.UseWithdrawCard(card,uid);err != nil {
-				response.SetResponseBase(constants.RC_SYSTEM_ERR)
-				return
-			}
-			response.Data = withdrawCardUserResData{
-				Quota: utils.LVTintToFloatStr(card.Quota),
-			}
+	if card := common.GetUserWithdrawCardByPwd(password); card != nil {
+		ts := utils.GetTimestamp13()
+		if card.ExpireTime > 0 && card.ExpireTime < ts {
+			response.SetResponseBase(constants.RC_USE_CARD_EXPIRE)
+			return
+		}
+		if card.Status == constants.WITHDRAW_CARD_STATUS_USE {
+			response.SetResponseBase(constants.RC_USE_CARD_ALREADY_USED)
+			return
+		}
+		if err := common.UseWithdrawCard(card, uid); err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		response.Data = withdrawCardUserResData{
+			Quota: utils.LVTintToFloatStr(card.Quota),
+		}
 	} else {
 		common.AddUseCardLimit(uid)
 		response.SetResponseBase(constants.RC_USE_CARD_FAILED)
 	}
-
-
-
-
-
-
-
-
 
 }

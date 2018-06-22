@@ -1,13 +1,13 @@
 package asset
 
 import (
+	"math"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
 	"utils/logger"
-	"math"
 )
 
 type lockRemoveReqData struct {
@@ -16,21 +16,23 @@ type lockRemoveReqData struct {
 
 type lockRemoveParam struct {
 	AuthType int    `json:"auth_type"`
-	Secret string `json:"secret"`
+	Secret   string `json:"secret"`
 }
 
 type lockRemoveSecret struct {
-	Id  string  `json:"id"`
+	Id  string `json:"id"`
 	Pwd string `json:"pwd"`
 }
 
 type resData struct {
 	Cost string `json:"cost"`
 }
-func (lc *lockRemoveSecret)Valid()bool{
-	return len(lc.Id)>0&&
-		len(lc.Pwd) >0
+
+func (lc *lockRemoveSecret) Valid() bool {
+	return len(lc.Id) > 0 &&
+		len(lc.Pwd) > 0
 }
+
 // sendVCodeHandler
 type lockRemoveHandler struct {
 	//header      *common.HeaderParams // request header param
@@ -78,13 +80,13 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
 	}
-	if !utils.SignValid(aesKey,httpHeader.Signature,httpHeader.Timestamp) {
+	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 	secret := new(lockRemoveSecret)
-	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret);err != nil {
+	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
 		log.Error("decode secret error", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -94,7 +96,6 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
@@ -115,18 +116,17 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 	assetLockId := utils.Str2Int64(secret.Id)
 
-	al := common.QueryAssetLock(assetLockId,uid)
+	al := common.QueryAssetLock(assetLockId, uid)
 	//校验锁仓记录是否可以被提前解锁
 	//month > 0 value > 0 end > curr_timestamp
-	if al == nil || !al.IsOk() || al.Type == common.ASSET_LOCK_TYPE_DRAW{
+	if al == nil || !al.IsOk() || al.Type == common.ASSET_LOCK_TYPE_DRAW {
 		response.SetResponseBase(constants.RC_INVALID_LOCK_ID)
 		return
 	}
 
-
 	penaltyMoney := CalculationPenaltyMoney(al)
 
-	log.Info("query asset lock ",utils.ToJSON(al))
+	log.Info("query asset lock ", utils.ToJSON(al))
 
 	txid := common.GenerateTxID()
 
@@ -136,8 +136,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-
-	if ok,e := common.RemoveAssetLock(txid,al,penaltyMoney);ok {
+	if ok, e := common.RemoveAssetLock(txid, al, penaltyMoney); ok {
 		response.Data = resData{
 			Cost: utils.LVTintToFloatStr(penaltyMoney),
 		}
@@ -152,20 +151,15 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		}
 	}
 
-
-
-
-
 }
 
-
-func CalculationPenaltyMoney(al *common.AssetLock)int64{
+func CalculationPenaltyMoney(al *common.AssetLock) int64 {
 	//获取当前时间戳
 	ts := utils.GetTimestamp13()
 	//计算剩余毫秒
 	lts := al.End - ts
 	//剩余毫秒除以月毫秒数，向上取整 计算出m
-	m := math.Ceil(float64(lts)/constants.ASSET_LOCK_MONTH_TIMESTAMP)
+	m := math.Ceil(float64(lts) / constants.ASSET_LOCK_MONTH_TIMESTAMP)
 
 	t := float64(al.Month)
 	//计算系数
@@ -174,7 +168,7 @@ func CalculationPenaltyMoney(al *common.AssetLock)int64{
 	s := float64(utils.LVTintToNamorInt(al.ValueInt))
 	//L=（m/T）*0.5*S
 	//计算后得出的lvt数为float 需要转换成数据库存储的格式
-	l := utils.NamorFloatToLVTint(m/t*a*s)
-	logger.Info("m",m,"t",t,"a",a,"s",s,"m/t*a*s",l)
+	l := utils.NamorFloatToLVTint(m / t * a * s)
+	logger.Info("m", m, "t", t, "a", a, "s", s, "m/t*a*s", l)
 	return l
 }

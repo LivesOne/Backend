@@ -60,8 +60,6 @@ func checkLimit(key string, limit int, incrFlag bool) (bool, constants.Error) {
 	return true, constants.RC_OK
 }
 
-
-
 func CheckPrepareLimit(lvtUid int64, level int) (bool, constants.Error) {
 	key := DAILY_PREPARE_KEY_PROXY + utils.Int642Str(lvtUid)
 	var limit int
@@ -70,7 +68,7 @@ func CheckPrepareLimit(lvtUid int64, level int) (bool, constants.Error) {
 		userLevel := GetTransUserLevel(lvtUid)
 		limitConfig := config.GetLimitByLevel(userLevel)
 		limit = limitConfig.DailyPrepareAccess()
-	}else{
+	} else {
 		limitConfig := getCFG(level)
 		if limitConfig == nil {
 			return false, constants.RC_TOO_MANY_REQ
@@ -88,7 +86,7 @@ func CheckCommitLimit(lvtUid int64, level int) (bool, constants.Error) {
 		userLevel := GetTransUserLevel(lvtUid)
 		limitConfig := config.GetLimitByLevel(userLevel)
 		limit = limitConfig.DailyCommitAccess()
-	}else{
+	} else {
 		limitConfig := getCFG(level)
 		if limitConfig == nil {
 			return false, constants.RC_TOO_MANY_REQ
@@ -226,7 +224,7 @@ func GetTransLevel(uid int64) int {
 func GetTransUserLevel(uid int64) int {
 	key := USER_LEVEL_KEY_PROXY + utils.Int642Str(uid)
 	t, err := ttl(key)
-	logger.Info("ttl key",key,"expire ",t)
+	logger.Info("ttl key", key, "expire ", t)
 	if err != nil {
 		return 0
 	}
@@ -234,13 +232,13 @@ func GetTransUserLevel(uid int64) int {
 	var e error = nil
 	if t < 0 {
 		userLevel = GetUserLevel(uid)
-		logger.Info("key",key,"t ",t,userLevel)
+		logger.Info("key", key, "t ", t, userLevel)
 		if userLevel > -1 {
 			setAndExpire(key, userLevel, DAY_30)
 		}
 	} else {
 		userLevel, e = rdsGet(key)
-		logger.Info("rdsGet key",key,"value ",userLevel)
+		logger.Info("rdsGet key", key, "value ", userLevel)
 		if e != nil {
 			logger.Error("get redis error")
 			return 0
@@ -249,8 +247,7 @@ func GetTransUserLevel(uid int64) int {
 	return userLevel
 }
 
-
-func SetTransUserLevel(uid int64,userLevel int){
+func SetTransUserLevel(uid int64, userLevel int) {
 	key := USER_LEVEL_KEY_PROXY + utils.Int642Str(uid)
 	setAndExpire(key, userLevel, DAY_30)
 }

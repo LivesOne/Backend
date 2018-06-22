@@ -9,8 +9,6 @@ import (
 	"utils/logger"
 )
 
-
-
 type transCommitParam struct {
 	Txid string `json:"txid"`
 }
@@ -86,9 +84,9 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
-	log.Info("txid",txIdStr)
+	log.Info("txid", txIdStr)
 
 	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitLVTTrans(uidStr,txIdStr))
+	response.SetResponseBase(common.CommitLVTTrans(uidStr, txIdStr))
 
 }

@@ -11,7 +11,7 @@ type ethtransResultParam struct {
 }
 
 type ethtransResultRequest struct {
-	Base  *common.BaseInfo  `json:"base"`
+	Base  *common.BaseInfo     `json:"base"`
 	Param *ethtransResultParam `json:"param"`
 }
 

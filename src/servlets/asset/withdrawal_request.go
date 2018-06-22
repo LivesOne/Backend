@@ -1,17 +1,17 @@
 package asset
 
 import (
+	"database/sql"
 	"net/http"
-	"utils/logger"
+	"regexp"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"utils"
-	"database/sql"
-	"utils/vcode"
-	"utils/config"
 	"strings"
-	"regexp"
+	"utils"
+	"utils/config"
+	"utils/logger"
+	"utils/vcode"
 )
 
 type withdrawRequestParams struct {
@@ -162,7 +162,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
 		return
 	}
-	
+
 	withdrawAmount := utils.FloatStrToLVTint(secret.Value)
 	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
 	//提币额度表没有记录，进行初始化

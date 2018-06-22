@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"server"
 	"servlets"
+	"servlets/common"
 	"servlets/log_cleaner"
 	"utils"
 	"utils/config"
 	"utils/logger"
-	"servlets/common"
 )
 
 func main() {

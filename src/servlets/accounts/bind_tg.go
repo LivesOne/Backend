@@ -6,8 +6,8 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/logger"
 	"utils/db_factory"
+	"utils/logger"
 )
 
 type bindTGSecret struct {
@@ -38,7 +38,6 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 	defer log.InfoAll()
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
-
 
 	header := common.ParseHttpHeaderParams(request)
 
@@ -71,10 +70,8 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 
 	uid := utils.Str2Int64(uidString)
 
-
 	requestData := new(bindTGRequest)
 	common.ParseHttpBodyParams(request, requestData)
-
 
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -93,7 +90,7 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	if ok,res := common.AuthTG(uidString,secret.Code);ok {
+	if ok, res := common.AuthTG(uidString, secret.Code); ok {
 
 		err := common.InitAccountExtend(uid)
 		if err != nil {
@@ -101,9 +98,9 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 			return
 		}
 
-		r, err := common.SetTGId(uid,res.Data.Telegram)
+		r, err := common.SetTGId(uid, res.Data.Telegram)
 		if err != nil {
-			if db_factory.CheckDuplicateByColumn(err,"tg_id"){
+			if db_factory.CheckDuplicateByColumn(err, "tg_id") {
 				response.SetResponseBase(constants.RC_DUP_TG_ID)
 				return
 			} else {
@@ -131,6 +128,5 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 		response.SetResponseBase(constants.RC_INVALID_TG_CODE)
 		return
 	}
-
 
 }

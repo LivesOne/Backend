@@ -9,22 +9,19 @@ import (
 	"utils/logger"
 )
 
-
-
-
 type withdrawCardListResData struct {
 	Cards []withdrawCardListRecord `json:"cards"`
 }
 
 type withdrawCardListRecord struct {
-	Id string `json:"id"`
+	Id       string `json:"id"`
 	Password string `json:"password"`
-	Quota string `json:"quota"`
-	Expire int64 `json:"expire"`
-	Cost string `json:"cost"`
-	GetTime int64 `json:"get_time"`
-	UseTime int64 `json:"use_time"`
-	Status int `json:"status"`
+	Quota    string `json:"quota"`
+	Expire   int64  `json:"expire"`
+	Cost     string `json:"cost"`
+	GetTime  int64  `json:"get_time"`
+	UseTime  int64  `json:"use_time"`
+	Status   int    `json:"status"`
 }
 
 // sendVCodeHandler
@@ -85,11 +82,11 @@ func (handler *withdrawCardListHandler) Handle(request *http.Request, writer htt
 
 }
 
-func convRowToWithdrawCardListRecord(rows []map[string]string)[]withdrawCardListRecord{
-	re := make([]withdrawCardListRecord,0)
+func convRowToWithdrawCardListRecord(rows []map[string]string) []withdrawCardListRecord {
+	re := make([]withdrawCardListRecord, 0)
 
-	for _,item := range rows {
-		quota :=  utils.LVTintToFloatStr(utils.Str2Int64(item["quota"]))
+	for _, item := range rows {
+		quota := utils.LVTintToFloatStr(utils.Str2Int64(item["quota"]))
 		cost := utils.LVTintToFloatStr(utils.Str2Int64(item["cost"]))
 		entity := withdrawCardListRecord{
 			Id:       item["id"],
@@ -101,7 +98,7 @@ func convRowToWithdrawCardListRecord(rows []map[string]string)[]withdrawCardList
 			UseTime:  utils.Str2Int64(item["use_time"]),
 			Status:   utils.Str2Int(item["status"]),
 		}
-		re = append(re,entity)
+		re = append(re, entity)
 	}
 	return re
 }

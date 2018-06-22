@@ -1,29 +1,29 @@
 package common
 
 import (
+	"github.com/garyburd/redigo/redis"
 	"servlets/constants"
 	"time"
-	"utils/logger"
 	"utils"
-	"github.com/garyburd/redigo/redis"
+	"utils/logger"
 )
 
-func ListenTxhistoryQueue()  {
+func ListenTxhistoryQueue() {
 
-	for  {
+	for {
 		if redisPool == nil || tSession == nil {
 			logger.Info("push_tx_history_lvt redis/mongo pool not init")
 			time.Sleep(10 * 1e9)
 			continue
 		}
 
-		results, _ := redis.Strings(rdsDo("BLPOP", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME,0))
+		results, _ := redis.Strings(rdsDo("BLPOP", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, 0))
 		if results != nil && len(results) >= 2 {
 			logger.Debug(len(results))
-			logger.Debug("jsonstr:" , results[0], results[1])
+			logger.Debug("jsonstr:", results[0], results[1])
 			txh := new(DTTXHistory)
 
-			if err := utils.FromJson(results[1],txh); err == nil {
+			if err := utils.FromJson(results[1], txh); err == nil {
 				err = InsertCommited(txh)
 				if err != nil {
 					logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
@@ -35,7 +35,7 @@ func ListenTxhistoryQueue()  {
 	}
 }
 
-func PushTxHistoryByTimer()  {
+func PushTxHistoryByTimer() {
 	c := time.Tick(time.Hour * 4)
 	for {
 		if gDBAsset != nil && tSession != nil {
@@ -43,7 +43,7 @@ func PushTxHistoryByTimer()  {
 			before4Hour := time.Now().Add(4 * hour)
 			dTTXHistoryList := QueryTxhistoryLvtTmpByTimie(utils.GetTimestamp13ByTime(before4Hour))
 			if dTTXHistoryList != nil {
-				for _,dTTXHistory := range dTTXHistoryList {
+				for _, dTTXHistory := range dTTXHistoryList {
 					err := InsertCommited(dTTXHistory)
 					if err == nil {
 						DeleteTxhistoryLvtTmpByTxid(dTTXHistory.Id)
@@ -56,6 +56,6 @@ func PushTxHistoryByTimer()  {
 			c = time.Tick(time.Second * 10)
 		}
 
-		<- c
+		<-c
 	}
 }

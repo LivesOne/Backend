@@ -2,11 +2,11 @@ package asset
 
 import (
 	"net/http"
-	"utils/logger"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/logger"
 )
 
 type withdrawListParams struct {
@@ -23,7 +23,7 @@ type withdrawListResponseData struct {
 }
 
 type withdrawListResponse struct {
-	Id         string  `json:"id"`
+	Id         string `json:"id"`
 	TradeNo    string `json:"trade_no"`
 	AssetType  string `json:"asset_type"`
 	Address    string `json:"address"`

@@ -3,9 +3,9 @@ package logger
 import (
 	"fmt"
 	"github.com/alecthomas/log4go"
+	"github.com/google/uuid"
 	"os"
 	"path/filepath"
-	"github.com/google/uuid"
 	"runtime"
 	"strings"
 )
@@ -52,61 +52,59 @@ func Warn(v ...interface{}) {
 	log4go.Warn(v)
 }
 
-
 type LvtLogger struct {
-	LogId string
+	LogId  string
 	LogNow bool
-	infos []interface{}
-
+	infos  []interface{}
 }
 
-func NewLvtLogger(logNow bool,info ...interface{})*LvtLogger{
+func NewLvtLogger(logNow bool, info ...interface{}) *LvtLogger {
 	l := new(LvtLogger)
-	l.infos = make([]interface{},0)
+	l.infos = make([]interface{}, 0)
 	l.LogNow = logNow
 	l.LogId = uuid.New().String()
-	if _, file, _, ok := runtime.Caller(1);ok{
-		fs := strings.Split(file,"/")
-		l.infos = append(l.infos,"file : "+fs[len(fs)-1])
+	if _, file, _, ok := runtime.Caller(1); ok {
+		fs := strings.Split(file, "/")
+		l.infos = append(l.infos, "file : "+fs[len(fs)-1])
 	}
-	if len(info) >0 {
+	if len(info) > 0 {
 		l.Info(info...)
 	}
 	return l
 }
 
-func (l *LvtLogger)Debug(v ...interface{}) {
+func (l *LvtLogger) Debug(v ...interface{}) {
 	if l.LogNow {
-		i := append([]interface{}{l.LogId},v...)
+		i := append([]interface{}{l.LogId}, v...)
 		Debug(i...)
 	}
-	l.infos = append(l.infos,v...)
+	l.infos = append(l.infos, v...)
 }
 
-func (l *LvtLogger)Info(v ...interface{}) {
+func (l *LvtLogger) Info(v ...interface{}) {
 	if l.LogNow {
-		i := append([]interface{}{l.LogId},v...)
+		i := append([]interface{}{l.LogId}, v...)
 		Info(i...)
 	}
-	l.infos = append(l.infos,v...)
+	l.infos = append(l.infos, v...)
 }
 
-func (l *LvtLogger)Warn(v ...interface{}) {
+func (l *LvtLogger) Warn(v ...interface{}) {
 	if l.LogNow {
-		i := append([]interface{}{l.LogId},v...)
+		i := append([]interface{}{l.LogId}, v...)
 		Warn(i...)
 	}
-	l.infos = append(l.infos,v...)
+	l.infos = append(l.infos, v...)
 }
 
-func (l *LvtLogger)Error(v ...interface{}) {
+func (l *LvtLogger) Error(v ...interface{}) {
 	if l.LogNow {
-		i := append([]interface{}{l.LogId},v...)
+		i := append([]interface{}{l.LogId}, v...)
 		Error(i...)
 	}
-	l.infos = append(l.infos,v...)
+	l.infos = append(l.infos, v...)
 }
 
-func (l *LvtLogger)InfoAll() {
+func (l *LvtLogger) InfoAll() {
 	Info(l.infos...)
 }

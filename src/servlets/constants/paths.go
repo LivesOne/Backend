@@ -77,7 +77,7 @@ const (
 
 	ACCOUNT_BIND_WX = "/user/v1/profile/bind_wx"
 
-	ACCOUNT_BIND_TG= "/user/v1/profile/bind_tg"
+	ACCOUNT_BIND_TG = "/user/v1/profile/bind_tg"
 
 	ACCOUNT_PROFILE_USERINFO = "/user/v1/profile/userinfo"
 	// Contacts Sync APIs

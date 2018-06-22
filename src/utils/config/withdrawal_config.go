@@ -1,19 +1,19 @@
 package config
 
 import (
-	"path/filepath"
-	"fmt"
 	"errors"
+	"fmt"
+	"path/filepath"
 	"utils"
 )
 
 type WithdrawalConfig struct {
-	LvtAcceptAccount           int64
-	EthAcceptAccount           int64
+	LvtAcceptAccount               int64
+	EthAcceptAccount               int64
 	WithdrawalCardEthAcceptAccount int64
-	WithdrawalEthFee           float64
-	WithdrawalCardEthUnitPrice float64
-	WithdrawalFromAddress string
+	WithdrawalEthFee               float64
+	WithdrawalCardEthUnitPrice     float64
+	WithdrawalFromAddress          string
 }
 
 var withdrawalConfig *WithdrawalConfig
@@ -28,7 +28,7 @@ func LoadWithdrawalConfig(dir string, cfgName string) error {
 		panic(err)
 	}
 
-	if !withdrawalConfig.isValid(){
+	if !withdrawalConfig.isValid() {
 		err := errors.New("withdrawal config item not integrity")
 		fmt.Println("withdrawal config item not integrity\n", err)
 		fmt.Println("json str --- >", utils.ToJSONIndent(withdrawalConfig))
@@ -39,12 +39,12 @@ func LoadWithdrawalConfig(dir string, cfgName string) error {
 }
 
 func (cfg *WithdrawalConfig) isValid() bool {
-	return cfg.LvtAcceptAccount >0 &&
-		cfg.EthAcceptAccount >0 &&
-		cfg.WithdrawalEthFee >0 &&
-		cfg.WithdrawalCardEthUnitPrice >0&&
-		cfg.WithdrawalCardEthAcceptAccount >0&&
-		len(cfg.WithdrawalFromAddress) >0
+	return cfg.LvtAcceptAccount > 0 &&
+		cfg.EthAcceptAccount > 0 &&
+		cfg.WithdrawalEthFee > 0 &&
+		cfg.WithdrawalCardEthUnitPrice > 0 &&
+		cfg.WithdrawalCardEthAcceptAccount > 0 &&
+		len(cfg.WithdrawalFromAddress) > 0
 }
 
 func GetWithdrawalConfig() *WithdrawalConfig {

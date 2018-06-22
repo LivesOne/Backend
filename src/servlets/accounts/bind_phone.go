@@ -39,7 +39,7 @@ func (handler *bindPhoneHandler) Method() string {
 }
 
 func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-	log := logger.NewLvtLogger(true,"bind phone")
+	log := logger.NewLvtLogger(true, "bind phone")
 	defer log.InfoAll()
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
@@ -47,7 +47,6 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	header := common.ParseHttpHeaderParams(request)
 	requestData := new(bindPhoneRequest)
 	common.ParseHttpBodyParams(request, requestData)
-
 
 	//校验参数合法
 	if (header == nil) || !header.IsValid() ||
@@ -59,7 +58,6 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
@@ -92,16 +90,15 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	//如果这个参数为空，手动重置为下行短信
-	vType:= requestData.Param.VCodeType
+	vType := requestData.Param.VCodeType
 	if vType == 0 {
 		vType = 1
 	}
 
-
 	switch vType {
 	case 1:
 		// 判断手机验证码正确
-		if ok, c := vcode.ValidateSmsAndCallVCode(secret.Phone, secret.Country, requestData.Param.VCode, 0, vcode.FLAG_DEF);!ok {
+		if ok, c := vcode.ValidateSmsAndCallVCode(secret.Phone, secret.Country, requestData.Param.VCode, 0, vcode.FLAG_DEF); !ok {
 			log.Error("bind phone: validate sms and call vcode failed")
 			response.SetResponseBase(vcode.ConvSmsErr(c))
 			return
@@ -117,8 +114,6 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-
-
 	account, err := common.GetAccountByUID(uidString)
 	if err != nil {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
@@ -132,7 +127,7 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 	// check privilege
 	limit := config.GetLimitByLevel(account.Level)
-	if len(account.Phone) > 0 && !limit.ChangePhone(){
+	if len(account.Phone) > 0 && !limit.ChangePhone() {
 		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
 		return
 	}
@@ -151,4 +146,3 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		}
 	}
 }
-

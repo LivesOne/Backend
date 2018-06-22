@@ -9,7 +9,6 @@ import (
 	"utils/logger"
 )
 
-
 type ethtransHistoryParam struct {
 	Txid  string `json:"txid"`
 	Type  int    `json:"type"`
@@ -23,17 +22,17 @@ type ethtransHistoryRequest struct {
 }
 
 type ethtransHistoryResData struct {
-	More    int                  `json:"more"`
+	More    int                     `json:"more"`
 	Records []ethtransHistoryRecord `json:"records"`
 }
 
 type ethtransHistoryRecord struct {
-	Txid  string               `json:"txid"`
-	Type  int                 `json:"type"`
-	From  string              `json:"from"`
-	To    string              `json:"to"`
-	Value string              `json:"value"`
-	Ts    int64               `json:"ts"`
+	Txid  string `json:"txid"`
+	Type  int    `json:"type"`
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Value string `json:"value"`
+	Ts    int64  `json:"ts"`
 }
 
 // sendVCodeHandler
@@ -85,7 +84,7 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 
 	uid := utils.Str2Int64(uidString)
 
-	requestData := new(ethtransHistoryRequest)// request body
+	requestData := new(ethtransHistoryRequest) // request body
 
 	if !common.ParseHttpBodyParams(request, requestData) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -97,7 +96,6 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
 
 	c := DEF_COUNT
 
@@ -112,7 +110,7 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 	//query record
 	//查新c+1条记录，如果len > c 说明more = 1
 
-	dbRecord := common.QueryEthTxHistory(uid,p.Txid,p.Type,p.Begin,p.End,c+1)
+	dbRecord := common.QueryEthTxHistory(uid, p.Txid, p.Type, p.Begin, p.End, c+1)
 
 	resData := &ethtransHistoryResData{
 		More:    0,
@@ -133,11 +131,10 @@ func (handler *ethtransHistoryHandler) Handle(request *http.Request, writer http
 
 }
 
+func convRowToTxHistoryRecord(rows []map[string]string) []ethtransHistoryRecord {
+	re := make([]ethtransHistoryRecord, 0)
 
-func convRowToTxHistoryRecord(rows []map[string]string)[]ethtransHistoryRecord{
-	re := make([]ethtransHistoryRecord,0)
-
-	for _,item := range rows {
+	for _, item := range rows {
 		value := utils.Str2Int64(item["value"])
 		entity := ethtransHistoryRecord{
 			Txid:  item["txid"],
@@ -147,16 +144,15 @@ func convRowToTxHistoryRecord(rows []map[string]string)[]ethtransHistoryRecord{
 			Value: utils.LVTintToFloatStr(value),
 			Ts:    utils.Str2Int64(item["ts"]),
 		}
-		re = append(re,entity)
+		re = append(re, entity)
 	}
 	return re
 }
 
-
 func validateEthType(t int) bool {
 	if t == constants.TX_TYPE_ALL ||
 		(t >= constants.TX_TYPE_RECHANGE &&
-		 t <= constants.TX_TYPE_BUY_COIN_CARD){
+			t <= constants.TX_TYPE_BUY_COIN_CARD) {
 		return true
 	}
 	return false

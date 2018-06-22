@@ -41,8 +41,6 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-
-
 	// retrive the original token from cache
 	_, aesKey, tokenCache, errT := token.GetAll(header.TokenHash)
 	if (errT != constants.ERR_INT_OK) || (len(aesKey) != constants.AES_totalLen) {
@@ -64,7 +62,6 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-
 	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
@@ -76,4 +73,3 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 	}
 }
-

@@ -6,8 +6,8 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/logger"
 	"utils/db_factory"
+	"utils/logger"
 )
 
 type bindWXSecret struct {
@@ -40,7 +40,6 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
 
-
 	header := common.ParseHttpHeaderParams(request)
 
 	// fmt.Println("modify user profile: 111 \n", utils.ToJSONIndent(header), utils.ToJSONIndent(requestData))
@@ -72,10 +71,8 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 
 	uid := utils.Str2Int64(uidString)
 
-
 	requestData := new(bindWXRequest)
 	common.ParseHttpBodyParams(request, requestData)
-
 
 	if len(aesKey) != constants.AES_totalLen {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -94,7 +91,7 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	if ok,res := common.AuthWX(secret.Code);ok {
+	if ok, res := common.AuthWX(secret.Code); ok {
 
 		err := common.InitAccountExtend(uid)
 		if err != nil {
@@ -102,10 +99,10 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 			return
 		}
 
-		r, err := common.SetWxId(uid,res.Openid,res.Unionid)
+		r, err := common.SetWxId(uid, res.Openid, res.Unionid)
 		if err != nil {
-			if db_factory.CheckDuplicateByColumn(err,"wx_openid") ||
-				db_factory.CheckDuplicateByColumn(err,"wx_unionid"){
+			if db_factory.CheckDuplicateByColumn(err, "wx_openid") ||
+				db_factory.CheckDuplicateByColumn(err, "wx_unionid") {
 				response.SetResponseBase(constants.RC_DUP_WX_ID)
 				return
 			} else {
@@ -128,6 +125,5 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 		response.SetResponseBase(constants.RC_INVALID_WX_CODE)
 		return
 	}
-
 
 }
