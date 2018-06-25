@@ -130,7 +130,7 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			}else {
 				// set unbind time
-				common.SetUnbindLimt(uid)
+				common.SetUnbindLimt(uid,param.Mid)
 			}
 		}
 	}

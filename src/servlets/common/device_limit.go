@@ -12,12 +12,12 @@ const (
 	DEVICE_LOCK_EXPIRE   = 50 * 5
 )
 
-func SetUnbindLimt(uid int64) {
-	key := DEVICE_UNBIND_PROXY + utils.Int642Str(uid)
+func SetUnbindLimt(uid int64,mid int) {
+	key := DEVICE_UNBIND_PROXY + utils.Int642Str(uid)+":"+utils.Int2Str(mid)
 	setAndExpire(key, 1, DEVICE_UNBIND_EXPIRE)
 }
-func CheckUnbindLimit(uid int64) bool {
-	key := DEVICE_UNBIND_PROXY + utils.Int642Str(uid)
+func CheckUnbindLimit(uid int64,mid int) bool {
+	key := DEVICE_UNBIND_PROXY + utils.Int642Str(uid)+":"+utils.Int2Str(mid)
 	i, e := ttl(key)
 	if e != nil {
 		logger.Error("ttl redis error", e.Error())

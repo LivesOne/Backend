@@ -94,7 +94,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 
 	uid := utils.Str2Int64(uidStr)
 
-	if common.CheckUnbindLimit(uid) {
+	if common.CheckUnbindLimit(uid,param.Mid) {
 		response.SetResponseBase(constants.RC_DEVICE_BIND_TOO_SHORT)
 		return
 	}

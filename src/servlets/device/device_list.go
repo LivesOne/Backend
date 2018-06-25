@@ -95,7 +95,6 @@ func convDevicelistToMiners(deviceList []common.DtDevice, uid int64) []miners {
 			m = miners{
 				Mid:            v.Mid,
 				Plat:           v.Plat,
-				IsValid: 		!common.CheckUnbindLimit(uid),
 				Devices:        make([]minerDevice, 0),
 			}
 		}
@@ -122,9 +121,9 @@ func convDevicelistToMiners(deviceList []common.DtDevice, uid int64) []miners {
 		if !ok {
 			m = miners{
 				Mid: i,
-				IsValid:true,
 			}
 		}
+		m.IsValid = !common.CheckUnbindLimit(uid,m.Mid)
 		res = append(res, m)
 	}
 
