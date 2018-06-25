@@ -138,7 +138,7 @@ func QueryUserAllDevice(uid int64) ([]DtDevice ,error){
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := []DtDevice{}
-	err := collection.Find(bson.M{"uid":uid}).All(res)
+	err := collection.Find(bson.M{"uid":uid}).All(&res)
 	if err != nil {
 		logger.Error("query mongo db error", err.Error())
 		return nil, err
