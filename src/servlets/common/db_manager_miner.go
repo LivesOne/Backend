@@ -104,3 +104,44 @@ func InsertDeviceBindHistory(device *DtDevice) error {
 	ddh.Build(device)
 	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE_HISTORY, ddh)
 }
+
+
+func QueryDeviceByDid(did string) (*DtDevice ,error){
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
+	res := new(DtDevice)
+	err := collection.Find(bson.M{"did":did}).One(res)
+	if err != nil {
+		logger.Error("query mongo db error", err.Error())
+		return nil, err
+	}
+	return res, nil
+}
+
+func GetLastUnbindDeviceTs(uid int64,mid int) (int64 ,error){
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE_HISTORY)
+	res := new(DtDeviceHistory)
+	err := collection.Find(bson.M{"uid":uid,"mid":mid}).Sort("-unbind_ts").Limit(1).One(res)
+	if err != nil {
+		logger.Error("query mongo db error", err.Error())
+		return 0, err
+	}
+	return res.UnbindTs, nil
+}
+
+
+func QueryUserAllDevice(uid int64) ([]DtDevice ,error){
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
+	res := []DtDevice{}
+	err := collection.Find(bson.M{"uid":uid}).All(res)
+	if err != nil {
+		logger.Error("query mongo db error", err.Error())
+		return nil, err
+	}
+	return res, nil
+}

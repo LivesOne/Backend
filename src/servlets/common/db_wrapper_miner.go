@@ -20,15 +20,15 @@ import (
 
 type (
 	DtDevice struct {
-		Id     bson.ObjectId `bson:"_id,omitempty"`
-		Uid    int64         `bson:"uid,omitempty"`
-		Mid    int           `bson:"mid,omitempty"`
-		Plat   int           `bson:"plat,omitempty"`
-		Appid  int           `bson:"appid,omitempty"`
-		Did    string        `bson:"did,omitempty"`
-		Dn     string        `bson:"dn,omitempty"`
-		OsVer  string        `bson:"os_ver,omitempty"`
-		BindTs int64         `bson:"bind_ts,omitempty"`
+		Id     bson.ObjectId `bson:"_id,omitempty" json:"-"`
+		Uid    int64         `bson:"uid,omitempty" json:"uid"`
+		Mid    int           `bson:"mid,omitempty" json:"mid"`
+		Plat   int           `bson:"plat,omitempty" json:"plat"`
+		Appid  int           `bson:"appid,omitempty" json:"appid"`
+		Did    string        `bson:"did,omitempty" json:"-"`
+		Dn     string        `bson:"dn,omitempty" json:"dn"`
+		OsVer  string        `bson:"os_ver,omitempty" json:"os_version"`
+		BindTs int64         `bson:"bind_ts,omitempty" json:"bind_ts"`
 	}
 	DtDeviceHistory struct {
 		DtDevice
