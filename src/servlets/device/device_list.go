@@ -7,8 +7,8 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/logger"
 	"utils/config"
+	"utils/logger"
 )
 
 type minerDevice struct {
@@ -20,10 +20,10 @@ type minerDevice struct {
 }
 
 type miners struct {
-	Mid            int           `json:"mid"`
-	Plat           int           `json:"plat"`
-	LastUnbindTime int64         `json:"last_unbind_time"`
-	Devices        []minerDevice `json:"devices"`
+	Mid     int           `json:"mid"`
+	Plat    int           `json:"plat"`
+	IsValid bool          `json:"is_valid"`
+	Devices []minerDevice `json:"devices"`
 }
 
 // sendVCodeHandler
@@ -76,34 +76,29 @@ func (handler *deviceListHandler) Handle(request *http.Request, writer http.Resp
 
 	uid := utils.Str2Int64(uidStr)
 
-	deviceAllList,err := common.QueryUserAllDevice(uid)
+	deviceAllList, err := common.QueryUserAllDevice(uid)
 	if err != nil && err != mgo.ErrNotFound {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	response.Data = convDevicelistToMiners(deviceAllList,uid)
+	response.Data = convDevicelistToMiners(deviceAllList, uid)
 
 }
 
-func convDevicelistToMiners(deviceList []common.DtDevice,uid int64)[]miners{
+func convDevicelistToMiners(deviceList []common.DtDevice, uid int64) []miners {
 
-	cache := make(map[int]miners,0)
+	cache := make(map[int]miners, 0)
 
-	for _,v := range deviceList {
-		m,ok := cache[v.Mid]
+	for _, v := range deviceList {
+		m, ok := cache[v.Mid]
 		if !ok {
-			unbindTs,err := common.GetLastUnbindDeviceTs(v.Uid,v.Mid)
-			if err != nil && err != mgo.ErrNotFound {
-				logger.Error("query mongo err",err.Error())
-			}
 			m = miners{
 				Mid:            v.Mid,
 				Plat:           v.Plat,
-				LastUnbindTime: unbindTs,
-				Devices:        make([]minerDevice,0),
+				IsValid: 		!common.CheckUnbindLimit(uid),
+				Devices:        make([]minerDevice, 0),
 			}
 		}
-
 
 		mm := minerDevice{
 			Appid:    v.Appid,
@@ -112,7 +107,7 @@ func convDevicelistToMiners(deviceList []common.DtDevice,uid int64)[]miners{
 			OsServer: v.OsVer,
 			BindTime: v.BindTs,
 		}
-		m.Devices = append(m.Devices,mm)
+		m.Devices = append(m.Devices, mm)
 		cache[v.Mid] = m
 	}
 
@@ -120,17 +115,16 @@ func convDevicelistToMiners(deviceList []common.DtDevice,uid int64)[]miners{
 
 	ulc := config.GetLimitByLevel(ul)
 
+	res := make([]miners, 0)
 
-	res := make([]miners,0)
-
-	for i := 0;i<ulc.MinerIndexSize();i++ {
-		m,ok := cache[i]
+	for i := 0; i < ulc.MinerIndexSize(); i++ {
+		m, ok := cache[i]
 		if !ok {
 			m = miners{
-				Mid:            i,
+				Mid: i,
 			}
 		}
-		res = append(res,m)
+		res = append(res, m)
 	}
 
 	return res
