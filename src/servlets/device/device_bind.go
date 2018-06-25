@@ -9,6 +9,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"utils/config"
 )
 
 type deviceBindParam struct {
@@ -136,6 +137,16 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_DEVICE_DUP_BIND)
 		return
 	}
+
+
+	ul := common.GetTransUserLevel(uid)
+	ulc := config.GetLimitByLevel(ul)
+	if param.Mid >= ulc.MinerIndexSize() {
+		log.Error("bind device mid index error",param.Mid,"mast <",ulc.MinerIndexSize())
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 
 	// check lock uid,did
 
