@@ -21,8 +21,12 @@ type UserLevelLimit struct {
 	dailyCommitAccess      int
 	dailyWithdrawalQuota   int64
 	monthlyWithdrawalQuota int64
+	minerIndexSize         int
 }
 
+func (limit *UserLevelLimit) MinerIndexSize() int {
+	return limit.minerIndexSize
+}
 func (limit *UserLevelLimit) ChangePhone() bool {
 	return limit.changePhone
 }
@@ -83,6 +87,7 @@ type UserLevelLimitInternal struct {
 	DailyCommitAccess      int
 	DailyWithdrawalQuota   int64
 	MonthlyWithdrawalQuota int64
+	MinerIndexSize         int
 }
 
 type UserLevelConfigInternal struct {
@@ -102,6 +107,7 @@ var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit{
 	dailyCommitAccess:      0,
 	dailyWithdrawalQuota:   0,
 	monthlyWithdrawalQuota: 0,
+	minerIndexSize:         0,
 }
 
 /*func GetLevelConfig() *UserLevelConfig {
@@ -140,6 +146,7 @@ func LoadLevelConfig(dir string, cfgName string) error {
 			dailyCommitAccess:      v.DailyCommitAccess,
 			dailyWithdrawalQuota:   v.DailyWithdrawalQuota,
 			monthlyWithdrawalQuota: v.MonthlyWithdrawalQuota,
+			minerIndexSize:         v.MinerIndexSize,
 		}
 	}
 	return nil

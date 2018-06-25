@@ -8,6 +8,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"utils/config"
 )
 
 type minerDevice struct {
@@ -80,11 +81,11 @@ func (handler *deviceListHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	response.Data = convDevicelistToMiners(deviceAllList)
+	response.Data = convDevicelistToMiners(deviceAllList,uid)
 
 }
 
-func convDevicelistToMiners(deviceList []common.DtDevice)[]miners{
+func convDevicelistToMiners(deviceList []common.DtDevice,uid int64)[]miners{
 
 	cache := make(map[int]miners,0)
 
@@ -115,13 +116,22 @@ func convDevicelistToMiners(deviceList []common.DtDevice)[]miners{
 		cache[v.Mid] = m
 	}
 
-	if len(cache) == 0 {
-		return nil
-	}
+	ul := common.GetTransUserLevel(uid)
+
+	ulc := config.GetLimitByLevel(ul)
+
 
 	res := make([]miners,0)
-	for _,v := range cache {
-		res = append(res,v)
+
+	for i := 0;i<ulc.MinerIndexSize();i++ {
+		m,ok := cache[i]
+		if !ok {
+			m = miners{
+				Mid:            i,
+			}
+		}
+		res = append(res,m)
 	}
+
 	return res
 }

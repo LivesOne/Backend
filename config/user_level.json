@@ -11,7 +11,8 @@
       "DailyPrepareAccess": 0,
       "DailyCommitAccess": 0,
       "DailyWithdrawalQuota": 0,
-      "MonthlyWithdrawalQuota": 0
+      "MonthlyWithdrawalQuota": 0,
+      "MinerIndexSize":1
     },
     "1":{
       "ChangePhone": true,
@@ -24,7 +25,8 @@
       "DailyPrepareAccess": 0,
       "DailyCommitAccess": 0,
       "DailyWithdrawalQuota": 0,
-      "MonthlyWithdrawalQuota": 0
+      "MonthlyWithdrawalQuota": 0,
+      "MinerIndexSize":2
     },
     "2":{
       "ChangePhone": true,
@@ -37,7 +39,8 @@
       "DailyPrepareAccess": 3,
       "DailyCommitAccess": 2,
       "DailyWithdrawalQuota": 200,
-      "MonthlyWithdrawalQuota": 200
+      "MonthlyWithdrawalQuota": 200,
+      "MinerIndexSize":3
     },
     "3":{
       "ChangePhone": true,
@@ -50,7 +53,8 @@
       "DailyPrepareAccess": 7,
       "DailyCommitAccess": 5,
       "DailyWithdrawalQuota": 300,
-      "MonthlyWithdrawalQuota": 300
+      "MonthlyWithdrawalQuota": 300,
+      "MinerIndexSize":4
     },
     "4":{
       "ChangePhone": true,
@@ -63,7 +67,8 @@
       "DailyPrepareAccess": 14,
       "DailyCommitAccess": 10,
       "DailyWithdrawalQuota": 400,
-      "MonthlyWithdrawalQuota": 400
+      "MonthlyWithdrawalQuota": 400,
+      "MinerIndexSize":5
     }
   }
 }
