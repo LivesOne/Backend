@@ -24,16 +24,16 @@ func InitMinerRMongoDB() {
 	connStr := fmt.Sprintf("%s?maxPoolSize=%d", minerdbc.DBHost, minerdbc.MaxConn)
 	logger.Info("conn mongo db ---> ", connStr)
 	var err error
-	tSession, err = mgo.Dial(connStr)
+	mSession, err = mgo.Dial(connStr)
 	if err != nil {
 		logger.Error("connect failed ", err.Error())
 		return
 	}
-	tSession.SetPoolLimit(minerdbc.MaxConn)
+	mSession.SetPoolLimit(minerdbc.MaxConn)
 }
 
 func minerCommonInsert(db, c string, p interface{}) error {
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	session.SetSafe(&mgo.Safe{WMode: "majority"})
 	collection := session.DB(db).C(c)
@@ -45,14 +45,14 @@ func minerCommonInsert(db, c string, p interface{}) error {
 }
 
 func minerCommitDelete(db, c string, id bson.ObjectId) error {
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(db).C(c)
 	return collection.RemoveId(id)
 }
 
 func QueryMinerBindDevice(query bson.M) ([]DtDevice, error) {
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := []DtDevice{}
@@ -65,7 +65,7 @@ func QueryMinerBindDevice(query bson.M) ([]DtDevice, error) {
 }
 
 func QueryMinerBindDeviceCount(query bson.M) (int, error) {
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	count, err := collection.Find(query).Count()
@@ -81,7 +81,7 @@ func InsertDeviceBind(device *DtDevice) error {
 }
 
 func QueryDevice(uid int64,mid int,did string) (*DtDevice ,error){
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := new(DtDevice)
@@ -93,7 +93,7 @@ func QueryDevice(uid int64,mid int,did string) (*DtDevice ,error){
 	return res, nil
 }
 func DeleteDevice(uid int64,mid,appid int,did string) error{
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	return collection.Remove(bson.M{"uid":uid,"did":did,"mid":mid,"appid":appid})
@@ -107,7 +107,7 @@ func InsertDeviceBindHistory(device *DtDevice) error {
 
 
 func QueryDeviceByDid(did string) (*DtDevice ,error){
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := new(DtDevice)
@@ -120,7 +120,7 @@ func QueryDeviceByDid(did string) (*DtDevice ,error){
 }
 
 func GetLastUnbindDeviceTs(uid int64,mid int) (int64 ,error){
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE_HISTORY)
 	res := new(DtDeviceHistory)
@@ -134,7 +134,7 @@ func GetLastUnbindDeviceTs(uid int64,mid int) (int64 ,error){
 
 
 func QueryUserAllDevice(uid int64) ([]DtDevice ,error){
-	session := tSession.Clone()
+	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := []DtDevice{}
