@@ -27,7 +27,7 @@ type (
 		Appid  int           `bson:"appid,omitempty" json:"appid"`
 		Did    string        `bson:"did,omitempty" json:"-"`
 		Dn     string        `bson:"dn,omitempty" json:"dn"`
-		OsVer  string        `bson:"os_ver,omitempty" json:"os_version"`
+		OsVer  string        `bson:"os_ver,omitempty" json:"os_ver"`
 		BindTs int64         `bson:"bind_ts,omitempty" json:"bind_ts"`
 	}
 	DtDeviceHistory struct {

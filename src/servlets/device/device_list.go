@@ -15,7 +15,7 @@ type minerDevice struct {
 	Appid    int    `json:"appid"`
 	Did      string `json:"did"`
 	Dn       string `json:"dn"`
-	OsServer string `json:"os_server"`
+	OsServer string `json:"os_ver"`
 	BindTime int64  `json:"bind_time"`
 }
 

@@ -18,7 +18,7 @@ type deviceBindParam struct {
 	Plat      int    `json:"plat"`
 	Did       string `json:"did"`
 	Dn        string `json:"dn"`
-	OsVersion string `json:"os_version"`
+	OsVersion string `json:"os_ver"`
 }
 
 func (dbp *deviceBindParam) Validate() bool {
