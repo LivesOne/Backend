@@ -122,6 +122,7 @@ func convDevicelistToMiners(deviceList []common.DtDevice, uid int64) []miners {
 		if !ok {
 			m = miners{
 				Mid: i,
+				IsValid:true,
 			}
 		}
 		res = append(res, m)
