@@ -160,7 +160,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		}
 	}
 
-
+	log.Debug(from,to,txType)
 	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
 	switch txType {
 	case constants.TX_TYPE_TRANS:
