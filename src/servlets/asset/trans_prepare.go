@@ -30,7 +30,7 @@ type transPrepareSecret struct {
 }
 
 func (tps *transPrepareSecret) isValid() bool {
-	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Pwd) > 0
+	return len(tps.Value) > 0 && len(tps.Pwd) > 0
 }
 
 type transPrepareRequest struct {
