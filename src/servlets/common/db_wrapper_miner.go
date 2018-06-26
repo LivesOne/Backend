@@ -31,12 +31,28 @@ type (
 		BindTs int64         `bson:"bind_ts,omitempty" json:"bind_ts"`
 	}
 	DtDeviceHistory struct {
-		DtDevice
+		Id     bson.ObjectId `bson:"_id,omitempty" json:"-"`
+		Uid    int64         `bson:"uid,omitempty" json:"uid"`
+		Mid    int           `bson:"mid,omitempty" json:"mid"`
+		Plat   int           `bson:"plat,omitempty" json:"plat"`
+		Appid  int           `bson:"appid,omitempty" json:"appid"`
+		Did    string        `bson:"did,omitempty" json:"-"`
+		Dn     string        `bson:"dn,omitempty" json:"dn"`
+		OsVer  string        `bson:"os_ver,omitempty" json:"os_ver"`
+		BindTs int64         `bson:"bind_ts,omitempty" json:"bind_ts"`
 		UnbindTs int64 `bson:"unbind_ts,omitempty"`
 	}
 )
 
 func (ddh *DtDeviceHistory) Build(dd *DtDevice) {
 	ddh.UnbindTs = utils.GetTimestamp13()
-	ddh.DtDevice = *dd
+	ddh.Id = dd.Id
+	ddh.Uid = dd.Uid
+	ddh.Mid = dd.Mid
+	ddh.Plat = dd.Plat
+	ddh.Appid = dd.Appid
+	ddh.Did = dd.Did
+	ddh.Dn = dd.Dn
+	ddh.OsVer = dd.OsVer
+	ddh.BindTs = dd.BindTs
 }
