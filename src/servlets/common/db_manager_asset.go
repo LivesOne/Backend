@@ -1349,7 +1349,7 @@ func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse, tx *sql.Tx) error {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
-	_, err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time,type,currency) values (?,?,?,?,?,?,?)",
+	_, err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time,type,currency,txid) values (?,?,?,?,?,?,?,?)",
 		wcu.TradeNo,
 		wcu.Uid,
 		wcu.Quota,
@@ -1357,6 +1357,7 @@ func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse, tx *sql.Tx) error {
 		wcu.CreateTime,
 		wcu.Type,
 		wcu.Currency,
+		wcu.Txid,
 	)
 	return err
 }
