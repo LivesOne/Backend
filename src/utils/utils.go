@@ -227,6 +227,7 @@ func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 		logger.Error("json Unmarshal error ", err.Error())
 		return err
 	}
+	logger.Debug("decode secret",ToJSON(secretPtr))
 	return nil
 
 }
