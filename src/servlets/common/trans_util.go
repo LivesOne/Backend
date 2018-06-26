@@ -11,7 +11,7 @@ const (
 	TRANS_TIMEOUT = 10 * 1000
 )
 
-func PrepareLVTTrans(from, to int64, txTpye int, value string) (string, constants.Error) {
+func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (string, constants.Error) {
 	txid := GenerateTxID()
 
 	if txid == -1 {
@@ -19,14 +19,15 @@ func PrepareLVTTrans(from, to int64, txTpye int, value string) (string, constant
 		return "", constants.RC_SYSTEM_ERR
 	}
 	txh := DTTXHistory{
-		Id:     txid,
-		Status: constants.TX_STATUS_DEFAULT,
-		Type:   txTpye,
-		From:   from,
-		To:     to,
-		Value:  utils.FloatStrToLVTint(value),
-		Ts:     utils.TXIDToTimeStamp13(txid),
-		Code:   constants.TX_CODE_SUCC,
+		Id:         txid,
+		Status:     constants.TX_STATUS_DEFAULT,
+		Type:       txTpye,
+		From:       from,
+		To:         to,
+		Value:      utils.FloatStrToLVTint(value),
+		Ts:         utils.TXIDToTimeStamp13(txid),
+		Code:       constants.TX_CODE_SUCC,
+		BizContent: bizContent,
 	}
 	err := InsertPending(&txh)
 	if err != nil {
@@ -79,12 +80,38 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 			DeletePendingByInfo(perPending)
 			//不删除数据库中的txid
 
-			if perPending.Type == constants.TX_TYPE_TRANS {
-				//common.RemoveTXID(txid)
+			//识别类型进行操作
+			switch perPending.Type {
+			case constants.TX_TYPE_TRANS:
 				if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
 					SetTotalTransfer(perPending.From, perPending.Value)
 				}
+			case constants.TX_TYPE_BUY_COIN_CARD:
+				var bizContent map[string]string
+				utils.FromJson(perPending.BizContent,&bizContent)
+				quota := utils.FloatStrToLVTint(bizContent["quota"])
+				// 用卡记录
+				wcu := &UserWithdrawalCardUse{
+					TradeNo:    GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_BUY_COIN_CARD),
+					Uid:        uid,
+					Quota:      quota,
+					Cost:       perPending.Value,
+					CreateTime: utils.TXIDToTimeStamp13(txid),
+					Type:       constants.WITHDRAW_CARD_TYPE_DIV,
+					Currency: 	CURRENCY_LVT,
+				}
 
+				if err = InsertWithdrawalCardUse(wcu); err != nil {
+					return constants.RC_SYSTEM_ERR
+				}
+				//临时额度
+				if wr := InitUserWithdrawal(uid); wr != nil {
+					if ok, _ := IncomeUserWithdrawalCasualQuota(uid, quota); !ok {
+						return constants.RC_SYSTEM_ERR
+					}
+				} else {
+					return constants.RC_SYSTEM_ERR
+				}
 			}
 		}
 
@@ -183,6 +210,7 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 			Cost:       tp.Value,
 			CreateTime: utils.TXIDToTimeStamp13(txId),
 			Type:       constants.WITHDRAW_CARD_TYPE_DIV,
+			Currency: CURRENCY_ETH,
 		}
 
 		if err = InsertWithdrawalCardUseByTx(wcu, tx); err != nil {

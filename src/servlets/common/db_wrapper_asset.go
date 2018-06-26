@@ -7,6 +7,8 @@ import (
 const (
 	ASSET_LOCK_TYPE_NOR  = 0
 	ASSET_LOCK_TYPE_DRAW = 1
+	CURRENCY_LVT = "LVT"
+	CURRENCY_ETH = "ETH"
 )
 
 type (
@@ -67,6 +69,7 @@ type (
 		CostStr    string `json:"cost"`
 		CreateTime int64  `json:"create_time"`
 		Type       int    `json:"type"`
+		Currency   string `json:"currency"`
 	}
 
 	UserWithdrawalRequest struct {

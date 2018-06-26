@@ -182,6 +182,11 @@ func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
+
+
+
+
+
 	return true, constants.TRANS_ERR_SUCC
 }
 
@@ -911,24 +916,14 @@ func IncomeUserWithdrawalCasualQuotaByTx(uid int64, incomeCasual int64, tx *sql.
 }
 
 func InitUserWithdrawal(uid int64) *UserWithdrawalQuota {
-	level := GetTransUserLevel(uid)
-	limitConfig := config.GetLimitByLevel(level)
-	day, month := limitConfig.DailyWithdrawalQuota()*utils.CONV_LVT,
-		limitConfig.MonthlyWithdrawalQuota()*utils.CONV_LVT
-	_, err := CreateUserWithdrawalQuota(uid, day, month, level)
-	if err != nil {
-		logger.Error("insert user withdrawal quota error for user:", uid)
-		return nil
-	}
-	return &UserWithdrawalQuota{
-		Day:       day,
-		Month:     month,
-		Casual:    0,
-		DayExpend: 0,
-	}
+	return InitUserWithdrawalByTx(uid,nil)
 }
 
 func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
+	if tx == nil {
+		tx,_ := gDBAsset.Begin()
+		defer tx.Commit()
+	}
 	level := GetTransUserLevel(uid)
 	limitConfig := config.GetLimitByLevel(level)
 	day, month := limitConfig.DailyWithdrawalQuota()*utils.CONV_LVT,
@@ -1354,13 +1349,14 @@ func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse, tx *sql.Tx) error {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
-	_, err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time,type) values (?,?,?,?,?,?)",
+	_, err := tx.Exec("insert into user_withdrawal_card_use (trade_no,uid,quota,cost,create_time,type,currency) values (?,?,?,?,?,?,?)",
 		wcu.TradeNo,
 		wcu.Uid,
 		wcu.Quota,
 		wcu.Cost,
 		wcu.CreateTime,
 		wcu.Type,
+		wcu.Currency,
 	)
 	return err
 }
@@ -1477,6 +1473,7 @@ func UseWithdrawCard(card *UserWithdrawCard, uid int64) error {
 		Cost:       card.Cost,
 		CreateTime: ts,
 		Type:       constants.WITHDRAW_CARD_TYPE_FULL,
+		Currency: "",
 	}
 
 	if err = InsertWithdrawalCardUseByTx(wcu, tx); err != nil {

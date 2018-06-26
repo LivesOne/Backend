@@ -26,6 +26,7 @@ type transPrepareSecret struct {
 	To    string `json:"to"`
 	Value string `json:"value"`
 	Pwd   string `json:"pwd"`
+	BizContent map[string]string `json:"biz_content"`
 }
 
 func (tps *transPrepareSecret) isValid() bool {
@@ -145,14 +146,15 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	from := utils.Str2Int64(uidString)
 	to := utils.Str2Int64(secret.To)
+	txType := requestData.Param.TxType
 
 	//不能给自己转账，不能转无效用户
-	if from == to || !common.ExistsUID(to) {
+	if from == to || (!common.ExistsUID(to) && txType != constants.TX_TYPE_BUY_COIN_CARD) {
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
 
-	txType := requestData.Param.TxType
+
 
 	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
 	switch txType {
@@ -231,13 +233,19 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
+	case constants.TX_TYPE_BUY_COIN_CARD:
+		if len(secret.BizContent["quota"]) == 0 {
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+		to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
+	bizContent :=  utils.ToJSON(secret.BizContent)
 	//调用统一提交流程
-	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value); resErr == constants.RC_OK {
+	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value,bizContent); resErr == constants.RC_OK {
 		response.Data = transPrepareResData{
 			Txid: txid,
 		}
