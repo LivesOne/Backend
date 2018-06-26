@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"gopkg.in/mgo.v2"
 )
 
 type deviceUnBindParam struct {
@@ -131,7 +132,7 @@ func execUnbind(uid int64,mid int,did string,log *logger.LvtLogger)bool{
 	common.DeviceLockDid(did)
 	// query device info
 	device,err := common.QueryDevice(uid,mid,did)
-	if err != nil {
+	if err != nil && err != mgo.ErrNotFound{
 		log.Error("query device error",err.Error())
 	}else{
 		// device bind history insert
@@ -156,7 +157,7 @@ func execUnbindAll(uid int64,mid int,log *logger.LvtLogger)bool{
 	f := false
 	// query device info
 	device,err := common.QueryAllDevice(uid,mid)
-	if err != nil {
+	if err != nil && err != mgo.ErrNotFound {
 		log.Error("query device error",err.Error())
 	}else{
 		// device bind history insert
