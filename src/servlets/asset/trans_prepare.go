@@ -149,7 +149,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	txType := requestData.Param.TxType
 
 	//不能给自己转账，不能转无效用户
-	if from == to || (!common.ExistsUID(to) && txType != constants.TX_TYPE_BUY_COIN_CARD) {
+	if from == to || !common.ExistsUID(to) || txType != constants.TX_TYPE_BUY_COIN_CARD {
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
@@ -216,6 +216,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 		//直接放行
+	case constants.TX_TYPE_BUY_COIN_CARD:
+		if len(secret.BizContent["quota"]) == 0 {
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+		to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -233,12 +239,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
-	case constants.TX_TYPE_BUY_COIN_CARD:
-		if len(secret.BizContent["quota"]) == 0 {
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
-		}
-		to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
