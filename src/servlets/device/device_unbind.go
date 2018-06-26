@@ -7,7 +7,6 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
-	"log"
 )
 
 type deviceUnBindParam struct {

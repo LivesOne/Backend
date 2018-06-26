@@ -7,8 +7,8 @@ import (
 const (
 	ASSET_LOCK_TYPE_NOR  = 0
 	ASSET_LOCK_TYPE_DRAW = 1
-	CURRENCY_LVT = "LVT"
-	CURRENCY_ETH = "ETH"
+	CURRENCY_LVT         = "LVT"
+	CURRENCY_ETH         = "ETH"
 )
 
 type (
@@ -60,7 +60,7 @@ type (
 		Type       int    `json:"type"`
 	}
 	UserWithdrawalCardUse struct {
-		Id         int64  `json:"id"`
+		Txid       int64  `json:"txid"`
 		TradeNo    string `json:"trade_no"`
 		Uid        int64  `json:"uid"`
 		Quota      int64  `json:"-"`

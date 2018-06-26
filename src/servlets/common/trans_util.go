@@ -88,7 +88,7 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 				}
 			case constants.TX_TYPE_BUY_COIN_CARD:
 				var bizContent map[string]string
-				utils.FromJson(perPending.BizContent,&bizContent)
+				utils.FromJson(perPending.BizContent, &bizContent)
 				quota := utils.FloatStrToLVTint(bizContent["quota"])
 				// 用卡记录
 				wcu := &UserWithdrawalCardUse{
@@ -98,7 +98,8 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 					Cost:       perPending.Value,
 					CreateTime: utils.TXIDToTimeStamp13(txid),
 					Type:       constants.WITHDRAW_CARD_TYPE_DIV,
-					Currency: 	CURRENCY_LVT,
+					Txid:       txid,
+					Currency:   CURRENCY_LVT,
 				}
 
 				if err = InsertWithdrawalCardUse(wcu); err != nil {
@@ -210,7 +211,8 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 			Cost:       tp.Value,
 			CreateTime: utils.TXIDToTimeStamp13(txId),
 			Type:       constants.WITHDRAW_CARD_TYPE_DIV,
-			Currency: CURRENCY_ETH,
+			Txid:       txId,
+			Currency:   CURRENCY_ETH,
 		}
 
 		if err = InsertWithdrawalCardUseByTx(wcu, tx); err != nil {

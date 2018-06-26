@@ -131,7 +131,7 @@ func InsertAllDeviceBindHistory(device []DtDevice) error {
 		ddh.Build(&v)
 		adds = append(adds,ddh)
 	}
-	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE_HISTORY, adds...)
+	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE_HISTORY, adds)
 }
 
 
