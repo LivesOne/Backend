@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"log"
 )
 
 type deviceUnBindParam struct {
@@ -110,35 +111,65 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 
 	//  lock uid,did
 	common.DeviceLockUid(uid)
-	common.DeviceLockDid(param.Did)
+	if len(param.Did) > 0 {
+		if !execUnbind(uid,param.Mid,param.Did,log) {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		}
+	} else {
+		if !execUnbindAll(uid,param.Mid,log) {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		}
+	}
+	//锁定矿机绑定时间
+	common.SetUnbindLimt(uid,param.Mid)
+	common.DeviceUnLockUid(uid)
 
+}
+
+
+func execUnbind(uid int64,mid int,did string,log *logger.LvtLogger)bool{
+	f := false
+	common.DeviceLockDid(did)
 	// query device info
-	device,err := common.QueryDevice(uid,param.Mid,param.Did)
+	device,err := common.QueryDevice(uid,mid,did)
 	if err != nil {
 		log.Error("query device error",err.Error())
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-
 	}else{
 		// device bind history insert
 		if err := common.InsertDeviceBindHistory(device);err != nil {
 			log.Error("insert device history error",err.Error())
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}else{
 			// delete device info
 			if err := common.DeleteDevice(device.Uid,device.Mid,device.Appid,device.Did);err != nil {
 				log.Error("delete device error",err.Error())
-				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			}else {
 				// set unbind time
-				common.SetUnbindLimt(uid,param.Mid)
+				f = true
 			}
 		}
 	}
-
-
-
 	//  unlock
-	common.DeviceUnLockUid(uid)
-	common.DeviceUnLockDid(param.Did)
+	common.DeviceUnLockDid(did)
+	return f
+}
 
+func execUnbindAll(uid int64,mid int,log *logger.LvtLogger)bool{
+	f := false
+	// query device info
+	device,err := common.QueryAllDevice(uid,mid)
+	if err != nil {
+		log.Error("query device error",err.Error())
+	}else{
+		// device bind history insert
+		if err := common.InsertAllDeviceBindHistory(device);err != nil {
+			log.Error("insert device history error",err.Error())
+		}else{
+			// delete device info
+			for _,v := range device {
+				common.DeleteDevice(v.Uid,v.Mid,v.Appid,v.Did)
+			}
+			f = true
+		}
+	}
+	return f
 }
