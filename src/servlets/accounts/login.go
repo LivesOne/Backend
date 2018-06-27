@@ -35,7 +35,7 @@ type responseLoginSPK struct {
 
 type responseLogin struct {
 	UID    string            `json:"uid"`
-	Token  string            `json:"token"`
+	Token  string            `json:"token,omitempty"`
 	Expire int64             `json:"expire"`
 	SPK    *responseLoginSPK `json:"spk"`
 }
