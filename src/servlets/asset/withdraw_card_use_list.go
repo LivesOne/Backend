@@ -14,13 +14,14 @@ type withdrawCardUseListResData struct {
 }
 
 type withdrawCardUseListRecord struct {
-	Id      string `json:"id"`
-	TradeNo string `json:"trade_no"`
-	Txid    string `json:"txid"`
-	Type    int    `json:"type"`
-	Cost    string `json:"cost"`
-	Quota   string `json:"quota"`
-	UseTime int64  `json:"use_time"`
+	Id       string `json:"id"`
+	TradeNo  string `json:"trade_no"`
+	Txid     string `json:"txid"`
+	Type     int    `json:"type"`
+	Cost     string `json:"cost"`
+	Quota    string `json:"quota"`
+	UseTime  int64  `json:"use_time"`
+	Currency string `json:"currency"`
 }
 
 // sendVCodeHandler
@@ -88,13 +89,14 @@ func convRowTowithdrawCardUseListRecord(rows []map[string]string) []withdrawCard
 		quota := utils.LVTintToFloatStr(utils.Str2Int64(item["quota"]))
 		cost := utils.LVTintToFloatStr(utils.Str2Int64(item["cost"]))
 		entity := withdrawCardUseListRecord{
-			Id:      item["id"],
-			Txid:    item["txid"],
-			Type:    utils.Str2Int(item["type"]),
-			Quota:   quota,
-			TradeNo: item["trade_no"],
-			Cost:    cost,
-			UseTime: utils.Str2Int64(item["create_time"]),
+			Id:       item["id"],
+			Txid:     item["txid"],
+			Type:     utils.Str2Int(item["type"]),
+			Quota:    quota,
+			TradeNo:  item["trade_no"],
+			Cost:     cost,
+			UseTime:  utils.Str2Int64(item["create_time"]),
+			Currency: item["currency"],
 		}
 		re = append(re, entity)
 	}
