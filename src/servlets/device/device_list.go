@@ -116,7 +116,7 @@ func convDevicelistToMiners(deviceList []common.DtDevice, uid int64) []miners {
 
 	res := make([]miners, 0)
 
-	for i := 0; i < ulc.MinerIndexSize(); i++ {
+	for i := 1; i <= ulc.MinerIndexSize(); i++ {
 		m, ok := cache[i]
 		if !ok {
 			m = miners{
