@@ -37,7 +37,7 @@ func minerCommonInsert(c string, p ...interface{}) error {
 	defer session.Close()
 	session.SetSafe(&mgo.Safe{WMode: "majority"})
 	collection := session.DB(minerdbc.DBDatabase).C(c)
-	err := collection.Insert(p)
+	err := collection.Insert(p...)
 	if err != nil {
 		logger.Error("mongo_base method:Insert ", err.Error())
 	}
@@ -125,13 +125,13 @@ func InsertDeviceBindHistory(device *DtDevice) error {
 }
 
 func InsertAllDeviceBindHistory(device []DtDevice) error {
-	adds := make([]*DtDeviceHistory,0)
+	adds := make([]interface{},0)
 	for _,v := range device {
 		ddh := new(DtDeviceHistory)
 		ddh.Build(&v)
 		adds = append(adds,ddh)
 	}
-	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE_HISTORY, adds)
+	return minerCommonInsert(DT_DEVICE_HISTORY, adds...)
 }
 
 
