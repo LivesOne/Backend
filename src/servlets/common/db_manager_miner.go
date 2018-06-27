@@ -32,12 +32,12 @@ func InitMinerRMongoDB() {
 	mSession.SetPoolLimit(minerdbc.MaxConn)
 }
 
-func minerCommonInsert(db, c string, p ...interface{}) error {
+func minerCommonInsert(c string, p ...interface{}) error {
 	session := mSession.Clone()
 	defer session.Close()
 	session.SetSafe(&mgo.Safe{WMode: "majority"})
-	collection := session.DB(db).C(c)
-	err := collection.Insert(p...)
+	collection := session.DB(minerdbc.DBDatabase).C(c)
+	err := collection.Insert(p)
 	if err != nil {
 		logger.Error("mongo_base method:Insert ", err.Error())
 	}
@@ -77,7 +77,7 @@ func QueryMinerBindDeviceCount(query bson.M) (int, error) {
 }
 
 func InsertDeviceBind(device *DtDevice) error {
-	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE, device)
+	return minerCommonInsert(DT_DEVICE, device)
 }
 
 func QueryDevice(uid int64,mid int,did string) (*DtDevice ,error){
@@ -121,7 +121,7 @@ func DeleteAllDevice(uid int64,mid,appid int) error{
 func InsertDeviceBindHistory(device *DtDevice) error {
 	ddh := new(DtDeviceHistory)
 	ddh.Build(device)
-	return minerCommonInsert(minerdbc.DBDatabase, DT_DEVICE_HISTORY, ddh)
+	return minerCommonInsert(DT_DEVICE_HISTORY, ddh)
 }
 
 func InsertAllDeviceBindHistory(device []DtDevice) error {
