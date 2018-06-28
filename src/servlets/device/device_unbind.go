@@ -19,7 +19,7 @@ type deviceUnBindParam struct {
 }
 
 func (dbp *deviceUnBindParam) Validate() bool {
-	return dbp.Mid > 0 && len(dbp.Pwd) > 0 && dbp.Appid > 0
+	return dbp.Mid > 0 && len(dbp.Pwd) > 0 
 }
 
 type deviceUnBindRequest struct {
