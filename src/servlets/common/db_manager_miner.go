@@ -80,18 +80,6 @@ func InsertDeviceBind(device *DtDevice) error {
 	return minerCommonInsert(DT_DEVICE, device)
 }
 
-func QueryDevice(uid int64,mid int,did string) (*DtDevice ,error){
-	session := mSession.Clone()
-	defer session.Close()
-	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
-	res := new(DtDevice)
-	err := collection.Find(bson.M{"uid":uid,"did":did,"mid":mid}).One(res)
-	if err != nil {
-		logger.Error("query mongo db error", err.Error())
-		return nil, err
-	}
-	return res, nil
-}
 func QueryAllDevice(uid int64,mid int) ([]DtDevice ,error){
 	session := mSession.Clone()
 	defer session.Close()
@@ -135,12 +123,12 @@ func InsertAllDeviceBindHistory(device []DtDevice) error {
 }
 
 
-func QueryDeviceByDid(did string) (*DtDevice ,error){
+func QueryDevice(query bson.M) (*DtDevice ,error){
 	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := new(DtDevice)
-	err := collection.Find(bson.M{"did":did}).One(res)
+	err := collection.Find(query).One(res)
 	if err != nil {
 		logger.Error("query mongo db error", err.Error())
 		return nil, err

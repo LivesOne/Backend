@@ -1,27 +1,27 @@
 package device
 
 import (
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
 	"utils/logger"
-	"gopkg.in/mgo.v2"
 )
 
 type deviceUnBindParam struct {
-	Mid       int    `json:"mid"`
-	Did       string `json:"did"`
-	Pwd        string `json:"pwd"`
+	Mid   int    `json:"mid"`
+	Did   string `json:"did"`
+	Appid int    `json:"appid"`
+	Pwd   string `json:"pwd"`
 }
 
 func (dbp *deviceUnBindParam) Validate() bool {
-	return dbp.Mid > 0 && len(dbp.Pwd) > 0
+	return dbp.Mid > 0 && len(dbp.Pwd) > 0 && dbp.Appid > 0
 }
 
 type deviceUnBindRequest struct {
-	Base  *common.BaseInfo `json:"base"`
 	Param *deviceUnBindParam `json:"param"`
 }
 
@@ -102,7 +102,6 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-
 	if common.CheckDeviceLockUid(uid) || common.CheckDeviceLockDid(param.Did) {
 		log.Error("unbind device uid or did in lock")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -111,38 +110,50 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 
 	//  lock uid,did
 	common.DeviceLockUid(uid)
-	if len(param.Did) > 0 {
-		if !execUnbind(uid,param.Mid,param.Did,log) {
+
+
+	switch {
+	case len(param.Did) == 0 && param.Appid == 0:
+		if !execUnbindAll(uid, param.Mid, log) {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
-	} else {
-		if !execUnbindAll(uid,param.Mid,log) {
+	case len(param.Did) > 0 && param.Appid > 0:
+		if !execUnbind(uid, param.Mid, param.Appid, param.Did, log) {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
+
+
 	//锁定矿机绑定时间
-	common.SetUnbindLimt(uid,param.Mid)
+	common.SetUnbindLimt(uid, param.Mid)
 	common.DeviceUnLockUid(uid)
 
 }
 
-
-func execUnbind(uid int64,mid int,did string,log *logger.LvtLogger)bool{
+func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) bool {
 	f := false
 	common.DeviceLockDid(did)
 	// query device info
-	device,err := common.QueryDevice(uid,mid,did)
-	if err != nil && err != mgo.ErrNotFound{
-		log.Error("query device error",err.Error())
-	}else{
+	query := bson.M{
+		"uid":   uid,
+		"mid":   mid,
+		"appid": appid,
+		"did":   did,
+	}
+	device, err := common.QueryDevice(query)
+	if err != nil {
+		log.Error("query device error", err.Error())
+	} else {
 		// device bind history insert
-		if err := common.InsertDeviceBindHistory(device);err != nil {
-			log.Error("insert device history error",err.Error())
-		}else{
+		if err := common.InsertDeviceBindHistory(device); err != nil {
+			log.Error("insert device history error", err.Error())
+		} else {
 			// delete device info
-			if err := common.DeleteDevice(device.Uid,device.Mid,device.Appid,device.Did);err != nil {
-				log.Error("delete device error",err.Error())
-			}else {
+			if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil {
+				log.Error("delete device error", err.Error())
+			} else {
 				// set unbind time
 				f = true
 			}
@@ -153,20 +164,20 @@ func execUnbind(uid int64,mid int,did string,log *logger.LvtLogger)bool{
 	return f
 }
 
-func execUnbindAll(uid int64,mid int,log *logger.LvtLogger)bool{
+func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) bool {
 	f := false
 	// query device info
-	device,err := common.QueryAllDevice(uid,mid)
-	if err != nil && err != mgo.ErrNotFound {
-		log.Error("query device error",err.Error())
-	}else{
+	device, err := common.QueryAllDevice(uid, mid)
+	if err != nil {
+		log.Error("query device error", err.Error())
+	} else {
 		// device bind history insert
-		if err := common.InsertAllDeviceBindHistory(device);err != nil {
-			log.Error("insert device history error",err.Error())
-		}else{
+		if err := common.InsertAllDeviceBindHistory(device); err != nil {
+			log.Error("insert device history error", err.Error())
+		} else {
 			// delete device info
-			for _,v := range device {
-				common.DeleteDevice(v.Uid,v.Mid,v.Appid,v.Did)
+			for _, v := range device {
+				common.DeleteDevice(v.Uid, v.Mid, v.Appid, v.Did)
 			}
 			f = true
 		}

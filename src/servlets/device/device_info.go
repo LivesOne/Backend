@@ -6,6 +6,7 @@ import (
 	"servlets/constants"
 	"utils/logger"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 
@@ -44,12 +45,26 @@ func (handler *deviceInfoHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	device,err := common.QueryDeviceByDid(requestData.Base.Device.DID)
+	//校验参数
+	if requestData.Base == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	app,device := requestData.Base.App,requestData.Base.Device
+	if app == nil || device == nil || !app.IsValid(){
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	//组装查询
+	query := bson.M{
+		"appid":app.AppID,
+		"did":device.DID,
+	}
+	deviceInfo,err := common.QueryDevice(query)
 	if err != nil && err != mgo.ErrNotFound {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
-	response.Data = device
+	response.Data = deviceInfo
 
 }
