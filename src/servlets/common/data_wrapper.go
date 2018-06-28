@@ -42,10 +42,10 @@ type (
 	}
 
 	AppInfo struct {
-		Name  string `json:"name,omitempty"`
-		AppID interface{}    `json:"appid,omitempty"`
-		Plat  int    `json:"plat,omitempty"`
-		Ver   string `json:"ver,omitempty"`
+		Name  string      `json:"name,omitempty"`
+		AppID interface{} `json:"appid,omitempty"`
+		Plat  interface{} `json:"plat,omitempty"`
+		Ver   string      `json:"ver,omitempty"`
 	}
 
 	// BaseReq defines the Request Params format
@@ -88,7 +88,7 @@ func (app *AppInfo) IsValid() bool {
 		//app.AppID > 0 &&
 		//app.Plat > 0 &&
 		(len(app.Ver) > 0)
-			//config.IsAppIDValid(app.AppID)
+	//config.IsAppIDValid(app.AppID)
 }
 
 func NewResponseData() *ResponseData {
