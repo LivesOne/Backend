@@ -8,6 +8,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"gopkg.in/mgo.v2"
 )
 
 type deviceUnBindParam struct {
@@ -114,13 +115,11 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 
 	switch {
 	case len(param.Did) == 0 && param.Appid == 0:
-		if !execUnbindAll(uid, param.Mid, log) {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		}
+		resBase := execUnbindAll(uid, param.Mid, log)
+		response.SetResponseBase(resBase)
 	case len(param.Did) > 0 && param.Appid > 0:
-		if !execUnbind(uid, param.Mid, param.Appid, param.Did, log) {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		}
+		resBase := execUnbind(uid, param.Mid, param.Appid, param.Did, log)
+		response.SetResponseBase(resBase)
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
@@ -132,9 +131,9 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 
 }
 
-func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) bool {
-	f := false
-	common.DeviceLockDid(did)
+func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) constants.Error {
+
+	res := constants.RC_SYSTEM_ERR
 	// query device info
 	query := bson.M{
 		"uid":   uid,
@@ -143,9 +142,9 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) bo
 		"did":   did,
 	}
 	device, err := common.QueryDevice(query)
-	if err != nil {
-		log.Error("query device error", err.Error())
-	} else {
+	switch err {
+	case nil:
+		common.DeviceLockDid(did)
 		// device bind history insert
 		if err := common.InsertDeviceBindHistory(device); err != nil {
 			log.Error("insert device history error", err.Error())
@@ -155,32 +154,37 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) bo
 				log.Error("delete device error", err.Error())
 			} else {
 				// set unbind time
-				f = true
+				res = constants.RC_OK
 			}
 		}
+		common.DeviceUnLockDid(did)
+	case mgo.ErrNotFound:
+		res =  constants.RC_NOT_FOUND_DEVICE
 	}
-	//  unlock
-	common.DeviceUnLockDid(did)
-	return f
+
+	return res
 }
 
-func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) bool {
-	f := false
+func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
+	res := constants.RC_SYSTEM_ERR
 	// query device info
 	device, err := common.QueryAllDevice(uid, mid)
-	if err != nil {
-		log.Error("query device error", err.Error())
-	} else {
+	switch err {
+	case nil:
 		// device bind history insert
 		if err := common.InsertAllDeviceBindHistory(device); err != nil {
 			log.Error("insert device history error", err.Error())
 		} else {
 			// delete device info
 			for _, v := range device {
+				common.DeviceLockDid(v.Did)
 				common.DeleteDevice(v.Uid, v.Mid, v.Appid, v.Did)
+				common.DeviceUnLockDid(v.Did)
 			}
-			f = true
+			res = constants.RC_OK
 		}
+	case mgo.ErrNotFound:
+		res =  constants.RC_NOT_FOUND_DEVICE
 	}
-	return f
+	return res
 }

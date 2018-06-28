@@ -68,6 +68,7 @@ var (
 	RC_DEVICE_BIND_TOO_SHORT = Error{23002, "bind interval too short"}
 	RC_DEVICE_PLAT_NOT_MATCH = Error{23003, "plat not match"}
 	RC_DEVICE_DUP_APPID      = Error{23004, "duplicate appid"}
+	RC_NOT_FOUND_DEVICE      = Error{23005, "not found device"}
 
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
