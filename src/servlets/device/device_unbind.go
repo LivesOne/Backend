@@ -121,6 +121,7 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		resBase := execUnbind(uid, param.Mid, param.Appid, param.Did, log)
 		response.SetResponseBase(resBase)
 	default:
+		log.Error("unkonw unbind type uid",uid,"did",param.Did,"appid",param.Appid)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
 
