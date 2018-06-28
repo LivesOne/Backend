@@ -146,18 +146,22 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
-
-	// check lock uid,did
-
-	if common.CheckDeviceLockUid(uid) || common.CheckDeviceLockDid(param.Did) {
-		log.Error("bind device uid or did in lock")
+	// check and  lock uid,did
+	userLockTs := common.DeviceUserLock(uid)
+	if userLockTs == 0 {
+		log.Error("unbind device uid",uid," in lock")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	//  lock uid,did
-	common.DeviceLockUid(uid)
-	common.DeviceLockDid(param.Did)
+
+	deviceLockTs := common.DeviceLock(param.Appid,param.Did)
+	if deviceLockTs == 0 {
+		log.Error("unbind device device in lock uid",uid,"mid",param.Mid,"appid",param.Appid,"did",param.Did)
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
+
 	// bind
 	device := &common.DtDevice{
 		Uid:    uid,
@@ -174,7 +178,9 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	}
 	//  unlock
-	common.DeviceUnLockUid(uid)
-	common.DeviceUnLockDid(param.Did)
+	common.DeviceUnLockDid(param.Appid,param.Did,deviceLockTs)
+	common.DeviceUnLockUid(uid,userLockTs)
+	//common.DeviceUnLockUid(uid)
+	//common.DeviceUnLockDid(param.Did)
 
 }

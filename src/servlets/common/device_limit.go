@@ -26,24 +26,32 @@ func CheckUnbindLimit(uid int64,mid int) bool {
 	return i > 0
 }
 
-func DeviceLockUid(uid int64) {
-	key := DEVICE_LOCK_PROXY + utils.Int642Str(uid)
-	setAndExpire(key, 1, DEVICE_LOCK_EXPIRE)
-}
-func DeviceLockDid(did string) {
-	key := DEVICE_LOCK_PROXY + did
-	setAndExpire(key, 1, DEVICE_LOCK_EXPIRE)
+func devicelock(key string)int64{
+	ts := utils.GetTimestamp13()
+	f,err := setnx(key,ts)
+	if err != nil || f != 1 {
+		return 0
+	}
+	return ts
 }
 
-func CheckDeviceLockUid(uid int64) bool {
+func DeviceUserLock(uid int64) int64{
 	key := DEVICE_LOCK_PROXY + utils.Int642Str(uid)
-	i, e := ttl(key)
-	if e != nil {
-		logger.Error("ttl redis error", e.Error())
-		return false
+	ts := devicelock(key)
+	if ts > 0 {
+		rdsExpire(key,DEVICE_LOCK_EXPIRE)
 	}
-	return i > 0
+	return ts
 }
+func DeviceLock(appid int,did string) int64{
+	key := DEVICE_LOCK_PROXY + utils.Int2Str(appid) + ":" + did
+	ts := devicelock(key)
+	if ts > 0 {
+		rdsExpire(key,DEVICE_LOCK_EXPIRE)
+	}
+	return ts
+}
+
 func CheckDeviceLockDid(did string) bool {
 	key := DEVICE_LOCK_PROXY + did
 	i, e := ttl(key)
@@ -54,11 +62,17 @@ func CheckDeviceLockDid(did string) bool {
 	return i > 0
 }
 
-func DeviceUnLockUid(uid int64) {
+func DeviceUnLockUid(uid int64,ts int64) {
 	key := DEVICE_LOCK_PROXY + utils.Int642Str(uid)
-	rdsDel(key)
+	t,e := rdsGet64(key)
+	if e == nil && ts == t {
+		rdsDel(key)
+	}
 }
-func DeviceUnLockDid(did string) {
-	key := DEVICE_LOCK_PROXY + did
-	rdsDel(key)
+func DeviceUnLockDid(appid int,did string,ts int64) {
+	key := DEVICE_LOCK_PROXY + utils.Int2Str(appid) + ":" + did
+	t,e := rdsGet64(key)
+	if e == nil && ts == t {
+		rdsDel(key)
+	}
 }

@@ -237,11 +237,11 @@ func TokenErr2RcErr(tokenErr int) constants.Error {
 	case constants.ERR_INT_OK:
 		return constants.RC_OK
 	case constants.ERR_INT_TK_DB:
-		return constants.RC_PARAM_ERR
+		return constants.RC_SYSTEM_ERR
 	case constants.ERR_INT_TK_DUPLICATE:
 		return constants.RC_PARAM_ERR
 	case constants.ERR_INT_TK_NOTEXISTS:
-		return constants.RC_PARAM_ERR
+		return constants.RC_INVALID_TOKEN
 	default:
 		return constants.RC_SYSTEM_ERR
 	}

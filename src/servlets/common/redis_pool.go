@@ -91,6 +91,10 @@ func rdsGet(key string) (int, error) {
 	return redis.Int(rdsDo("GET", key))
 }
 
+func rdsGet64(key string) (int64, error) {
+	return redis.Int64(rdsDo("GET", key))
+}
+
 func rdsDel(key string) error {
 	_, err := rdsDo("DEL", key)
 	return err
@@ -104,4 +108,8 @@ func rdsExpire(key string, expire int) error {
 func setAndExpire(key string, value, expire int) error {
 	_, err := rdsDo("SET", key, value, "EX", expire)
 	return err
+}
+
+func setnx(key string,value int64) (int,error) {
+	return redis.Int(rdsDo("SETNX",key,value))
 }

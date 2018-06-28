@@ -19,7 +19,7 @@ type deviceUnBindParam struct {
 }
 
 func (dbp *deviceUnBindParam) Validate() bool {
-	return dbp.Mid > 0 && len(dbp.Pwd) > 0 
+	return dbp.Mid > 0 && len(dbp.Pwd) > 0
 }
 
 type deviceUnBindRequest struct {
@@ -103,14 +103,14 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	if common.CheckDeviceLockUid(uid) || common.CheckDeviceLockDid(param.Did) {
-		log.Error("unbind device uid or did in lock")
+
+	userLockTs := common.DeviceUserLock(uid)
+	if userLockTs == 0 {
+		log.Error("unbind device uid in lock")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
-	//  lock uid,did
-	common.DeviceLockUid(uid)
 
 
 	switch {
@@ -124,11 +124,9 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		log.Error("unkonw unbind type uid",uid,"did",param.Did,"appid",param.Appid)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
-
-
 	//锁定矿机绑定时间
 	common.SetUnbindLimt(uid, param.Mid)
-	common.DeviceUnLockUid(uid)
+	common.DeviceUnLockUid(uid,userLockTs)
 
 }
 
@@ -145,7 +143,11 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) co
 	device, err := common.QueryDevice(query)
 	switch err {
 	case nil:
-		common.DeviceLockDid(did)
+		deviceLockTs := common.DeviceLock(appid,did)
+		if deviceLockTs == 0 {
+			log.Error("unbind device device in lock uid",uid,"mid",mid,"appid",appid,"did",did)
+			return constants.RC_SYSTEM_ERR
+		}
 		// device bind history insert
 		if err := common.InsertDeviceBindHistory(device); err != nil {
 			log.Error("insert device history error", err.Error())
@@ -158,7 +160,7 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) co
 				res = constants.RC_OK
 			}
 		}
-		common.DeviceUnLockDid(did)
+		common.DeviceUnLockDid(appid,did,deviceLockTs)
 	case mgo.ErrNotFound:
 		res =  constants.RC_NOT_FOUND_DEVICE
 	}
@@ -172,18 +174,24 @@ func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
 	device, err := common.QueryAllDevice(uid, mid)
 	switch err {
 	case nil:
-		// device bind history insert
-		if err := common.InsertAllDeviceBindHistory(device); err != nil {
-			log.Error("insert device history error", err.Error())
-		} else {
-			// delete device info
-			for _, v := range device {
-				common.DeviceLockDid(v.Did)
-				common.DeleteDevice(v.Uid, v.Mid, v.Appid, v.Did)
-				common.DeviceUnLockDid(v.Did)
+		for _, v := range device {
+			deviceLockTs := common.DeviceLock(v.Appid,v.Did)
+			if deviceLockTs == 0 {
+				log.Error("unbind device device in lock uid",v.Uid,"mid",v.Mid,"appid",v.Appid,"did",v.Did)
+				continue
 			}
-			res = constants.RC_OK
+			device := &v
+			if err := common.InsertDeviceBindHistory(device); err != nil {
+				log.Error("insert device history error", err.Error())
+			} else {
+				// delete device info
+				if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil {
+					log.Error("delete device error", err.Error())
+				}
+			}
+			common.DeviceUnLockDid(v.Appid,v.Did,deviceLockTs)
 		}
+		res = constants.RC_OK
 	case mgo.ErrNotFound:
 		res =  constants.RC_NOT_FOUND_DEVICE
 	}
