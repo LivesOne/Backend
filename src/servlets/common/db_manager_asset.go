@@ -123,11 +123,7 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	tx.Exec("select * from user_asset where uid in (?,?) for update", from, to)
 
-	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
-	if !CheckAssetLimeted(from, tx) {
-		tx.Rollback()
-		return false, constants.TRANS_ERR_ASSET_LIMITED
-	}
+
 	ts := utils.GetTimestamp13()
 
 	//查询转出账户余额是否满足需要
@@ -145,6 +141,12 @@ func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
+	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
+	if !CheckAssetLimeted(from, tx) {
+		tx.Rollback()
+		return false, constants.TRANS_ERR_ASSET_LIMITED
+	}
+
 
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
