@@ -90,6 +90,9 @@ func QueryAllDevice(uid int64,mid int) ([]DtDevice ,error){
 		logger.Error("query mongo db error", err.Error())
 		return nil, err
 	}
+	if len(res) == 0 {
+		return nil, mgo.ErrNotFound
+	}
 	return res, nil
 }
 

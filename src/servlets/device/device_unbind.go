@@ -9,6 +9,7 @@ import (
 	"utils"
 	"utils/logger"
 	"gopkg.in/mgo.v2"
+	"utils/config"
 )
 
 type deviceUnBindParam struct {
@@ -89,6 +90,15 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 
 	uid := utils.Str2Int64(uidStr)
 
+
+	ul := common.GetTransUserLevel(uid)
+	ulc := config.GetLimitByLevel(ul)
+	if param.Mid > 0 && param.Mid > ulc.MinerIndexSize() {
+		log.Error("bind device mid index error mid:",param.Mid,"mast <",ulc.MinerIndexSize())
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
 	password, err := utils.AesDecrypt(param.Pwd, key, iv)
@@ -124,8 +134,6 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		log.Error("unkonw unbind type uid",uid,"did",param.Did,"appid",param.Appid)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
-	//锁定矿机绑定时间
-	common.SetUnbindLimt(uid, param.Mid)
 	common.DeviceUnLockUid(uid,userLockTs)
 
 }
@@ -158,11 +166,13 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) co
 			} else {
 				// set unbind time
 				res = constants.RC_OK
+				common.SetUnbindLimt(uid, mid)
 			}
 		}
 		common.DeviceUnLockDid(appid,did,deviceLockTs)
 	case mgo.ErrNotFound:
-		res =  constants.RC_NOT_FOUND_DEVICE
+		log.Error("unbind device uid",uid,"mid",mid,"appid",appid,"did",did,"device not found")
+		res = constants.RC_NOT_FOUND_DEVICE
 	}
 
 	return res
@@ -189,11 +199,15 @@ func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
 					log.Error("delete device error", err.Error())
 				}
 			}
+
 			common.DeviceUnLockDid(v.Appid,v.Did,deviceLockTs)
 		}
+		//锁定矿机绑定时间
+		common.SetUnbindLimt(uid, mid)
 		res = constants.RC_OK
 	case mgo.ErrNotFound:
-		res =  constants.RC_NOT_FOUND_DEVICE
+		log.Error("unbind all device uid",uid,"mid",mid,"device not found")
+		res = constants.RC_NOT_FOUND_DEVICE
 	}
 	return res
 }
