@@ -95,6 +95,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 	uid := utils.Str2Int64(uidStr)
 
 	if common.CheckUnbindLimit(uid,param.Mid) {
+		log.Error("uid",uid,"mid",param.Mid,"device unbind time too short")
 		response.SetResponseBase(constants.RC_DEVICE_BIND_TOO_SHORT)
 		return
 	}
@@ -107,6 +108,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 	devicelist, err := common.QueryMinerBindDevice(query)
 
 	if err != nil && err != mgo.ErrNotFound {
+		log.Error("uid",uid,"mid",param.Mid,"query mongo error")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -115,10 +117,12 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		// uid,mid,plat,appid check
 		for _, v := range devicelist {
 			if v.Plat != param.Plat {
+				log.Error("uid",uid,"mid",param.Mid,"plat not match")
 				response.SetResponseBase(constants.RC_DEVICE_PLAT_NOT_MATCH)
 				return
 			}
 			if v.Appid == param.Appid {
+				log.Error("uid",uid,"mid",param.Mid,"appid exists")
 				response.SetResponseBase(constants.RC_DEVICE_DUP_APPID)
 				return
 			}
@@ -126,6 +130,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 	}
 	//  DID check
 	query = bson.M{
+		"appid":param.Appid,
 		"did": param.Did,
 	}
 	deviceCount, err := common.QueryMinerBindDeviceCount(query)
@@ -134,6 +139,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 	if deviceCount > 0 {
+		log.Error("uid",uid,"mid",param.Mid,"appid",param.Appid,"did appid already bind")
 		response.SetResponseBase(constants.RC_DEVICE_DUP_BIND)
 		return
 	}

@@ -52,15 +52,6 @@ func DeviceLock(appid int,did string) int64{
 	return ts
 }
 
-func CheckDeviceLockDid(did string) bool {
-	key := DEVICE_LOCK_PROXY + did
-	i, e := ttl(key)
-	if e != nil {
-		logger.Error("ttl redis error", e.Error())
-		return false
-	}
-	return i > 0
-}
 
 func DeviceUnLockUid(uid int64,ts int64) {
 	key := DEVICE_LOCK_PROXY + utils.Int642Str(uid)
