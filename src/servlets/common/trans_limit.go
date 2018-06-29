@@ -222,7 +222,7 @@ func GetTransLevel(uid int64) int {
 }
 
 func GetTransUserLevel(uid int64) int {
-	//key := USER_LEVEL_KEY_PROXY + utils.Int642Str(uid)
+	key := USER_LEVEL_KEY_PROXY + utils.Int642Str(uid)
 	//t, err := ttl(key)
 	//logger.Info("ttl key", key, "expire ", t)
 	//if err != nil {
@@ -245,7 +245,12 @@ func GetTransUserLevel(uid int64) int {
 	//	}
 	//}
 	//return userLevel
-	return GetUserLevel(uid)
+	userLevel := GetUserLevel(uid)
+	logger.Info("key", key, userLevel)
+	if userLevel > -1 {
+		setAndExpire(key, userLevel, DAY_30)
+	}
+	return userLevel
 }
 
 func SetTransUserLevel(uid int64, userLevel int) {
