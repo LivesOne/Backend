@@ -115,14 +115,19 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 			if !strings.HasPrefix(walletAddress, "0x") {
 				walletAddress = "0x" + walletAddress
 			}
-			rowsAffected, dbErr := common.SetWalletAddress(uid, walletAddress)
-			if dbErr != nil {
-				if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
-					log.Info("modify user profile: duplicate wallet_address", dbErr)
-					response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
-				} else {
-					log.Info("modify user profile : save wallet_address to db error:", dbErr)
-					response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			if common.CheckWalletAddressBlacklist(walletAddress) > 0 {
+				logger.Info("blacklist exist this wallet address ", walletAddress)
+				response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
+			} else {
+				rowsAffected, dbErr := common.SetWalletAddress(uid, walletAddress)
+				if dbErr != nil {
+					if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
+						log.Info("modify user profile: duplicate wallet_address", dbErr)
+						response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
+					} else {
+						log.Info("modify user profile : save wallet_address to db error:", dbErr)
+						response.SetResponseBase(constants.RC_SYSTEM_ERR)
+					}
 				}
 			}
 		} else {

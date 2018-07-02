@@ -3,12 +3,10 @@ package common
 import (
 	"database/sql"
 	sqlBase "database/sql"
-	"encoding/json"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
 	"strconv"
-	"time"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
@@ -791,9 +789,6 @@ func convUserWithdrawalQuota(al map[string]string) *UserWithdrawalQuota {
 	return &alres
 }
 
-func CreateUserWithdrawalQuota(uid int64, day int64, month int64, lastLevel int) (sql.Result, error) {
-	return CreateUserWithdrawalQuotaByTx(uid, day, month, lastLevel, nil)
-}
 func CreateUserWithdrawalQuotaByTx(uid int64, day int64, month int64, lastLevel int, tx *sql.Tx) (sql.Result, error) {
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()
@@ -943,15 +938,6 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 	}
 }
 
-func QueryWithdrawValueOfCurMonth(uid int64) int64 {
-	sql := "select sum(value) from user_withdrawal_request where uid = ? and create_time > ?"
-
-	tm := time.Unix(time.Now().Unix(), 0)
-	tm2, _ := time.Parse("2006-01", tm.Format("2006-01"))
-	result, _ := gDBAsset.QueryRow(sql, uid, utils.GetTimestamp13ByTime(tm2))
-	return utils.Str2Int64(result["value"])
-}
-
 func Withdraw(uid int64, amount int64, address string, quotaType int) (string, constants.Error) {
 	tx, _ := gDBAsset.Begin()
 
@@ -1096,108 +1082,6 @@ func convDTTXHistoryRequest(al map[string]string) *DTTXHistory {
 		Ts:      utils.Str2Int64(al["ts"]),
 	}
 	return &alres
-}
-
-func repayWithdraw(transId int64) bool {
-	tx, err := gDBAsset.Begin()
-	if err != nil {
-		logger.Error("db pool begin error ", err.Error())
-		return false
-	}
-
-	sql := "select trade_no,uid,`value`,quota_type from user_withdrawal_request where id = ?"
-	row := tx.QueryRow(sql, transId)
-	var trade_no string
-	var uid int64
-	var value int64
-	var quota_type int
-	err = row.Scan(&trade_no, &uid, &value, &quota_type)
-	if err != nil {
-		logger.Error("query user withdraw request error, id : ", transId)
-		tx.Rollback()
-		return false
-	}
-	flag, _ := repayUserWithdrawalQuota(uid, value, quota_type, tx)
-	if !flag {
-		tx.Rollback()
-		return false
-	}
-	fromLvt := config.GetWithdrawalConfig().LvtAcceptAccount
-	txid_lvt := GenerateTxID()
-	timestamp := utils.GetTimestamp13()
-	transLvtResult, _ := TransAccountLvtByTx(txid_lvt, fromLvt, uid, value, tx)
-	if !transLvtResult {
-		tx.Rollback()
-		return false
-	}
-	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txid_lvt, constants.TX_TYPE_WITHDRAW_LVT, trade_no, fromLvt, uid, value, timestamp)
-	if err3 != nil {
-		logger.Error("query error ", err3.Error())
-		tx.Rollback()
-		return false
-	}
-	tx.Commit()
-
-	//同步至mongo
-	go func() {
-		txh := &DTTXHistory{
-			Id:      txid_lvt,
-			TradeNo: trade_no,
-			Type:    constants.TX_TYPE_WITHDRAW_LVT,
-			From:    fromLvt,
-			To:      uid,
-			Value:   value,
-			Ts:      timestamp,
-		}
-		err = InsertCommited(txh)
-		if err != nil {
-			logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
-			b, _ := json.Marshal(txh)
-			rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, b)
-		} else {
-			DeleteTxhistoryLvtTmpByTxid(txid_lvt)
-		}
-	}()
-	return true
-}
-
-/**
- * 退还提币额度
- */
-func repayUserWithdrawalQuota(uid int64, repayQuota int64, quotaType int, tx *sql.Tx) (bool, error) {
-	if quotaType != CASUAL_QUOTA_TYPE {
-		return true, nil
-	}
-	var sql = "select `month`, casual user_withdrawal_quota where uid = ?"
-	row := tx.QueryRow(sql, uid)
-	var month int64
-	var casual int64
-	err := row.Scan(&month, &casual)
-	if err != nil {
-		logger.Error("query user quota error， uid : ", uid)
-	}
-	if quotaType == CASUAL_QUOTA_TYPE {
-		sql = "update user_withdrawal_quota set casual = casual + ?, month = month + ?, last_expend = ? where uid = ?"
-		result, err := tx.Exec(sql, repayQuota, utils.GetTimestamp13(), uid)
-		rowsAffected, _ := result.RowsAffected()
-		if rowsAffected > 0 {
-			return true, nil
-		} else {
-			return false, err
-		}
-	}
-
-	result, err := tx.Exec(sql, repayQuota, repayQuota, utils.GetTimestamp13(), uid)
-	if err != nil {
-		logger.Error("exec sql error", sql)
-		return false, err
-	}
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected > 0 {
-		return true, nil
-	} else {
-		return false, sqlBase.ErrNoRows
-	}
 }
 
 func QueryWithdrawalList(uid int64) []*UserWithdrawalRequest {
