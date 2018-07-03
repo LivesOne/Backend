@@ -504,7 +504,7 @@ func CheckWalletAddressBlacklist(walletAddress string) int {
 }
 
 func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
-	result, err := gDbUser.Exec("update account_extend set wallet_address = ? where uid = ?", walletAddress, uid)
+	result, err := gDbUser.Exec("update account_extend set wallet_address = ?, update_time = ? where uid = ?", walletAddress, utils.GetTimestamp13(), uid)
 	if err != nil {
 		logger.Error("exec sql error", err.Error())
 		return 0, err
