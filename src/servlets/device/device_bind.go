@@ -8,14 +8,16 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/logger"
 	"utils/config"
+	"utils/logger"
 )
 
 type deviceBindParam struct {
 	Mid       int    `json:"mid"`
 	Appid     int    `json:"appid"`
 	Plat      int    `json:"plat"`
+	Sid       int    `json:"sid"`
+	Didi      int    `json:"didi"`
 	Did       string `json:"did"`
 	Dn        string `json:"dn"`
 	OsVersion string `json:"os_ver"`
@@ -94,8 +96,8 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 
 	uid := utils.Str2Int64(uidStr)
 
-	if common.CheckUnbindLimit(uid,param.Mid) {
-		log.Error("uid",uid,"mid",param.Mid,"device unbind time too short")
+	if common.CheckUnbindLimit(uid, param.Mid) {
+		log.Error("uid", uid, "mid", param.Mid, "device unbind time too short")
 		response.SetResponseBase(constants.RC_DEVICE_BIND_TOO_SHORT)
 		return
 	}
@@ -108,7 +110,7 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 	devicelist, err := common.QueryMinerBindDevice(query)
 
 	if err != nil && err != mgo.ErrNotFound {
-		log.Error("uid",uid,"mid",param.Mid,"query mongo error")
+		log.Error("uid", uid, "mid", param.Mid, "query mongo error")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -117,12 +119,12 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		// uid,mid,plat,appid check
 		for _, v := range devicelist {
 			if v.Plat != param.Plat {
-				log.Error("uid",uid,"mid",param.Mid,"plat not match")
+				log.Error("uid", uid, "mid", param.Mid, "plat not match")
 				response.SetResponseBase(constants.RC_DEVICE_PLAT_NOT_MATCH)
 				return
 			}
 			if v.Appid == param.Appid {
-				log.Error("uid",uid,"mid",param.Mid,"appid exists")
+				log.Error("uid", uid, "mid", param.Mid, "appid exists")
 				response.SetResponseBase(constants.RC_DEVICE_DUP_APPID)
 				return
 			}
@@ -130,8 +132,8 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 	}
 	//  DID check
 	query = bson.M{
-		"appid":param.Appid,
-		"did": param.Did,
+		"appid": param.Appid,
+		"did":   param.Did,
 	}
 	deviceCount, err := common.QueryMinerBindDeviceCount(query)
 	if err != nil && err != mgo.ErrNotFound {
@@ -139,34 +141,32 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 	if deviceCount > 0 {
-		log.Error("uid",uid,"mid",param.Mid,"appid",param.Appid,"did appid already bind")
+		log.Error("uid", uid, "mid", param.Mid, "appid", param.Appid, "did appid already bind")
 		response.SetResponseBase(constants.RC_DEVICE_DUP_BIND)
 		return
 	}
 
-
 	ul := common.GetTransUserLevel(uid)
 	ulc := config.GetLimitByLevel(ul)
 	if param.Mid > 0 && param.Mid > ulc.MinerIndexSize() {
-		log.Error("bind device mid index error mid:",param.Mid,"mast <",ulc.MinerIndexSize())
+		log.Error("bind device mid index error mid:", param.Mid, "mast <", ulc.MinerIndexSize())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 	// check and  lock uid,did
 	userLockTs := common.DeviceUserLock(uid)
 	if userLockTs == 0 {
-		log.Error("unbind device uid",uid," in lock")
+		log.Error("unbind device uid", uid, " in lock")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
-	deviceLockTs := common.DeviceLock(param.Appid,param.Did)
+	deviceLockTs := common.DeviceLock(param.Appid, param.Did)
 	if deviceLockTs == 0 {
-		log.Error("unbind device device in lock uid",uid,"mid",param.Mid,"appid",param.Appid,"did",param.Did)
+		log.Error("unbind device device in lock uid", uid, "mid", param.Mid, "appid", param.Appid, "did", param.Did)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
 
 	// bind
 	device := &common.DtDevice{
@@ -175,6 +175,8 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		Plat:   param.Plat,
 		Appid:  param.Appid,
 		Did:    param.Did,
+		Sid:param.Sid,
+		Didi:param.Didi,
 		Dn:     param.Dn,
 		OsVer:  param.OsVersion,
 		BindTs: utils.GetTimestamp13(),
@@ -184,8 +186,8 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	}
 	//  unlock
-	common.DeviceUnLockDid(param.Appid,param.Did,deviceLockTs)
-	common.DeviceUnLockUid(uid,userLockTs)
+	common.DeviceUnLockDid(param.Appid, param.Did, deviceLockTs)
+	common.DeviceUnLockUid(uid, userLockTs)
 	//common.DeviceUnLockUid(uid)
 	//common.DeviceUnLockDid(param.Did)
 
