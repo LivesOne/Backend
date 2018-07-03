@@ -60,6 +60,9 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
 	}
+
+	log.Info("receive data ",utils.ToJSON(requestData))
+
 	param := requestData.Param
 
 	if param == nil || !param.Validate() {
@@ -175,8 +178,8 @@ func (handler *deviceBindHandler) Handle(request *http.Request, writer http.Resp
 		Plat:   param.Plat,
 		Appid:  param.Appid,
 		Did:    param.Did,
-		Sid:param.Sid,
-		Didi:param.Didi,
+		Sid:    param.Sid,
+		Didi:   param.Didi,
 		Dn:     param.Dn,
 		OsVer:  param.OsVersion,
 		BindTs: utils.GetTimestamp13(),
