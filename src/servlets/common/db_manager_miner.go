@@ -14,6 +14,7 @@ var minerdbc config.MongoConfig
 const (
 
 	// MGDBPoolMax = 10
+	DT_ACTIVE       = "dt_active"
 	DT_DEVICE         = "dt_device"
 	DT_DEVICE_HISTORY = "dt_device_history"
 )
@@ -164,4 +165,11 @@ func QueryUserAllDevice(uid int64) ([]DtDevice ,error){
 		return nil, err
 	}
 	return res, nil
+}
+
+func DelDtActive(uid int64,mid,sid int)error{
+	session := mSession.Clone()
+	defer session.Close()
+	collection := session.DB(minerdbc.DBDatabase).C(DT_ACTIVE)
+	return collection.Remove(bson.M{"uid":uid,"sid":sid,"mid":mid})
 }

@@ -44,6 +44,7 @@ type (
 		BindTs   int64         `bson:"bind_ts,omitempty" json:"bind_ts"`
 		UnbindTs int64         `bson:"unbind_ts,omitempty"`
 	}
+
 )
 
 func (ddh *DtDeviceHistory) Build(dd *DtDevice) {

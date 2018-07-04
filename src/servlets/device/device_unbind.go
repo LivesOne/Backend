@@ -10,6 +10,7 @@ import (
 	"utils/logger"
 	"gopkg.in/mgo.v2"
 	"utils/config"
+	"log"
 )
 
 type deviceUnBindParam struct {
@@ -151,25 +152,12 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) co
 	device, err := common.QueryDevice(query)
 	switch err {
 	case nil:
-		deviceLockTs := common.DeviceLock(appid,did)
-		if deviceLockTs == 0 {
-			log.Error("unbind device device in lock uid",uid,"mid",mid,"appid",appid,"did",did)
-			return constants.RC_SYSTEM_ERR
-		}
-		// device bind history insert
-		if err := common.InsertDeviceBindHistory(device); err != nil {
-			log.Error("insert device history error", err.Error())
-		} else {
-			// delete device info
-			if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil {
-				log.Error("delete device error", err.Error())
-			} else {
+		if execMongoAndReidsUnbind(device,log){
 				// set unbind time
 				res = constants.RC_OK
 				common.SetUnbindLimt(uid, mid)
-			}
+
 		}
-		common.DeviceUnLockDid(appid,did,deviceLockTs)
 	case mgo.ErrNotFound:
 		log.Error("unbind device uid",uid,"mid",mid,"appid",appid,"did",did,"device not found")
 		res = constants.RC_NOT_FOUND_DEVICE
@@ -185,22 +173,7 @@ func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
 	switch err {
 	case nil:
 		for _, v := range device {
-			deviceLockTs := common.DeviceLock(v.Appid,v.Did)
-			if deviceLockTs == 0 {
-				log.Error("unbind device device in lock uid",v.Uid,"mid",v.Mid,"appid",v.Appid,"did",v.Did)
-				continue
-			}
-			device := &v
-			if err := common.InsertDeviceBindHistory(device); err != nil {
-				log.Error("insert device history error", err.Error())
-			} else {
-				// delete device info
-				if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil {
-					log.Error("delete device error", err.Error())
-				}
-			}
-
-			common.DeviceUnLockDid(v.Appid,v.Did,deviceLockTs)
+			execMongoAndReidsUnbind(&v,log)
 		}
 		//锁定矿机绑定时间
 		common.SetUnbindLimt(uid, mid)
@@ -210,4 +183,30 @@ func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
 		res = constants.RC_NOT_FOUND_DEVICE
 	}
 	return res
+}
+
+func execMongoAndReidsUnbind(device *common.DtDevice,log *logger.LvtLogger)bool{
+	deviceLockTs := common.DeviceLock(device.Appid,device.Did)
+	if deviceLockTs == 0 {
+		log.Error("unbind device device in lock uid",device.Uid,"mid",device.Mid,"appid",device.Appid,"did",device.Did)
+		return false
+	}
+	f := true
+	if err := common.InsertDeviceBindHistory(device); err != nil {
+		log.Error("insert device history error", err.Error())
+		f = false
+	} else {
+		// delete device info
+		if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil && err != mgo.ErrNotFound  {
+			log.Error("delete device error", err.Error())
+			f = false
+		}
+
+		if err := common.DelDtActive(device.Uid,device.Mid,device.Sid);err != nil && err != mgo.ErrNotFound {
+			log.Error("delete dt active error", err.Error())
+			f = false
+		}
+	}
+	common.DeviceUnLockDid(device.Appid,device.Did,deviceLockTs)
+	return f
 }
