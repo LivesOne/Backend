@@ -510,6 +510,7 @@ func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
 		return 0, err
 	}
 	if utils.Str2Int(res["count"]) <= 0 {
+		logger.Info("account extend not exist record of ", uid, "exec init")
 		InitAccountExtend(uid)
 	}
 	result, err := gDbUser.Exec("update account_extend set wallet_address = ?, update_time = ? where uid = ?", walletAddress, utils.GetTimestamp13(), uid)
