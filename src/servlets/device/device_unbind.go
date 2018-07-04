@@ -10,7 +10,6 @@ import (
 	"utils/logger"
 	"gopkg.in/mgo.v2"
 	"utils/config"
-	"log"
 )
 
 type deviceUnBindParam struct {
