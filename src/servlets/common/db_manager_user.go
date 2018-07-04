@@ -504,6 +504,14 @@ func CheckWalletAddressBlacklist(walletAddress string) int {
 }
 
 func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
+	res, err := gDbUser.QueryRow("select count(1) count from account_extend where uid = ?", uid)
+	if err != nil {
+		logger.Error("get count from wallet_address_blacklist by uid error ", err.Error())
+		return 0, err
+	}
+	if utils.Str2Int(res["count"]) <= 0 {
+		InitAccountExtend(uid)
+	}
 	result, err := gDbUser.Exec("update account_extend set wallet_address = ?, update_time = ? where uid = ?", walletAddress, utils.GetTimestamp13(), uid)
 	if err != nil {
 		logger.Error("exec sql error", err.Error())
