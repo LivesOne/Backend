@@ -5,10 +5,10 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"time"
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"time"
 )
 
 type withdrawQuotaResponse struct {
@@ -84,13 +84,17 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 				if userWithdrawalQuota.Day != utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())) {
 					logger.Debug("重置日额度，uid:", uid, "，原额度：", userWithdrawalQuota.Day, "，重置额度", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
 					common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
-					lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
-					if lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
+				}
+
+				lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
+				if lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
+					if userWithdrawalQuota.Month != utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())) {
 						logger.Debug("重置月额度，uid:", uid, "，原额度：", userWithdrawalQuota.Day, "，重置额度", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
 						common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
 					}
-					userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 				}
+
+				userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 			}
 		}
 	}
