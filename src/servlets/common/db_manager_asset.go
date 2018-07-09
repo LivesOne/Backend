@@ -469,7 +469,7 @@ func ckeckEthBalance(uid int64, value int64, tx *sql.Tx) bool {
 	return balance > 0 && (balance-locked) >= value
 }
 
-func CreateAssetLock(assetLock *AssetLock) (bool, int) {
+func CreateAssetLock(assetLock *AssetLockLvtc) (bool, int) {
 
 	tx, err := gDBAsset.Begin()
 	if err != nil {

@@ -141,7 +141,7 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 	//计算结束时间
 	end := begin + (int64(secret.Month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
 
-	assetLock := &common.AssetLock{
+	assetLock := &common.AssetLockLvtc{
 		Uid:      uid,
 		Value:    secret.Value,
 		ValueInt: utils.FloatStrToLVTint(secret.Value),

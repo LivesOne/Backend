@@ -22,6 +22,19 @@ type (
 	}
 
 	AssetLock struct {
+		Id       int64  `json:"-" bson:"id"`
+		IdStr    string `json:"id" bson:"-"`
+		Type     int    `json:"type" bson:"type"`
+		Uid      int64  `json:"-" bson:"uid"`
+		Value    string `json:"value" bson:"-"`
+		Month    int    `json:"month" bson:"month"`
+		Hashrate int    `json:"hashrate" bson:"hashrate"`
+		Begin    int64  `json:"begin" bson:"begin"`
+		End      int64  `json:"end" bson:"end"`
+		ValueInt int64  `json:"-" bson:"value"`
+	}
+
+	AssetLockLvtc struct {
 		Id       	int64  `json:"-" bson:"id"`
 		IdStr    	string `json:"id" bson:"-"`
 		Uid      	int64  `json:"-" bson:"uid"`
