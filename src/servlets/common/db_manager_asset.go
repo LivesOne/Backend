@@ -945,9 +945,9 @@ func ResetDayQuota(uid int64, dayQuota int64) bool {
 	}
 }
 
-func ResetMonthQuota(uid int64, monthQuota int64) bool {
-	sql := "update user_withdrawal_quota set `month` = ? where uid = ?"
-	result, err := gDBAsset.Exec(sql, monthQuota, uid)
+func ResetMonthQuota(uid int64, monthQuota int64, dayQuota int64, level int) bool {
+	sql := "update user_withdrawal_quota set `month` = ?, `day` = ?, last_level = ? where uid = ?"
+	result, err := gDBAsset.Exec(sql, monthQuota, dayQuota, level, uid)
 	if err != nil {
 		logger.Error("重置月额度错误" + err.Error())
 		return false
