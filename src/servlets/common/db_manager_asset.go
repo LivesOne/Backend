@@ -67,8 +67,51 @@ func QueryReward(uid int64) (*Reward, error) {
 
 }
 
+func QueryLvtcReward(uid int64) (*Reward, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is zero")
+	}
+	resReward := &Reward{
+		Uid: uid,
+	}
+	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify,days from user_reward_lvtc where uid = ?", uid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			reward, err := QueryReward(uid)
+			if err == nil {
+				resReward.Days = reward.Days
+				resReward.Lastmodify = reward.Lastmodify
+				return resReward, nil
+			}
+		}
+		logger.Error("query db error ", err.Error())
+		return nil, err
+	}
+	if row != nil {
+		resReward.Total = utils.Str2Int64(row["total"])
+		resReward.Yesterday = utils.Str2Int64(row["lastday"])
+		resReward.Lastmodify = utils.Str2Int64(row["lastmodify"])
+		resReward.Days = utils.Str2Int(row["days"])
+
+	}
+	return resReward, err
+
+}
+
 func QueryBalance(uid int64) (int64, int64, error) {
 	row, err := gDBAsset.QueryRow("select balance,locked from user_asset where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), nil
+	}
+	return 0, 0, err
+}
+
+func QueryBalanceLvtc(uid int64) (int64, int64, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked from user_asset_lvtc where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
@@ -434,16 +477,16 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 		return false, constants.TRANS_ERR_SYS
 	}
 	//锁定记录
-	tx.Exec("select * from user_asset where uid = ? for update", assetLock.Uid)
+	tx.Exec("select * from user_asset_lvtc where uid = ? for update", assetLock.Uid)
 
 	//查询转出账户余额是否满足需要
-	if !ckeckBalance(assetLock.Uid, assetLock.ValueInt, tx) {
+	if !ckeckBalanceOfLvtc(assetLock.Uid, assetLock.ValueInt, tx) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
-	if !CheckAssetLimeted(assetLock.Uid, tx) {
+	if !CheckAssetLimetedOfLvtc(assetLock.Uid, tx) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_ASSET_LIMITED
 	}
@@ -451,7 +494,7 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 	//修改资产数据
 	//锁仓算力大于500时 给500
 	updSql := `update
-					user_asset
+					user_asset_lvtc
 			   set
 			   		locked = locked + ?,
 			   		lastmodify = ?
@@ -476,7 +519,7 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 		return false, constants.TRANS_ERR_SYS
 	}
 
-	sql := "insert into user_asset_lock (uid,value,month,hashrate,begin,end,type) values (?,?,?,?,?,?,?)"
+	sql := "insert into user_asset_lock (uid,value,month,hashrate,begin,end,currency,allow_unlock) values (?,?,?,?,?,?,?,?)"
 	params := []interface{}{
 		assetLock.Uid,
 		assetLock.ValueInt,
@@ -484,7 +527,8 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 		assetLock.Hashrate,
 		assetLock.Begin,
 		assetLock.End,
-		assetLock.Type,
+		assetLock.Currency,
+		assetLock.AllowUnlock,
 	}
 	res, err := tx.Exec(sql, params...)
 	if err != nil {
@@ -502,30 +546,6 @@ func CreateAssetLock(assetLock *AssetLock) (bool, int) {
 	if ok, code := updLockAssetHashRate(assetLock.Uid, tx); !ok {
 		tx.Rollback()
 		return ok, code
-	}
-	if assetLock.Type == ASSET_LOCK_TYPE_DRAW {
-
-		incomeCasual := int64(0)
-		switch assetLock.Month {
-		case 6:
-			incomeCasual = assetLock.ValueInt / 2
-		case 12:
-			incomeCasual = assetLock.ValueInt
-		default:
-			tx.Rollback()
-			return false, constants.TRANS_ERR_PARAM
-		}
-
-		if wr := InitUserWithdrawal(assetLock.Uid); wr != nil {
-			if ok, _ := IncomeUserWithdrawalCasualQuota(assetLock.Uid, incomeCasual); !ok {
-				tx.Rollback()
-				return false, constants.TRANS_ERR_SYS
-			}
-		} else {
-			tx.Rollback()
-			return false, constants.TRANS_ERR_SYS
-		}
-
 	}
 	tx.Commit()
 	assetLock.Id = id

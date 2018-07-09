@@ -19,10 +19,12 @@ type balanceRequest struct {
 }
 
 type balanceResData struct {
-	Balance    string `json:"balance"`
-	Locked     string `json:"locked"`
-	EthBalance string `json:"eth_balance"`
-	EthLocked  string `json:"eth_locked"`
+	Balance     string `json:"balance"`
+	Locked      string `json:"locked"`
+	LvtcBalance string `json:"lvtc_balance"`
+	LvtcLocked  string `json:"lvtc_locked"`
+	EthBalance  string `json:"eth_balance"`
+	EthLocked   string `json:"eth_locked"`
 }
 
 // sendVCodeHandler
@@ -77,15 +79,18 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 	uid := utils.Str2Int64(uidString)
 
 	balance, locked, err := common.QueryBalance(uid)
-	ethBalance, ethLocked, err2 := common.QueryBalanceEth(uid)
-	if err != nil || err2 != nil {
+	lvtcBalance, lvtcLocked, errLvtc := common.QueryBalanceLvtc(uid)
+	ethBalance, ethLocked, errEth := common.QueryBalanceEth(uid)
+	if err != nil || errLvtc != nil || errEth != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
 		response.Data = balanceResData{
-			Balance:    utils.LVTintToFloatStr(balance),
-			Locked:     utils.LVTintToFloatStr(locked),
-			EthBalance: utils.LVTintToFloatStr(ethBalance),
-			EthLocked:  utils.LVTintToFloatStr(ethLocked),
+			Balance:     utils.LVTintToFloatStr(balance),
+			Locked:      utils.LVTintToFloatStr(locked),
+			LvtcBalance: utils.LVTintToFloatStr(lvtcBalance),
+			LvtcLocked:  utils.LVTintToFloatStr(lvtcLocked),
+			EthBalance:  utils.LVTintToFloatStr(ethBalance),
+			EthLocked:   utils.LVTintToFloatStr(ethLocked),
 		}
 	}
 
