@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
-	"time"
 	"utils"
 	"utils/config"
 	"utils/logger"
+	"time"
+	"servlets/token"
 )
 
 type withdrawQuotaResponse struct {
@@ -65,33 +65,63 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 		dayExpend := userWithdrawalQuota.DayExpend
 		level := common.GetTransUserLevel(uid)
 		limitConfig := config.GetLimitByLevel(level)
-		if level > userWithdrawalQuota.LastLevel {
-			logger.Debug("用户等级提升，uid:", uid, ",原等级：", userWithdrawalQuota.LastLevel, ",现等级：", level)
-			oldLimitConfig := config.GetLimitByLevel(userWithdrawalQuota.LastLevel)
-			oldLevelDailyQuota := utils.FloatStrToLVTint(utils.Int642Str(oldLimitConfig.DailyWithdrawalQuota()))
-			oldLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(oldLimitConfig.MonthlyWithdrawalQuota()))
-			currentLevelDailyQuota := utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))
-			currentLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota()))
-			balanceDailyQuota := currentLevelDailyQuota - oldLevelDailyQuota
-			balanceMonthlyQuota := currentLevelMonthlyQuota - oldLevelMonthlyQuota
-			common.ResetDayQuota(uid, balanceDailyQuota+userWithdrawalQuota.Day)
-			common.ResetMonthQuota(uid, balanceMonthlyQuota+userWithdrawalQuota.Month)
-			common.UpdateLastLevelOfQuota(uid, level)
-			userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
-		} else {
-			logger.Debug("用户等级未变化，uid:", uid)
-			if dayExpend == 0 || !utils.IsToday(dayExpend, utils.GetTimestamp13()) {
-				if userWithdrawalQuota.Day != utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())) {
-					logger.Debug("重置日额度，uid:", uid, "，原额度：", userWithdrawalQuota.Day, "，重置额度", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
-					common.ResetDayQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
-					lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
-					if lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
-						logger.Debug("重置月额度，uid:", uid, "，原额度：", userWithdrawalQuota.Day, "，重置额度", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
-						common.ResetMonthQuota(uid, utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota())))
+		resetMonthAndDay := false
+		resetDay := false
+
+		if dayExpend == 0 || !utils.IsToday(dayExpend, utils.GetTimestamp13()) {
+			lastExpendDate := utils.Timestamp13ToDate(userWithdrawalQuota.DayExpend)
+			if dayExpend == 0 || lastExpendDate.Year() < time.Now().Year() || (lastExpendDate.Year() == time.Now().Year() && lastExpendDate.Month() < time.Now().Month()) {
+				logger.Debug("重置月额度，uid:", uid, "，原月额度：", userWithdrawalQuota.Day, "，重置月额度:", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())), "原日额度：", userWithdrawalQuota.Day, "重置日额度：", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
+				userWithdrawalQuota.Month = utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota()))
+				userWithdrawalQuota.Day = utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))
+				userWithdrawalQuota.LastLevel = level
+				resetMonthAndDay = true
+			} else {
+				if level > userWithdrawalQuota.LastLevel {
+					logger.Debug("用户等级提升，uid:", uid, ",原等级：", userWithdrawalQuota.LastLevel, ",现等级：", level)
+
+					oldLimitConfig := config.GetLimitByLevel(userWithdrawalQuota.LastLevel)
+					oldLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(oldLimitConfig.MonthlyWithdrawalQuota()))
+					currentLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota()))
+					balanceMonthlyQuota := currentLevelMonthlyQuota - oldLevelMonthlyQuota
+
+					userWithdrawalQuota.Month = balanceMonthlyQuota+userWithdrawalQuota.Month
+					userWithdrawalQuota.Day = utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))
+					userWithdrawalQuota.LastLevel = level
+					resetMonthAndDay = true
+				} else {
+					if userWithdrawalQuota.Day != utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())) {
+						logger.Debug("重置日额度，uid:", uid, "，原额度：", userWithdrawalQuota.Day, "，重置额度:", utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota())))
+						userWithdrawalQuota.Day = utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))
+						resetDay = true
 					}
-					userWithdrawalQuota = common.GetUserWithdrawalQuotaByUid(uid)
 				}
 			}
+		} else {
+			if level > userWithdrawalQuota.LastLevel {
+				logger.Debug("用户等级提升，uid:", uid, ",原等级：", userWithdrawalQuota.LastLevel, ",现等级：", level)
+
+				oldLimitConfig := config.GetLimitByLevel(userWithdrawalQuota.LastLevel)
+				oldLevelDailyQuota := utils.FloatStrToLVTint(utils.Int642Str(oldLimitConfig.DailyWithdrawalQuota()))
+				oldLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(oldLimitConfig.MonthlyWithdrawalQuota()))
+				currentLevelDailyQuota := utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))
+				currentLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota()))
+
+				balanceDailyQuota := currentLevelDailyQuota - oldLevelDailyQuota
+				balanceMonthlyQuota := currentLevelMonthlyQuota - oldLevelMonthlyQuota
+
+				userWithdrawalQuota.Month = balanceMonthlyQuota+userWithdrawalQuota.Month
+				userWithdrawalQuota.Day = balanceDailyQuota+userWithdrawalQuota.Day
+				userWithdrawalQuota.LastLevel = level
+				resetMonthAndDay = true
+			}
+		}
+
+		if resetMonthAndDay {
+			common.ResetMonthQuota(uid, userWithdrawalQuota.Month, userWithdrawalQuota.Day, userWithdrawalQuota.LastLevel)
+		}
+		if resetDay {
+			common.ResetDayQuota(uid, userWithdrawalQuota.Day)
 		}
 	}
 
