@@ -118,6 +118,33 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 	return ok, e
 }
 
+func TransAccountLvtc(txid, from, to, value int64) (bool, int) {
+	//检测资产初始化情况
+	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
+	f, c := CheckAndInitAsset(from)
+	if !f {
+		return f, c
+	}
+
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	var (
+		ok bool
+		e  int
+	)
+
+	if ok, e = TransAccountLvtcByTx(txid, from, to, value, tx); ok {
+		tx.Commit()
+	} else {
+		tx.Rollback()
+	}
+	return ok, e
+}
+
 func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	tx.Exec("select * from user_asset where uid in (?,?) for update", from, to)
 
@@ -180,7 +207,6 @@ func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
-
 	return true, constants.TRANS_ERR_SUCC
 }
 
@@ -230,13 +256,11 @@ func TransAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	}
 	//txid 写入数据库
 	_, e := InsertTXID(txid, tx)
-
 	if e != nil {
 		logger.Error("sql error ", e.Error())
 		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
-
 	return true, constants.TRANS_ERR_SUCC
 }
 
@@ -247,10 +271,14 @@ func CheckAndInitAsset(uid int64) (bool, int) {
 		logger.Error("init asset error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
-
 	rowsCount, err := res.RowsAffected()
 	if err != nil {
 		logger.Error("get RowsAffected error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	_, err = InsertAssetLvtc(uid)
+	if err != nil {
+		logger.Error("init lvtc_asset error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
 
@@ -296,6 +324,11 @@ func InsertReward(uid int64) (sql.Result, error) {
 
 func InsertAsset(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_asset (uid,balance,lastmodify) values (?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0)
+}
+
+func InsertAssetLvtc(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_asset_lvtc (uid,balance,lastmodify) values (?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0)
 }
 func InsertAssetEth(uid int64) (sql.Result, error) {

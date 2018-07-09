@@ -44,6 +44,14 @@
         "DBUserPwd" : "",
         "DBDatabase" : "db_livesone_tx_history"
     },
+    "NewTxHistory" :
+    {
+        "MaxConn" : 10,
+        "DBHost" : "10.100.13.6:20000",
+        "DBUser" : "",
+        "DBUserPwd" : "",
+        "DBDatabase" : "db_livesone_tx_history_new"
+    },
     "Miner" :
     {
         "MaxConn" : 10,
