@@ -67,6 +67,29 @@ func QueryReward(uid int64) (*Reward, error) {
 
 }
 
+func QueryLvtcReward(uid int64) (*Reward, error) {
+	if uid == 0 {
+		return nil, errors.New("uid is zero")
+	}
+	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify,days from user_reward_lvtc where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+		return nil, err
+	}
+	resReward := &Reward{
+		Uid: uid,
+	}
+	if row != nil {
+		resReward.Total = utils.Str2Int64(row["total"])
+		resReward.Yesterday = utils.Str2Int64(row["lastday"])
+		resReward.Lastmodify = utils.Str2Int64(row["lastmodify"])
+		resReward.Days = utils.Str2Int(row["days"])
+
+	}
+	return resReward, err
+
+}
+
 func QueryBalance(uid int64) (int64, int64, error) {
 	row, err := gDBAsset.QueryRow("select balance,locked from user_asset where uid = ?", uid)
 	if err != nil {
