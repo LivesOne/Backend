@@ -79,6 +79,18 @@ func QueryBalance(uid int64) (int64, int64, error) {
 	return 0, 0, err
 }
 
+func QueryBalanceLvtc(uid int64) (int64, int64, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked from user_asset_lvtc where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), nil
+	}
+	return 0, 0, err
+}
+
 func QueryBalanceEth(uid int64) (int64, int64, error) {
 	row, err := gDBAsset.QueryRow("select balance,locked from user_asset_eth where uid = ?", uid)
 	if err != nil {
