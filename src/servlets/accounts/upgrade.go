@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"utils"
 	"servlets/token"
+	"utils"
 	"utils/logger"
 )
 
@@ -24,6 +24,7 @@ type upgradeRequest struct {
 type upgradeResData struct {
 	Level int `json:"level"`
 }
+
 // checkVCodeHandler
 type upgradeHandler struct {
 }
@@ -33,7 +34,7 @@ func (handler *upgradeHandler) Method() string {
 }
 
 func (handler *upgradeHandler) Handle(request *http.Request, writer http.ResponseWriter) {
-	log := logger.NewLvtLogger(true,"user upgrade")
+	log := logger.NewLvtLogger(true, "user upgrade")
 	defer log.InfoAll()
 	response := &common.ResponseData{
 		Base: &common.BaseResp{
@@ -59,7 +60,7 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 		return
 	}
 
-	log.Info("uid",uidString)
+	log.Info("uid", uidString)
 
 	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
 		log.Error("validate sign failed")
@@ -67,12 +68,11 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 		return
 	}
 
-
 	requestData := new(upgradeRequest)
 
 	common.ParseHttpBodyParams(request, requestData)
 	//判断有合法参数才进行微信二次校验
-	if requestData.Param != nil && len(requestData.Param.Secret) >0 {
+	if requestData.Param != nil && len(requestData.Param.Secret) > 0 {
 		// 解码 secret 参数
 		secretString := requestData.Param.Secret
 		secret := new(upgradeSecret)
@@ -86,18 +86,18 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 			// 微信二次验证
 			uid := utils.Str2Int64(uidString)
 			//未绑定返回验升级失败
-			openId,unionId,_ := common.GetUserExtendByUid(uid)
+			openId, unionId, _ := common.GetUserExtendByUid(uid)
 			if len(openId) == 0 || len(unionId) == 0 {
 				log.Error("user is not bind wx")
 				response.SetResponseBase(constants.RC_UPGRAD_FAILED)
 				return
 			}
 			//微信认证并比对id
-			if ok,res := common.AuthWX(secret.WxCode);ok {
+			if ok, res := common.AuthWX(secret.WxCode); ok {
 				if res.Unionid != unionId || res.Openid != openId {
 					log.Error("user check sec wx failed")
-					log.Error("db openId,unionId [",openId,unionId,"]")
-					log.Error("wx result openId,unionId [",res.Openid,res.Unionid,"]")
+					log.Error("db openId,unionId [", openId, unionId, "]")
+					log.Error("wx result openId,unionId [", res.Openid, res.Unionid, "]")
 					//二次验证不通过扣10分
 					//deductionCreditScore := 10
 					//log.Error("deduction credit score :",deductionCreditScore)
@@ -116,7 +116,7 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 
 	}
 
-	if ok,level := common.UserUpgrade(uidString);ok {
+	if ok, level := common.UserUpgrade(uidString); ok {
 		response.Data = upgradeResData{
 			Level: level,
 		}
@@ -125,9 +125,5 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 		response.SetResponseBase(constants.RC_UPGRAD_FAILED)
 		log.Info("upgrade failed")
 	}
-
-
-
-
 
 }

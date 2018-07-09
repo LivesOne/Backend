@@ -85,7 +85,6 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			return
 		}
 
-
 	case 2: //短信下行验证
 		if (len(param.Phone) < 1) || (param.Country < 1) {
 			log.Info("reset password: invalid phone or country", param.Country, param.Phone)

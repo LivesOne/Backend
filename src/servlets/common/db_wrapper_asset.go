@@ -1,10 +1,14 @@
 package common
 
-import "utils"
+import (
+	"utils"
+)
 
 const (
 	ASSET_LOCK_TYPE_NOR  = 0
 	ASSET_LOCK_TYPE_DRAW = 1
+	CURRENCY_LVT         = "LVT"
+	CURRENCY_ETH         = "ETH"
 )
 
 type (
@@ -33,7 +37,67 @@ type (
 		Day       int64 `json:"day"`
 		Month     int64 `json:"month"`
 		Casual    int64 `json:"casual"`
-		DayExpend int64 `json:"dayExpend"`
+		DayExpend int64 `json:"day_expend"`
+		LastLevel int   `json:"last_level"`
+	}
+
+	EthTxHistory struct {
+		Txid    int64  `json:"txid"`
+		Type    int    `json:"type"`
+		TradeNo string `json:"trade_no"`
+		From    int64  `json:"from"`
+		To      int64  `json:"to"`
+		Value   int64  `json:"value"`
+		Ts      int64  `json:"ts"`
+	}
+	TradePending struct {
+		TradeNo    string `json:"trade_no"`
+		Uid        int64  `json:"uid"`
+		BizContent string `json:"biz_content"`
+		Ts         int64  `json:"ts"`
+		Value      int64  `json:"-"`
+		ValueStr   string `json:"value"`
+		Type       int    `json:"type"`
+	}
+	UserWithdrawalCardUse struct {
+		Txid       int64  `json:"txid"`
+		TradeNo    string `json:"trade_no"`
+		Uid        int64  `json:"uid"`
+		Quota      int64  `json:"-"`
+		QuotaStr   string `json:"quota"`
+		Cost       int64  `json:"-"`
+		CostStr    string `json:"cost"`
+		CreateTime int64  `json:"create_time"`
+		Type       int    `json:"type"`
+		Currency   string `json:"currency"`
+	}
+
+	UserWithdrawalRequest struct {
+		Id         int64  `json:"id"`
+		TradeNo    string `json:"trade_no"`
+		Uid        int64  `json:"uid"`
+		Value      int64  `json:"value"`
+		Address    string `json:"address"`
+		TxidLvt    int64  `json:"txid_lvt"`
+		TxidEth    int64  `json:"txid_eth"`
+		CreateTime int64  `json:"create_time"`
+		UpdateTime int64  `json:"update_time"`
+		Status     int    `json:"status"`
+		Free       int64  `json:"free"`
+	}
+
+	UserWithdrawCard struct {
+		Id         int64  `json:"id"`
+		Password   string `json:"password"`
+		TradeNo    string `json:"trade_no"`
+		OwnerUid   int64  `json:"owner_uid"`
+		Quota      int64  `json:"quota"`
+		CreateTime int64  `json:"create_time"`
+		ExpireTime int64  `json:"expire_time"`
+		Cost       int64  `json:"cost"`
+		GetTime    int64  `json:"get_time"`
+		UseTime    int64  `json:"use_time"`
+		Status     int    `json:"status"`
 	}
 )
 

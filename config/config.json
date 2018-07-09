@@ -4,10 +4,11 @@
     "PrivKey" : "rsa_private_key.pem",
     "UserLevelConfig" : "user_level.json",
     "LogConfig": "l4g.xml",
+    "WithdrawalConfig": "withdrawal.json",
     "MaxActivityRewardValue":100,
     "AppIDs" :
     [
-        "maxthon"
+        0,1,2
     ],
 
     "Redis" :
@@ -42,6 +43,14 @@
         "DBUser" : "",
         "DBUserPwd" : "",
         "DBDatabase" : "db_livesone_tx_history"
+    },
+    "Miner" :
+    {
+        "MaxConn" : 10,
+        "DBHost" : "10.0.5.248:40000",
+        "DBUser" : "",
+        "DBUserPwd" : "",
+        "DBDatabase" : "miner"
     },
   
     "SmsSvrAddr":"http://10.0.5.248:9099",

@@ -9,14 +9,12 @@ import (
 	"utils/logger"
 )
 
-
-
 type ethTransCommitParam struct {
-	Txid string `json:"txid"`
+	TradeNo string `json:"trade_no"`
 }
 
 type ethTransCommitRequest struct {
-	Base  *common.BaseInfo  `json:"base"`
+	Base  *common.BaseInfo     `json:"base"`
 	Param *ethTransCommitParam `json:"param"`
 }
 
@@ -61,7 +59,7 @@ func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.
 
 	// 判断用户身份
 	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -79,7 +77,7 @@ func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.
 
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
+	tradeNo, err := utils.AesDecrypt(requestData.Param.TradeNo, key, iv)
 	if err != nil {
 		log.Error("aes decrypt error ", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -87,6 +85,6 @@ func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.
 	}
 
 	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitETHTrans(uidStr,txIdStr))
+	response.SetResponseBase(common.CommitETHTrans(uidStr, tradeNo))
 
 }

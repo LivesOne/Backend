@@ -68,7 +68,6 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-
 	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return

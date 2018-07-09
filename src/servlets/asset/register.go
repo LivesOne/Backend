@@ -19,4 +19,12 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_WITHDRAWAL_QUOTA, &withdrawQuotaHandler{})
 	server.RegisterHandler(constants.ASSET_ETH_TRANS_PREPARE, &ethTransPrepareHandler{})
 	server.RegisterHandler(constants.ASSET_ETH_TRANS_COMMIT, &ethTransCommitHandler{})
+	server.RegisterHandler(constants.ASSET_ETH_TRANS_RESULT, &ethtransResultHandler{})
+	server.RegisterHandler(constants.ASSET_ETH_TRANS_HISTORY, &ethtransHistoryHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_LIST, &withdrawListHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_REQUEST, &withdrawRequestHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_CARD_LIST, &withdrawCardListHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_CARD_USE, &withdrawCardUseHandler{})
+	server.RegisterHandler(constants.ASSET_WITHDRAWAL_CARD_USE_LIST, &withdrawCardUseListHandler{})
+
 }

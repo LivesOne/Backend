@@ -11,9 +11,10 @@ import (
 	"utils"
 	"utils/logger"
 
+	"fmt"
 	"github.com/garyburd/redigo/redis"
-	"strings"
 	"io/ioutil"
+	"strings"
 )
 
 // FlushJSONData2Client flush json data to http Client
@@ -67,7 +68,7 @@ func ParseHttpBodyParams(request *http.Request, body interface{}) bool {
 		return true
 	}
 
-	bodyBytes ,err := ioutil.ReadAll(request.Body)
+	bodyBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		logger.Info("ParseHttpBodyParams: read http body error : ", err)
 		return false
@@ -175,7 +176,7 @@ func IsGoodUID(uid string) bool {
 
 // GenerateTxID generate a new transaction ID
 func GenerateTxID() int64 {
-	rid, err := getTxID("id_tx")
+	rid, err := getAutoIncrID("id_tx")
 	if err != constants.ERR_INT_OK {
 		return -1
 	}
@@ -197,7 +198,7 @@ func GenerateTxID() int64 {
 // getTxID gets the INCR tx ID from the redis
 // put this function in the redis_db.go file && call it from the GenerateTxID()
 //        causes "import cycle" error
-func getTxID(key string) (int64, int) {
+func getAutoIncrID(key string) (int64, int) {
 	conn := GetRedisConn()
 	if conn == nil {
 		return -1, constants.ERR_INT_TK_DB
@@ -205,7 +206,6 @@ func getTxID(key string) (int64, int) {
 	defer conn.Close()
 
 	// idx, err := redis.Int(conn.Do("INCR", key))
-
 	reply, err := conn.Do("INCR", key)
 	if err != nil {
 		return -1, constants.ERR_INT_TK_DB
@@ -214,5 +214,35 @@ func getTxID(key string) (int64, int) {
 	} else {
 		idx, _ := redis.Int64(reply, nil)
 		return idx, constants.ERR_INT_OK
+	}
+}
+
+func GenerateTradeNo(type_id, subtype_id int) string {
+	datetime_str := utils.GetFormatDateNow14()
+	ver := 1
+	cluster_id := 1
+
+	rid, err := getAutoIncrID("id_trade")
+	if err != constants.ERR_INT_OK {
+		return ""
+	}
+
+	rid = rid % 10000
+
+	trade_no := fmt.Sprintf("%s%02d%03d%03d%02d%04d", datetime_str, ver, type_id, subtype_id, cluster_id, rid)
+	return trade_no
+}
+func TokenErr2RcErr(tokenErr int) constants.Error {
+	switch tokenErr {
+	case constants.ERR_INT_OK:
+		return constants.RC_OK
+	case constants.ERR_INT_TK_DB:
+		return constants.RC_SYSTEM_ERR
+	case constants.ERR_INT_TK_DUPLICATE:
+		return constants.RC_PARAM_ERR
+	case constants.ERR_INT_TK_NOTEXISTS:
+		return constants.RC_INVALID_TOKEN
+	default:
+		return constants.RC_SYSTEM_ERR
 	}
 }

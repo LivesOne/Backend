@@ -2,7 +2,10 @@ package utils
 
 import (
 	"encoding/json"
+	"github.com/shopspring/decimal"
 	"io/ioutil"
+	"math"
+	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"math"
 	"utils/logger"
 )
 
@@ -22,9 +24,10 @@ const (
 	Day          = 24 * Hour
 	TwoDay       = 2 * Day
 
-	DayDuration    = 24 * time.Hour
-	TwoDayDuration = 2 * DayDuration
-	CONV_LVT       = 10000 * 10000
+	DayDuration         = 24 * time.Hour
+	TwoDayDuration      = 2 * DayDuration
+	CONV_LVT            = 1e8
+	DB_CONV_CHAIN_VALUE = 1e10
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -124,19 +127,30 @@ func Timestamp13ToDate(timestamp int64) time.Time {
 }
 
 func LVTintToFloatStr(lvt int64) string {
-	return strconv.FormatFloat((float64(lvt) / CONV_LVT), 'f', 8, 64)
+	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_LVT))
+	return d2.StringFixed(8)
 }
 
 func FloatStrToLVTint(lvt string) int64 {
-	return int64(Str2Float64(lvt) * CONV_LVT)
+
+	d2, err := decimal.NewFromString(lvt)
+	if err != nil {
+		logger.Error("decimal conv folat error", err.Error())
+		return 0
+	}
+	d3 := d2.Mul(decimal.NewFromFloat(CONV_LVT))
+
+	return d3.IntPart()
 }
 
-func LVTintToNamorInt(lvt int64)int{
-	return int(lvt/CONV_LVT)
+func LVTintToNamorInt(lvt int64) int {
+	d := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_LVT))
+	return int(d.IntPart())
 }
 
-func NamorFloatToLVTint(nlvt float64)int64{
-	return int64(nlvt*CONV_LVT)
+func NamorFloatToLVTint(nlvt float64) int64 {
+	d := decimal.NewFromFloat(nlvt).Mul(decimal.NewFromFloat(CONV_LVT))
+	return d.IntPart()
 }
 
 func Str2Float64(str string) float64 {
@@ -154,17 +168,19 @@ func GetFormatDateNow() string {
 	return time.Now().UTC().Format("2006-01-02 15:04:05")
 }
 
+func GetFormatDateNow14() string {
+	return time.Now().UTC().Format("20060102150405")
+}
+
 func TimestampToTxid(ts, iv int64) int64 {
 	delta := ts - iv - constants.BASE_TIMESTAMP
 	tstx := (delta << 22) & 0x7FFFFFFFFFC00000
 	return tstx
 }
 
-
-func Round(f float64)int{
-	return int(math.Floor(f+0.5))
+func Round(f float64) int {
+	return int(math.Floor(f + 0.5))
 }
-
 
 func SignValid(aeskey, signature string, timestamp int64) bool {
 
@@ -188,15 +204,12 @@ func SignValid(aeskey, signature string, timestamp int64) bool {
 	return res
 }
 
-
-func GetTs13(ts int64)int64{
+func GetTs13(ts int64) int64 {
 	if ts > 1000000000 && ts < 2000000000 {
-		return ts *1000
+		return ts * 1000
 	}
 	return ts
 }
-
-
 
 func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 	if len(secret) == 0 {
@@ -214,6 +227,22 @@ func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 		logger.Error("json Unmarshal error ", err.Error())
 		return err
 	}
+	logger.Debug("decode secret",ToJSON(secretPtr))
 	return nil
 
+}
+
+func ConvDBValueToChainStr(lvt int64) string {
+	dbValue := big.NewInt(lvt)
+	withdrawal := big.NewInt(0).Mul(dbValue, big.NewInt(DB_CONV_CHAIN_VALUE))
+	return withdrawal.Text(10)
+}
+
+func ConvChainStrToDBValue(chainStr string) int64 {
+	chainValue, ok := new(big.Int).SetString(chainStr, 10)
+	if !ok {
+		return 0
+	}
+	dbValue := big.NewInt(0).Div(chainValue, big.NewInt(DB_CONV_CHAIN_VALUE))
+	return dbValue.Int64()
 }

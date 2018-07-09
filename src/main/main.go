@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"server"
 	"servlets"
+	"servlets/common"
 	"servlets/log_cleaner"
 	"utils"
 	"utils/config"
@@ -51,7 +52,16 @@ func initialize(cfgPath string) {
 	config.LoadLevelConfig(cfgDir, config.GetConfig().UserLevelConfig)
 	//加载绑定活动相关配置
 	config.LoadBindActiveConfig(cfgDir, config.GetConfig().BindActive)
+	//加载提币相关配置
+	config.LoadWithdrawalConfig(cfgDir, config.GetConfig().WithdrawalConfig)
 	//加载log配置
 	logger.InitLogger(cfgDir, config.GetConfig().LogConfig)
 	logger.Info("server initialize.....")
+
+	go func() {
+		common.ListenTxhistoryQueue()
+	}()
+	go func() {
+		common.PushTxHistoryByTimer()
+	}()
 }

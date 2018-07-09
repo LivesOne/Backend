@@ -15,7 +15,7 @@ func DecryptSecret(secret string, key string, iv string, instance interface{}) c
 	if err != nil {
 		return constants.RC_PARAM_ERR
 	}
-	logger.Info("Decrypt Secret str ",dataStr)
+	logger.Info("Decrypt Secret str ", dataStr)
 	if err := json.Unmarshal([]byte(dataStr), instance); err != nil {
 		return constants.RC_PARAM_ERR
 	}

@@ -1,10 +1,10 @@
 package config
 
 import (
-	"path/filepath"
-	"fmt"
-	"utils"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"utils"
 )
 
 const USER_LEVEL_NUM = 5
@@ -13,6 +13,7 @@ type UserLevelLimit struct {
 	changePhone            bool
 	lockAsset              bool
 	transferTo             bool
+	withdrawal             bool
 	singleAmountMin        int64
 	singleAmountMax        int64
 	dailyAmountMax         int64
@@ -20,8 +21,12 @@ type UserLevelLimit struct {
 	dailyCommitAccess      int
 	dailyWithdrawalQuota   int64
 	monthlyWithdrawalQuota int64
+	minerIndexSize         int
 }
 
+func (limit *UserLevelLimit) MinerIndexSize() int {
+	return limit.minerIndexSize
+}
 func (limit *UserLevelLimit) ChangePhone() bool {
 	return limit.changePhone
 }
@@ -62,6 +67,10 @@ func (limit *UserLevelLimit) MonthlyWithdrawalQuota() int64 {
 	return limit.monthlyWithdrawalQuota
 }
 
+func (limit *UserLevelLimit) Withdrawal() bool {
+	return limit.withdrawal
+}
+
 type UserLevelConfig struct {
 	LimitMap map[int]UserLevelLimit
 }
@@ -70,6 +79,7 @@ type UserLevelLimitInternal struct {
 	ChangePhone            bool
 	LockAsset              bool
 	TransferTo             bool
+	Withdrawal             bool
 	SingleAmountMin        int64
 	SingleAmountMax        int64
 	DailyAmountMax         int64
@@ -77,6 +87,7 @@ type UserLevelLimitInternal struct {
 	DailyCommitAccess      int
 	DailyWithdrawalQuota   int64
 	MonthlyWithdrawalQuota int64
+	MinerIndexSize         int
 }
 
 type UserLevelConfigInternal struct {
@@ -88,6 +99,7 @@ var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit{
 	changePhone:            false,
 	lockAsset:              false,
 	transferTo:             false,
+	withdrawal:             false,
 	singleAmountMin:        0,
 	singleAmountMax:        0,
 	dailyAmountMax:         0,
@@ -95,6 +107,7 @@ var gUserLevelLimitDefault UserLevelLimit = UserLevelLimit{
 	dailyCommitAccess:      0,
 	dailyWithdrawalQuota:   0,
 	monthlyWithdrawalQuota: 0,
+	minerIndexSize:         0,
 }
 
 /*func GetLevelConfig() *UserLevelConfig {
@@ -125,6 +138,7 @@ func LoadLevelConfig(dir string, cfgName string) error {
 			changePhone:            v.ChangePhone,
 			lockAsset:              v.LockAsset,
 			transferTo:             v.TransferTo,
+			withdrawal:             v.Withdrawal,
 			singleAmountMin:        v.SingleAmountMin,
 			singleAmountMax:        v.SingleAmountMax,
 			dailyAmountMax:         v.DailyAmountMax,
@@ -132,6 +146,7 @@ func LoadLevelConfig(dir string, cfgName string) error {
 			dailyCommitAccess:      v.DailyCommitAccess,
 			dailyWithdrawalQuota:   v.DailyWithdrawalQuota,
 			monthlyWithdrawalQuota: v.MonthlyWithdrawalQuota,
+			minerIndexSize:         v.MinerIndexSize,
 		}
 	}
 	return nil
@@ -146,7 +161,7 @@ func GetLimitByLevel(level int) *UserLevelLimit {
 
 func (cfg *UserLevelConfigInternal) isValid() bool {
 	if len(cfg.LimitMap) < USER_LEVEL_NUM {
-		fmt.Println("level is not enough");
+		fmt.Println("level is not enough")
 		return false
 	}
 

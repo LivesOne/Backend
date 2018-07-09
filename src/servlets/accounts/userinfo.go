@@ -1,11 +1,11 @@
 package accounts
 
 import (
+	"database/sql"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"utils"
-	"database/sql"
 	"utils/logger"
 )
 
@@ -60,25 +60,24 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 	}
 	param := requestData.Param
 
-	if param == nil || len(param.Uid) == 0  {
+	if param == nil || len(param.Uid) == 0 {
 		log.Error("validate param is failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	acc, err := common.GetAccountByUID(param.Uid)
-	if err != nil && err != sql.ErrNoRows{
-		log.Error("sql error",err.Error())
+	if err != nil && err != sql.ErrNoRows {
+		log.Error("sql error", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
-	if acc == nil   {
-		log.Error("can not find user by uid:",param.Uid)
+	if acc == nil {
+		log.Error("can not find user by uid:", param.Uid)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
 
 	response.Data = userinfoResData{
 		RegisterTime: utils.GetTs13(acc.RegisterTime),

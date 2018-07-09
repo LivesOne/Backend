@@ -19,7 +19,7 @@ type lockUpgradeParam struct {
 }
 
 type lockUpgradeSecret struct {
-	Id string `json:"id"`
+	Id    string `json:"id"`
 	Month int    `json:"month"`
 	Pwd   string `json:"pwd"`
 }
@@ -65,7 +65,7 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset lockUpgrade: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -101,7 +101,7 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 
 	secret := new(lockUpgradeSecret)
 
-	if err := utils.DecodeSecret(reqParam.Secret, key, iv, secret);err != nil {
+	if err := utils.DecodeSecret(reqParam.Secret, key, iv, secret); err != nil {
 		log.Error("decode secret error", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -119,7 +119,6 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
 		return
 	}
-
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
@@ -139,26 +138,23 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 	}
 	assetLockId := utils.Str2Int64(secret.Id)
 
-	al := common.QueryAssetLock(assetLockId,uid)
+	al := common.QueryAssetLock(assetLockId, uid)
 	//校验锁仓记录是否可以被提前解锁
 	//month > 0 value > 0 end > curr_timestamp
-	if al == nil || !al.IsOk() || al.Type == common.ASSET_LOCK_TYPE_DRAW{
+	if al == nil || !al.IsOk() || al.Type == common.ASSET_LOCK_TYPE_DRAW {
 		response.SetResponseBase(constants.RC_INVALID_LOCK_ID)
 		return
 	}
-
 
 	begin := utils.GetTimestamp13()
 	//计算结束时间
 	end := begin + (int64(secret.Month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
 
-
-
 	al.Month = secret.Month
 	al.Begin = begin
 	al.End = end
 	al.Type = common.ASSET_LOCK_TYPE_DRAW
-	al.Hashrate = getLockHashrate(secret.Month,al.Value)
+	al.Hashrate = getLockHashrate(secret.Month, al.Value)
 
 	if ok, e := common.UpgradeAssetLock(al); ok {
 		response.Data = al
@@ -176,5 +172,3 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 	}
 
 }
-
-

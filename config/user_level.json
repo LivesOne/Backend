@@ -4,61 +4,71 @@
       "ChangePhone": false,
       "LockAsset": false,
       "TransferTo": false,
+      "Withdrawal": false,
       "SingleAmountMin": 0,
       "SingleAmountMax": 0,
       "DailyAmountMax": 0,
       "DailyPrepareAccess": 0,
       "DailyCommitAccess": 0,
       "DailyWithdrawalQuota": 0,
-      "MonthlyWithdrawalQuota": 0
+      "MonthlyWithdrawalQuota": 0,
+      "MinerIndexSize":1
     },
     "1":{
       "ChangePhone": true,
       "LockAsset": true,
       "TransferTo": true,
+      "Withdrawal": false,
       "SingleAmountMin": 0,
       "SingleAmountMax": 0,
       "DailyAmountMax": 0,
       "DailyPrepareAccess": 0,
       "DailyCommitAccess": 0,
       "DailyWithdrawalQuota": 0,
-      "MonthlyWithdrawalQuota": 0
+      "MonthlyWithdrawalQuota": 0,
+      "MinerIndexSize":2
     },
     "2":{
       "ChangePhone": true,
       "LockAsset": true,
       "TransferTo": true,
+      "Withdrawal": true,
       "SingleAmountMin": 10,
       "SingleAmountMax": 2000,
       "DailyAmountMax": 2000,
       "DailyPrepareAccess": 3,
       "DailyCommitAccess": 2,
       "DailyWithdrawalQuota": 200,
-      "MonthlyWithdrawalQuota": 200
+      "MonthlyWithdrawalQuota": 200,
+      "MinerIndexSize":3
     },
     "3":{
       "ChangePhone": true,
       "LockAsset": true,
       "TransferTo": true,
+      "Withdrawal": true,
       "SingleAmountMin": 10,
       "SingleAmountMax": 5000,
       "DailyAmountMax": 5000,
       "DailyPrepareAccess": 7,
       "DailyCommitAccess": 5,
-      "DailyWithdrawalQuota": 200,
-      "MonthlyWithdrawalQuota": 200
+      "DailyWithdrawalQuota": 300,
+      "MonthlyWithdrawalQuota": 300,
+      "MinerIndexSize":4
     },
     "4":{
       "ChangePhone": true,
       "LockAsset": true,
       "TransferTo": true,
+      "Withdrawal": true,
       "SingleAmountMin": 10,
       "SingleAmountMax": 10000,
       "DailyAmountMax": 10000,
       "DailyPrepareAccess": 14,
       "DailyCommitAccess": 10,
-      "DailyWithdrawalQuota": 200,
-      "MonthlyWithdrawalQuota": 200
+      "DailyWithdrawalQuota": 400,
+      "MonthlyWithdrawalQuota": 400,
+      "MinerIndexSize":5
     }
   }
 }

@@ -18,7 +18,7 @@ const (
 )
 
 type checkWithVcodeRequest struct {
-	Base  *common.BaseInfo            `json:"base"`
+	Base  *common.BaseInfo     `json:"base"`
 	Param *checkWithVcodeParam `json:"param"`
 }
 

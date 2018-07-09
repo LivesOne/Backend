@@ -1,22 +1,19 @@
 package config
 
 import (
-	"path/filepath"
-	"fmt"
-	"utils"
 	"errors"
+	"fmt"
+	"path/filepath"
+	"utils"
 )
 
-
-
 type BindActive struct {
-	RegisterTimeActive int64
-	BindTimeActiveStart int64
-	BindTimeActiveEnd int64
+	RegisterTimeActive   int64
+	BindTimeActiveStart  int64
+	BindTimeActiveEnd    int64
 	BindWXActiveHashRate int
 	BindTGActiveHashRate int
-	HashRateActiveMonth int
-
+	HashRateActiveMonth  int
 }
 
 var config *BindActive
@@ -35,7 +32,7 @@ func LoadBindActiveConfig(dir string, cfgName string) error {
 		panic(err)
 	}
 
-	if !config.isValid(){
+	if !config.isValid() {
 		err := errors.New("user level limit item not integrity")
 		fmt.Println("user level limit item not integrity\n", err)
 		fmt.Println("json str --- >", utils.ToJSONIndent(config))
@@ -45,15 +42,14 @@ func LoadBindActiveConfig(dir string, cfgName string) error {
 	return nil
 }
 
-
 func (cfg *BindActive) isValid() bool {
-	return cfg.RegisterTimeActive >0 &&
-		cfg.BindTGActiveHashRate >0 &&
-		cfg.BindTimeActiveEnd >0 &&
-		cfg.BindTimeActiveStart >0 &&
-		cfg.HashRateActiveMonth >0
+	return cfg.RegisterTimeActive > 0 &&
+		cfg.BindTGActiveHashRate > 0 &&
+		cfg.BindTimeActiveEnd > 0 &&
+		cfg.BindTimeActiveStart > 0 &&
+		cfg.HashRateActiveMonth > 0
 }
 
-func GetBindActive()*BindActive{
+func GetBindActive() *BindActive {
 	return config
 }

@@ -5,7 +5,6 @@ package common
 
 import (
 	"servlets/constants"
-	"utils/config"
 	"utils/logger"
 )
 
@@ -44,7 +43,7 @@ type (
 
 	AppInfo struct {
 		Name  string      `json:"name,omitempty"`
-		AppID string      `json:"appid,omitempty"`
+		AppID interface{} `json:"appid,omitempty"`
 		Plat  interface{} `json:"plat,omitempty"`
 		Ver   string      `json:"ver,omitempty"`
 	}
@@ -86,9 +85,10 @@ type (
 // IsValid check is it a valid App Info
 func (app *AppInfo) IsValid() bool {
 	return (len(app.Name) > 0) &&
-		config.IsAppIDValid(app.AppID) &&
-		// (len(app.Plat) > 0) &&
+		//app.AppID > 0 &&
+		//app.Plat > 0 &&
 		(len(app.Ver) > 0)
+	//config.IsAppIDValid(app.AppID)
 }
 
 func NewResponseData() *ResponseData {

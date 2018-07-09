@@ -33,7 +33,7 @@ type transHistoryResData struct {
 }
 
 type transHistoryRecord struct {
-	Txid  int64               `json:"txid"`
+	Txid  string              `json:"txid"`
 	Type  int                 `json:"type"`
 	From  string              `json:"from"`
 	To    string              `json:"to"`
@@ -78,7 +78,7 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset transHistory: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -136,7 +136,7 @@ func buildResData(records []common.DTTXHistory, max int, uid int64) *transHistor
 		}
 		for _, v := range records {
 			r := transHistoryRecord{
-				Txid:  v.Id,
+				Txid:  utils.Int642Str(v.Id),
 				Type:  convType(v.Type, v.To, uid),
 				From:  convUidStr(v.From),
 				To:    convUidStr(v.To),

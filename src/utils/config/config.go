@@ -71,13 +71,13 @@ type Configuration struct {
 	// asset db config
 	Asset     DBConfig
 	TxHistory MongoConfig
+	Miner     MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制
 	LoginPwdErrCntLimit []LoginPwdErrCntLimit
 	TransferLimit       map[int]TransferLimit
-	AppIDs              []string        // app IDs read from configuration file
-	appsMap             map[string]bool // used to check apps ID existing or not
+	AppIDs              []int        // app IDs read from configuration file
 
 	// 短信验证网关相关
 	SmsSvrAddr string
@@ -97,6 +97,7 @@ type Configuration struct {
 	WXAuth                 WXAuth
 	BindActive             string
 	AuthTelegramUrl        string
+	WithdrawalConfig       string
 }
 
 // configuration data
@@ -124,11 +125,11 @@ func LoadConfig(cfgFilename string, cd string) error {
 		//return errors.New("configuration item not integrity")
 	}
 	//logger.Info(gConfig.AppIDs)
-	gConfig.appsMap = make(map[string]bool)
-	for _, appid := range gConfig.AppIDs {
-		gConfig.appsMap[appid] = true
-	}
-	gConfig.AppIDs = nil // release it
+	//gConfig.appsMap = make(map[string]bool)
+	//for _, appid := range gConfig.AppIDs {
+	//	gConfig.appsMap[appid] = true
+	//}
+	//gConfig.AppIDs = nil // release it
 	// logger.Info("load configuration success, is app id valid:", gConfig.IsAppIDValid("maxthon"))
 	// logger.Info("configuration item not integrity\n", utils.ToJSONIndent(gConfig))
 	cfgDir = cd
@@ -201,7 +202,7 @@ func (cfg *Configuration) isValid() bool {
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
 		cfg.TxHistory.isValid() &&
-		len(cfg.AppIDs) > 0 &&
+		//len(cfg.AppIDs) > 0 &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
 		len(cfg.ImgSvrAddr) > 0
@@ -217,8 +218,12 @@ func (cfg *Configuration) CautionMoneyIdsExist(uid int64) bool {
 	}
 	return false
 }
-func IsAppIDValid(appid string) bool {
-	logger.Info("app_id in ", appid, "curr app_id ", gConfig.appsMap)
-	_, existing := gConfig.appsMap[appid]
-	return existing
+func IsAppIDValid(appid int) bool {
+	logger.Info("app_id in ", appid, "curr app_id ", gConfig.AppIDs)
+	for _,v := range gConfig.AppIDs{
+		if v == appid {
+			return true
+		}
+	}
+	return false
 }

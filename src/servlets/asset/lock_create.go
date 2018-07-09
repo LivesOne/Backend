@@ -66,7 +66,7 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset lockCreate: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -102,7 +102,7 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 
 	secret := new(lockCreateSecret)
 
-	if err := utils.DecodeSecret(reqParam.Secret, key, iv, secret);err != nil {
+	if err := utils.DecodeSecret(reqParam.Secret, key, iv, secret); err != nil {
 		log.Error("decode secret error", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -155,7 +155,7 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 		Value:    secret.Value,
 		ValueInt: utils.FloatStrToLVTint(secret.Value),
 		Month:    secret.Month,
-		Hashrate: getLockHashrate(secret.Month,secret.Value),
+		Hashrate: getLockHashrate(secret.Month, secret.Value),
 		Begin:    begin,
 		End:      end,
 		Type:     reqParam.Type,
@@ -178,9 +178,7 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 
 }
 
-
-
-func getLockHashrate(monnth int,value string) int {
+func getLockHashrate(monnth int, value string) int {
 	//锁仓数额	B	[用户自定义填充]，锁仓额为1000LVT的倍数
 	b := utils.Str2Float64(value)
 	//锁仓期间	T	用户选择：1个月、3个月、6个月、12个月，24个月
@@ -198,4 +196,3 @@ func getLockHashrate(monnth int,value string) int {
 	}
 	return constants.ASSET_LOCK_MAX_VALUE
 }
-

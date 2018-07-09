@@ -35,17 +35,17 @@ type responseLoginSPK struct {
 
 type responseLogin struct {
 	UID    string            `json:"uid"`
-	Token  string            `json:"token"`
+	Token  string            `json:"token,omitempty"`
 	Expire int64             `json:"expire"`
 	SPK    *responseLoginSPK `json:"spk"`
 }
 
 type limitedRes struct {
-	Uid       string `json:"uid"`
+	Uid string `json:"uid"`
 }
 
 type tmpLimitedRes struct {
-	LimitTime int    `json:"limit_time"`
+	LimitTime int `json:"limit_time"`
 }
 
 // loginHandler implements the "Echo message" interface
@@ -133,7 +133,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		// 识别数量决定是否限制
 		// 多个+
 		for _, acc := range accountList {
-			if ok,time := common.AddWrongPwd(acc.UID);ok {
+			if ok, time := common.AddWrongPwd(acc.UID); ok {
 				response.Data = tmpLimitedRes{
 					LimitTime: time,
 				}
@@ -232,8 +232,6 @@ func (handler *loginHandler) checkRequestParams(header *common.HeaderParams, log
 
 	return true
 }
-
-
 
 func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, error) {
 

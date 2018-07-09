@@ -22,8 +22,8 @@ type registerUpVcodeParam struct {
 }
 
 type registerUpVcodeResData struct {
-	Uid string `json:"uid"`
-	RegisterTime int64 `json:"register_time"`
+	Uid          string `json:"uid"`
+	RegisterTime int64  `json:"register_time"`
 }
 
 // registerRequest holds entire request data
