@@ -15,7 +15,6 @@ type lockCreateReqData struct {
 
 type lockCreateParam struct {
 	AuthType int    `json:"auth_type"`
-	Type     int    `json:"type"`
 	Secret   string `json:"secret"`
 }
 
@@ -121,14 +120,6 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	switch reqParam.Type {
-	case common.ASSET_LOCK_TYPE_NOR:
-	case common.ASSET_LOCK_TYPE_DRAW:
-	default:
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
-
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
@@ -158,7 +149,8 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 		Hashrate: getLockHashrate(secret.Month, secret.Value),
 		Begin:    begin,
 		End:      end,
-		Type:     reqParam.Type,
+		Currency: common.CURRENCY_LVTC,
+		AllowUnlock: 1,
 	}
 
 	if ok, e := common.CreateAssetLock(assetLock); ok {
