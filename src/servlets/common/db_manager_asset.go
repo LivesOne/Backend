@@ -293,6 +293,11 @@ func CheckAndInitAsset(uid int64) (bool, int) {
 		logger.Error("init reward error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
+	_, err = InsertRewardLvtc(uid)
+	if err != nil {
+		logger.Error("init reward error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
 
 	if rowsCount == 0 {
 		return true, constants.TRANS_ERR_SUCC
@@ -319,6 +324,11 @@ func RemoveTXID(txid int64) error {
 
 func InsertReward(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_reward (uid,total,lastday,lastmodify) values (?,?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0, 0)
+}
+
+func InsertRewardLvtc(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_reward_lvtc (uid,total,lastday,lastmodify) values (?,?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0, 0)
 }
 
