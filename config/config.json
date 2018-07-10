@@ -131,7 +131,7 @@
         "Secret":""
     },
     "BindActive":"bind_active.json",
-    "AuthTelegramUrl":"http://tg-callback.lives.one/code/v1/verify"
-
+    "AuthTelegramUrl":"http://tg-callback.lives.one/code/v1/verify",
+    "LvtcHashrateScale": 8
 
 }

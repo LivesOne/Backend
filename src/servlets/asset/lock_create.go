@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"utils/config"
 )
 
 type lockCreateReqData struct {
@@ -152,6 +153,11 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 		Currency: common.CURRENCY_LVTC,
 		AllowUnlock: 1,
 	}
+	if assetLock.ValueInt < 100 {
+		log.Info("asset create lock less than 100")
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	if ok, e := common.CreateAssetLock(assetLock); ok {
 		response.Data = assetLock
@@ -183,8 +189,11 @@ func getLockHashrate(monnth int, value string) int {
 
 	//Mmax=500%，大于500%取500%
 	//四舍五入后数值大于500 取500
-	if re := utils.Round(s); re <= constants.ASSET_LOCK_MAX_VALUE {
-		return re
+	lvtcScale := config.GetConfig().LvtcHashrateScale
+	if lvtcScale > 0 {
+		if re := utils.Round(s) * lvtcScale; re <= constants.ASSET_LOCK_MAX_VALUE {
+			return re
+		}
 	}
 	return constants.ASSET_LOCK_MAX_VALUE
 }

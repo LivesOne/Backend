@@ -65,9 +65,11 @@ bind wx(86)
 */
 func upOne(acc *Account) (bool, int) {
 	// check miner days and bind wxid
-	if CheckCreditScore(acc.UID, DEF_SCORE) && CheckBindWx(acc.UID) && QueryCountMinerByUid(acc.UID) >= 7 {
+	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
+	if CheckCreditScore(acc.UID, DEF_SCORE) && CheckBindWx(acc.UID) &&
+		QueryCountMinerByUid(acc.UID) >= 7 && lvtcScale > 0 {
 		//check asset lock month and value
-		lvtc := utils.CONV_LVT * int64(1000) / 8
+		lvtc := utils.CONV_LVT * int64(1000) / lvtcScale
 		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvtc {
 			// set level up
 			level := 2
@@ -89,9 +91,10 @@ lock_asset:month>=3,value>=5w
 */
 func upTwo(acc *Account) (bool, int) {
 	// check miner days
-	if QueryCountMinerByUid(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) {
+	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
+	if QueryCountMinerByUid(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
 		//check asset lock month and value
-		lvt := utils.CONV_LVT * int64(50000) / 8
+		lvt := utils.CONV_LVT * int64(50000) / lvtcScale
 		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvt {
 			// set level up
 			level := 3
@@ -113,9 +116,10 @@ lock_asset:month>=3,value>=20w
 */
 func upThree(acc *Account) (bool, int) {
 	// check miner days
-	if QueryCountMinerByUid(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) {
+	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
+	if QueryCountMinerByUid(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
 		//check asset lock month and value
-		lvt := utils.CONV_LVT * int64(200000) / 8
+		lvt := utils.CONV_LVT * int64(200000) / lvtcScale
 		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvt {
 			// set level up
 			level := 4

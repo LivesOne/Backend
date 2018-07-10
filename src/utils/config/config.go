@@ -99,6 +99,7 @@ type Configuration struct {
 	BindActive             string
 	AuthTelegramUrl        string
 	WithdrawalConfig       string
+	LvtcHashrateScale	   int
 }
 
 // configuration data
