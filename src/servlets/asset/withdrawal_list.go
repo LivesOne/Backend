@@ -25,7 +25,7 @@ type withdrawListResponseData struct {
 type withdrawListResponse struct {
 	Id         string `json:"id"`
 	TradeNo    string `json:"trade_no"`
-	AssetType  string `json:"asset_type"`
+	Currency   string `json:"currency"`
 	Address    string `json:"address"`
 	Value      string `json:"value"`
 	Fee        string `json:"fee"`
@@ -81,7 +81,7 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 		withdrawListResponseArray = append(withdrawListResponseArray, withdrawListResponse{
 			Id:         utils.Int642Str(userWithdrawalRequest.Id),
 			TradeNo:    userWithdrawalRequest.TradeNo,
-			AssetType:  "LVT",
+			Currency:   "LVTC",
 			Address:    userWithdrawalRequest.Address,
 			Value:      utils.LVTintToFloatStr(userWithdrawalRequest.Value),
 			Fee:        utils.LVTintToFloatStr(userWithdrawalRequest.Free),

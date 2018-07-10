@@ -46,6 +46,7 @@ var (
 	RC_WX_SEC_AUTH_FAILED            = Error{20020, "weixin auth faild"}
 	RC_INVALID_WALLET_ADDRESS_FORMAT = Error{20021, "invalid wallet address format"}
 	RC_DUP_WALLET_ADDRESS            = Error{20022, "duplicate wallet address"}
+	RC_PERMISSION_DENIED             = Error{20023, "permission denied"}
 
 	RC_ACCOUNT_ACCESS_LIMITED         = Error{21001, "account access limited"}
 	RC_INSUFFICIENT_BALANCE           = Error{21002, "insufficient balance"}
