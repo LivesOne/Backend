@@ -90,6 +90,9 @@ func InsertCommited(commited *DTTXHistory) error {
 func InsertFailed(failed *DTTXHistory) error {
 	return txCommonInsert(tSession,txdbc.DBDatabase, FAILED, failed)
 }
+func InsertLVTCFailed(failed *DTTXHistory) error {
+	return txCommonInsert(ntSession,ntxdbc.DBDatabase, FAILED, failed)
+}
 
 func InsertLVTCPending(pending *DTTXHistory) error {
 	return txCommonInsert(ntSession,ntxdbc.DBDatabase, PENDING, pending)

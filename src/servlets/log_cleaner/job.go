@@ -9,9 +9,15 @@ import (
 
 func StartJob() {
 	go func() {
-		logger.Info("start cleaner pending job ---> ", utils.GetFormatDateNow())
+		logger.Info("start cleaner lvt pending job ---> ", utils.GetFormatDateNow())
 		for {
 			startTask()
+		}
+	}()
+	go func() {
+		logger.Info("start cleaner lvtc pending job ---> ", utils.GetFormatDateNow())
+		for {
+			startLvtcTask()
 		}
 	}()
 }
@@ -19,6 +25,16 @@ func StartJob() {
 func startTask() {
 	//循环至每月数据
 	for cleanerPending() {
+	}
+	//随机3-5秒休眠
+	s := random3To5()
+	//logger.Debug("sleep task second ", s)
+	time.Sleep(time.Duration(s) * time.Second)
+}
+
+func startLvtcTask() {
+	//循环至每月数据
+	for cleanerLVTCPending() {
 	}
 	//随机3-5秒休眠
 	s := random3To5()
