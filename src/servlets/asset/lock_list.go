@@ -10,7 +10,7 @@ import (
 )
 
 type lockListResData struct {
-	Records []*common.AssetLock `json:"records"`
+	Records []*common.AssetLockLvtc `json:"records"`
 }
 
 // sendVCodeHandler
@@ -58,7 +58,7 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 	uid := utils.Str2Int64(uidString)
 
 	response.Data = lockListResData{
-		Records: common.QueryAssetLockList(uid),
+		Records: common.QueryAssetLockList(uid, common.CURRENCY_LVTC),
 	}
 
 }

@@ -637,8 +637,8 @@ func UpgradeAssetLock(assetLock *AssetLock) (bool, int) {
 	return true, constants.TRANS_ERR_SUCC
 }
 
-func QueryAssetLockList(uid int64) []*AssetLock {
-	res := gDBAsset.Query("select * from user_asset_lock where uid = ? order by id desc", uid)
+func QueryAssetLockList(uid int64, currency string) []*AssetLockLvtc {
+	res := gDBAsset.Query("select * from user_asset_lock where uid = ? and currency = ? order by id desc", uid, currency)
 	if res == nil {
 		return nil
 	}
@@ -756,10 +756,10 @@ func convLvtcAssetLock(al map[string]string) *AssetLockLvtc {
 	return &alres
 }
 
-func convAssetLockList(list []map[string]string) []*AssetLock {
-	listRes := make([]*AssetLock, 0)
+func convAssetLockList(list []map[string]string) []*AssetLockLvtc {
+	listRes := make([]*AssetLockLvtc, 0)
 	for _, v := range list {
-		listRes = append(listRes, convAssetLock(v))
+		listRes = append(listRes, convLvtcAssetLock(v))
 	}
 	return listRes
 }
