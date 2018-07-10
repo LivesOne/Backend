@@ -42,8 +42,8 @@ func initNewTxHistoryMongoDB(){
 	ntxdbc = config.NewTxHistory
 	connStr := fmt.Sprintf("%s?maxPoolSize=%d", ntxdbc.DBHost, ntxdbc.MaxConn)
 	logger.Info("conn mongo db ---> ", connStr)
-	tSession, _ = mgo.Dial(connStr)
-	tSession.SetPoolLimit(ntxdbc.MaxConn)
+	ntSession, _ = mgo.Dial(connStr)
+	ntSession.SetPoolLimit(ntxdbc.MaxConn)
 }
 
 
