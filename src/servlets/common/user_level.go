@@ -67,8 +67,8 @@ func upOne(acc *Account) (bool, int) {
 	// check miner days and bind wxid
 	if CheckCreditScore(acc.UID, DEF_SCORE) && CheckBindWx(acc.UID) && QueryCountMinerByUid(acc.UID) >= 7 {
 		//check asset lock month and value
-		lvt := utils.CONV_LVT * int64(1000)
-		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvt {
+		lvtc := utils.CONV_LVT * int64(1000) / 8
+		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvtc {
 			// set level up
 			level := 2
 			err := SetUserLevel(acc.UID, level)
@@ -91,7 +91,7 @@ func upTwo(acc *Account) (bool, int) {
 	// check miner days
 	if QueryCountMinerByUid(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) {
 		//check asset lock month and value
-		lvt := utils.CONV_LVT * int64(50000)
+		lvt := utils.CONV_LVT * int64(50000) / 8
 		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvt {
 			// set level up
 			level := 3
@@ -115,7 +115,7 @@ func upThree(acc *Account) (bool, int) {
 	// check miner days
 	if QueryCountMinerByUid(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) {
 		//check asset lock month and value
-		lvt := utils.CONV_LVT * int64(200000)
+		lvt := utils.CONV_LVT * int64(200000) / 8
 		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvt {
 			// set level up
 			level := 4
