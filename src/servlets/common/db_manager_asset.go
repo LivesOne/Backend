@@ -50,7 +50,7 @@ func QueryReward(uid int64) (*Reward, error) {
 	}
 	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify,days from user_reward where uid = ?", uid)
 	if err != nil {
-		logger.Error("query db error ", err.Error())
+		logger.Error("query db:user_reward error ", err.Error())
 		return nil, err
 	}
 	resReward := &Reward{
@@ -76,15 +76,7 @@ func QueryLvtcReward(uid int64) (*Reward, error) {
 	}
 	row, err := gDBAsset.QueryRow("select total,lastday,lastmodify,days from user_reward_lvtc where uid = ?", uid)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			reward, err := QueryReward(uid)
-			if err == nil {
-				resReward.Days = reward.Days
-				resReward.Lastmodify = reward.Lastmodify
-				return resReward, nil
-			}
-		}
-		logger.Error("query db error ", err.Error())
+		logger.Error("query db:user_reward_lvtc error ", err.Error())
 		return nil, err
 	}
 	if row != nil {
@@ -93,6 +85,17 @@ func QueryLvtcReward(uid int64) (*Reward, error) {
 		resReward.Lastmodify = utils.Str2Int64(row["lastmodify"])
 		resReward.Days = utils.Str2Int(row["days"])
 
+	} else {
+		// no record
+		// query table: user_reward
+		reward, err := QueryReward(uid)
+		if err != nil {
+			return nil, err
+		}
+		if reward != nil && reward.Lastmodify != 0 {
+			resReward.Days = reward.Days
+			resReward.Lastmodify = reward.Lastmodify
+		}
 	}
 	return resReward, err
 
@@ -705,6 +708,15 @@ func QueryAssetLock(id, uid int64) *AssetLock {
 	return convAssetLock(res)
 }
 
+func QueryLvtcAssetLock(id, uid int64) *AssetLockLvtc {
+	res, err := gDBAsset.QueryRow("select * from user_asset_lock where id = ? and uid = ?", id, uid)
+	if err != nil {
+		logger.Error("query asset lock error", err.Error())
+		return nil
+	}
+	return convLvtcAssetLock(res)
+}
+
 func convAssetLock(al map[string]string) *AssetLock {
 	if al == nil {
 		return nil
@@ -724,6 +736,26 @@ func convAssetLock(al map[string]string) *AssetLock {
 	return &alres
 }
 
+func convLvtcAssetLock(al map[string]string) *AssetLockLvtc {
+	if al == nil {
+		return nil
+	}
+	alres := AssetLockLvtc{
+		Id:       utils.Str2Int64(al["id"]),
+		Uid:      utils.Str2Int64(al["uid"]),
+		ValueInt: utils.Str2Int64(al["value"]),
+		Month:    utils.Str2Int(al["month"]),
+		Hashrate: utils.Str2Int(al["hashrate"]),
+		Begin:    utils.Str2Int64(al["begin"]),
+		End:      utils.Str2Int64(al["end"]),
+		Currency: al["currency"],
+		AllowUnlock:	utils.Str2Int(al["allow_unlock"]),
+	}
+	alres.Value = utils.LVTintToFloatStr(alres.ValueInt)
+	alres.IdStr = utils.Int642Str(alres.Id)
+	return &alres
+}
+
 func convAssetLockList(list []map[string]string) []*AssetLock {
 	listRes := make([]*AssetLock, 0)
 	for _, v := range list {
@@ -732,11 +764,11 @@ func convAssetLockList(list []map[string]string) []*AssetLock {
 	return listRes
 }
 
-func execRemoveAssetLock(txid int64, assetLock *AssetLock, penaltyMoney int64, tx *sql.Tx) (bool, int) {
+func execRemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int64, tx *sql.Tx) (bool, int) {
 	//锁定记录
 	ts := utils.TXIDToTimeStamp13(txid)
 	to := config.GetConfig().PenaltyMoneyAccountUid
-	tx.Exec("select * from user_asset where uid in (?,?) for update", assetLock.Uid, to)
+	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", assetLock.Uid, to)
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
 	if !CheckAssetLimeted(assetLock.Uid, tx) {
@@ -746,7 +778,7 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLock, penaltyMoney int64, t
 	//修改资产数据
 	//锁仓算力大于500时 给500
 	updSql := `update
-					user_asset
+					user_asset_lvtc
 			   set
 			   		balance = balance - ?,
 			   		locked = locked - ?,
@@ -772,7 +804,7 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLock, penaltyMoney int64, t
 	}
 
 	//增加目标的balance to为系统配置账户
-	info2, err2 := tx.Exec("update user_asset set balance = balance + ?,lastmodify = ? where uid = ?", assetLock.ValueInt, ts, to)
+	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", assetLock.ValueInt, ts, to)
 	if err2 != nil {
 		logger.Error("sql error ", err2.Error())
 		return false, constants.TRANS_ERR_SYS
@@ -796,7 +828,7 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLock, penaltyMoney int64, t
 	return true, constants.TRANS_ERR_SUCC
 }
 
-func RemoveAssetLock(txid int64, assetLock *AssetLock, penaltyMoney int64) (bool, int) {
+func RemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int64) (bool, int) {
 	ts := utils.TXIDToTimeStamp13(txid)
 	tx, err := gDBAsset.Begin()
 	if err != nil {

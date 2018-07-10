@@ -122,3 +122,10 @@ func (al *AssetLock) IsOk() bool {
 		al.End > utils.GetTimestamp13()
 
 }
+
+func (al *AssetLockLvtc) IsOk() bool {
+	return al.Month > 0 &&
+		al.ValueInt > 0 &&
+		al.End > utils.GetTimestamp13()
+
+}
