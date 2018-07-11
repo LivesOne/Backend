@@ -1178,13 +1178,14 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	//同步至mongo
 	go func() {
 		txh := &DTTXHistory{
-			Id:      txId,
-			TradeNo: tradeNo,
-			Type:    constants.TX_TYPE_WITHDRAW_LVT,
-			From:    uid,
-			To:      toLvt,
-			Value:   amount,
-			Ts:      timestamp,
+			Id:       txId,
+			TradeNo:  tradeNo,
+			Type:     constants.TX_TYPE_WITHDRAW_LVT,
+			From:     uid,
+			To:       toLvt,
+			Value:    amount,
+			Ts:       timestamp,
+			Currency: "LVTC",
 		}
 		err := InsertLVTCCommited(txh)
 		if err != nil {
