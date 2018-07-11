@@ -30,5 +30,7 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_LVTC_TRANS_COMMIT, &lvtcTransCommitHandler{})
 	server.RegisterHandler(constants.ASSET_LVTC_TRANS_RESULT, &lvtcTransResultHandler{})
 	server.RegisterHandler(constants.ASSET_LVTC_TRANS_HISTORY, &lvtcTransHistoryHandler{})
+	server.RegisterHandler(constants.ASSET_LVT2LVTC, &lvt2lvtcHandler{})
+	server.RegisterHandler(constants.ASSET_LVT2LVTC_COUNT, &lvt2lvtcCountHandler{})
 
 }

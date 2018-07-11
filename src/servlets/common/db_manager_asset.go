@@ -741,15 +741,15 @@ func convLvtcAssetLock(al map[string]string) *AssetLockLvtc {
 		return nil
 	}
 	alres := AssetLockLvtc{
-		Id:       utils.Str2Int64(al["id"]),
-		Uid:      utils.Str2Int64(al["uid"]),
-		ValueInt: utils.Str2Int64(al["value"]),
-		Month:    utils.Str2Int(al["month"]),
-		Hashrate: utils.Str2Int(al["hashrate"]),
-		Begin:    utils.Str2Int64(al["begin"]),
-		End:      utils.Str2Int64(al["end"]),
-		Currency: al["currency"],
-		AllowUnlock:	utils.Str2Int(al["allow_unlock"]),
+		Id:          utils.Str2Int64(al["id"]),
+		Uid:         utils.Str2Int64(al["uid"]),
+		ValueInt:    utils.Str2Int64(al["value"]),
+		Month:       utils.Str2Int(al["month"]),
+		Hashrate:    utils.Str2Int(al["hashrate"]),
+		Begin:       utils.Str2Int64(al["begin"]),
+		End:         utils.Str2Int64(al["end"]),
+		Currency:    al["currency"],
+		AllowUnlock: utils.Str2Int(al["allow_unlock"]),
 	}
 	alres.Value = utils.LVTintToFloatStr(alres.ValueInt)
 	alres.IdStr = utils.Int642Str(alres.Id)
@@ -1126,10 +1126,10 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
 	ethFee := utils.FloatStrToLVTint(ethFeeString)
 	timestamp := utils.GetTimestamp13()
-	txIdLvtc := GenerateTxID()
+	txId := GenerateTxID()
 	toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
 
-	transLvtResult, e := TransAccountLvtcByTx(txIdLvtc, uid, toLvt, amount, tx)
+	transLvtResult, e := TransAccountLvtcByTx(txId, uid, toLvt, amount, tx)
 	if !transLvtResult {
 		tx.Rollback()
 		switch e {
@@ -1143,7 +1143,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			return "", constants.RC_SYSTEM_ERR
 		}
 	}
-	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txIdLvtc, constants.TX_TYPE_WITHDRAW_LVT, tradeNo, uid, toLvt, amount, timestamp)
+	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txId, constants.TX_TYPE_WITHDRAW_LVT, tradeNo, uid, toLvt, amount, timestamp)
 	if err3 != nil {
 		tx.Rollback()
 		logger.Error("insert tx_history_lvt_tmp error ", err3.Error())
@@ -1151,8 +1151,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	}
 
 	toEth := config.GetWithdrawalConfig().EthAcceptAccount
-	txIdEth, e := EthTransCommit(uid, toEth, ethFee, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
-	if txIdEth <= 0 {
+	txIdFee, e := EthTransCommit(uid, toEth, ethFee, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
+	if txIdFee <= 0 {
 		tx.Rollback()
 		switch e {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
@@ -1166,8 +1166,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		}
 	}
 
-	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time, status, fee, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txIdLvtc, txIdEth, timestamp, timestamp, 0, ethFee, quotaType)
+	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, quota_type) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txId, txIdFee, timestamp, timestamp, 0, ethFee, quotaType)
 	if err1 != nil {
 		logger.Error("add user_withdrawal_request error ", err1.Error())
 		tx.Rollback()
@@ -1178,7 +1178,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	//同步至mongo
 	go func() {
 		txh := &DTTXHistory{
-			Id:      txIdLvtc,
+			Id:      txId,
 			TradeNo: tradeNo,
 			Type:    constants.TX_TYPE_WITHDRAW_LVT,
 			From:    uid,
@@ -1186,12 +1186,12 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			Value:   amount,
 			Ts:      timestamp,
 		}
-		err := InsertCommited(txh)
+		err := InsertLVTCCommited(txh)
 		if err != nil {
 			logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
 			rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
 		} else {
-			DeleteTxhistoryLvtTmpByTxid(txIdLvtc)
+			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
 	}()
 
@@ -1205,7 +1205,7 @@ func DeleteTxhistoryLvtTmpByTxid(txid int64) {
 
 func QueryTxhistoryLvtTmpByTimie(ts int64) []*DTTXHistory {
 	if gDBAsset != nil && gDBAsset.IsConn() {
-		results := gDBAsset.Query("select * from tx_history_lvt_tmp where ts < ?", ts)
+		results := gDBAsset.Query("select thl.*,uwr.currency from tx_history_lvt_tmp thl left join user_withdrawal_request uwr on thl.trade_no = uwr.trade_no where ts < ?", ts)
 		if results == nil {
 			return nil
 		}
@@ -1227,19 +1227,25 @@ func convDTTXHistoryRequest(al map[string]string) *DTTXHistory {
 		return nil
 	}
 	alres := DTTXHistory{
-		Id:      utils.Str2Int64(al["txid"]),
-		Type:    utils.Str2Int(al["type"]),
-		TradeNo: al["trade_no"],
-		From:    utils.Str2Int64(al["from"]),
-		To:      utils.Str2Int64(al["to"]),
-		Value:   utils.Str2Int64(al["value"]),
-		Ts:      utils.Str2Int64(al["ts"]),
+		Id:       utils.Str2Int64(al["txid"]),
+		Type:     utils.Str2Int(al["type"]),
+		TradeNo:  al["trade_no"],
+		From:     utils.Str2Int64(al["from"]),
+		To:       utils.Str2Int64(al["to"]),
+		Value:    utils.Str2Int64(al["value"]),
+		Ts:       utils.Str2Int64(al["ts"]),
+		Currency: al["currency"],
 	}
 	return &alres
 }
 
+func GetWithdrawalCurrency(tradeNo string) string {
+	row, _ := gDBAsset.QueryRow("select currency from user_withdrawal_request where trade_no = ?", tradeNo)
+	return row["currency"]
+}
+
 func QueryWithdrawalList(uid int64) []*UserWithdrawalRequest {
-	sql := "select id,trade_no, uid, value, address, txid_lvt, txid_eth, create_time, update_time,fee, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
+	sql := "select id, trade_no, currency, value, address, fee, create_time, update_time, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
 	results := gDBAsset.Query(sql, uid)
 	if results == nil {
 		return nil
@@ -1262,15 +1268,13 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 	alres := UserWithdrawalRequest{
 		Id:         utils.Str2Int64(al["id"]),
 		TradeNo:    al["trade_no"],
-		Uid:        utils.Str2Int64(al["uid"]),
 		Address:    al["address"],
 		Value:      utils.Str2Int64(al["value"]),
-		TxidLvt:    utils.Str2Int64(al["txid_lvt"]),
-		TxidEth:    utils.Str2Int64(al["txid_eth"]),
+		Currency:   al["currency"],
+		Fee:        utils.Str2Int64(al["fee"]),
 		CreateTime: utils.Str2Int64(al["create_time"]),
 		UpdateTime: utils.Str2Int64(al["update_time"]),
 		Status:     utils.Str2Int(al["status"]),
-		Free:       utils.Str2Int64(al["fee"]),
 	}
 	return &alres
 }
@@ -1558,4 +1562,79 @@ func convUserWithdrawCard(row map[string]string) *UserWithdrawCard {
 	}
 
 	return uwc
+}
+
+
+func lvt2LvtcInMysql(uid int64,tx *sql.Tx)(int64,int64,error){
+
+	ts := utils.GetTimestamp13()
+	//资产锁定
+	_,err := tx.Exec("select * from user_asset where uid = ? for update",uid)
+	if err != nil {
+		logger.Error("lock table error",err.Error())
+		return 0,0,err
+	}
+	_,err = tx.Exec("select * from user_asset_lvtc where uid = ? for update",uid)
+	if err != nil {
+		logger.Error("lock table error",err.Error())
+		return 0,0,err
+	}
+	_,err = tx.Exec("select * from user_asset_lock where uid = ? and currency = ? for update",uid,CURRENCY_LVT)
+	if err != nil {
+		logger.Error("lock table error",err.Error())
+		return 0,0,err
+	}
+	balance := int64(0)
+	row := tx.QueryRow("select balance from user_asset where uid = ?",uid)
+	err = row.Scan(&balance)
+	if err != nil {
+		logger.Error("query balance error",err.Error())
+		return 0,0,err
+	}
+	//余额不足的不处理
+	if balance <= 0 {
+		return 0,0,nil
+	}
+	//获取转换汇率
+	lvtcHashrateScale := int64(config.GetConfig().LvtcHashrateScale)
+
+	//锁仓转换
+	_,err = tx.Exec("update user_asset_lock set `value` = `value` / ?,currency = ?  where uid = ? and currency = ? ",lvtcHashrateScale,CURRENCY_LVTC,uid,CURRENCY_LVT)
+	if err != nil {
+		logger.Error("modify user_asset_lock error",err.Error())
+		return 0,0,err
+	}
+
+	//获取转换后的锁仓锁定总额
+	lvtcLockCount := int64(0)
+	row = tx.QueryRow("select if(sum(value) is null,0,sum(value)) as c from user_asset_lock where uid = ? and currency = ?",uid,CURRENCY_LVTC)
+	err = row.Scan(&lvtcLockCount)
+	if err != nil {
+		logger.Error("query asset lvtc lock count error",err.Error())
+		return 0,0,err
+	}
+
+
+
+	//修改锁仓
+	//此处不对余额进行处理，交由上层统一走转账流程
+
+	_,err = tx.Exec("update user_asset_lvtc set locked = ?,lastmodify = ? where uid = ?",lvtcLockCount,ts,uid)
+	if err != nil {
+		logger.Error("modify locked error",err.Error())
+		return 0,0,err
+	}
+
+	//修改锁仓
+	//此处不对余额进行处理，交由上层统一走转账流程
+	_,err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?",ts,uid)
+	if err != nil {
+		logger.Error("modify locked error",err.Error())
+		return 0,0,err
+	}
+	//计算转换后的资产
+	lvtcBalance := balance/lvtcHashrateScale
+
+	return balance,lvtcBalance,nil
+
 }

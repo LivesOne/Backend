@@ -135,6 +135,10 @@ const (
 
 	ASSET_WITHDRAWAL_CARD_USE_LIST = "/asset/v1/withdraw/card/use_list"
 
+	ASSET_LVT2LVTC = "/asset/v1/misc/lvt2lvtc"
+
+	ASSET_LVT2LVTC_COUNT = "/asset/v1/misc/lvt2lvtc_count"
+
 	DEVICE_BIND_DEVICE = "/user/v1/device/bind"
 
 	DEVICE_UNBIND_DEVICE = "/user/v1/device/unbind"
