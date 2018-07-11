@@ -215,8 +215,9 @@ func buildQuery(uid int64, param *transHistoryParam) bson.M {
 		//判断查询类型
 		//生成不同的查询条件
 		switch {
-		case param.Type == constants.TX_TYPE_REWARD ||
-			param.Type == constants.TX_TYPE_PRIVATE_PLACEMENT:
+		case param.Type == constants.TX_TYPE_REWARD||
+			param.Type == constants.TX_TYPE_ACTIVITY_REWARD ||
+			param.Type == constants.TX_TYPE_PRIVATE_PLACEMENT :
 			query["to"] = uid
 			query["type"] = param.Type
 		case param.Type == constants.TX_TYPE_RECEIVABLES:
