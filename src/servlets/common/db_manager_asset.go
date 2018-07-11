@@ -1559,3 +1559,70 @@ func convUserWithdrawCard(row map[string]string) *UserWithdrawCard {
 
 	return uwc
 }
+
+
+func lvt2LvtcInMysql(uid int64,tx *sql.Tx)(int64,int64,error){
+
+	ts := utils.GetTimestamp13()
+	//资产锁定
+	_,err := tx.Exec("select * from user_asset where uid = ? for update",uid)
+	if err != nil {
+		logger.Error("lock table error",err.Error())
+		return 0,0,err
+	}
+	_,err = tx.Exec("select * from user_asset_lvtc where uid = ? for update",uid)
+	if err != nil {
+		logger.Error("lock table error",err.Error())
+		return 0,0,err
+	}
+	_,err = tx.Exec("select * from user_asset_lock where uid = ? and currency = ? for update",uid,CURRENCY_LVT)
+	if err != nil {
+		logger.Error("lock table error",err.Error())
+		return 0,0,err
+	}
+	balance := int64(0)
+	row := tx.QueryRow("select balance from user_asset where uid = ?",uid)
+	err = row.Scan(&balance)
+	if err != nil {
+		logger.Error("query balance error",err.Error())
+		return 0,0,err
+	}
+	//余额不足的不处理
+	if balance <= 0 {
+		return 0,0,nil
+	}
+	//获取转换汇率
+	lvtcHashrateScale := int64(config.GetConfig().LvtcHashrateScale)
+
+	//锁仓转换
+	_,err = tx.Exec("update user_asset_lock set `value` = `value` / ?,currency = ?  where uid = ? and currency = ? ",lvtcHashrateScale,CURRENCY_LVTC,uid,CURRENCY_LVT)
+	if err != nil {
+		logger.Error("modify user_asset_lock error",err.Error())
+		return 0,0,err
+	}
+
+	//获取转换后的锁仓锁定总额
+	lvtcLockCount := int64(0)
+	row = tx.QueryRow("select if(sum(value) is null,0,sum(value)) as c from user_asset_lock where uid = ? and currency = ?",uid,CURRENCY_LVTC)
+	err = row.Scan(&lvtcLockCount)
+	if err != nil {
+		logger.Error("query asset lvtc lock count error",err.Error())
+		return 0,0,err
+	}
+
+
+
+	//修改锁仓
+	//此处不对余额进行处理，交由上层统一走转账流程
+	_,err = tx.Exec("update user_asset_lvtc set locked = locked + ?,lastmodify = ? where uid = ?",lvtcLockCount,ts,uid)
+	if err != nil {
+		logger.Error("modify balance error",err.Error())
+		return 0,0,err
+	}
+
+	//计算转换后的资产
+	lvtcBalance := balance/lvtcHashrateScale
+
+	return balance,lvtcBalance,nil
+
+}
