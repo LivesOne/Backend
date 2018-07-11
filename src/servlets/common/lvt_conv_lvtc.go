@@ -30,7 +30,7 @@ func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 
 
 
-	if txid,e := buildLvtTxHistory(uid,lvt,tx);txid > 0 {
+	if txid,e := buildLvtTxHistory(uid,lvt,tx);txid < 0 {
 		logger.Error("build lvt tx history failed ,rollback the tx")
 		tx.Rollback()
 		return lvt,lvtc,e
@@ -62,7 +62,7 @@ func buildLvtTxHistory(uid,lvt int64,tx *sql.Tx)(int64,constants.Error){
 
 	if txid == -1 {
 		logger.Error("get txid error")
-		return txid,constants.RC_SYSTEM_ERR
+		return -1,constants.RC_SYSTEM_ERR
 	}
 	systemUid := config.GetConfig().Lvt2LvtcSystemAccountUid
 
@@ -83,10 +83,10 @@ func buildLvtTxHistory(uid,lvt int64,tx *sql.Tx)(int64,constants.Error){
 		err := InsertCommited(txh)
 		if !CheckDup(err) {
 			logger.Error("insert mongo error",err.Error())
-			return txid,constants.RC_SYSTEM_ERR
+			return -1,constants.RC_SYSTEM_ERR
 		}
 	} else {
-		return txid,getConvResCode(c)
+		return -1,getConvResCode(c)
 	}
 	return txid,constants.RC_OK
 }
