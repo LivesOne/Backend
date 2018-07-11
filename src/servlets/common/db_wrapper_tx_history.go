@@ -14,6 +14,7 @@ type (
 		Remark     interface{} `bson:"remark"`
 		Miner      []Miner     `bson:"miner,omitempty"`
 		BizContent string      `bson:"biz_content,omitempty"`
+		Currency   string
 	}
 
 	Miner struct {
