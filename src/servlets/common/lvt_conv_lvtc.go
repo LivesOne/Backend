@@ -35,7 +35,7 @@ func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 		tx.Rollback()
 		return lvt,lvtc,e
 	}else{
-		if ok,e := buildLvtcTxHistory(uid,lvt,tx);!ok {
+		if ok,e := buildLvtcTxHistory(uid,lvtc,tx);!ok {
 			logger.Error("build lvtc tx history failed ,rollback the tx")
 			DeleteLVTCCommited(txid)
 			tx.Rollback()
