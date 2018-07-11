@@ -1618,12 +1618,20 @@ func lvt2LvtcInMysql(uid int64,tx *sql.Tx)(int64,int64,error){
 
 	//修改锁仓
 	//此处不对余额进行处理，交由上层统一走转账流程
-	_,err = tx.Exec("update user_asset_lvtc set locked = locked + ?,lastmodify = ? where uid = ?",lvtcLockCount,ts,uid)
+
+	_,err = tx.Exec("update user_asset_lvtc set locked = ?,lastmodify = ? where uid = ?",lvtcLockCount,ts,uid)
 	if err != nil {
-		logger.Error("modify balance error",err.Error())
+		logger.Error("modify locked error",err.Error())
 		return 0,0,err
 	}
 
+	//修改锁仓
+	//此处不对余额进行处理，交由上层统一走转账流程
+	_,err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?",ts,uid)
+	if err != nil {
+		logger.Error("modify locked error",err.Error())
+		return 0,0,err
+	}
 	//计算转换后的资产
 	lvtcBalance := balance/lvtcHashrateScale
 

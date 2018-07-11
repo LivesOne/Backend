@@ -25,7 +25,7 @@ func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 
 	if lvt == 0 {
 		tx.Rollback()
-		return 0,0,constants.RC_SYSTEM_ERR
+		return 0,0,constants.RC_OK
 	}
 
 
