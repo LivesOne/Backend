@@ -81,10 +81,10 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 		withdrawListResponseArray = append(withdrawListResponseArray, withdrawListResponse{
 			Id:         utils.Int642Str(userWithdrawalRequest.Id),
 			TradeNo:    userWithdrawalRequest.TradeNo,
-			Currency:   "LVTC",
+			Currency:   userWithdrawalRequest.Currency,
 			Address:    userWithdrawalRequest.Address,
 			Value:      utils.LVTintToFloatStr(userWithdrawalRequest.Value),
-			Fee:        utils.LVTintToFloatStr(userWithdrawalRequest.Free),
+			Fee:        utils.LVTintToFloatStr(userWithdrawalRequest.Fee),
 			CreateTime: userWithdrawalRequest.CreateTime,
 			UpdateTime: userWithdrawalRequest.UpdateTime,
 			Status:     userWithdrawalRequest.Status,
