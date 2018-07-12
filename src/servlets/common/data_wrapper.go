@@ -43,8 +43,8 @@ type (
 
 	AppInfo struct {
 		Name  string      `json:"name,omitempty"`
-		AppID int 		  `json:"appid,omitempty"`
-		Plat  int		  `json:"plat,omitempty"`
+		AppID interface{} `json:"appid,omitempty"`
+		Plat  int         `json:"plat,omitempty"`
 		Ver   string      `json:"ver,omitempty"`
 	}
 
