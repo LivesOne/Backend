@@ -841,7 +841,7 @@ func RemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int64) (
 		Code:   constants.TX_CODE_SUCC,
 		Remark: assetLock,
 	}
-	err = InsertCommited(txh)
+	err = InsertLVTCCommited(txh)
 	if err != nil {
 		logger.Error("insert mongo  error ", err.Error())
 		tx.Rollback()
