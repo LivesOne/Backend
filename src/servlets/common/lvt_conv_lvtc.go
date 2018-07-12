@@ -10,6 +10,7 @@ import (
 
 func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 
+
 	tx ,err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("begin trans error",err.Error())
