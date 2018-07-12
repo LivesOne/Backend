@@ -65,6 +65,8 @@ func (handler *lvt2lvtcHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	uid := utils.Str2Int64(uidString)
+	//初始化
+	common.	CheckAndInitAsset(uid)
 
 	if lvt,lvtc,e := common.Lvt2Lvtc(uid);e == constants.RC_OK {
 		response.Data = &lvt2lvtcResData{

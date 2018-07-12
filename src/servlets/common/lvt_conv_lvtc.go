@@ -10,6 +10,7 @@ import (
 
 func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 
+
 	tx ,err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("begin trans error",err.Error())
@@ -30,17 +31,20 @@ func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 
 
 
-	if ok,e := buildLvtTxHistory(uid,lvt,tx);!ok {
+	if txid,e := buildLvtTxHistory(uid,lvt,tx);txid < 0 {
 		logger.Error("build lvt tx history failed ,rollback the tx")
 		tx.Rollback()
 		return lvt,lvtc,e
+	}else{
+		if ok,e := buildLvtcTxHistory(uid,lvtc,tx);!ok {
+			logger.Error("build lvtc tx history failed ,rollback the tx")
+			DeleteLVTCCommited(txid)
+			tx.Rollback()
+			return lvt,lvtc,e
+		}
 	}
 
-	if ok,e := buildLvtcTxHistory(uid,lvt,tx);!ok {
-		logger.Error("build lvtc tx history failed ,rollback the tx")
-		tx.Rollback()
-		return lvt,lvtc,e
-	}
+
 
 
 	err = tx.Commit()
@@ -54,12 +58,12 @@ func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 
 }
 
-func buildLvtTxHistory(uid,lvt int64,tx *sql.Tx)(bool,constants.Error){
+func buildLvtTxHistory(uid,lvt int64,tx *sql.Tx)(int64,constants.Error){
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("get txid error")
-		return false,constants.RC_SYSTEM_ERR
+		return -1,constants.RC_SYSTEM_ERR
 	}
 	systemUid := config.GetConfig().Lvt2LvtcSystemAccountUid
 
@@ -80,12 +84,12 @@ func buildLvtTxHistory(uid,lvt int64,tx *sql.Tx)(bool,constants.Error){
 		err := InsertCommited(txh)
 		if !CheckDup(err) {
 			logger.Error("insert mongo error",err.Error())
-			return false,constants.RC_SYSTEM_ERR
+			return -1,constants.RC_SYSTEM_ERR
 		}
 	} else {
-		return false,getConvResCode(c)
+		return -1,getConvResCode(c)
 	}
-	return true,constants.RC_OK
+	return txid,constants.RC_OK
 }
 
 

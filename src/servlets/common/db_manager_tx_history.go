@@ -64,7 +64,7 @@ func txCommitDelete(cs *mgo.Session,db, c string, txid int64) error {
 	session := tSession.Clone()
 	defer session.Close()
 	collection := session.DB(db).C(c)
-	return collection.Remove(bson.M{"_id": txid})
+	return collection.RemoveId(txid)
 }
 
 func txCommonCheckExists(cs *mgo.Session,db, tb string, id interface{}) bool {
@@ -82,8 +82,6 @@ func txCommonCheckExists(cs *mgo.Session,db, tb string, id interface{}) bool {
 func InsertPending(pending *DTTXHistory) error {
 	return txCommonInsert(tSession,txdbc.DBDatabase, PENDING, pending)
 }
-
-
 func InsertCommited(commited *DTTXHistory) error {
 	return txCommonInsert(tSession,txdbc.DBDatabase, COMMITED, commited)
 }
@@ -158,7 +156,9 @@ func CheckLVTCPending(txid int64) bool {
 func CheckLVTCCommited(txid int64) bool {
 	return txCommonCheckExists(ntSession,ntxdbc.DBDatabase, COMMITED, txid)
 }
-
+func DeleteLVTCCommited(txid int64)error{
+	return txCommitDelete(ntSession,ntxdbc.DBDatabase,COMMITED,txid)
+}
 func FindAndModifyPending(txid, from, status int64) (*DTTXHistory, bool) {
 	session := tSession.Clone()
 	defer session.Close()

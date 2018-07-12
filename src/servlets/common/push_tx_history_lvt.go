@@ -24,8 +24,7 @@ func ListenTxhistoryQueue() {
 			txh := new(DTTXHistory)
 
 			if err := utils.FromJson(results[1], txh); err == nil {
-				currency := GetWithdrawalCurrency(txh.TradeNo)
-				if currency == "LVTC" {
+				if txh.Currency == "LVTC" {
 					err = InsertLVTCCommited(txh)
 				} else {
 					err = InsertCommited(txh)
