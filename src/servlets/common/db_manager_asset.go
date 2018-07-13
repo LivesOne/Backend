@@ -866,6 +866,15 @@ func QuerySumLockAsset(uid int64, month int) int64 {
 	return utils.Str2Int64(row["value"])
 }
 
+func QuerySumLockAssetLvtc(uid int64, month int, currency string) int64 {
+	row, err := gDBAsset.QueryRow("select if(sum(value) is null,0,sum(value)) as value from user_asset_lock where uid = ? and currency = ? and month >= ?", uid, currency, month)
+	if err != nil {
+		logger.Error("query user lvtc asset lock error", err.Error())
+		return 0
+	}
+	return utils.Str2Int64(row["value"])
+}
+
 func QueryHashRateByUid(uid int64) int {
 
 	sql := `select if(sum(t.h) is null,0,sum(t.h)) as sh from (
@@ -894,6 +903,15 @@ func QueryHashRateByUid(uid int64) int {
 
 func QueryCountMinerByUid(uid int64) int {
 	row, err := gDBAsset.QueryRow("select days from user_reward where uid = ?", uid)
+	if err != nil {
+		logger.Error("query reward days error", err.Error())
+		return 0
+	}
+	return utils.Str2Int(row["days"])
+}
+
+func QueryLvtcCountMinerByUid(uid int64) int {
+	row, err := gDBAsset.QueryRow("select days from user_reward_lvtc where uid = ?", uid)
 	if err != nil {
 		logger.Error("query reward days error", err.Error())
 		return 0

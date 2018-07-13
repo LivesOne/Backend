@@ -43,7 +43,7 @@ func upZero(acc *Account) (bool, int) {
 	// check base info
 	if len(acc.Nickname) > 0 && len(acc.PaymentPassword) > 0 && len(acc.Phone) > 0 {
 		// check miner days
-		if QueryCountMinerByUid(acc.UID) >= 3 && CheckCreditScore(acc.UID, DEF_SCORE) {
+		if QueryLvtcCountMinerByUid(acc.UID) >= 3 && CheckCreditScore(acc.UID, DEF_SCORE) {
 			// set level up
 			level := 1
 			err := SetUserLevel(acc.UID, level)
@@ -67,10 +67,10 @@ func upOne(acc *Account) (bool, int) {
 	// check miner days and bind wxid
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
 	if CheckCreditScore(acc.UID, DEF_SCORE) && CheckBindWx(acc.UID) &&
-		QueryCountMinerByUid(acc.UID) >= 7 && lvtcScale > 0 {
+		QueryLvtcCountMinerByUid(acc.UID) >= 7 && lvtcScale > 0 {
 		//check asset lock month and value
 		lvtc := utils.CONV_LVT * int64(1000) / lvtcScale
-		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvtc {
+		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvtc {
 			// set level up
 			level := 2
 			err := SetUserLevel(acc.UID, level)
@@ -92,10 +92,10 @@ lock_asset:month>=3,value>=5w
 func upTwo(acc *Account) (bool, int) {
 	// check miner days
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if QueryCountMinerByUid(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
+	if QueryLvtcCountMinerByUid(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(50000) / lvtcScale
-		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvt {
+		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
 			// set level up
 			level := 3
 			err := SetUserLevel(acc.UID, level)
@@ -117,10 +117,10 @@ lock_asset:month>=3,value>=20w
 func upThree(acc *Account) (bool, int) {
 	// check miner days
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if QueryCountMinerByUid(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
+	if QueryLvtcCountMinerByUid(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(200000) / lvtcScale
-		if v := QuerySumLockAsset(acc.UID, LOCK_ASSET_MONTH); v >= lvt {
+		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
 			// set level up
 			level := 4
 			err := SetUserLevel(acc.UID, level)
