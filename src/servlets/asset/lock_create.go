@@ -177,6 +177,8 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 }
 
 func getLockHashrate(monnth int, value string) int {
+	//获取转换汇率
+	lvtcScale := config.GetConfig().LvtcHashrateScale
 	//锁仓数额	B	[用户自定义填充]，锁仓额为1000LVT的倍数
 	b := utils.Str2Float64(value)
 	//锁仓期间	T	用户选择：1个月、3个月、6个月、12个月，24个月
@@ -184,14 +186,13 @@ func getLockHashrate(monnth int, value string) int {
 
 	//算力系数 a=0.2 计算算力为整数，a=0.2 扩大100倍 a := 20
 	a := float64(20)
-	//锁仓算力	S	S=B/100000*T*a*100%（a=0.2）
-	s := b / 100000 * t * a
+	//锁仓算力	S	S=lvtcScale*B/100000*T*a*100%（a=0.2）
+	s := float64(lvtcScale) * b / 100000 * t * a
 
 	//Mmax=500%，大于500%取500%
 	//四舍五入后数值大于500 取500
-	lvtcScale := config.GetConfig().LvtcHashrateScale
 	if lvtcScale > 0 {
-		if re := utils.Round(s) * lvtcScale; re <= constants.ASSET_LOCK_MAX_VALUE {
+		if re := utils.Round(s); re <= constants.ASSET_LOCK_MAX_VALUE {
 			return re
 		}
 	}
