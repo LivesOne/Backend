@@ -159,6 +159,9 @@ func CheckLVTCCommited(txid int64) bool {
 func DeleteLVTCCommited(txid int64)error{
 	return txCommitDelete(ntSession,ntxdbc.DBDatabase,COMMITED,txid)
 }
+func DeleteCommited(txid int64)error{
+	return txCommitDelete(tSession,txdbc.DBDatabase,COMMITED,txid)
+}
 func FindAndModifyPending(txid, from, status int64) (*DTTXHistory, bool) {
 	session := tSession.Clone()
 	defer session.Close()
