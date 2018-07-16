@@ -250,17 +250,24 @@ func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 }
 
 func TransAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
+	return TransAccountLvtcByTxCheck(txid,from,to,value,tx,true)
+}
+
+
+func TransAccountLvtcByTxCheck(txid, from, to, value int64, tx *sql.Tx,check bool) (bool, int) {
 	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", from, to)
 
 	ts := utils.GetTimestamp13()
 
-	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
-	if !ckeckBalanceOfLvtc(from, value, tx) {
-		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
-	}
-	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
-	if !CheckAssetLimetedOfLvtc(from, tx) {
-		return false, constants.TRANS_ERR_ASSET_LIMITED
+	if check {
+		//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+		if !ckeckBalanceOfLvtc(from, value, tx) {
+			return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+		}
+		//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
+		if !CheckAssetLimetedOfLvtc(from, tx) {
+			return false, constants.TRANS_ERR_ASSET_LIMITED
+		}
 	}
 
 	//扣除转出方balance

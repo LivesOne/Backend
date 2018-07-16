@@ -103,7 +103,7 @@ func buildLvtcTxHistory(uid,lvtc int64,tx *sql.Tx)(bool,constants.Error){
 	systemUid := config.GetConfig().Lvt2LvtcSystemAccountUid
 
 
-	f, c := TransAccountLvtcByTx(txid,systemUid, uid, lvtc,tx)
+	f, c := TransAccountLvtcByTxCheck(txid,systemUid, uid, lvtc,tx,false)
 	if f {
 		//成功 插入commited lvtc
 		txh := &DTTXHistory{
