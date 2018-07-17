@@ -957,6 +957,11 @@ func QueryLvtcCountMinerByUid(uid int64) int {
 		logger.Error("query reward days error", err.Error())
 		return 0
 	}
+	if row == nil {
+		// no record
+		// query table: user_reward
+		return QueryCountMinerByUid(uid)
+	}
 	return utils.Str2Int(row["days"])
 }
 
