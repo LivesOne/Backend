@@ -361,16 +361,16 @@ func CheckAndInitAsset(uid int64) (bool, int) {
 		return false, constants.TRANS_ERR_SYS
 	}
 
-	_, err = InsertReward(uid)
-	if err != nil {
-		logger.Error("init reward error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
-	}
-	_, err = InsertRewardLvtc(uid)
-	if err != nil {
-		logger.Error("init reward error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
-	}
+	//_, err = InsertReward(uid)
+	//if err != nil {
+	//	logger.Error("init reward error ", err.Error())
+	//	return false, constants.TRANS_ERR_SYS
+	//}
+	//_, err = InsertRewardLvtc(uid)
+	//if err != nil {
+	//	logger.Error("init reward error ", err.Error())
+	//	return false, constants.TRANS_ERR_SYS
+	//}
 
 	if rowsCount == 0 {
 		return true, constants.TRANS_ERR_SUCC
