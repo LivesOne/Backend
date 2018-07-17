@@ -250,24 +250,17 @@ func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 }
 
 func TransAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
-	return TransAccountLvtcByTxCheck(txid,from,to,value,tx,true)
-}
-
-
-func TransAccountLvtcByTxCheck(txid, from, to, value int64, tx *sql.Tx,check bool) (bool, int) {
 	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", from, to)
 
 	ts := utils.GetTimestamp13()
 
-	if check {
-		//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
-		if !ckeckBalanceOfLvtc(from, value, tx) {
-			return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
-		}
-		//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
-		if !CheckAssetLimetedOfLvtc(from, tx) {
-			return false, constants.TRANS_ERR_ASSET_LIMITED
-		}
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckBalanceOfLvtc(from, value, tx) {
+		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
+	if !CheckAssetLimetedOfLvtc(from, tx) {
+		return false, constants.TRANS_ERR_ASSET_LIMITED
 	}
 
 	//扣除转出方balance
@@ -302,6 +295,47 @@ func TransAccountLvtcByTxCheck(txid, from, to, value int64, tx *sql.Tx,check boo
 	}
 	return true, constants.TRANS_ERR_SUCC
 }
+
+
+func ConvAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
+	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", from, to)
+
+	ts := utils.GetTimestamp13()
+
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return false, constants.TRANS_ERR_SYS
+	}
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return false, constants.TRANS_ERR_SYS
+	}
+	//txid 写入数据库
+	_, e := InsertTXID(txid, tx)
+	if e != nil {
+		logger.Error("sql error ", e.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	return true, constants.TRANS_ERR_SUCC
+}
+
 
 func CheckAndInitAsset(uid int64) (bool, int) {
 	//初始化资产
