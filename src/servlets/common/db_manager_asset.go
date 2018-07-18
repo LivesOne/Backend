@@ -296,12 +296,10 @@ func TransAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	return true, constants.TRANS_ERR_SUCC
 }
 
-
 func ConvAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", from, to)
 
 	ts := utils.GetTimestamp13()
-
 
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, from)
@@ -335,7 +333,6 @@ func ConvAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	}
 	return true, constants.TRANS_ERR_SUCC
 }
-
 
 func CheckAndInitAsset(uid int64) (bool, int) {
 	//初始化资产
@@ -480,7 +477,7 @@ func ckeckBalance(uid int64, value int64, tx *sql.Tx) bool {
 	var locked int64
 	row := tx.QueryRow("select balance,locked from user_asset where uid  = ?", uid)
 	row.Scan(&balance, &locked)
-	logger.Info("balance",balance,"locked",locked)
+	logger.Info("balance", balance, "locked", locked)
 	return balance > 0 && (balance-locked) >= value
 }
 
@@ -489,7 +486,7 @@ func ckeckBalanceOfLvtc(uid int64, value int64, tx *sql.Tx) bool {
 	var locked int64
 	row := tx.QueryRow("select balance,locked from user_asset_lvtc where uid  = ?", uid)
 	row.Scan(&balance, &locked)
-	logger.Info("balance",balance,"locked",locked)
+	logger.Info("balance", balance, "locked", locked)
 	return balance > 0 && (balance-locked) >= value
 }
 
@@ -501,25 +498,17 @@ func ckeckEthBalance(uid int64, value int64, tx *sql.Tx) bool {
 	return balance > 0 && (balance-locked) >= value
 }
 
-func CreateAssetLock(assetLock *AssetLockLvtc) (bool, int) {
-
-	tx, err := gDBAsset.Begin()
-	if err != nil {
-		logger.Error("db pool begin error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
-	}
+func CreateAssetLockByTx(assetLock *AssetLockLvtc, tx *sql.Tx) (bool, int) {
 	//锁定记录
 	tx.Exec("select * from user_asset_lvtc where uid = ? for update", assetLock.Uid)
 
 	//查询转出账户余额是否满足需要
 	if !ckeckBalanceOfLvtc(assetLock.Uid, assetLock.ValueInt, tx) {
-		tx.Rollback()
 		return false, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
 
 	//资产冻结状态校验，如果status是0 返回true 继续执行，status ！= 0 账户冻结，返回错误
 	if !CheckAssetLimetedOfLvtc(assetLock.Uid, tx) {
-		tx.Rollback()
 		return false, constants.TRANS_ERR_ASSET_LIMITED
 	}
 
@@ -540,14 +529,12 @@ func CreateAssetLock(assetLock *AssetLockLvtc) (bool, int) {
 	info1, err1 := tx.Exec(updSql, updParams...)
 	if err1 != nil {
 		logger.Error("sql error ", err1.Error())
-		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
 	rsa, _ := info1.RowsAffected()
 	if rsa == 0 {
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", assetLock.Uid, "")
-		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 
@@ -565,23 +552,37 @@ func CreateAssetLock(assetLock *AssetLockLvtc) (bool, int) {
 	res, err := tx.Exec(sql, params...)
 	if err != nil {
 		logger.Error("create asset lock error", err.Error())
-		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
 		logger.Error("get last insert id error", err.Error())
-		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
 
-	if ok, code := updLockAssetHashRate(assetLock.Uid, tx); !ok {
-		tx.Rollback()
-		return ok, code
-	}
-	tx.Commit()
 	assetLock.Id = id
 	assetLock.IdStr = utils.Int642Str(id)
+
+	if ok, code := updLockAssetHashRate(assetLock.Uid, tx); !ok {
+		return ok, code
+	}
+	return true, constants.TRANS_ERR_SUCC
+}
+
+func CreateAssetLock(assetLock *AssetLockLvtc) (bool, int) {
+
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	if ok, e := CreateAssetLockByTx(assetLock, tx); !ok {
+		tx.Rollback()
+		return ok, e
+	}
+
+	tx.Commit()
 	return true, constants.TRANS_ERR_SUCC
 }
 
@@ -1617,77 +1618,240 @@ func convUserWithdrawCard(row map[string]string) *UserWithdrawCard {
 	return uwc
 }
 
-
-func lvt2LvtcInMysql(uid int64,tx *sql.Tx)(int64,int64,error){
+func lvt2LvtcInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 
 	ts := utils.GetTimestamp13()
 	//资产锁定
-	_,err := tx.Exec("select * from user_asset where uid = ? for update",uid)
+	_, err := tx.Exec("select * from user_asset where uid = ? for update", uid)
 	if err != nil {
-		logger.Error("lock table error",err.Error())
-		return 0,0,err
+		logger.Error("lock table error", err.Error())
+		return 0, 0, err
 	}
-	_,err = tx.Exec("select * from user_asset_lvtc where uid = ? for update",uid)
+	_, err = tx.Exec("select * from user_asset_lvtc where uid = ? for update", uid)
 	if err != nil {
-		logger.Error("lock table error",err.Error())
-		return 0,0,err
+		logger.Error("lock table error", err.Error())
+		return 0, 0, err
 	}
-	_,err = tx.Exec("select * from user_asset_lock where uid = ? and currency = ? for update",uid,CURRENCY_LVT)
+	_, err = tx.Exec("select * from user_asset_lock where uid = ? and currency = ? for update", uid, CURRENCY_LVT)
 	if err != nil {
-		logger.Error("lock table error",err.Error())
-		return 0,0,err
+		logger.Error("lock table error", err.Error())
+		return 0, 0, err
 	}
 	balance := int64(0)
-	row := tx.QueryRow("select balance from user_asset where uid = ?",uid)
+	row := tx.QueryRow("select balance from user_asset where uid = ?", uid)
 	err = row.Scan(&balance)
 	if err != nil {
-		logger.Error("query balance error",err.Error())
-		return 0,0,err
+		logger.Error("query balance error", err.Error())
+		return 0, 0, err
 	}
 	//余额不足的不处理
 	if balance <= 0 {
-		return 0,0,nil
+		return 0, 0, nil
 	}
 	//获取转换汇率
 	lvtcHashrateScale := int64(config.GetConfig().LvtcHashrateScale)
 
 	//锁仓转换
-	_,err = tx.Exec("update user_asset_lock set `value` = `value` / ?,currency = ?  where uid = ? and currency = ? ",lvtcHashrateScale,CURRENCY_LVTC,uid,CURRENCY_LVT)
+	_, err = tx.Exec("update user_asset_lock set `value` = `value` / ?,currency = ?  where uid = ? and currency = ? ", lvtcHashrateScale, CURRENCY_LVTC, uid, CURRENCY_LVT)
 	if err != nil {
-		logger.Error("modify user_asset_lock error",err.Error())
-		return 0,0,err
+		logger.Error("modify user_asset_lock error", err.Error())
+		return 0, 0, err
 	}
 
 	//获取转换后的锁仓锁定总额
 	lvtcLockCount := int64(0)
-	row = tx.QueryRow("select if(sum(value) is null,0,sum(value)) as c from user_asset_lock where uid = ? and currency = ?",uid,CURRENCY_LVTC)
+	row = tx.QueryRow("select if(sum(value) is null,0,sum(value)) as c from user_asset_lock where uid = ? and currency = ?", uid, CURRENCY_LVTC)
 	err = row.Scan(&lvtcLockCount)
 	if err != nil {
-		logger.Error("query asset lvtc lock count error",err.Error())
-		return 0,0,err
-	}
-
-
-
-	//修改锁仓
-	//此处不对余额进行处理，交由上层统一走转账流程
-
-	_,err = tx.Exec("update user_asset_lvtc set locked = ?,lastmodify = ? where uid = ?",lvtcLockCount,ts,uid)
-	if err != nil {
-		logger.Error("modify locked error",err.Error())
-		return 0,0,err
+		logger.Error("query asset lvtc lock count error", err.Error())
+		return 0, 0, err
 	}
 
 	//修改锁仓
 	//此处不对余额进行处理，交由上层统一走转账流程
-	_,err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?",ts,uid)
+
+	_, err = tx.Exec("update user_asset_lvtc set locked = ?,lastmodify = ? where uid = ?", lvtcLockCount, ts, uid)
 	if err != nil {
-		logger.Error("modify locked error",err.Error())
-		return 0,0,err
+		logger.Error("modify locked error", err.Error())
+		return 0, 0, err
+	}
+
+	//修改锁仓
+	//此处不对余额进行处理，交由上层统一走转账流程
+	_, err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?", ts, uid)
+	if err != nil {
+		logger.Error("modify locked error", err.Error())
+		return 0, 0, err
 	}
 	//计算转换后的资产
-	lvtcBalance := balance/lvtcHashrateScale
+	lvtcBalance := balance / lvtcHashrateScale
 
-	return balance,lvtcBalance,nil
+	return balance, lvtcBalance, nil
 
+}
+
+func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
+
+	ts := utils.GetTimestamp13()
+	//资产锁定 并查询余额
+	balance := int64(0)
+	row := tx.QueryRow("select balance from user_asset where uid = ? for update", uid)
+	err := row.Scan(&balance)
+	if err != nil {
+		logger.Error("query balance error", err.Error())
+		return 0, 0, err
+	}
+	//余额不足的不处理
+	if balance <= 0 {
+		return 0, 0, nil
+	}
+
+	_, err = tx.Exec("select * from user_asset_lvtc where uid = ? for update", uid)
+	if err != nil {
+		logger.Error("lock table error", err.Error())
+		return 0, 0, err
+	}
+	//锁仓解除(lvt)
+	_, err = tx.Exec("delete from user_asset_lock where uid = ? and currency = ? ", uid, CURRENCY_LVT)
+	if err != nil {
+		logger.Error("modify user_asset_lock error", err.Error())
+		return 0, 0, err
+	}
+
+	//前19个 自动锁仓
+
+	begin := utils.GetTimestamp13()
+	//分20期 取小数点后六位
+	lockValue := balance / 20 / 100 *100
+	lockValueStr := utils.LVTintToFloatStr(lockValue)
+	lvtScale := config.GetConfig().LvtcHashrateScale
+	for i := 0; i < 19; i++ {
+		month := i + 4
+		//计算结束时间
+		end := begin + (int64(month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
+
+		assetLock := &AssetLockLvtc{
+			Uid:         uid,
+			Value:       lockValueStr,
+			ValueInt:    lockValue,
+			Month:       month,
+			Hashrate:    utils.GetLockHashrate(lvtScale,month, lockValueStr),
+			Begin:       begin,
+			End:         end,
+			Currency:    CURRENCY_LVTC,
+			AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
+		}
+		if err := CreateAssetLockConv(assetLock,tx);err != nil {
+			logger.Error("Create Asset Lock error", err.Error())
+			return 0, 0, err
+		}
+	}
+	//最后一个锁仓的操作
+	lastLockValue := lockValue + (balance - (lockValue *20))
+	lastLockValueStr := utils.LVTintToFloatStr(lastLockValue)
+	month := 24
+	//计算结束时间
+	end := begin + (int64(month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
+
+	assetLock := &AssetLockLvtc{
+		Uid:         uid,
+		Value:       lastLockValueStr,
+		ValueInt:    lastLockValue,
+		Month:       month,
+		Hashrate:    utils.GetLockHashrate(lvtScale,month, lastLockValueStr),
+		Begin:       begin,
+		End:         end,
+		Currency:    CURRENCY_LVTC,
+		AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
+	}
+	if err := CreateAssetLockConv(assetLock,tx);err != nil {
+		logger.Error("Create Asset Lock error", err.Error())
+		return 0, 0, err
+	}
+
+
+
+	//获取转换后的锁仓锁定总额
+	lvtcLockCount := int64(0)
+	row = tx.QueryRow("select if(sum(value) is null,0,sum(value)) as c from user_asset_lock where uid = ? and currency = ?", uid, CURRENCY_LVTC)
+	err = row.Scan(&lvtcLockCount)
+	if err != nil {
+		logger.Error("query asset lvtc lock count error", err.Error())
+		return 0, 0, err
+	}
+
+	//此处不对余额进行处理，交由上层统一走转账流程
+
+	_, err = tx.Exec("update user_asset_lvtc set locked = ?,lastmodify = ? where uid = ?", lvtcLockCount, ts, uid)
+	if err != nil {
+		logger.Error("modify locked error", err.Error())
+		return 0, 0, err
+	}
+
+
+	return balance, balance, nil
+
+}
+
+
+func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
+	//锁定记录
+	tx.Exec("select * from user_asset_lvtc where uid = ? for update", assetLock.Uid)
+
+
+	//修改资产数据
+	//锁仓算力大于500时 给500
+	updSql := `update
+					user_asset_lvtc
+			   set
+			   		locked = locked + ?,
+			   		lastmodify = ?
+			   where
+			   		uid = ?`
+	updParams := []interface{}{
+		assetLock.ValueInt,
+		assetLock.Begin,
+		assetLock.Uid,
+	}
+	info1, err1 := tx.Exec(updSql, updParams...)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return err1
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", assetLock.Uid, "")
+		return sql.ErrNoRows
+	}
+
+	sql := "insert into user_asset_lock (uid,value,month,hashrate,begin,end,currency,allow_unlock) values (?,?,?,?,?,?,?,?)"
+	params := []interface{}{
+		assetLock.Uid,
+		assetLock.ValueInt,
+		assetLock.Month,
+		assetLock.Hashrate,
+		assetLock.Begin,
+		assetLock.End,
+		assetLock.Currency,
+		assetLock.AllowUnlock,
+	}
+	res, err := tx.Exec(sql, params...)
+	if err != nil {
+		logger.Error("create asset lock error", err.Error())
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		logger.Error("get last insert id error", err.Error())
+		return err
+	}
+
+	assetLock.Id = id
+	assetLock.IdStr = utils.Int642Str(id)
+
+	if ok, _ := updLockAssetHashRate(assetLock.Uid, tx); !ok {
+		return errors.New("system error : update lock asset hashrate")
+	}
+	return nil
 }

@@ -89,18 +89,19 @@ type Configuration struct {
 	// 短信上行接口地址
 	SmsUpValidateSvrAddr string
 	// log相关
-	LogConfig                string
-	UserLevelConfig          string
-	Captcha                  captcha
-	MaxActivityRewardValue   int
-	CautionMoneyIds          []int64
-	PenaltyMoneyAccountUid   int64
-	WXAuth                   WXAuth
-	BindActive               string
-	AuthTelegramUrl          string
-	WithdrawalConfig         string
-	LvtcHashrateScale        int
-	Lvt2LvtcSystemAccountUid int64
+	LogConfig                     string
+	UserLevelConfig               string
+	Captcha                       captcha
+	MaxActivityRewardValue        int
+	CautionMoneyIds               []int64
+	PenaltyMoneyAccountUid        int64
+	WXAuth                        WXAuth
+	BindActive                    string
+	AuthTelegramUrl               string
+	WithdrawalConfig              string
+	LvtcHashrateScale             int
+	Lvt2LvtcSystemAccountUid      int64
+	Lvt2LvtcDelaySystemAccountUid int64
 }
 
 // configuration data

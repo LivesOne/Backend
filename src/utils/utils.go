@@ -28,6 +28,7 @@ const (
 	TwoDayDuration      = 2 * DayDuration
 	CONV_LVT            = 1e8
 	DB_CONV_CHAIN_VALUE = 1e10
+
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -245,4 +246,27 @@ func ConvChainStrToDBValue(chainStr string) int64 {
 	}
 	dbValue := big.NewInt(0).Div(chainValue, big.NewInt(DB_CONV_CHAIN_VALUE))
 	return dbValue.Int64()
+}
+
+
+
+func GetLockHashrate(lvtcScale,monnth int, value string) int {
+	//锁仓数额	B	[用户自定义填充]，锁仓额为1000LVT的倍数
+	b := Str2Float64(value)
+	//锁仓期间	T	用户选择：1个月、3个月、6个月、12个月，24个月
+	t := float64(monnth)
+
+	//算力系数 a=0.2 计算算力为整数，a=0.2 扩大100倍 a := 20
+	a := float64(20)
+	//锁仓算力	S	S=lvtcScale*B/100000*T*a*100%（a=0.2）
+	s := float64(lvtcScale) * b / 100000 * t * a
+
+	//Mmax=500%，大于500%取500%
+	//四舍五入后数值大于500 取500
+	if lvtcScale > 0 {
+		if re := Round(s); re <= constants.ASSET_LOCK_MAX_VALUE {
+			return re
+		}
+	}
+	return constants.ASSET_LOCK_MAX_VALUE
 }
