@@ -28,20 +28,12 @@ func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 		tx.Rollback()
 		return 0,0,constants.RC_OK
 	}
+	systemUid := config.GetConfig().Lvt2LvtcSystemAccountUid
 
 
-
-	if txid,e := buildLvtTxHistory(uid,lvt,tx);txid < 0 {
-		logger.Error("build lvt tx history failed ,rollback the tx")
+	if ok,e := commonConvTrans(uid,systemUid,lvt,lvtc,tx);!ok {
 		tx.Rollback()
 		return lvt,lvtc,e
-	}else{
-		if ok,e := buildLvtcTxHistory(uid,lvtc,tx);!ok {
-			logger.Error("build lvtc tx history failed ,rollback the tx")
-			DeleteCommited(txid)
-			tx.Rollback()
-			return lvt,lvtc,e
-		}
 	}
 
 
@@ -58,14 +50,69 @@ func Lvt2Lvtc(uid int64)(int64,int64,constants.Error){
 
 }
 
-func buildLvtTxHistory(uid,lvt int64,tx *sql.Tx)(int64,constants.Error){
+
+
+func Lvt2LvtcDelay(uid int64)(int64,int64,constants.Error){
+
+
+	tx ,err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("begin trans error",err.Error())
+	}
+
+	lvt,lvtc,err := lvt2LvtcDelayInMysql(uid,tx)
+
+	if err != nil{
+		logger.Error("begin trans error",err.Error())
+		tx.Rollback()
+		return 0,0,constants.RC_SYSTEM_ERR
+	}
+
+	if lvt == 0 {
+		tx.Rollback()
+		return 0,0,constants.RC_OK
+	}
+	systemUid := config.GetConfig().Lvt2LvtcDelaySystemAccountUid
+	if ok,e := commonConvTrans(uid,systemUid,lvt,lvtc,tx);!ok {
+		tx.Rollback()
+		return lvt,lvtc,e
+	}
+
+
+	err = tx.Commit()
+	if err != nil{
+		logger.Error("commit trans error",err.Error())
+		return 0,0,constants.RC_SYSTEM_ERR
+	}
+
+	return lvt,lvtc,constants.RC_OK
+
+
+}
+
+func commonConvTrans(uid,systemUid,lvt,lvtc int64 , tx *sql.Tx)(bool,constants.Error){
+	if txid,e := buildLvtTxHistory(uid,systemUid,lvt,tx);txid < 0 {
+		logger.Error("build lvt tx history failed ,rollback the tx")
+		return false,e
+	}else{
+		if ok,e := buildLvtcTxHistory(uid,systemUid,lvtc,tx);!ok {
+			logger.Error("build lvtc tx history failed ,rollback the tx")
+			DeleteCommited(txid)
+			return false,e
+		}
+	}
+	return true,constants.RC_OK
+}
+
+
+func buildLvtTxHistory(uid,systemUid,lvt int64,tx *sql.Tx)(int64,constants.Error){
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("get txid error")
 		return -1,constants.RC_SYSTEM_ERR
 	}
-	systemUid := config.GetConfig().Lvt2LvtcSystemAccountUid
+
 
 
 	f, c := TransAccountLvtByTx(txid,uid, systemUid, lvt,tx)
@@ -93,15 +140,13 @@ func buildLvtTxHistory(uid,lvt int64,tx *sql.Tx)(int64,constants.Error){
 }
 
 
-func buildLvtcTxHistory(uid,lvtc int64,tx *sql.Tx)(bool,constants.Error){
+func buildLvtcTxHistory(uid,systemUid,lvtc int64,tx *sql.Tx)(bool,constants.Error){
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("get txid error")
 		return false,constants.RC_SYSTEM_ERR
 	}
-	systemUid := config.GetConfig().Lvt2LvtcSystemAccountUid
-
 
 	f, c := ConvAccountLvtcByTx(txid,systemUid, uid, lvtc,tx)
 	if f {

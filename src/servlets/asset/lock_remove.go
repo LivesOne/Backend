@@ -124,7 +124,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 	// verify is unlock allowed
-	if al.AllowUnlock == 0 {
+	if al.AllowUnlock == constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW {
 		log.Error("asset unlock not allowed")
 		response.SetResponseBase(constants.RC_INVALID_LOCK_ID)
 		return
