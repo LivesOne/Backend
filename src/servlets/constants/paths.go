@@ -148,4 +148,6 @@ const (
 	DEVICE_DEVICE_INFO = "/user/v1/device/info"
 
 	DEVICE_DEVICE_LIST = "/user/v1/device/list"
+
+	DEVICE_FORCE_UNBIND = "/user/v1/device/force_unbind"
 )
