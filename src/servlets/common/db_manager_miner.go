@@ -133,8 +133,10 @@ func QueryDevice(query bson.M) (*DtDevice ,error){
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := new(DtDevice)
 	err := collection.Find(query).One(res)
-	if err != nil && err != mgo.ErrNotFound {
-		logger.Error("query mongo db error", err.Error())
+	if err != nil {
+		if err != mgo.ErrNotFound {
+			logger.Error("query mongo db error", err.Error())
+		}
 		return nil, err
 	}
 	return res, nil
