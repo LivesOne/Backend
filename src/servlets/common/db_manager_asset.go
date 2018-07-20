@@ -1732,7 +1732,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 	lockValueStr := utils.LVTintToFloatStr(lockValue)
 	lvtScale := config.GetConfig().LvtcHashrateScale
 	for i := 0; i < 19; i++ {
-		month := i + 4
+		month := i + 5
 		//计算结束时间
 		end := begin + (int64(month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
 
@@ -1755,7 +1755,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 	//最后一个锁仓的操作
 	lastLockValue := lockValue + (balance - (lockValue *20))
 	lastLockValueStr := utils.LVTintToFloatStr(lastLockValue)
-	month := 23
+	month := 24
 	//计算结束时间
 	end := begin + (int64(month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
 
