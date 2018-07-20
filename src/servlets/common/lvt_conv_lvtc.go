@@ -90,6 +90,7 @@ func Lvt2LvtcDelay(uid int64)(int64,int64,constants.Error){
 
 }
 
+
 func commonConvTrans(uid,systemUid,lvt,lvtc int64 , tx *sql.Tx)(bool,constants.Error){
 	if txid,e := buildLvtTxHistory(uid,systemUid,lvt,tx);txid < 0 {
 		logger.Error("build lvt tx history failed ,rollback the tx")
