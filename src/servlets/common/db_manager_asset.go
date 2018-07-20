@@ -1718,6 +1718,12 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		return 0, 0, err
 	}
 
+	_, err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?",  ts, uid)
+	if err != nil {
+		logger.Error("modify locked error", err.Error())
+		return 0, 0, err
+	}
+
 	//前19个 自动锁仓
 
 	begin := utils.GetTimestamp13()
@@ -1788,11 +1794,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		return 0, 0, err
 	}
 
-	_, err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?",  ts, uid)
-	if err != nil {
-		logger.Error("modify locked error", err.Error())
-		return 0, 0, err
-	}
+
 
 
 	return balance, balance, nil
