@@ -154,6 +154,8 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) co
 		if execMongoAndReidsUnbind(device,log){
 				// set unbind time
 				res = constants.RC_OK
+				//清理sid对应下所有心跳
+				common.ClearOnline(uid,mid,device.Sid)
 				common.SetUnbindLimt(uid, mid)
 
 		}
@@ -174,6 +176,8 @@ func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
 		for _, v := range device {
 			execMongoAndReidsUnbind(&v,log)
 		}
+		//清理矿机下所有心跳
+		common.ClearOnline(uid,mid,0)
 		//锁定矿机绑定时间
 		common.SetUnbindLimt(uid, mid)
 		res = constants.RC_OK

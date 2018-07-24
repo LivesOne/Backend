@@ -6,6 +6,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"utils/config"
 	"utils/logger"
+	"utils"
 )
 
 var mSession *mgo.Session
@@ -18,6 +19,7 @@ const (
 	DT_MINER_ACTIVE   = "dt_miner_active"
 	DT_DEVICE         = "dt_device"
 	DT_DEVICE_HISTORY = "dt_device_history"
+	DT_ONLINE = "dt_online_"
 )
 
 func InitMinerRMongoDB() {
@@ -173,4 +175,20 @@ func DelDtActive(uid int64, mid, sid int) error {
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_MINER_ACTIVE)
 	return collection.Remove(bson.M{"uid": uid, "sid": sid, "mid": mid})
+}
+
+
+func ClearOnline(uid int64,mid,sid int) error {
+	session := mSession.Clone()
+	defer session.Close()
+	tbName := DT_ONLINE + utils.GetFormatDateNow14()[:8]
+	collection := session.DB(minerdbc.DBDatabase).C(tbName)
+	q := bson.M{
+		"uid":uid,
+		"mid":mid,
+	}
+	if sid >0 {
+		q["sid"] = sid
+	}
+	return collection.Remove(q)
 }
