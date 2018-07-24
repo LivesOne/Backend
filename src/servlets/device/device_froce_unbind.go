@@ -132,6 +132,7 @@ func execForceUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogge
 			// set unbind time
 			res = constants.RC_OK
 			common.SetForceUnbindLimit(appid, did)
+			common.ClearOnline(uid,mid,device.Sid)
 		}
 	case mgo.ErrNotFound:
 		log.Error("force unbind device uid",uid,"mid",mid,"appid",appid,"did",did,"device not found")
