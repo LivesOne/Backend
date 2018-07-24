@@ -14,7 +14,8 @@ var minerdbc config.MongoConfig
 const (
 
 	// MGDBPoolMax = 10
-	DT_ACTIVE       = "dt_active"
+	DT_ACTIVE         = "dt_active"
+	DT_MINER_ACTIVE   = "dt_miner_active"
 	DT_DEVICE         = "dt_device"
 	DT_DEVICE_HISTORY = "dt_device_history"
 )
@@ -81,12 +82,12 @@ func InsertDeviceBind(device *DtDevice) error {
 	return minerCommonInsert(DT_DEVICE, device)
 }
 
-func QueryAllDevice(uid int64,mid int) ([]DtDevice ,error){
+func QueryAllDevice(uid int64, mid int) ([]DtDevice, error) {
 	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := []DtDevice{}
-	err := collection.Find(bson.M{"uid":uid,"mid":mid}).All(&res)
+	err := collection.Find(bson.M{"uid": uid, "mid": mid}).All(&res)
 	if err != nil {
 		logger.Error("query mongo db error", err.Error())
 		return nil, err
@@ -97,17 +98,17 @@ func QueryAllDevice(uid int64,mid int) ([]DtDevice ,error){
 	return res, nil
 }
 
-func DeleteDevice(uid int64,mid,appid int,did string) error{
+func DeleteDevice(uid int64, mid, appid int, did string) error {
 	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
-	return collection.Remove(bson.M{"uid":uid,"did":did,"mid":mid,"appid":appid})
+	return collection.Remove(bson.M{"uid": uid, "did": did, "mid": mid, "appid": appid})
 }
-func DeleteAllDevice(uid int64,mid,appid int) error{
+func DeleteAllDevice(uid int64, mid, appid int) error {
 	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
-	return collection.Remove(bson.M{"uid":uid,"mid":mid,"appid":appid})
+	return collection.Remove(bson.M{"uid": uid, "mid": mid, "appid": appid})
 }
 
 func InsertDeviceBindHistory(device *DtDevice) error {
@@ -117,17 +118,16 @@ func InsertDeviceBindHistory(device *DtDevice) error {
 }
 
 func InsertAllDeviceBindHistory(device []DtDevice) error {
-	adds := make([]interface{},0)
-	for _,v := range device {
+	adds := make([]interface{}, 0)
+	for _, v := range device {
 		ddh := new(DtDeviceHistory)
 		ddh.Build(&v)
-		adds = append(adds,ddh)
+		adds = append(adds, ddh)
 	}
 	return minerCommonInsert(DT_DEVICE_HISTORY, adds...)
 }
 
-
-func QueryDevice(query bson.M) (*DtDevice ,error){
+func QueryDevice(query bson.M) (*DtDevice, error) {
 	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
@@ -142,12 +142,12 @@ func QueryDevice(query bson.M) (*DtDevice ,error){
 	return res, nil
 }
 
-func GetLastUnbindDeviceTs(uid int64,mid int) (int64 ,error){
+func GetLastUnbindDeviceTs(uid int64, mid int) (int64, error) {
 	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE_HISTORY)
 	res := new(DtDeviceHistory)
-	err := collection.Find(bson.M{"uid":uid,"mid":mid}).Sort("-unbind_ts").Limit(1).One(res)
+	err := collection.Find(bson.M{"uid": uid, "mid": mid}).Sort("-unbind_ts").Limit(1).One(res)
 	if err != nil {
 		logger.Error("query mongo db error", err.Error())
 		return 0, err
@@ -155,13 +155,12 @@ func GetLastUnbindDeviceTs(uid int64,mid int) (int64 ,error){
 	return res.UnbindTs, nil
 }
 
-
-func QueryUserAllDevice(uid int64) ([]DtDevice ,error){
+func QueryUserAllDevice(uid int64) ([]DtDevice, error) {
 	session := mSession.Clone()
 	defer session.Close()
 	collection := session.DB(minerdbc.DBDatabase).C(DT_DEVICE)
 	res := []DtDevice{}
-	err := collection.Find(bson.M{"uid":uid}).All(&res)
+	err := collection.Find(bson.M{"uid": uid}).All(&res)
 	if err != nil {
 		logger.Error("query mongo db error", err.Error())
 		return nil, err
@@ -169,9 +168,9 @@ func QueryUserAllDevice(uid int64) ([]DtDevice ,error){
 	return res, nil
 }
 
-func DelDtActive(uid int64,mid,sid int)error{
+func DelDtActive(uid int64, mid, sid int) error {
 	session := mSession.Clone()
 	defer session.Close()
-	collection := session.DB(minerdbc.DBDatabase).C(DT_ACTIVE)
-	return collection.Remove(bson.M{"uid":uid,"sid":sid,"mid":mid})
+	collection := session.DB(minerdbc.DBDatabase).C(DT_MINER_ACTIVE)
+	return collection.Remove(bson.M{"uid": uid, "sid": sid, "mid": mid})
 }
