@@ -43,6 +43,7 @@ type (
 		OsVer    string        `bson:"os_ver,omitempty" json:"os_ver"`
 		BindTs   int64         `bson:"bind_ts,omitempty" json:"bind_ts"`
 		UnbindTs int64         `bson:"unbind_ts,omitempty"`
+		ForceUid int64         `bson:"force_uid,omitempty"`
 	}
 
 )
@@ -58,4 +59,9 @@ func (ddh *DtDeviceHistory) Build(dd *DtDevice) {
 	ddh.Dn = dd.Dn
 	ddh.OsVer = dd.OsVer
 	ddh.BindTs = dd.BindTs
+}
+
+func (ddh *DtDeviceHistory) BuildForceUnBind(dd *DtDevice, forceUid int64) {
+	ddh.ForceUid = forceUid
+	ddh.Build(dd)
 }

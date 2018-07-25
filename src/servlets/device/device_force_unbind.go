@@ -69,7 +69,7 @@ func (handler *deviceForceUnBindHandler) Handle(request *http.Request, writer ht
 	}
 
 	// 判断用户身份
-	_, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	forceUidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("device force unbind: get info from redis error:", err)
 		response.SetResponseBase(err)
@@ -87,6 +87,7 @@ func (handler *deviceForceUnBindHandler) Handle(request *http.Request, writer ht
 		return
 	}
 
+	forceUid := utils.Str2Int64(forceUidStr)
 	uid := int64(param.Uid)
 	// 设备强制解绑24小时内禁止再次进行强制解绑
 	if common.CheckForceUnbindLimit(param.Appid, param.Did) {
@@ -110,12 +111,12 @@ func (handler *deviceForceUnBindHandler) Handle(request *http.Request, writer ht
 		return
 	}
 
-	resBase := execForceUnbind(uid, param.Mid, param.Appid, param.Did, log)
+	resBase := execForceUnbind(uid, forceUid, param.Mid, param.Appid, param.Did, log)
 	common.DeviceUnLockUid(uid,userLockTs)
 	response.SetResponseBase(resBase)
 }
 
-func execForceUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) constants.Error {
+func execForceUnbind(uid, forceUid int64, mid, appid int, did string, log *logger.LvtLogger) constants.Error {
 
 	res := constants.RC_SYSTEM_ERR
 	// query device info
@@ -128,7 +129,7 @@ func execForceUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogge
 	device, err := common.QueryDevice(query)
 	switch err {
 	case nil:
-		if execMongoAndReidsForceUnbind(device,log){
+		if execMongoAndReidsForceUnbind(device, forceUid,log){
 			// set unbind time
 			res = constants.RC_OK
 			common.SetForceUnbindLimit(appid, did)
@@ -142,14 +143,14 @@ func execForceUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogge
 	return res
 }
 
-func execMongoAndReidsForceUnbind(device *common.DtDevice,log *logger.LvtLogger)bool{
+func execMongoAndReidsForceUnbind(device *common.DtDevice, forceUid int64,log *logger.LvtLogger)bool{
 	deviceLockTs := common.DeviceLock(device.Appid,device.Did)
 	if deviceLockTs == 0 {
 		log.Error("unbind device in lock uid",device.Uid,"mid",device.Mid,"appid",device.Appid,"did",device.Did)
 		return false
 	}
 	f := true
-	if err := common.InsertDeviceBindHistory(device); err != nil {
+	if err := common.InsertDeviceForceUnBindHistory(device, forceUid); err != nil {
 		log.Error("insert device history error", err.Error())
 		f = false
 	} else {
