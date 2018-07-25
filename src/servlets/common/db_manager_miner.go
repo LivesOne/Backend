@@ -119,6 +119,12 @@ func InsertDeviceBindHistory(device *DtDevice) error {
 	return minerCommonInsert(DT_DEVICE_HISTORY, ddh)
 }
 
+func InsertDeviceForceUnBindHistory(device *DtDevice, forceUid int64) error {
+	ddh := new(DtDeviceHistory)
+	ddh.BuildForceUnBind(device, forceUid)
+	return minerCommonInsert(DT_DEVICE_HISTORY, ddh)
+}
+
 func InsertAllDeviceBindHistory(device []DtDevice) error {
 	adds := make([]interface{}, 0)
 	for _, v := range device {
