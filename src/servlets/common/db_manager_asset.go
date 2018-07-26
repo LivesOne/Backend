@@ -296,13 +296,13 @@ func TransAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	return true, constants.TRANS_ERR_SUCC
 }
 
-func ConvAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
-	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", from, to)
+func ConvAccountLvtcByTx(txid, systemUid, to,lvt,lvtc int64, tx *sql.Tx) (bool, int) {
+	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", systemUid, to)
 
 	ts := utils.GetTimestamp13()
-
+	sysValue := lvt-lvtc
 	//扣除转出方balance
-	info1, err1 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, from)
+	info1, err1 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", sysValue, ts, systemUid)
 	if err1 != nil {
 		logger.Error("sql error ", err1.Error())
 		return false, constants.TRANS_ERR_SYS
@@ -310,11 +310,11 @@ func ConvAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
 	rsa, _ := info1.RowsAffected()
 	if rsa == 0 {
-		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", systemUid, "")
 		return false, constants.TRANS_ERR_SYS
 	}
 	//增加目标的balance
-	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", lvtc, ts, to)
 	if err2 != nil {
 		logger.Error("sql error ", err2.Error())
 		return false, constants.TRANS_ERR_SYS

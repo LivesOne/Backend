@@ -96,7 +96,7 @@ func commonConvTrans(uid,systemUid,lvt,lvtc int64 , tx *sql.Tx)(bool,constants.E
 		logger.Error("build lvt tx history failed ,rollback the tx")
 		return false,e
 	}else{
-		if ok,e := buildLvtcTxHistory(uid,systemUid,lvtc,tx);!ok {
+		if ok,e := buildLvtcTxHistory(uid,systemUid,lvt,lvtc,tx);!ok {
 			logger.Error("build lvtc tx history failed ,rollback the tx")
 			DeleteCommited(txid)
 			return false,e
@@ -141,7 +141,7 @@ func buildLvtTxHistory(uid,systemUid,lvt int64,tx *sql.Tx)(int64,constants.Error
 }
 
 
-func buildLvtcTxHistory(uid,systemUid,lvtc int64,tx *sql.Tx)(bool,constants.Error){
+func buildLvtcTxHistory(uid,systemUid,lvt,lvtc int64,tx *sql.Tx)(bool,constants.Error){
 	txid := GenerateTxID()
 
 	if txid == -1 {
@@ -149,7 +149,7 @@ func buildLvtcTxHistory(uid,systemUid,lvtc int64,tx *sql.Tx)(bool,constants.Erro
 		return false,constants.RC_SYSTEM_ERR
 	}
 
-	f, c := ConvAccountLvtcByTx(txid,systemUid, uid, lvtc,tx)
+	f, c := ConvAccountLvtcByTx(txid,systemUid, uid,lvt, lvtc,tx)
 	if f {
 		//成功 插入commited lvtc
 		txh := &DTTXHistory{
