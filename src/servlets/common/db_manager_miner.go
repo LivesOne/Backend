@@ -196,6 +196,6 @@ func ClearOnline(uid int64,mid,sid int) error {
 	if sid >0 {
 		q["sid"] = sid
 	}
-	logger.Info("clear online query ",utils.ToJSON(q))
+	logger.Info("clear online tb name",tbName," query ",utils.ToJSON(q))
 	return collection.Remove(q)
 }
