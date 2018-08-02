@@ -31,6 +31,7 @@ type RedisConfig struct {
 	MaxConn   int
 	RedisAddr string //"[ip]:port"
 	RedisAuth string
+	DBIndex int
 }
 
 type captcha struct {

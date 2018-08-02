@@ -15,7 +15,8 @@
     {
         "MaxConn" : 10,
         "RedisAddr" : "10.100.15.96:6379",
-        "RedisAuth" : "lvt_serv"
+        "RedisAuth" : "lvt_serv",
+        "DBIndex":0
     },
 
     "User" : 
