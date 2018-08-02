@@ -57,10 +57,10 @@ func RedisPoolInit() {
 					c.Close()
 					return nil, errors.New("can not select db " + utils.Int2Str(redisCfg.DBIndex))
 				}
-				logger.Info("select db res",succ)
+				//logger.Info("select db res",succ)
 			}
 
-			logger.Info("select db",redisCfg.DBIndex)
+			//logger.Info("select db",redisCfg.DBIndex)
 			return c, err
 		},
 
