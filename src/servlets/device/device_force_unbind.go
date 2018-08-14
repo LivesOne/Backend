@@ -1,15 +1,15 @@
 package device
 
 import (
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
-	"utils/logger"
-	"gopkg.in/mgo.v2"
 	"utils/config"
+	"utils/logger"
 )
 
 type deviceForceUnBindParam struct {
@@ -99,7 +99,7 @@ func (handler *deviceForceUnBindHandler) Handle(request *http.Request, writer ht
 	ul := common.GetTransUserLevel(uid)
 	ulc := config.GetLimitByLevel(ul)
 	if param.Mid > ulc.MinerIndexSize() {
-		log.Error("bind device mid index error mid:",param.Mid,"mast <",ulc.MinerIndexSize())
+		log.Error("bind device mid index error mid:", param.Mid, "mast <", ulc.MinerIndexSize())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -112,7 +112,7 @@ func (handler *deviceForceUnBindHandler) Handle(request *http.Request, writer ht
 	}
 
 	resBase := execForceUnbind(uid, forceUid, param.Mid, param.Appid, param.Did, log)
-	common.DeviceUnLockUid(uid,userLockTs)
+	common.DeviceUnLockUid(uid, userLockTs)
 	response.SetResponseBase(resBase)
 }
 
@@ -129,42 +129,43 @@ func execForceUnbind(uid, forceUid int64, mid, appid int, did string, log *logge
 	device, err := common.QueryDevice(query)
 	switch err {
 	case nil:
-		if execMongoAndReidsForceUnbind(device, forceUid,log){
+		if execMongoAndReidsForceUnbind(device, forceUid, log) {
 			// set unbind time
 			res = constants.RC_OK
 			common.SetForceUnbindLimit(appid, did)
-			common.ClearOnline(uid,mid,device.Sid)
+			common.ClearOnline(uid, mid, device.Sid)
 		}
 	case mgo.ErrNotFound:
-		log.Error("force unbind device uid",uid,"mid",mid,"appid",appid,"did",did,"device not found")
+		log.Error("force unbind device uid", uid, "mid", mid, "appid", appid, "did", did, "device not found")
 		res = constants.RC_NOT_FOUND_DEVICE
 	}
 
 	return res
 }
 
-func execMongoAndReidsForceUnbind(device *common.DtDevice, forceUid int64,log *logger.LvtLogger)bool{
-	deviceLockTs := common.DeviceLock(device.Appid,device.Did)
+func execMongoAndReidsForceUnbind(device *common.DtDevice, forceUid int64, log *logger.LvtLogger) bool {
+	deviceLockTs := common.DeviceLock(device.Appid, device.Did)
 	if deviceLockTs == 0 {
-		log.Error("unbind device in lock uid",device.Uid,"mid",device.Mid,"appid",device.Appid,"did",device.Did)
+		log.Error("unbind device in lock uid", device.Uid, "mid", device.Mid, "appid", device.Appid, "did", device.Did)
 		return false
 	}
 	f := true
-	if err := common.InsertDeviceForceUnBindHistory(device, forceUid); err != nil {
-		log.Error("insert device history error", err.Error())
+	if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil && err != mgo.ErrNotFound {
+		log.Error("delete device error", err.Error())
 		f = false
 	} else {
-		// delete device info
-		if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil && err != mgo.ErrNotFound  {
-			log.Error("delete device error", err.Error())
+		if err := common.InsertDeviceForceUnBindHistory(device, forceUid); err != nil {
+			log.Error("insert device history error", err.Error())
 			f = false
 		}
 
-		if err := common.DelDtActive(device.Uid,device.Mid,device.Sid);err != nil && err != mgo.ErrNotFound {
+		if err := common.DelDtActive(device.Uid, device.Mid, device.Sid); err != nil && err != mgo.ErrNotFound {
 			log.Error("delete dt active error", err.Error())
 			f = false
+
 		}
 	}
-	common.DeviceUnLockDid(device.Appid,device.Did,deviceLockTs)
+
+	common.DeviceUnLockDid(device.Appid, device.Did, deviceLockTs)
 	return f
 }
