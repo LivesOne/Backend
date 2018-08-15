@@ -8,6 +8,7 @@ import (
 
 	"errors"
 	"github.com/garyburd/redigo/redis"
+	"utils"
 )
 
 var redisPool *redis.Pool
@@ -44,6 +45,22 @@ func RedisPoolInit() {
 			// 		return nil, errors.New("redis server password wrong")
 			// 	}
 			// }
+
+			if redisCfg.DBIndex > 0 {
+				succ, err := redis.String(c.Do("SELECT", redisCfg.DBIndex))
+				if err != nil {
+					logger.Info("select db",redisCfg.DBIndex,"failed",err.Error())
+					c.Close()
+					return nil, err
+				} else if succ != "OK" {
+					logger.Info("select db",redisCfg.DBIndex,"failed")
+					c.Close()
+					return nil, errors.New("can not select db " + utils.Int2Str(redisCfg.DBIndex))
+				}
+				//logger.Info("select db res",succ)
+			}
+
+			//logger.Info("select db",redisCfg.DBIndex)
 			return c, err
 		},
 

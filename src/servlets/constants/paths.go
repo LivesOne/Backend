@@ -92,6 +92,21 @@ const (
 
 	ASSET_TRANS_COMMIT = "/asset/v1/trans/commit"
 
+
+
+	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
+
+	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
+
+	ASSET_LVTC_TRANS_PREPARE = "/asset/v1/trans/lvtc_prepare"
+
+	ASSET_LVTC_TRANS_COMMIT = "/asset/v1/trans/lvtc_commit"
+
+	ASSET_LVTC_TRANS_RESULT = "/asset/v1/trans/lvtc_result"
+
+	ASSET_LVTC_TRANS_HISTORY = "/asset/v1/trans/lvtc_history"
+
+
 	ASSET_ETH_TRANS_PREPARE = "/asset/v1/trans/eth_prepare"
 
 	ASSET_ETH_TRANS_COMMIT = "/asset/v1/trans/eth_commit"
@@ -99,10 +114,6 @@ const (
 	ASSET_ETH_TRANS_RESULT = "/asset/v1/trans/eth_result"
 
 	ASSET_ETH_TRANS_HISTORY = "/asset/v1/trans/eth_history"
-
-	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
-
-	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
 
 	ASSET_LOGK_LIST = "/asset/v1/lock/list"
 
@@ -124,6 +135,12 @@ const (
 
 	ASSET_WITHDRAWAL_CARD_USE_LIST = "/asset/v1/withdraw/card/use_list"
 
+	ASSET_LVT2LVTC = "/asset/v1/misc/lvt2lvtc"
+
+	ASSET_LVT2LVTC_DELAY = "/asset/v1/misc/lvt2lvtc_delay"
+
+	ASSET_LVT2LVTC_COUNT = "/asset/v1/misc/lvt2lvtc_count"
+
 	DEVICE_BIND_DEVICE = "/user/v1/device/bind"
 
 	DEVICE_UNBIND_DEVICE = "/user/v1/device/unbind"
@@ -131,4 +148,6 @@ const (
 	DEVICE_DEVICE_INFO = "/user/v1/device/info"
 
 	DEVICE_DEVICE_LIST = "/user/v1/device/list"
+
+	DEVICE_FORCE_UNBIND = "/user/v1/device/force_unbind"
 )

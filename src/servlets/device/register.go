@@ -10,4 +10,5 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.DEVICE_UNBIND_DEVICE, new(deviceUnBindHandler))
 	server.RegisterHandler(constants.DEVICE_DEVICE_INFO, new(deviceInfoHandler))
 	server.RegisterHandler(constants.DEVICE_DEVICE_LIST, new(deviceListHandler))
+	server.RegisterHandler(constants.DEVICE_FORCE_UNBIND, new(deviceForceUnBindHandler))
 }

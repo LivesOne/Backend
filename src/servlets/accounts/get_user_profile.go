@@ -39,8 +39,8 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	uid, aesKey, _, errT := token.GetAll(header.TokenHash)
-	if (errT != constants.ERR_INT_OK) || (len(uid) != constants.LEN_uid) {
+	uid, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
+	if  err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		logger.Info("get user profile: get uid from token cache failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return

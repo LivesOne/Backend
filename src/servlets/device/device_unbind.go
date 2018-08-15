@@ -154,7 +154,7 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) co
 		if execMongoAndReidsUnbind(device,log){
 				// set unbind time
 				res = constants.RC_OK
-				common.SetUnbindLimt(uid, mid)
+
 
 		}
 	case mgo.ErrNotFound:
@@ -174,8 +174,6 @@ func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
 		for _, v := range device {
 			execMongoAndReidsUnbind(&v,log)
 		}
-		//锁定矿机绑定时间
-		common.SetUnbindLimt(uid, mid)
 		res = constants.RC_OK
 	case mgo.ErrNotFound:
 		log.Error("unbind all device uid",uid,"mid",mid,"device not found")
@@ -191,21 +189,25 @@ func execMongoAndReidsUnbind(device *common.DtDevice,log *logger.LvtLogger)bool{
 		return false
 	}
 	f := true
-	if err := common.InsertDeviceBindHistory(device); err != nil {
-		log.Error("insert device history error", err.Error())
+	// delete device info
+	if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil && err != mgo.ErrNotFound  {
+		log.Error("delete device error", err.Error())
 		f = false
-	} else {
-		// delete device info
-		if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil && err != mgo.ErrNotFound  {
-			log.Error("delete device error", err.Error())
-			f = false
+	}else{
+		if err := common.InsertDeviceBindHistory(device); err != nil {
+			log.Error("insert device history error", err.Error())
 		}
-
 		if err := common.DelDtActive(device.Uid,device.Mid,device.Sid);err != nil && err != mgo.ErrNotFound {
 			log.Error("delete dt active error", err.Error())
-			f = false
 		}
 	}
+	//清理sid对应下所有心跳
+	err := common.ClearOnline(device.Uid,device.Mid,device.Sid)
+	if err != nil {
+		logger.Error("remove online error",err.Error())
+	}
+	//锁定矿机绑定时间
+	common.SetUnbindLimt(device.Uid,device.Mid)
 	common.DeviceUnLockDid(device.Appid,device.Did,deviceLockTs)
 	return f
 }

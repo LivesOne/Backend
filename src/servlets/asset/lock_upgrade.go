@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"utils/config"
 )
 
 type lockUpgradeReqData struct {
@@ -154,7 +155,7 @@ func (handler *lockUpgradeHandler) Handle(request *http.Request, writer http.Res
 	al.Begin = begin
 	al.End = end
 	al.Type = common.ASSET_LOCK_TYPE_DRAW
-	al.Hashrate = getLockHashrate(secret.Month, al.Value)
+	al.Hashrate = utils.GetLockHashrate(config.GetConfig().LvtcHashrateScale,secret.Month, al.Value)
 
 	if ok, e := common.UpgradeAssetLock(al); ok {
 		response.Data = al

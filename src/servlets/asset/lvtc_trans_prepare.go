@@ -6,53 +6,28 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
-	"strings"
 	"utils"
 	"utils/config"
 	"utils/logger"
 	"utils/vcode"
 )
 
-type transPrepareParam struct {
-	TxType    int    `json:"tx_type"`
-	AuthType  int    `json:"auth_type"`
-	VcodeType int    `json:"vcode_type"`
-	VcodeId   string `json:"vcode_id"`
-	Vcode     string `json:"vcode"`
-	Secret    string `json:"secret"`
-}
 
-type transPrepareSecret struct {
-	To    string `json:"to"`
-	Value string `json:"value"`
-	Pwd   string `json:"pwd"`
-	BizContent map[string]string `json:"biz_content"`
-}
 
-func (tps *transPrepareSecret) isValid() bool {
-	return len(tps.Value) > 0 && len(tps.Pwd) > 0
-}
 
-type transPrepareRequest struct {
-	Base  *common.BaseInfo   `json:"base"`
-	Param *transPrepareParam `json:"param"`
-}
 
-type transPrepareResData struct {
-	Txid string `json:"txid"`
-}
 
 // sendVCodeHandler
-type transPrepareHandler struct {
+type lvtcTransPrepareHandler struct {
 	//header      *common.HeaderParams // request header param
 	//requestData *sendVCodeRequest    // request body
 }
 
-func (handler *transPrepareHandler) Method() string {
+func (handler *lvtcTransPrepareHandler) Method() string {
 	return http.MethodPost
 }
 
-func (handler *transPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+func (handler *lvtcTransPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 	log := logger.NewLvtLogger(true)
 	defer log.InfoAll()
 	response := &common.ResponseData{
@@ -95,7 +70,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
-		log.Info("asset trans prepare: valid sing failed")
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
@@ -104,7 +78,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	if requestData.Param.VcodeType > 0 {
 		acc, err := common.GetAccountByUID(uidString)
 		if err != nil && err != sql.ErrNoRows {
-			log.Info("asset trans prepare: get account by uid err", err.Error(), "uid:", uidString)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
@@ -122,7 +95,6 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 				return
 			}
 		default:
-			log.Info("asset trans prepare: vcode type error")
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
@@ -133,84 +105,110 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	secret := new(transPrepareSecret)
 
 	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
-		log.Error("asset trans prepare: secret decodeS error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !secret.isValid() {
-		log.Info("asset trans prepare: secret valid failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !validateValue(secret.Value) {
-		log.Info("asset trans prepare: trade value error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	from := utils.Str2Int64(uidString)
-	if common.GetTransLevel(from) == 0 {
-		logger.Info("current user is not a trader")
-		response.SetResponseBase(constants.RC_PERMISSION_DENIED)
-		return
-	}
-
 	to := utils.Str2Int64(secret.To)
 	txType := requestData.Param.TxType
 
-	logger.Debug(from,to,txType)
-
-	if txType != constants.TX_TYPE_TRANS {
-		logger.Info("asset trans prepare: unsupported transaction type")
-		response.SetResponseBase(constants.RC_PERMISSION_DENIED)
-		return
-	}
-
-	if from == to || !common.ExistsUID(to) {
-		logger.Info("asset trans prepare: transfer to himself or account not exist, from:", from, "to:", to)
-		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
-		return
-	}
-
-	//目标账号非系统账号才校验额度
-	if !config.GetConfig().CautionMoneyIdsExist(to) {
-
-		//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
-		transLevelOfTo := common.GetTransLevel(to)
-		if transLevelOfTo == 0 && !common.CanBeTo(to) {
-			logger.Info("asset trans prepare: target account has't receipt rights, to:", to)
+	log.Debug(from,to,txType)
+	//chacke to
+	switch txType {
+	case constants.TX_TYPE_BUY_COIN_CARD:
+		to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
+	default:
+		//不能给自己转账，不能转无效用户
+		if from == to || !common.ExistsUID(to) {
 			response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 			return
 		}
+	}
 
-		//金额校验不通过，删除pending
-		level := common.GetTransLevel(from)
-		if f, e := common.CheckAmount(from, utils.FloatStrToLVTint(secret.Value), level); !f {
-			logger.Info("asset trans prepare: transfer out amount level limit exceeded, from:", from)
-			response.SetResponseBase(e)
+	//交易类型 只支持，红包，转账，购买，退款 不支持私募，工资
+	switch txType {
+	case constants.TX_TYPE_TRANS:
+
+		//目标账号非系统账号才校验额度
+		if !config.GetConfig().CautionMoneyIdsExist(to) {
+
+			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
+			transLevelOfTo := common.GetTransLevel(to)
+			if transLevelOfTo == 0 && !common.CanBeTo(to) {
+				response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
+				return
+			}
+
+			//金额校验不通过，删除pending
+			level := common.GetTransLevel(from)
+			if f, e := common.CheckAmount(from, utils.FloatStrToLVTint(secret.Value), level); !f {
+				response.SetResponseBase(e)
+				return
+			}
+			//校验用户的交易限制
+			if f, e := common.CheckPrepareLimit(from, level); !f {
+				response.SetResponseBase(e)
+				return
+			}
+		}
+	case constants.TX_TYPE_ACTIVITY_REWARD: //如果是活动领取，需要校验转出者的id
+		if utils.Str2Float64(secret.Value) > float64(config.GetConfig().MaxActivityRewardValue) {
+			response.SetResponseBase(constants.RC_TRANS_AUTH_FAILED)
 			return
 		}
-		//校验用户的交易限制
-		if f, e := common.CheckPrepareLimit(from, level); !f {
-			logger.Info("asset trans prepare: transfer out amount day limit exceeded, from:", from)
-			response.SetResponseBase(e)
+
+		if !common.CheckTansTypeFromUid(from, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
+	case constants.TX_TYPE_BUY:
+		if !common.CheckTansTypeFromUid(to, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+		//直接放行
+	case constants.TX_TYPE_REFUND:
+		if !common.CheckTansTypeFromUid(from, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+		//直接放行
+	case constants.TX_TYPE_THREAD_IN:
+		if !common.CheckTansTypeFromUid(to, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+		//直接放行
+	case constants.TX_TYPE_THREAD_OUT:
+		if !common.CheckTansTypeFromUid(from, txType) {
+			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
+			return
+		}
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	}
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
 		if !common.CheckLoginPwd(from, pwd) {
-			logger.Info("asset trans prepare: login password error")
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
 		if !common.CheckPaymentPwd(from, pwd) {
-			logger.Info("asset trans prepare: trade password error")
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
@@ -218,9 +216,8 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	bizContent :=  utils.ToJSON(secret.BizContent)
 	//调用统一提交流程
-	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value,bizContent); resErr == constants.RC_OK {
+	if txid, resErr := common.PrepareLVTCTrans(from, to, requestData.Param.TxType, secret.Value); resErr == constants.RC_OK {
 		response.Data = transPrepareResData{
 			Txid: txid,
 		}
@@ -228,15 +225,4 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(resErr)
 	}
 
-}
-
-func validateValue(value string) bool {
-	if utils.Str2Float64(value) > 0 {
-		index := strings.Index(value, ".")
-		last := value[index+1:]
-		if len(last) <= 8 {
-			return true
-		}
-	}
-	return false
 }

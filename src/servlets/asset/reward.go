@@ -45,7 +45,10 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 
 	requestData := rewardRequest{} // request body
 	//header := common.ParseHttpHeaderParams(request)
-	common.ParseHttpBodyParams(request, &requestData)
+	if !common.ParseHttpBodyParams(request, &requestData) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return 
+	}
 
 	base := requestData.Base
 
@@ -61,7 +64,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	re, err := common.QueryReward(intUid)
+	re, err := common.QueryLvtcReward(intUid)
 
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)

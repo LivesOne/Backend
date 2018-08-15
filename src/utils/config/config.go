@@ -31,6 +31,7 @@ type RedisConfig struct {
 	MaxConn   int
 	RedisAddr string //"[ip]:port"
 	RedisAuth string
+	DBIndex int
 }
 
 type captcha struct {
@@ -69,15 +70,16 @@ type Configuration struct {
 	// account db config
 	User DBConfig
 	// asset db config
-	Asset     DBConfig
-	TxHistory MongoConfig
-	Miner     MongoConfig
+	Asset        DBConfig
+	TxHistory    MongoConfig
+	NewTxHistory MongoConfig
+	Miner        MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制
 	LoginPwdErrCntLimit []LoginPwdErrCntLimit
 	TransferLimit       map[int]TransferLimit
-	AppIDs              []int        // app IDs read from configuration file
+	AppIDs              []int // app IDs read from configuration file
 
 	// 短信验证网关相关
 	SmsSvrAddr string
@@ -88,16 +90,19 @@ type Configuration struct {
 	// 短信上行接口地址
 	SmsUpValidateSvrAddr string
 	// log相关
-	LogConfig              string
-	UserLevelConfig        string
-	Captcha                captcha
-	MaxActivityRewardValue int
-	CautionMoneyIds        []int64
-	PenaltyMoneyAccountUid int64
-	WXAuth                 WXAuth
-	BindActive             string
-	AuthTelegramUrl        string
-	WithdrawalConfig       string
+	LogConfig                     string
+	UserLevelConfig               string
+	Captcha                       captcha
+	MaxActivityRewardValue        int
+	CautionMoneyIds               []int64
+	PenaltyMoneyAccountUid        int64
+	WXAuth                        WXAuth
+	BindActive                    string
+	AuthTelegramUrl               string
+	WithdrawalConfig              string
+	LvtcHashrateScale             int
+	Lvt2LvtcSystemAccountUid      int64
+	Lvt2LvtcDelaySystemAccountUid int64
 }
 
 // configuration data
@@ -220,7 +225,7 @@ func (cfg *Configuration) CautionMoneyIdsExist(uid int64) bool {
 }
 func IsAppIDValid(appid int) bool {
 	logger.Info("app_id in ", appid, "curr app_id ", gConfig.AppIDs)
-	for _,v := range gConfig.AppIDs{
+	for _, v := range gConfig.AppIDs {
 		if v == appid {
 			return true
 		}

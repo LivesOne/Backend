@@ -9,6 +9,7 @@ const (
 	ASSET_LOCK_TYPE_DRAW = 1
 	CURRENCY_LVT         = "LVT"
 	CURRENCY_ETH         = "ETH"
+	CURRENCY_LVTC        = "LVTC"
 )
 
 type (
@@ -31,6 +32,20 @@ type (
 		Begin    int64  `json:"begin" bson:"begin"`
 		End      int64  `json:"end" bson:"end"`
 		ValueInt int64  `json:"-" bson:"value"`
+	}
+
+	AssetLockLvtc struct {
+		Id          int64  `json:"-" bson:"id"`
+		IdStr       string `json:"id" bson:"-"`
+		Uid         int64  `json:"-" bson:"uid"`
+		Value       string `json:"value" bson:"-"`
+		Month       int    `json:"month" bson:"month"`
+		Hashrate    int    `json:"hashrate" bson:"hashrate"`
+		Begin       int64  `json:"begin" bson:"begin"`
+		End         int64  `json:"end" bson:"end"`
+		ValueInt    int64  `json:"-" bson:"value"`
+		Currency    string `json:"currency" bson:"currency"`
+		AllowUnlock int    `json:"allow_unlock" bson:"allow_unlock"`
 	}
 
 	UserWithdrawalQuota struct {
@@ -73,17 +88,21 @@ type (
 	}
 
 	UserWithdrawalRequest struct {
-		Id         int64  `json:"id"`
-		TradeNo    string `json:"trade_no"`
-		Uid        int64  `json:"uid"`
-		Value      int64  `json:"value"`
-		Address    string `json:"address"`
-		TxidLvt    int64  `json:"txid_lvt"`
-		TxidEth    int64  `json:"txid_eth"`
-		CreateTime int64  `json:"create_time"`
-		UpdateTime int64  `json:"update_time"`
-		Status     int    `json:"status"`
-		Free       int64  `json:"free"`
+		Id            int64  `json:"id"`
+		TradeNo       string `json:"trade_no"`
+		Uid           int64  `json:"uid"`
+		Address       string `json:"address"`
+		Value         int64  `json:"value"`
+		Currency      string `json:"currency"`
+		Fee           int64  `json:"currency"`
+		FeeCurrency   string `json:"currency"`
+		Txid          int64  `json:"txid"`
+		TxidReturn    int64  `json:"txid_return"`
+		TxidFee       int64  `json:"txid_eth"`
+		TxidFeeReturn int64  `json:"txid_eth_return"`
+		CreateTime    int64  `json:"create_time"`
+		UpdateTime    int64  `json:"update_time"`
+		Status        int    `json:"status"`
 	}
 
 	UserWithdrawCard struct {
@@ -102,6 +121,13 @@ type (
 )
 
 func (al *AssetLock) IsOk() bool {
+	return al.Month > 0 &&
+		al.ValueInt > 0 &&
+		al.End > utils.GetTimestamp13()
+
+}
+
+func (al *AssetLockLvtc) IsOk() bool {
 	return al.Month > 0 &&
 		al.ValueInt > 0 &&
 		al.End > utils.GetTimestamp13()

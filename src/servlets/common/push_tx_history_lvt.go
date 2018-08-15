@@ -24,9 +24,13 @@ func ListenTxhistoryQueue() {
 			txh := new(DTTXHistory)
 
 			if err := utils.FromJson(results[1], txh); err == nil {
-				err = InsertCommited(txh)
+				if txh.Currency == "LVTC" {
+					err = InsertLVTCCommited(txh)
+				} else {
+					err = InsertCommited(txh)
+				}
 				if err != nil {
-					logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
+					logger.Error("tx_history_lvt_tmp insert mongo error ", err.Error())
 					rdsDo("RPUSH", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
 				}
 			}
@@ -44,7 +48,13 @@ func PushTxHistoryByTimer() {
 			dTTXHistoryList := QueryTxhistoryLvtTmpByTimie(utils.GetTimestamp13ByTime(before4Hour))
 			if dTTXHistoryList != nil {
 				for _, dTTXHistory := range dTTXHistoryList {
-					err := InsertCommited(dTTXHistory)
+					var err error
+					if dTTXHistory.Currency == "LVTC" {
+						err = InsertLVTCCommited(dTTXHistory)
+					} else {
+						err = InsertCommited(dTTXHistory)
+					}
+
 					if err == nil {
 						DeleteTxhistoryLvtTmpByTxid(dTTXHistory.Id)
 					}

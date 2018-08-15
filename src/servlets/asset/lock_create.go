@@ -7,6 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
+	"utils/config"
 )
 
 type lockCreateReqData struct {
@@ -15,7 +16,6 @@ type lockCreateReqData struct {
 
 type lockCreateParam struct {
 	AuthType int    `json:"auth_type"`
-	Type     int    `json:"type"`
 	Secret   string `json:"secret"`
 }
 
@@ -121,14 +121,6 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	switch reqParam.Type {
-	case common.ASSET_LOCK_TYPE_NOR:
-	case common.ASSET_LOCK_TYPE_DRAW:
-	default:
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
-
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
@@ -149,16 +141,22 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 	begin := utils.GetTimestamp13()
 	//计算结束时间
 	end := begin + (int64(secret.Month) * constants.ASSET_LOCK_MONTH_TIMESTAMP)
-
-	assetLock := &common.AssetLock{
+	lvtScale := config.GetConfig().LvtcHashrateScale
+	assetLock := &common.AssetLockLvtc{
 		Uid:      uid,
 		Value:    secret.Value,
 		ValueInt: utils.FloatStrToLVTint(secret.Value),
 		Month:    secret.Month,
-		Hashrate: getLockHashrate(secret.Month, secret.Value),
+		Hashrate: utils.GetLockHashrate(lvtScale,secret.Month, secret.Value),
 		Begin:    begin,
 		End:      end,
-		Type:     reqParam.Type,
+		Currency: common.CURRENCY_LVTC,
+		AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_DEF,
+	}
+	if assetLock.ValueInt < 100 {
+		log.Info("asset create lock less than 100")
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	}
 
 	if ok, e := common.CreateAssetLock(assetLock); ok {
@@ -178,21 +176,3 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 
 }
 
-func getLockHashrate(monnth int, value string) int {
-	//锁仓数额	B	[用户自定义填充]，锁仓额为1000LVT的倍数
-	b := utils.Str2Float64(value)
-	//锁仓期间	T	用户选择：1个月、3个月、6个月、12个月，24个月
-	t := float64(monnth)
-
-	//算力系数 a=0.2 计算算力为整数，a=0.2 扩大100倍 a := 20
-	a := float64(20)
-	//锁仓算力	S	S=B/100000*T*a*100%（a=0.2）
-	s := b / 100000 * t * a
-
-	//Mmax=500%，大于500%取500%
-	//四舍五入后数值大于500 取500
-	if re := utils.Round(s); re <= constants.ASSET_LOCK_MAX_VALUE {
-		return re
-	}
-	return constants.ASSET_LOCK_MAX_VALUE
-}

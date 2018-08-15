@@ -71,7 +71,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		log.Info("asset lockList: get info from cache error:", err)
+		logger.Info("asset lockList: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
@@ -93,19 +93,20 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	if requestData.Param.VcodeType > 0 {
 		acc, err := common.GetAccountByUID(uidString)
 		if err != nil && err != sql.ErrNoRows {
+			logger.Info("query account by uid  error", err.Error())
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
 		switch requestData.Param.VcodeType {
 		case 1:
 			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
-				log.Info("validate sms code failed")
+				logger.Info("validate sms code failed")
 				response.SetResponseBase(vcode.ConvSmsErr(errCode))
 				return
 			}
 		case 2:
 			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode); !ok {
-				log.Info("validate up sms code failed")
+				logger.Info("validate up sms code failed")
 				response.SetResponseBase(resErr)
 				return
 			}
@@ -120,21 +121,25 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	secret := new(withdrawRequestSecret)
 
 	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
+		logger.Info("secret decode error", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !secret.isValid() {
+		logger.Info("withdrawal secret valid failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !validateWithdrawalValue(secret.Value) {
+		logger.Info("withdrawal value error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !validateWithdrawalAddress(secret.Address) {
+		logger.Info("withdrawal address format error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -143,15 +148,18 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
 		if !common.CheckLoginPwd(uid, pwd) {
+			logger.Info("login password error")
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
 		if !common.CheckPaymentPwd(uid, pwd) {
+			logger.Info("trade password error")
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
 	default:
+		logger.Info("auth type parameter error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -164,26 +172,6 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	withdrawAmount := utils.FloatStrToLVTint(secret.Value)
-	userWithdrawalQuota := common.GetUserWithdrawalQuotaByUid(uid)
-	//提币额度表没有记录，进行初始化
-	if userWithdrawalQuota == nil {
-		userWithdrawalQuota = common.InitUserWithdrawal(uid)
-	}
-	switch requestData.Param.QuotaType {
-	case common.DAY_QUOTA_TYPE:
-		if withdrawAmount > userWithdrawalQuota.Day || withdrawAmount > userWithdrawalQuota.Month {
-			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
-			return
-		}
-	case common.CASUAL_QUOTA_TYPE:
-		if withdrawAmount > userWithdrawalQuota.Casual || withdrawAmount > userWithdrawalQuota.Month {
-			response.SetResponseBase(constants.RC_INSUFFICIENT_WITHDRAW_QUOTA)
-			return
-		}
-	default:
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
 	address := strings.ToLower(secret.Address)
 	if !strings.HasPrefix(address, "0x") {
 		address = "0x" + address

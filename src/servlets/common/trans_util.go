@@ -36,6 +36,30 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (stri
 	}
 	return utils.Int642Str(txid), constants.RC_OK
 }
+func PrepareLVTCTrans(from, to int64, txTpye int, value string) (string, constants.Error) {
+	txid := GenerateTxID()
+
+	if txid == -1 {
+		logger.Error("txid is -1  ")
+		return "", constants.RC_SYSTEM_ERR
+	}
+	txh := &DTTXHistory{
+		Id:         txid,
+		Status:     constants.TX_STATUS_DEFAULT,
+		Type:       txTpye,
+		From:       from,
+		To:         to,
+		Value:      utils.FloatStrToLVTint(value),
+		Ts:         utils.TXIDToTimeStamp13(txid),
+		Code:       constants.TX_CODE_SUCC,
+	}
+	err := InsertLVTCPending(txh)
+	if err != nil {
+		logger.Error("insert mongo db error ", err.Error())
+		return "", constants.RC_SYSTEM_ERR
+	}
+	return utils.Int642Str(txid), constants.RC_OK
+}
 
 func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 	txid := utils.Str2Int64(txIdStr)
@@ -131,6 +155,83 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 	}
 	return constants.RC_OK
 }
+
+
+func CommitLVTCTrans(uidStr, txIdStr string) constants.Error {
+	txid := utils.Str2Int64(txIdStr)
+	uid := utils.Str2Int64(uidStr)
+	perPending, flag := FindAndModifyLVTCPending(txid, uid, constants.TX_STATUS_COMMIT)
+	//未查到数据，返回处理中
+	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
+		return constants.RC_TRANS_IN_PROGRESS
+
+	}
+	// 只有转账进行限制
+	if perPending.Type == constants.TX_TYPE_TRANS {
+		//非系统账号才进行限额校验
+		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+			level := GetTransLevel(perPending.From)
+			//交易次数校验不通过，删除pending
+			if f, e := CheckCommitLimit(perPending.From, level); !f {
+				DeleteLVTCPendingByInfo(perPending)
+				return e
+			}
+		}
+	}
+	//txid 时间戳检测
+	ts := utils.GetTimestamp13()
+	txid_ts := utils.TXIDToTimeStamp13(txid)
+	//暂时写死10秒
+	if ts-txid_ts > TRANS_TIMEOUT {
+		//删除pending
+		DeleteLVTCPendingByInfo(perPending)
+		return constants.RC_TRANS_TIMEOUT
+
+	}
+	//存在就检测资产初始化状况，未初始化的用户给初始化
+	CheckAndInitAsset(perPending.To)
+
+	f, c := TransAccountLvtc(txid, perPending.From, perPending.To, perPending.Value)
+	if f {
+		//成功 插入commited
+		err := InsertLVTCCommited(perPending)
+		if CheckDup(err) {
+			//删除pending
+			DeleteLVTCPendingByInfo(perPending)
+			//不删除数据库中的txid
+
+			//识别类型进行操作
+			switch perPending.Type {
+			case constants.TX_TYPE_TRANS:
+				if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+					SetTotalTransfer(perPending.From, perPending.Value)
+				}
+			}
+		}
+
+	} else {
+		//删除pending
+		DeleteLVTCPendingByInfo(perPending)
+		//失败设置返回信息
+		switch c {
+		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
+			return constants.RC_INSUFFICIENT_BALANCE
+		case constants.TRANS_ERR_SYS:
+			return constants.RC_TRANS_IN_PROGRESS
+		case constants.TRANS_ERR_ASSET_LIMITED:
+			return constants.RC_ACCOUNT_ACCESS_LIMITED
+		}
+	}
+	return constants.RC_OK
+}
+
+
+
+
+
+
+
+
 func PrepareETHTrans(from int64, valueStr string, txTpye int, bizContent map[string]string) (string, constants.Error) {
 	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_BUY_COIN_CARD) //TODO 修改
 	value := utils.FloatStrToLVTint(valueStr)

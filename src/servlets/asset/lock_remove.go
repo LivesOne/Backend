@@ -116,10 +116,22 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 	assetLockId := utils.Str2Int64(secret.Id)
 
-	al := common.QueryAssetLock(assetLockId, uid)
+	al := common.QueryLvtcAssetLock(assetLockId, uid)
 	//校验锁仓记录是否可以被提前解锁
 	//month > 0 value > 0 end > curr_timestamp
-	if al == nil || !al.IsOk() || al.Type == common.ASSET_LOCK_TYPE_DRAW {
+	if al == nil || !al.IsOk() {
+		response.SetResponseBase(constants.RC_INVALID_LOCK_ID)
+		return
+	}
+	// verify is unlock allowed
+	if al.AllowUnlock == constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW {
+		log.Error("asset unlock not allowed")
+		response.SetResponseBase(constants.RC_INVALID_LOCK_ID)
+		return
+	}
+	// verify is currency equal "LVTC"
+	if al.Currency != common.CURRENCY_LVTC {
+		log.Error("asset unlock currency: ", al.Currency)
 		response.SetResponseBase(constants.RC_INVALID_LOCK_ID)
 		return
 	}
@@ -153,7 +165,7 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 
 }
 
-func CalculationPenaltyMoney(al *common.AssetLock) int64 {
+func CalculationPenaltyMoney(al *common.AssetLockLvtc) int64 {
 	//获取当前时间戳
 	ts := utils.GetTimestamp13()
 	//计算剩余毫秒

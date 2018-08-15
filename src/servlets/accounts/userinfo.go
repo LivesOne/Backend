@@ -21,6 +21,9 @@ type userinfoRequest struct {
 type userinfoResData struct {
 	Level        int    `json:"level"`
 	NickName     string `json:"nick_name"`
+	Country      int    `json:"country"`
+	Phone        string `json:"phone"`
+	Email        string `json:"email"`
 	Hashrate     int    `json:"hashrate"`
 	RegisterTime int64  `json:"register_time"`
 	Ts           int64  `json:"ts"`
@@ -83,6 +86,9 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		RegisterTime: utils.GetTs13(acc.RegisterTime),
 		Level:        acc.Level,
 		NickName:     acc.Nickname,
+		Country:	  acc.Country,
+		Phone:        acc.Phone,
+		Email:        acc.Email,
 		Ts:           acc.UpdateTime,
 		Hashrate:     common.QueryHashRateByUid(acc.UID),
 	}

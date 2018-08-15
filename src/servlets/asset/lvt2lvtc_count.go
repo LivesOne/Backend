@@ -6,24 +6,22 @@ import (
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"utils/config"
 	"utils/logger"
 )
 
-type lockListResData struct {
-	Records []*common.AssetLockLvtc `json:"records"`
-}
 
 // sendVCodeHandler
-type lockListHandler struct {
+type lvt2lvtcCountHandler struct {
 	//header      *common.HeaderParams // request header param
 	//requestData *sendVCodeRequest    // request body
 }
 
-func (handler *lockListHandler) Method() string {
+func (handler *lvt2lvtcCountHandler) Method() string {
 	return http.MethodPost
 }
 
-func (handler *lockListHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+func (handler *lvt2lvtcCountHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 	log := logger.NewLvtLogger(true)
 	defer log.InfoAll()
 	response := &common.ResponseData{
@@ -34,12 +32,12 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	//requestData := lockListRequest{} // request body
+
 	httpHeader := common.ParseHttpHeaderParams(request)
 
 	// if httpHeader.IsValid() == false {
 	if !httpHeader.IsValidTimestamp() || !httpHeader.IsValidTokenhash() {
-		log.Info("asset lockList: request param error")
+		log.Info("asset trans prepare: request param error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -47,18 +45,43 @@ func (handler *lockListHandler) Handle(request *http.Request, writer http.Respon
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		log.Info("asset lockList: get info from cache error:", err)
+		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
 	}
+	if len(aesKey) != constants.AES_totalLen {
+		log.Info("asset trans prepare: get aeskey from cache error:", len(aesKey))
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
 	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
+
 	uid := utils.Str2Int64(uidString)
 
-	response.Data = lockListResData{
-		Records: common.QueryAssetLockList(uid, common.CURRENCY_LVTC),
+
+	resData := &lvt2lvtcResData{
+		Lvt:  "0",
+		Lvtc: "0",
 	}
+
+
+	balance,_,err := common.QueryBalance(uid)
+	if err != nil {
+		log.Error("query mysql error",err.Error())
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+	if balance > 0 {
+		resData.Lvt = utils.LVTintToFloatStr(balance)
+		lvtcBalance := balance/int64(config.GetConfig().LvtcHashrateScale)
+		resData.Lvtc = utils.LVTintToFloatStr(lvtcBalance)
+	}
+
+	response.Data = resData
+
 
 }
