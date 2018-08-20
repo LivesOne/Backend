@@ -1400,13 +1400,14 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 	return txid, constants.TRANS_ERR_SUCC
 }
 
-func InsertTradePending(uid int64, tradeNo, bizContent string, value int64, tradeType int) error {
-	_, err := gDBAsset.Exec("insert into trade_pending (trade_no,uid,type,biz_content,value,ts) values (?,?,?,?,?,?)", tradeNo, uid, tradeType, bizContent, value, utils.GetTimestamp13())
+func InsertTradePending(from, to int64, tradeNo, bizContent string, value int64, tradeType int) error {
+	_, err := gDBAsset.Exec("insert into trade_pending (trade_no,from,to,type,biz_content,value,ts) values (?,?,?,?,?,?)",
+		tradeNo, from, to, tradeType, bizContent, value, utils.GetTimestamp13())
 	return err
 }
 
 func GetTradePendingByTradeNo(tradeNo string, uid int64) (*TradePending, error) {
-	sql := "select * from trade_pending where trade_no = ? and uid = ?"
+	sql := "select * from trade_pending where trade_no = ? and from = ?"
 	row, err := gDBAsset.QueryRow(sql, tradeNo, uid)
 	if err != nil {
 		logger.Error("query trade_pending error", err.Error())
@@ -1422,7 +1423,8 @@ func ConvTradePending(row map[string]string) *TradePending {
 	tp := new(TradePending)
 	tp.TradeNo = row["trade_no"]
 	tp.BizContent = row["biz_content"]
-	tp.Uid = utils.Str2Int64(row["uid"])
+	tp.From = utils.Str2Int64(row["from"])
+	tp.To = utils.Str2Int64(row["to"])
 	tp.Ts = utils.Str2Int64(row["ts"])
 	tp.Type = utils.Str2Int(row["type"])
 	tp.Value = utils.Str2Int64(row["value"])
@@ -1435,7 +1437,7 @@ func DeleteTradePending(tradeNo string, uid int64, tx *sql.Tx) error {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
-	_, err := tx.Exec("delete from trade_pending where trade_no = ? and uid = ?", tradeNo, uid)
+	_, err := tx.Exec("delete from trade_pending where trade_no = ? and from = ?", tradeNo, uid)
 	return err
 }
 

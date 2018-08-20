@@ -28,7 +28,7 @@ type ethTransPrepareSecret struct {
 }
 
 func (tps *ethTransPrepareSecret) isValid() bool {
-	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Pwd) > 0 && tps.BizContent != nil
+	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Pwd) > 0
 }
 
 type ethTransPrepareRequest struct {
@@ -153,13 +153,16 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 
 	txType := requestData.Param.TxType
 
-	//交易类型 23 购买提币卡
 	switch txType {
-	case constants.TX_TYPE_BUY_COIN_CARD:
-		if len(secret.BizContent["quota"]) == 0 {
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
-		}
+	//case constants.TX_TYPE_BUY_COIN_CARD:
+	//交易类型 23 购买提币卡
+	//	if len(secret.BizContent["quota"]) == 0 {
+	//		response.SetResponseBase(constants.RC_PARAM_ERR)
+	//		return
+	//	}
+	case constants.TX_TYPE_TRANS:
+		//交易类型 4 转账
+		secret.BizContent = nil
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -183,7 +186,7 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 	}
 
 	//调用统一提交流程
-	if tradeNo, resErr := common.PrepareETHTrans(from, secret.Value, requestData.Param.TxType, secret.BizContent); resErr == constants.RC_OK {
+	if tradeNo, resErr := common.PrepareETHTrans(from, to, secret.Value, requestData.Param.TxType, secret.BizContent); resErr == constants.RC_OK {
 		response.Data = ethTransPrepareResData{
 			TradeNo: tradeNo,
 		}
