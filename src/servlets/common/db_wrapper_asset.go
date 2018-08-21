@@ -10,6 +10,7 @@ const (
 	CURRENCY_LVT         = "LVT"
 	CURRENCY_ETH         = "ETH"
 	CURRENCY_LVTC        = "LVTC"
+	ASSET_INCOME_MINING = 1
 )
 
 type (
@@ -46,6 +47,7 @@ type (
 		ValueInt    int64  `json:"-" bson:"value"`
 		Currency    string `json:"currency" bson:"currency"`
 		AllowUnlock int    `json:"allow_unlock" bson:"allow_unlock"`
+		Income int    `json:"-" bson:"income,omitempty"`
 	}
 
 	UserWithdrawalQuota struct {

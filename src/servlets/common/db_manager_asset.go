@@ -780,6 +780,7 @@ func convLvtcAssetLock(al map[string]string) *AssetLockLvtc {
 		End:         utils.Str2Int64(al["end"]),
 		Currency:    al["currency"],
 		AllowUnlock: utils.Str2Int(al["allow_unlock"]),
+		Income: utils.Str2Int(al["income"]),
 	}
 	alres.Value = utils.LVTintToFloatStr(alres.ValueInt)
 	alres.IdStr = utils.Int642Str(alres.Id)
@@ -807,19 +808,18 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int6
 
 	//修改资产数据
 	//锁仓算力大于500时 给500
-	updSql := `update
-					user_asset_lvtc
-			   set
-			   		balance = balance - ?,
-			   		locked = locked - ?,
-			   		lastmodify = ?
-			   where
-			   		uid = ?`
-	updParams := []interface{}{
-		penaltyMoney,
-		assetLock.ValueInt,
-		ts,
-		assetLock.Uid,
+	var updSql string
+	var updParams []interface{}
+	if assetLock.Income == ASSET_INCOME_MINING {
+		updSql = `update user_asset_lvtc
+			   set balance = balance - ?,locked = locked - ?,income = income + ?,lastmodify = ?
+			   where uid = ?`
+		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, assetLock.ValueInt, ts, assetLock.Uid}
+	} else {
+		updSql = `update user_asset_lvtc
+			   set balance = balance - ?, locked = locked - ?, lastmodify = ?
+			   where uid = ?`
+		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, ts, assetLock.Uid}
 	}
 	info1, err := tx.Exec(updSql, updParams...)
 	if err != nil {
@@ -834,7 +834,7 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int6
 	}
 
 	//增加目标的balance to为系统配置账户
-	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", assetLock.ValueInt, ts, to)
+	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", penaltyMoney, ts, to)
 	if err2 != nil {
 		logger.Error("sql error ", err2.Error())
 		return false, constants.TRANS_ERR_SYS
