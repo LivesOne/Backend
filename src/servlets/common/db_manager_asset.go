@@ -1866,7 +1866,6 @@ func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
 	return nil
 }
 
-//////////////////////////////////////////////////////////
 func ExtractIncomeLvtc(uid, income int64) (bool) {
 	tx, err := gDBAsset.Begin()
 	if err != nil {
