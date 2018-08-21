@@ -225,17 +225,14 @@ func CommitLVTCTrans(uidStr, txIdStr string) constants.Error {
 	return constants.RC_OK
 }
 
-
-
-
-
-
-
-
-func PrepareETHTrans(from int64, valueStr string, txTpye int, bizContent map[string]string) (string, constants.Error) {
-	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_BUY_COIN_CARD) //TODO 修改
+func PrepareETHTrans(from, to int64, valueStr string, txTpye int, bizContent map[string]string) (string, constants.Error) {
+	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_TRANS)
 	value := utils.FloatStrToLVTint(valueStr)
-	if err := InsertTradePending(from, tradeNo, utils.ToJSON(bizContent), value, txTpye); err != nil {
+	strBizContent := ""
+	if bizContent != nil {
+		strBizContent = utils.ToJSON(bizContent)
+	}
+	if err := InsertTradePending(from, to, tradeNo, strBizContent, value, txTpye); err != nil {
 		logger.Error("insert trade pending error", err.Error())
 		return "", constants.RC_SYSTEM_ERR
 	}
@@ -267,8 +264,10 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 	)
 	//识别类型进行操作
 	switch tp.Type {
-	case constants.TX_TYPE_BUY_COIN_CARD:
-		to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
+	//case constants.TX_TYPE_BUY_COIN_CARD:
+	//	to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
+	case constants.TX_TYPE_TRANS:
+		to = tp.To
 	default:
 		return constants.RC_PARAM_ERR
 	}
@@ -276,9 +275,11 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 	//存在就检测资产初始化状况，未初始化的用户给初始化
 	CheckAndInitAsset(to)
 
-	//解析业务数据，拿到具体数值
-	if je := utils.FromJson(tp.BizContent, &bizContent); je != nil {
-		return constants.RC_PARAM_ERR
+	if tp.BizContent != "" {
+		//解析业务数据，拿到具体数值
+		if je := utils.FromJson(tp.BizContent, &bizContent); je != nil {
+			return constants.RC_PARAM_ERR
+		}
 	}
 	tx, err := gDBAsset.Begin()
 	if err != nil {
@@ -301,6 +302,7 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 	}
 
 	//识别类型进行操作
+	/*
 	switch tp.Type {
 	case constants.TX_TYPE_BUY_COIN_CARD:
 		quota := utils.FloatStrToLVTint(bizContent["quota"])
@@ -334,7 +336,7 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 		tx.Rollback()
 		return constants.RC_PARAM_ERR
 	}
-
+	*/
 	err = DeleteTradePending(tp.TradeNo, uid, tx)
 	if err != nil {
 		tx.Rollback()

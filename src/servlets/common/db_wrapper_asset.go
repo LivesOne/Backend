@@ -67,7 +67,8 @@ type (
 	}
 	TradePending struct {
 		TradeNo    string `json:"trade_no"`
-		Uid        int64  `json:"uid"`
+		From        int64  `json:"from"`
+		To        int64  `json:"to"`
 		BizContent string `json:"biz_content"`
 		Ts         int64  `json:"ts"`
 		Value      int64  `json:"-"`
