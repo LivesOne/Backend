@@ -1275,7 +1275,7 @@ func addWithdrawFeeTradeInfo(txid int64, tradeNo string, tradeType int, from int
 		Status:          0,
 		Txid:            txid,
 	}
-	return InsertWithdrawTradeInfo(tradeInfo)
+	return InsertTradeInfo(tradeInfo)
 }
 
 //todo 更新status为处理中
@@ -1297,7 +1297,7 @@ func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType int, from int64,
 		FeeTradeNo:      FeeTradeNo,
 		Withdrawal:      &withdraw,
 	}
-	return InsertWithdrawTradeInfo(tradeInfo)
+	return InsertTradeInfo(tradeInfo)
 }
 
 func DeleteTxhistoryLvtTmpByTxid(txid int64) {
