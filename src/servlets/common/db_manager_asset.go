@@ -780,6 +780,7 @@ func convLvtcAssetLock(al map[string]string) *AssetLockLvtc {
 		End:         utils.Str2Int64(al["end"]),
 		Currency:    al["currency"],
 		AllowUnlock: utils.Str2Int(al["allow_unlock"]),
+		Income: utils.Str2Int(al["income"]),
 	}
 	alres.Value = utils.LVTintToFloatStr(alres.ValueInt)
 	alres.IdStr = utils.Int642Str(alres.Id)
@@ -807,19 +808,18 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int6
 
 	//修改资产数据
 	//锁仓算力大于500时 给500
-	updSql := `update
-					user_asset_lvtc
-			   set
-			   		balance = balance - ?,
-			   		locked = locked - ?,
-			   		lastmodify = ?
-			   where
-			   		uid = ?`
-	updParams := []interface{}{
-		penaltyMoney,
-		assetLock.ValueInt,
-		ts,
-		assetLock.Uid,
+	var updSql string
+	var updParams []interface{}
+	if assetLock.Income == ASSET_INCOME_MINING {
+		updSql = `update user_asset_lvtc
+			   set balance = balance - ?,locked = locked - ?,income = income + ?,lastmodify = ?
+			   where uid = ?`
+		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, assetLock.ValueInt, ts, assetLock.Uid}
+	} else {
+		updSql = `update user_asset_lvtc
+			   set balance = balance - ?, locked = locked - ?, lastmodify = ?
+			   where uid = ?`
+		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, ts, assetLock.Uid}
 	}
 	info1, err := tx.Exec(updSql, updParams...)
 	if err != nil {
@@ -834,7 +834,7 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int6
 	}
 
 	//增加目标的balance to为系统配置账户
-	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", assetLock.ValueInt, ts, to)
+	info2, err2 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", penaltyMoney, ts, to)
 	if err2 != nil {
 		logger.Error("sql error ", err2.Error())
 		return false, constants.TRANS_ERR_SYS
@@ -1247,10 +1247,57 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		} else {
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
+		err = addWithdrawFeeTradeInfo(txIdFee, tradeNo, 6, uid, toEth, ethFee, "ETH", timestamp)
+		if err != nil {
+			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+		}
+		err = addWithdrawTradeInfo(txId, tradeNo, 3, uid, toLvt, address, amount, "LVTC", tradeNo, timestamp)
+		if err != nil {
+			logger.Error("withdraw insert trade database error, error:", err.Error())
+		}
 	}()
 
 	return tradeNo, constants.RC_OK
 
+}
+
+//todo 更新status为成功
+func addWithdrawFeeTradeInfo(txid int64, tradeNo string, tradeType int, from int64, to int64, amount int64, currency string, ts int64) error {
+	tradeInfo := TradeInfo {
+		TradeNo:         tradeNo,
+		Type:            tradeType,
+		From:            from,
+		To:              to,
+		Amount:          amount,
+		Decimal:         8,
+		Currency:        currency,
+		CreateTime:      ts,
+		Status:          0,
+		Txid:            txid,
+	}
+	return InsertWithdrawTradeInfo(tradeInfo)
+}
+
+//todo 更新status为处理中
+func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType int, from int64, to int64, address string, amount int64, currency string, FeeTradeNo string, ts int64) error {
+	withdraw := TradeWithdrawal{
+		Address: address,
+	}
+	tradeInfo := TradeInfo {
+		TradeNo:         tradeNo,
+		Type:            tradeType,
+		From:            from,
+		To:              to,
+		Amount:          amount,
+		Decimal:         8,
+		Currency:        currency,
+		CreateTime:      ts,
+		Status:          0,
+		Txid:            txid,
+		FeeTradeNo:      FeeTradeNo,
+		Withdrawal:      &withdraw,
+	}
+	return InsertWithdrawTradeInfo(tradeInfo)
 }
 
 func DeleteTxhistoryLvtTmpByTxid(txid int64) {

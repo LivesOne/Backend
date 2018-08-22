@@ -74,6 +74,7 @@ type Configuration struct {
 	TxHistory    MongoConfig
 	NewTxHistory MongoConfig
 	Miner        MongoConfig
+	Trade        MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制
@@ -207,7 +208,7 @@ func (cfg *Configuration) isValid() bool {
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
 		cfg.TxHistory.isValid() &&
-		//len(cfg.AppIDs) > 0 &&
+	//len(cfg.AppIDs) > 0 &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
 		len(cfg.ImgSvrAddr) > 0
