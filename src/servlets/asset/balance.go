@@ -23,8 +23,10 @@ type balanceResData struct {
 	Locked      string `json:"locked"`
 	LvtcBalance string `json:"lvtc_balance"`
 	LvtcLocked  string `json:"lvtc_locked"`
+	LvtcIncome  string `json:"lvtc_income"`
 	EthBalance  string `json:"eth_balance"`
 	EthLocked   string `json:"eth_locked"`
+	EthIncome   string `json:"eth_income"`
 }
 
 // sendVCodeHandler
@@ -79,8 +81,8 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 	uid := utils.Str2Int64(uidString)
 
 	balance, locked, err := common.QueryBalance(uid)
-	lvtcBalance, lvtcLocked, errLvtc := common.QueryBalanceLvtc(uid)
-	ethBalance, ethLocked, errEth := common.QueryBalanceEth(uid)
+	lvtcBalance, lvtcLocked, lvtcIncome, errLvtc := common.QueryBalanceLvtc(uid)
+	ethBalance, ethLocked, ethIncome, errEth := common.QueryBalanceEth(uid)
 	if err != nil || errLvtc != nil || errEth != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	} else {
@@ -89,8 +91,10 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 			Locked:      utils.LVTintToFloatStr(locked),
 			LvtcBalance: utils.LVTintToFloatStr(lvtcBalance),
 			LvtcLocked:  utils.LVTintToFloatStr(lvtcLocked),
+			LvtcIncome:  utils.LVTintToFloatStr(lvtcIncome),
 			EthBalance:  utils.LVTintToFloatStr(ethBalance),
 			EthLocked:   utils.LVTintToFloatStr(ethLocked),
+			EthIncome:   utils.LVTintToFloatStr(ethIncome),
 		}
 	}
 

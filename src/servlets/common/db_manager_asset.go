@@ -113,28 +113,28 @@ func QueryBalance(uid int64) (int64, int64, error) {
 	return 0, 0, err
 }
 
-func QueryBalanceLvtc(uid int64) (int64, int64, error) {
-	row, err := gDBAsset.QueryRow("select balance,locked from user_asset_lvtc where uid = ?", uid)
+func QueryBalanceLvtc(uid int64) (int64, int64, int64, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income from user_asset_lvtc where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), nil
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), nil
 	}
-	return 0, 0, err
+	return 0, 0, 0, err
 }
 
-func QueryBalanceEth(uid int64) (int64, int64, error) {
-	row, err := gDBAsset.QueryRow("select balance,locked from user_asset_eth where uid = ?", uid)
+func QueryBalanceEth(uid int64) (int64, int64, int64, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income from user_asset_eth where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), nil
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), nil
 	}
-	return 0, 0, err
+	return 0, 0, 0, err
 }
 
 func TransAccountLvt(txid, from, to, value int64) (bool, int) {
@@ -1911,4 +1911,80 @@ func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
 		return errors.New("system error : update lock asset hashrate")
 	}
 	return nil
+}
+
+func ExtractIncomeLvtc(uid, income int64) (bool) {
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false
+	}
+
+	var ok bool
+
+	if ok = ExtractIncomeLvtcByTx(uid, income, tx); ok {
+		tx.Commit()
+	} else {
+		tx.Rollback()
+	}
+	return ok
+}
+
+func ExtractIncomeEth(uid, income int64) (bool) {
+	tx, err := gDBAsset.Begin()
+	if err != nil {
+		logger.Error("db pool begin error ", err.Error())
+		return false
+	}
+
+	var ok bool
+
+	if ok = ExtractIncomeEthByTx(uid, income, tx); ok {
+		tx.Commit()
+	} else {
+		tx.Rollback()
+	}
+	return ok
+}
+
+func ExtractIncomeLvtcByTx(uid, income int64, tx *sql.Tx) (bool) {
+	tx.Exec("select * from user_asset_lvtc where uid = ? for update", uid)
+
+	ts := utils.GetTimestamp13()
+
+	//扣除提取income
+	info, err := tx.Exec("update user_asset_lvtc set income = income - ?,lastmodify = ? where income >= ? and uid = ?", income, ts, income, uid)
+	if err != nil {
+		logger.Error("sql error ", err.Error())
+		return false
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user income error RowsAffected ", rsa, " can not find user  ", uid, "")
+		return false
+	}
+
+	return true
+}
+
+func ExtractIncomeEthByTx(uid, income int64, tx *sql.Tx) (bool) {
+	tx.Exec("select * from user_asset_eth where uid = ? for update", uid)
+
+	ts := utils.GetTimestamp13()
+
+	//扣除提取income
+	info, err := tx.Exec("update user_asset_eth set income = income - ?,lastmodify = ? where income >= ? and uid = ?", income, ts, income, uid)
+	if err != nil {
+		logger.Error("sql error ", err.Error())
+		return false
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user income error RowsAffected ", rsa, " can not find user  ", uid, "")
+		return false
+	}
+
+	return true
 }
