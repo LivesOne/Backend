@@ -1247,10 +1247,57 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		} else {
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
+		err = addWithdrawFeeTradeInfo(txIdFee, tradeNo, 6, uid, toEth, ethFee, "ETH", timestamp)
+		if err != nil {
+			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+		}
+		err = addWithdrawTradeInfo(txId, tradeNo, 3, uid, toLvt, address, amount, "LVTC", tradeNo, timestamp)
+		if err != nil {
+			logger.Error("withdraw insert trade database error, error:", err.Error())
+		}
 	}()
 
 	return tradeNo, constants.RC_OK
 
+}
+
+//todo 更新status为成功
+func addWithdrawFeeTradeInfo(txid int64, tradeNo string, tradeType int, from int64, to int64, amount int64, currency string, ts int64) error {
+	tradeInfo := TradeInfo {
+		TradeNo:         tradeNo,
+		Type:            tradeType,
+		From:            from,
+		To:              to,
+		Amount:          amount,
+		Decimal:         8,
+		Currency:        currency,
+		CreateTime:      ts,
+		Status:          0,
+		Txid:            txid,
+	}
+	return InsertWithdrawTradeInfo(tradeInfo)
+}
+
+//todo 更新status为处理中
+func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType int, from int64, to int64, address string, amount int64, currency string, FeeTradeNo string, ts int64) error {
+	withdraw := TradeWithdrawal{
+		Address: address,
+	}
+	tradeInfo := TradeInfo {
+		TradeNo:         tradeNo,
+		Type:            tradeType,
+		From:            from,
+		To:              to,
+		Amount:          amount,
+		Decimal:         8,
+		Currency:        currency,
+		CreateTime:      ts,
+		Status:          0,
+		Txid:            txid,
+		FeeTradeNo:      FeeTradeNo,
+		Withdrawal:      &withdraw,
+	}
+	return InsertWithdrawTradeInfo(tradeInfo)
 }
 
 func DeleteTxhistoryLvtTmpByTxid(txid int64) {

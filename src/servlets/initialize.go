@@ -11,5 +11,6 @@ func Init() {
 	common.AssetDbInit()
 	common.InitTxHistoryMongoDB()
 	common.InitMinerRMongoDB()
+	common.InitTradeMongoDB()
 	token.Init()
 }
