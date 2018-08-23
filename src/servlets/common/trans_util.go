@@ -34,23 +34,6 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (stri
 		logger.Error("insert mongo db:dt_pending error ", err.Error())
 		return "", constants.RC_SYSTEM_ERR
 	}
-	trade := TradeInfo{
-		Txid: txh.Id,
-		Status: txh.Status,
-		Type: txh.Type,
-		From: txh.From,
-		To: txh.To,
-		Amount: txh.Value,
-		Decimal: 8,
-		Currency: CURRENCY_LVT,
-		CreateTime: txh.Ts,
-	}
-	err = InsertTradeInfo(trade)
-	if err != nil {
-		logger.Error("insert mongo db:dt_trades error ", err.Error())
-		//return "", constants.RC_SYSTEM_ERR
-	}
-
 	return utils.Int642Str(txid), constants.RC_OK
 }
 func PrepareLVTCTrans(from, to int64, txTpye int, value string) (string, constants.Error) {
@@ -74,22 +57,6 @@ func PrepareLVTCTrans(from, to int64, txTpye int, value string) (string, constan
 	if err != nil {
 		logger.Error("insert mongo db:dt_pending error ", err.Error())
 		return "", constants.RC_SYSTEM_ERR
-	}
-	trade := TradeInfo{
-		Txid: txh.Id,
-		Status: txh.Status,
-		Type: txh.Type,
-		From: txh.From,
-		To: txh.To,
-		Amount: txh.Value,
-		Decimal: 8,
-		Currency: CURRENCY_LVTC,
-		CreateTime: txh.Ts,
-	}
-	err = InsertTradeInfo(trade)
-	if err != nil {
-		logger.Error("insert mongo db:dt_trades error ", err.Error())
-		//return "", constants.RC_SYSTEM_ERR
 	}
 	return utils.Int642Str(txid), constants.RC_OK
 }
@@ -171,16 +138,19 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 					return constants.RC_SYSTEM_ERR
 				}
 			}
+			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 			trade := TradeInfo{
+				TradeNo: tradeNo,
 				Txid: perPending.Id,
 				Status: perPending.Status,
-				Type: perPending.Type,
+				Type: constants.TRADE_TYPE_TRANSFER,
 				From: perPending.From,
 				To: perPending.To,
 				Amount: perPending.Value,
 				Decimal: 8,
 				Currency: CURRENCY_LVT,
 				CreateTime: perPending.Ts,
+				FinishTime: utils.GetTimestamp13(),
 			}
 			err = InsertTradeInfo(trade)
 			if err != nil {
@@ -256,16 +226,19 @@ func CommitLVTCTrans(uidStr, txIdStr string) constants.Error {
 					SetTotalTransfer(perPending.From, perPending.Value)
 				}
 			}
+			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 			trade := TradeInfo{
+				TradeNo: tradeNo,
 				Txid: perPending.Id,
 				Status: perPending.Status,
-				Type: perPending.Type,
+				Type: constants.TRADE_TYPE_TRANSFER,
 				From: perPending.From,
 				To: perPending.To,
 				Amount: perPending.Value,
 				Decimal: 8,
 				Currency: CURRENCY_LVTC,
 				CreateTime: perPending.Ts,
+				FinishTime: utils.GetTimestamp13(),
 			}
 			err = InsertTradeInfo(trade)
 			if err != nil {
@@ -300,23 +273,6 @@ func PrepareETHTrans(from, to int64, valueStr string, txTpye int, bizContent map
 		logger.Error("insert trade pending error", err.Error())
 		return "", constants.RC_SYSTEM_ERR
 	}
-	trade := TradeInfo{
-		TradeNo: tradeNo,
-		Status: constants.TX_STATUS_DEFAULT,
-		Type: txTpye,
-		From: from,
-		To: to,
-		Amount: value,
-		Decimal: 8,
-		Currency: CURRENCY_ETH,
-		CreateTime: utils.GetTimestamp13(),
-	}
-	err := InsertTradeInfo(trade)
-	if err != nil {
-		logger.Error("insert mongo db:dt_trades error ", err.Error())
-		//return "", constants.RC_SYSTEM_ERR
-	}
-
 	return tradeNo, constants.RC_OK
 }
 func CommitETHTrans(uidStr, tradeNo string) constants.Error {
@@ -423,17 +379,19 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 		tx.Rollback()
 		return constants.RC_SYSTEM_ERR
 	}
+	newTradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 	trade := TradeInfo{
-		TradeNo: tradeNo,
+		TradeNo: newTradeNo,
 		Txid: txId,
 		Status: constants.TX_STATUS_COMMIT,
-		Type: tp.Type,
+		Type: constants.TRADE_TYPE_TRANSFER,
 		From: tp.From,
 		To: tp.To,
 		Amount: tp.Value,
 		Decimal: 8,
 		Currency: CURRENCY_ETH,
 		CreateTime: tp.Ts,
+		FinishTime: utils.GetTimestamp13(),
 	}
 	err = InsertTradeInfo(trade)
 	if err != nil {
