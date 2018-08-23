@@ -138,7 +138,7 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 					return constants.RC_SYSTEM_ERR
 				}
 			}
-			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_BASE, constants.TRADE_TYPE_TRANSFER)
+			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 			trade := TradeInfo{
 				TradeNo: tradeNo,
 				Txid: perPending.Id,
@@ -226,7 +226,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) constants.Error {
 					SetTotalTransfer(perPending.From, perPending.Value)
 				}
 			}
-			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_BASE, constants.TRADE_TYPE_TRANSFER)
+			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 			trade := TradeInfo{
 				TradeNo: tradeNo,
 				Txid: perPending.Id,
@@ -379,7 +379,7 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 		tx.Rollback()
 		return constants.RC_SYSTEM_ERR
 	}
-	newTradeNo := GenerateTradeNo(constants.TRADE_TYPE_BASE, constants.TRADE_TYPE_TRANSFER)
+	newTradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 	trade := TradeInfo{
 		TradeNo: newTradeNo,
 		Txid: txId,
