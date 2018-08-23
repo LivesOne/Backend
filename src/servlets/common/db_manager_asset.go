@@ -296,11 +296,11 @@ func TransAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	return true, constants.TRANS_ERR_SUCC
 }
 
-func ConvAccountLvtcByTx(txid, systemUid, to,lvt,lvtc int64, tx *sql.Tx) (bool, int) {
+func ConvAccountLvtcByTx(txid, systemUid, to, lvt, lvtc int64, tx *sql.Tx) (bool, int) {
 	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", systemUid, to)
 
 	ts := utils.GetTimestamp13()
-	sysValue := lvt-lvtc
+	sysValue := lvt - lvtc
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", sysValue, ts, systemUid)
 	if err1 != nil {
@@ -780,7 +780,7 @@ func convLvtcAssetLock(al map[string]string) *AssetLockLvtc {
 		End:         utils.Str2Int64(al["end"]),
 		Currency:    al["currency"],
 		AllowUnlock: utils.Str2Int(al["allow_unlock"]),
-		Income: utils.Str2Int(al["income"]),
+		Income:      utils.Str2Int(al["income"]),
 	}
 	alres.Value = utils.LVTintToFloatStr(alres.ValueInt)
 	alres.IdStr = utils.Int642Str(alres.Id)
@@ -1174,7 +1174,8 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	tradeNo := GenerateTradeNo(constants.TRADE_NO_BASE_TYPE, constants.TRADE_NO_TYPE_WITHDRAW)
+	//大类型使用交易系统中定义的交易类型
+	tradeNo := GenerateTradeNo(3, constants.TRADE_NO_TYPE_WITHDRAW)
 
 	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
 	ethFee := utils.FloatStrToLVTint(ethFeeString)
@@ -1247,11 +1248,12 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		} else {
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
-		err = addWithdrawFeeTradeInfo(txIdFee, tradeNo, 6, uid, toEth, ethFee, "ETH", timestamp)
+		feeTradeNo := GenerateTradeNo(6, constants.TRADE_NO_TYPE_WITHDRAW)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, 6, uid, toEth, ethFee, "ETH", timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, 3, uid, toLvt, address, amount, "LVTC", tradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, 3, uid, toLvt, address, amount, "LVTC", feeTradeNo, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1262,9 +1264,10 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 }
 
 //todo 更新status为成功
-func addWithdrawFeeTradeInfo(txid int64, tradeNo string, tradeType int, from int64, to int64, amount int64, currency string, ts int64) error {
-	tradeInfo := TradeInfo {
+func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType int, from int64, to int64, amount int64, currency string, ts int64) error {
+	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
+		OriginalTradeNo: originalTradeNo,
 		Type:            tradeType,
 		From:            from,
 		To:              to,
@@ -1283,19 +1286,19 @@ func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType int, from int64,
 	withdraw := TradeWithdrawal{
 		Address: address,
 	}
-	tradeInfo := TradeInfo {
-		TradeNo:         tradeNo,
-		Type:            tradeType,
-		From:            from,
-		To:              to,
-		Amount:          amount,
-		Decimal:         8,
-		Currency:        currency,
-		CreateTime:      ts,
-		Status:          0,
-		Txid:            txid,
-		FeeTradeNo:      FeeTradeNo,
-		Withdrawal:      &withdraw,
+	tradeInfo := TradeInfo{
+		TradeNo:    tradeNo,
+		Type:       tradeType,
+		From:       from,
+		To:         to,
+		Amount:     amount,
+		Decimal:    8,
+		Currency:   currency,
+		CreateTime: ts,
+		Status:     0,
+		Txid:       txid,
+		FeeTradeNo: FeeTradeNo,
+		Withdrawal: &withdraw,
 	}
 	return InsertTradeInfo(tradeInfo)
 }
@@ -1767,7 +1770,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		return 0, 0, err
 	}
 
-	_, err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?",  ts, uid)
+	_, err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?", ts, uid)
 	if err != nil {
 		logger.Error("modify locked error", err.Error())
 		return 0, 0, err
@@ -1777,7 +1780,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 
 	begin := utils.GetTimestamp13()
 	//分20期 取小数点后六位
-	lockValue := balance / 20 / 100 *100
+	lockValue := balance / 20 / 100 * 100
 	lockValueStr := utils.LVTintToFloatStr(lockValue)
 	lvtScale := config.GetConfig().LvtcHashrateScale
 	for i := 0; i < 19; i++ {
@@ -1790,19 +1793,19 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 			Value:       lockValueStr,
 			ValueInt:    lockValue,
 			Month:       month,
-			Hashrate:    utils.GetLockHashrate(lvtScale,month, lockValueStr),
+			Hashrate:    utils.GetLockHashrate(lvtScale, month, lockValueStr),
 			Begin:       begin,
 			End:         end,
 			Currency:    CURRENCY_LVTC,
 			AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
 		}
-		if err := CreateAssetLockConv(assetLock,tx);err != nil {
+		if err := CreateAssetLockConv(assetLock, tx); err != nil {
 			logger.Error("Create Asset Lock error", err.Error())
 			return 0, 0, err
 		}
 	}
 	//最后一个锁仓的操作
-	lastLockValue := lockValue + (balance - (lockValue *20))
+	lastLockValue := lockValue + (balance - (lockValue * 20))
 	lastLockValueStr := utils.LVTintToFloatStr(lastLockValue)
 	month := 24
 	//计算结束时间
@@ -1813,18 +1816,16 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		Value:       lastLockValueStr,
 		ValueInt:    lastLockValue,
 		Month:       month,
-		Hashrate:    utils.GetLockHashrate(lvtScale,month, lastLockValueStr),
+		Hashrate:    utils.GetLockHashrate(lvtScale, month, lastLockValueStr),
 		Begin:       begin,
 		End:         end,
 		Currency:    CURRENCY_LVTC,
 		AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
 	}
-	if err := CreateAssetLockConv(assetLock,tx);err != nil {
+	if err := CreateAssetLockConv(assetLock, tx); err != nil {
 		logger.Error("Create Asset Lock error", err.Error())
 		return 0, 0, err
 	}
-
-
 
 	//获取转换后的锁仓锁定总额
 	lvtcLockCount := int64(0)
@@ -1843,18 +1844,13 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		return 0, 0, err
 	}
 
-
-
-
 	return balance, balance, nil
 
 }
 
-
 func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
 	//锁定记录
 	tx.Exec("select * from user_asset_lvtc where uid = ? for update", assetLock.Uid)
-
 
 	//修改资产数据
 	//锁仓算力大于500时 给500
