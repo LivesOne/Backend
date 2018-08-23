@@ -814,7 +814,7 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int6
 		updSql = `update user_asset_lvtc
 			   set balance = balance - ?,locked = locked - ?,income = income + ?,lastmodify = ?
 			   where uid = ?`
-		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, assetLock.ValueInt, ts, assetLock.Uid}
+		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, assetLock.ValueInt-penaltyMoney, ts, assetLock.Uid}
 	} else {
 		updSql = `update user_asset_lvtc
 			   set balance = balance - ?, locked = locked - ?, lastmodify = ?
