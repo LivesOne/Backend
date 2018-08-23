@@ -1264,10 +1264,10 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 }
 
 //todo 更新status为成功
-func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeno string, tradeType int, from int64, to int64, amount int64, currency string, ts int64) error {
+func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType int, from int64, to int64, amount int64, currency string, ts int64) error {
 	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
-		OriginalTradeNo: originalTradeno,
+		OriginalTradeNo: originalTradeNo,
 		Type:            tradeType,
 		From:            from,
 		To:              to,
