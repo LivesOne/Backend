@@ -44,14 +44,14 @@ func PrepareLVTCTrans(from, to int64, txTpye int, value string) (string, constan
 		return "", constants.RC_SYSTEM_ERR
 	}
 	txh := &DTTXHistory{
-		Id:         txid,
-		Status:     constants.TX_STATUS_DEFAULT,
-		Type:       txTpye,
-		From:       from,
-		To:         to,
-		Value:      utils.FloatStrToLVTint(value),
-		Ts:         utils.TXIDToTimeStamp13(txid),
-		Code:       constants.TX_CODE_SUCC,
+		Id:     txid,
+		Status: constants.TX_STATUS_DEFAULT,
+		Type:   txTpye,
+		From:   from,
+		To:     to,
+		Value:  utils.FloatStrToLVTint(value),
+		Ts:     utils.TXIDToTimeStamp13(txid),
+		Code:   constants.TX_CODE_SUCC,
 	}
 	err := InsertLVTCPending(txh)
 	if err != nil {
@@ -140,15 +140,16 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 			}
 			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 			trade := TradeInfo{
-				TradeNo: tradeNo,
-				Txid: perPending.Id,
-				Status: perPending.Status,
-				Type: constants.TRADE_TYPE_TRANSFER,
-				From: perPending.From,
-				To: perPending.To,
-				Amount: perPending.Value,
-				Decimal: 8,
-				Currency: CURRENCY_LVT,
+				TradeNo:    tradeNo,
+				Txid:       perPending.Id,
+				Status:     perPending.Status,
+				Type:       4,
+				SubType:    constants.TRADE_TYPE_TRANSFER,
+				From:       perPending.From,
+				To:         perPending.To,
+				Amount:     perPending.Value,
+				Decimal:    8,
+				Currency:   CURRENCY_LVT,
 				CreateTime: perPending.Ts,
 				FinishTime: utils.GetTimestamp13(),
 			}
@@ -174,7 +175,6 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 	}
 	return constants.RC_OK
 }
-
 
 func CommitLVTCTrans(uidStr, txIdStr string) constants.Error {
 	txid := utils.Str2Int64(txIdStr)
@@ -228,15 +228,16 @@ func CommitLVTCTrans(uidStr, txIdStr string) constants.Error {
 			}
 			tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 			trade := TradeInfo{
-				TradeNo: tradeNo,
-				Txid: perPending.Id,
-				Status: perPending.Status,
-				Type: constants.TRADE_TYPE_TRANSFER,
-				From: perPending.From,
-				To: perPending.To,
-				Amount: perPending.Value,
-				Decimal: 8,
-				Currency: CURRENCY_LVTC,
+				TradeNo:    tradeNo,
+				Txid:       perPending.Id,
+				Status:     perPending.Status,
+				Type:       4,
+				SubType:    constants.TRADE_TYPE_TRANSFER,
+				From:       perPending.From,
+				To:         perPending.To,
+				Amount:     perPending.Value,
+				Decimal:    8,
+				Currency:   CURRENCY_LVTC,
 				CreateTime: perPending.Ts,
 				FinishTime: utils.GetTimestamp13(),
 			}
@@ -381,15 +382,16 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 	}
 	newTradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 	trade := TradeInfo{
-		TradeNo: newTradeNo,
-		Txid: txId,
-		Status: constants.TX_STATUS_COMMIT,
-		Type: constants.TRADE_TYPE_TRANSFER,
-		From: tp.From,
-		To: tp.To,
-		Amount: tp.Value,
-		Decimal: 8,
-		Currency: CURRENCY_ETH,
+		TradeNo:    newTradeNo,
+		Txid:       txId,
+		Status:     constants.TX_STATUS_COMMIT,
+		Type:       4,
+		SubType:    constants.TRADE_TYPE_TRANSFER,
+		From:       tp.From,
+		To:         tp.To,
+		Amount:     tp.Value,
+		Decimal:    8,
+		Currency:   CURRENCY_ETH,
 		CreateTime: tp.Ts,
 		FinishTime: utils.GetTimestamp13(),
 	}
