@@ -232,14 +232,15 @@ func CommitLVTCTrans(uidStr, txIdStr, currency string) ( retErr constants.Error 
 	// 正常转账流程
 	var feeTxid int64
 	var feeTradeNo string
+	var feeSubType = constants.TX_TYPE_TRANS
+	transFeeAcc := config.GetConfig().PenaltyMoneyAccountUid
 	ok, intErr := TransAccountLvtc(tx, txid, perPending.From, perPending.To, perPending.Value)
 	if ok {
 		// 手续费转账流程
 		if bizContent.Fee > 0 {
 			// 转账subType 待定
-			feeTradeNo = GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_TYPE_TRANS)
+			feeTradeNo = GenerateTradeNo(constants.TRADE_TYPE_FEE, feeSubType)
 			feeTxid = GenerateTxID()
-			transFeeAcc := config.GetConfig().PenaltyMoneyAccountUid
 			switch bizContent.FeeCurrency {
 			case CURRENCY_ETH:
 			case CURRENCY_LVTC:
@@ -265,33 +266,21 @@ func CommitLVTCTrans(uidStr, txIdStr, currency string) ( retErr constants.Error 
 				}
 			}
 			var tradesArray []TradeInfo
+			finishTime := utils.GetTimestamp13()
 			trade := TradeInfo{
-				TradeNo: perPending.TradeNo,
-				Txid: perPending.Id,
-				Status: perPending.Status,
-				Type: constants.TRADE_TYPE_TRANSFER,
-				From: perPending.From,
-				To: perPending.To,
-				Amount: perPending.Value,
-				Decimal: 8,
-				Currency: perPending.Currency,
-				CreateTime: perPending.Ts,
-				FinishTime: utils.GetTimestamp13(),
+				TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TX_STATUS_COMMIT,
+				Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
+				To: perPending.To, Amount: perPending.Value, Decimal: 8,
+				Currency: perPending.Currency, CreateTime: perPending.Ts, FinishTime: finishTime,
 			}
 			tradesArray = append(tradesArray, trade)
 			if feeTxid > 0 && len(feeTradeNo) > 0 {
+				trade.FeeTradeNo = feeTradeNo
 				feeTrade := TradeInfo{
-					TradeNo: feeTradeNo,
-					Txid: feeTxid,
-					Status: perPending.Status,
-					Type: constants.TRADE_TYPE_FEE,
-					From: perPending.From,
-					To: perPending.To,
-					Amount: perPending.Value,
-					Decimal: 8,
-					Currency: CURRENCY_LVTC,
-					CreateTime: perPending.Ts,
-					FinishTime: utils.GetTimestamp13(),
+					TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+					Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+					From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: 8,
+					Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 				}
 				tradesArray = append(tradesArray, feeTrade)
 			}
