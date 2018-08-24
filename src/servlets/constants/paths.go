@@ -88,6 +88,8 @@ const (
 
 	ASSET_REWARD_EXTRACT = "/asset/v1/reward/extract"
 
+	ASSET_REWARD_DETAIL = "/asset/v1/reward/detail"
+
 	ASSET_BALANCE = "/asset/v1/balance"
 
 	ASSET_TRANS_PREPARE = "/asset/v1/trans/prepare"

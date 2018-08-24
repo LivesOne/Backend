@@ -84,7 +84,10 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 
 	requestData := new(rewardExtractRequest)
 
-	common.ParseHttpBodyParams(request, requestData)
+	if !common.ParseHttpBodyParams(request, requestData) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	if requestData.Param == nil {
 		log.Error("asset reward extract: requestData.Param is nil")
