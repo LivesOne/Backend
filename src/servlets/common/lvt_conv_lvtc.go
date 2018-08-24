@@ -161,36 +161,38 @@ func buildLvtcTxHistory(uid, systemUid, lvt, lvtc int64, tx *sql.Tx) (bool, cons
 	return true, constants.RC_OK
 }
 
-//todo 确定成功状态后更新status值
+//status为成功
 func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid int64) {
 	lvtTradeInfo := TradeInfo{
 		TradeNo:         lvtTradeNo,
 		Type:            11,
+		SubType:         constants.TX_TYPE_ASSET_CONV,
 		From:            from,
 		To:              to,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        "LVT",
 		CreateTime:      utils.TXIDToTimeStamp13(txid),
-		Status:          3,
+		Status:          2,
 		Txid:            txid,
 		OriginalTradeNo: lvtcTradeNo,
 	}
 	InsertTradeInfo(lvtTradeInfo)
 }
 
-//todo 确定成功状态后更新status值
+//status为成功
 func addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo string, from, to, amount, txid int64) {
 	lvtcTradeInfo := TradeInfo{
 		TradeNo:         lvtcTradeNo,
 		Type:            11,
+		SubType:         constants.TX_TYPE_ASSET_CONV,
 		From:            from,
 		To:              to,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        "LVTC",
 		CreateTime:      utils.TXIDToTimeStamp13(txid),
-		Status:          3,
+		Status:          2,
 		Txid:            txid,
 		OriginalTradeNo: lvtTradeNo,
 	}

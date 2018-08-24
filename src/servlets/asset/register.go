@@ -34,6 +34,7 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_LVT2LVTC_COUNT, &lvt2lvtcCountHandler{})
 	server.RegisterHandler(constants.ASSET_LVT2LVTC_DELAY, &lvt2lvtcDelayHandler{})
 	server.RegisterHandler(constants.ASSET_REWARD_EXTRACT, &rewardExtractHandler{})
+	server.RegisterHandler(constants.ASSET_REWARD_DETAIL, &rewardDetailHandler{})
 	server.RegisterHandler(constants.ASSET_COMMON_TRANS_PREPARE, &commonTransPrepareHandler{})
 	server.RegisterHandler(constants.ASSET_COMMON_TRANS_COMMIT, &commonTransCommitHandler{})
 }

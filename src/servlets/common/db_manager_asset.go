@@ -797,7 +797,7 @@ func execRemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int6
 		updSql = `update user_asset_lvtc
 			   set balance = balance - ?,locked = locked - ?,income = income + ?,lastmodify = ?
 			   where uid = ?`
-		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, assetLock.ValueInt-penaltyMoney, ts, assetLock.Uid}
+		updParams = []interface{}{penaltyMoney, assetLock.ValueInt, assetLock.ValueInt - penaltyMoney, ts, assetLock.Uid}
 	} else {
 		updSql = `update user_asset_lvtc
 			   set balance = balance - ?, locked = locked - ?, lastmodify = ?
@@ -1158,7 +1158,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
 	//大类型使用交易系统中定义的交易类型
-	tradeNo := GenerateTradeNo(3, constants.TRADE_NO_TYPE_WITHDRAW)
+	tradeNo := GenerateTradeNo(3, constants.TX_TYPE_WITHDRAW_LVT)
 
 	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
 	ethFee := utils.FloatStrToLVTint(ethFeeString)
@@ -1231,12 +1231,12 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		} else {
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
-		feeTradeNo := GenerateTradeNo(6, constants.TRADE_NO_TYPE_WITHDRAW)
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, 6, uid, toEth, ethFee, "ETH", timestamp)
+		feeTradeNo := GenerateTradeNo(6, constants.TX_TYPE_WITHDRAW_ETH_FEE)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, 6, constants.TX_TYPE_WITHDRAW_ETH_FEE, uid, toEth, ethFee, "ETH", timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, 3, uid, toLvt, address, amount, "LVTC", feeTradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, 3, constants.TX_TYPE_WITHDRAW_LVT, uid, toLvt, address, amount, "LVTC", feeTradeNo, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1246,39 +1246,41 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 }
 
-//todo 更新status为成功
-func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType int, from int64, to int64, amount int64, currency string, ts int64) error {
+//tatus为成功
+func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, ts int64) error {
 	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
 		OriginalTradeNo: originalTradeNo,
 		Type:            tradeType,
+		SubType:         subType,
 		From:            from,
 		To:              to,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        currency,
 		CreateTime:      ts,
-		Status:          0,
+		Status:          2,
 		Txid:            txid,
 	}
 	return InsertTradeInfo(tradeInfo)
 }
 
-//todo 更新status为处理中
-func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType int, from int64, to int64, address string, amount int64, currency string, FeeTradeNo string, ts int64) error {
+//tatus为处理中
+func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, from int64, to int64, address string, amount int64, currency string, FeeTradeNo string, ts int64) error {
 	withdraw := TradeWithdrawal{
 		Address: address,
 	}
 	tradeInfo := TradeInfo{
 		TradeNo:    tradeNo,
 		Type:       tradeType,
+		SubType:    subType,
 		From:       from,
 		To:         to,
 		Amount:     amount,
 		Decimal:    8,
 		Currency:   currency,
 		CreateTime: ts,
-		Status:     0,
+		Status:     1,
 		Txid:       txid,
 		FeeTradeNo: FeeTradeNo,
 		Withdrawal: &withdraw,

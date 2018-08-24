@@ -36,6 +36,7 @@ type (
 	TradeInfo struct {
 		TradeNo         string           `json:"trade_no,omitempty" bson:"trade_no,omitempty"`
 		Type            int              `json:"type,omitempty" bson:"type,omitempty"`
+		SubType         int              `json:"sub_type,omitempty" bson:"sub_type,omitempty"`
 		From            int64            `json:"from,omitempty" bson:"from,omitempty"`
 		To              int64            `json:"to,omitempty" bson:"to,omitempty"`
 		Amount          int64            `json:"amount,omitempty" bson:"amount,omitempty"`

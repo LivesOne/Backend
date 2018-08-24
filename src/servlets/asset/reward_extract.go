@@ -64,7 +64,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	}
 	if len(aesKey) != constants.AES_totalLen {
 		log.Info("asset reward extract: get aeskey from cache error:", len(aesKey))
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 	log.Info("uid", uidString)
@@ -84,11 +84,14 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 
 	requestData := new(rewardExtractRequest)
 
-	common.ParseHttpBodyParams(request, requestData)
+	if !common.ParseHttpBodyParams(request, requestData) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 
 	if requestData.Param == nil {
 		log.Error("asset reward extract: requestData.Param is nil")
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
@@ -133,35 +136,39 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	if len(requestData.Param.Currency) > 0 {
 		if requestData.Param.Currency != common.CURRENCY_LVTC && requestData.Param.Currency != common.CURRENCY_ETH {
 			log.Error("asset reward extract: requestData.Param.Currency is", requestData.Param.Currency)
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
 		currency = requestData.Param.Currency
 	}
 
 	var income int64
-	var ok bool
+	var ok  = true
 	var err error
 	if currency == common.CURRENCY_ETH {
-		_, _, income, err = common.QueryBalanceLvtc(uid)
-		if err != nil {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		}
-		ok = common.ExtractIncomeLvtc(uid, income)
-	} else {
 		_, _, income, err = common.QueryBalanceEth(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
-		ok = common.ExtractIncomeEth(uid, income)
+		if income > 0 {
+			ok = common.ExtractIncomeEth(uid, income)
+		}
+	} else {
+		_, _, income, err = common.QueryBalanceLvtc(uid)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		if income > 0 {
+			ok = common.ExtractIncomeLvtc(uid, income)
+		}
 	}
 
 	if ok {
 		response.Data = rewardExtractResData{
 			Currency: currency,
-			Income:   utils.Int642Str(income),
+			Income:   utils.LVTintToFloatStr(income),
 		}
 		log.Info("extract success")
 	} else {
