@@ -143,15 +143,6 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	var ok  = true
 	var err error
 	if currency == common.CURRENCY_ETH {
-		_, _, income, err = common.QueryBalanceLvtc(uid)
-		if err != nil {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		}
-		if income > 0 {
-			ok = common.ExtractIncomeLvtc(uid, income)
-		}
-	} else {
 		_, _, income, err = common.QueryBalanceEth(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -160,12 +151,21 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 		if income > 0 {
 			ok = common.ExtractIncomeEth(uid, income)
 		}
+	} else {
+		_, _, income, err = common.QueryBalanceLvtc(uid)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		if income > 0 {
+			ok = common.ExtractIncomeLvtc(uid, income)
+		}
 	}
 
 	if ok {
 		response.Data = rewardExtractResData{
 			Currency: currency,
-			Income:   utils.Int642Str(income),
+			Income:   utils.LVTintToFloatStr(income),
 		}
 		log.Info("extract success")
 	} else {
