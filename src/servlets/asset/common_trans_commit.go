@@ -1,26 +1,33 @@
 package asset
 
 import (
-	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
+	"net/http"
 	"utils/logger"
 )
 
-
-// sendVCodeHandler
-type lvtcTransCommitHandler struct {
-	//header      *common.HeaderParams // request header param
-	//requestData *sendVCodeRequest    // request body
+type commonTransCommitParam struct {
+	Txid string `json:"txid"`
+	Currency string `json:"currency"`
 }
 
-func (handler *lvtcTransCommitHandler) Method() string {
+type commonTransCommitRequest struct {
+	Base  *common.BaseInfo     `json:"base"`
+	Param *commonTransCommitParam `json:"param"`
+}
+
+// sendVCodeHandler
+type commonTransCommitHandler struct {
+}
+
+func (handler *commonTransCommitHandler) Method() string {
 	return http.MethodPost
 }
 
-func (handler *lvtcTransCommitHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+func (handler *commonTransCommitHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 	log := logger.NewLvtLogger(true)
 	defer log.InfoAll()
 	response := &common.ResponseData{
@@ -31,7 +38,7 @@ func (handler *lvtcTransCommitHandler) Handle(request *http.Request, writer http
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	requestData := transCommitRequest{} // request body
+	requestData := commonTransCommitRequest{} // request body
 
 	common.ParseHttpBodyParams(request, &requestData)
 
@@ -69,16 +76,19 @@ func (handler *lvtcTransCommitHandler) Handle(request *http.Request, writer http
 
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-	txIdStr, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
+	txid, err := utils.AesDecrypt(requestData.Param.Txid, key, iv)
 	if err != nil {
 		log.Error("aes decrypt error ", err.Error())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	log.Info("txid", txIdStr)
-
-	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitLVTCTrans(uidStr, txIdStr, ""))
-
+	switch requestData.Param.Currency {
+	case common.CURRENCY_ETH:
+	case common.CURRENCY_LVTC:
+		response.SetResponseBase(common.CommitLVTCTrans(uidStr, txid, requestData.Param.Currency))
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 }

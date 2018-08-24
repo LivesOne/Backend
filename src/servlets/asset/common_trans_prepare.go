@@ -11,46 +11,48 @@ import (
 	"utils/vcode"
 )
 
-type ethTransPrepareParam struct {
-	TxType    int    `json:"tx_type"`
+type commonTransPrepareParam struct {
 	AuthType  int    `json:"auth_type"`
 	VcodeType int    `json:"vcode_type"`
 	VcodeId   string `json:"vcode_id"`
 	Vcode     string `json:"vcode"`
+	Remark    string `json:"remark"`
 	Secret    string `json:"secret"`
 }
 
-type ethTransPrepareSecret struct {
-	To         string            `json:"to"`
-	Value      string            `json:"value"`
-	Pwd        string            `json:"pwd"`
-	BizContent map[string]string `json:"biz_content"`
+type commonTransPrepareSecret struct {
+	To          string `json:"to"`
+	Currency    string `json:"currency"`
+	Value       string `json:"value"`
+	FeeCurrency string `json:"fee_currency"`
+	Fee         string `json:"fee"`
+	Pwd         string `json:"pwd"`
 }
 
-func (tps *ethTransPrepareSecret) isValid() bool {
-	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Pwd) > 0
+func (tps *commonTransPrepareSecret) isValid() bool {
+	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Currency) > 0 &&
+		len(tps.FeeCurrency) > 0 && len(tps.Fee) > 0 && len(tps.Pwd) > 0
 }
 
-type ethTransPrepareRequest struct {
-	Base  *common.BaseInfo      `json:"base"`
-	Param *ethTransPrepareParam `json:"param"`
+type commonTransPrepareRequest struct {
+	Base  *common.BaseInfo         `json:"base"`
+	Param *commonTransPrepareParam `json:"param"`
 }
 
-type ethTransPrepareResData struct {
-	TradeNo string `json:"trade_no"`
+type commonTransPrepareResData struct {
+	Txid string `json:"txid"`
+	Currency string `json:"currency"`
 }
 
 // sendVCodeHandler
-type ethTransPrepareHandler struct {
-	//header      *common.HeaderParams // request header param
-	//requestData *sendVCodeRequest    // request body
+type commonTransPrepareHandler struct {
 }
 
-func (handler *ethTransPrepareHandler) Method() string {
+func (handler *commonTransPrepareHandler) Method() string {
 	return http.MethodPost
 }
 
-func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer http.ResponseWriter) {
 	log := logger.NewLvtLogger(true)
 	defer log.InfoAll()
 	response := &common.ResponseData{
@@ -61,7 +63,7 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-	requestData := ethTransPrepareRequest{} // request body
+	requestData := commonTransPrepareRequest{} // request body
 
 	common.ParseHttpBodyParams(request, &requestData)
 
@@ -125,7 +127,7 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 
 	iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
 
-	secret := new(ethTransPrepareSecret)
+	secret := new(commonTransPrepareSecret)
 
 	if err := utils.DecodeSecret(requestData.Param.Secret, key, iv, secret); err != nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -144,27 +146,9 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 
 	from := utils.Str2Int64(uidString)
 	to := utils.Str2Int64(secret.To)
-
 	//不能给自己转账，不能转无效用户
 	if from == to || !common.ExistsUID(to) {
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
-		return
-	}
-
-	txType := requestData.Param.TxType
-
-	switch txType {
-	//case constants.TX_TYPE_BUY_COIN_CARD:
-	//交易类型 23 购买提币卡
-	//	if len(secret.BizContent["quota"]) == 0 {
-	//		response.SetResponseBase(constants.RC_PARAM_ERR)
-	//		return
-	//	}
-	case constants.TX_TYPE_TRANS:
-		//交易类型 4 转账
-		secret.BizContent = nil
-	default:
-		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
@@ -184,15 +168,31 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
-	//调用统一提交流程
-	bizContent := utils.ToJSON(secret.BizContent)
-	if _, tradeNo, resErr := common.PrepareETHTrans(from, to, secret.Value, requestData.Param.TxType, bizContent); resErr == constants.RC_OK {
-		response.Data = ethTransPrepareResData{
-			TradeNo: tradeNo,
+	var txid string
+	var resErr constants.Error
+	bizContent := common.TransBizContent{
+		FeeCurrency: secret.FeeCurrency,
+		Fee:         utils.FloatStrToLVTint(secret.Fee),
+		Remark:      requestData.Param.Remark,
+	}
+	bizContentStr := utils.ToJSON(bizContent)
+	// 转账分币种进行
+	switch secret.Currency {
+	case common.CURRENCY_ETH:
+		txid, _, resErr = common.PrepareETHTrans(from, to, secret.Value, constants.TX_TYPE_TRANS, bizContentStr)
+	case common.CURRENCY_LVTC:
+		//调用统一提交流程
+		txid, resErr = common.PrepareLVTCTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
+	default:
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	if resErr == constants.RC_OK {
+		response.Data = commonTransPrepareResData{
+			Txid: txid,
+			Currency: secret.Currency,
 		}
 	} else {
 		response.SetResponseBase(resErr)
 	}
-
 }

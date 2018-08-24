@@ -164,31 +164,14 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 	return ok, e
 }
 
-func TransAccountLvtc(txid, from, to, value int64) (bool, int) {
+func TransAccountLvtc(tx *sql.Tx, txid, from, to, value int64) (bool, int) {
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
 	f, c := CheckAndInitAsset(from)
 	if !f {
 		return f, c
 	}
-
-	tx, err := gDBAsset.Begin()
-	if err != nil {
-		logger.Error("db pool begin error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
-	}
-
-	var (
-		ok bool
-		e  int
-	)
-
-	if ok, e = TransAccountLvtcByTx(txid, from, to, value, tx); ok {
-		tx.Commit()
-	} else {
-		tx.Rollback()
-	}
-	return ok, e
+	return TransAccountLvtcByTx(txid, from, to, value, tx)
 }
 
 func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
@@ -1450,9 +1433,13 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 	return txid, constants.TRANS_ERR_SUCC
 }
 
-func InsertTradePending(from, to int64, tradeNo, bizContent string, value int64, tradeType int) error {
-	_, err := gDBAsset.Exec("insert into trade_pending (trade_no,from,to,type,biz_content,value,ts) values (?,?,?,?,?,?)",
-		tradeNo, from, to, tradeType, bizContent, value, utils.GetTimestamp13())
+func InsertTradePending(txid, from, to int64, tradeNo, bizContent string, value int64, tradeType int) error {
+	tradeSql := `insert into 
+		trade_pending (txid,trade_no,from,to,type,biz_content,value,ts) 
+		values (?,?,?,?,?,?,?)`
+	_, err := gDBAsset.Exec(tradeSql,
+		txid, tradeNo, from, to, tradeType,
+		bizContent, value, utils.GetTimestamp13())
 	return err
 }
 

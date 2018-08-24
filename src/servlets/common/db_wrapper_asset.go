@@ -121,6 +121,13 @@ type (
 		UseTime    int64  `json:"use_time"`
 		Status     int    `json:"status"`
 	}
+
+	TransBizContent struct {
+	FeeCurrency string `json:"fee_currency"`
+	Fee         int64 `json:"fee"`
+	Remark      string `json:"remark"`
+	}
+
 )
 
 func (al *AssetLock) IsOk() bool {

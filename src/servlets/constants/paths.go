@@ -152,4 +152,10 @@ const (
 	DEVICE_DEVICE_LIST = "/user/v1/device/list"
 
 	DEVICE_FORCE_UNBIND = "/user/v1/device/force_unbind"
+
+	ASSET_COMMON_TRANS_PREPARE = "/asset/v1/transfer/prepare"
+
+	ASSET_COMMON_TRANS_COMMIT= "/asset/v1/transfer/commit"
+
+	ASSET_COMMON_TRANS_RESULT= "/asset/v1/transfer/result"
 )

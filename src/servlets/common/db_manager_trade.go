@@ -29,7 +29,7 @@ func InitTradeMongoDB() {
 	tradeSession.SetPoolLimit(tradeConfig.MaxConn)
 }
 
-func InsertTradeInfo(info TradeInfo) error {
+func InsertTradeInfo(info ...TradeInfo) error {
 	session := tradeSession.Clone()
 	defer session.Close()
 	session.SetSafe(sessionSafe)
