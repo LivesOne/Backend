@@ -164,14 +164,22 @@ func TransAccountLvt(txid, from, to, value int64) (bool, int) {
 	return ok, e
 }
 
-func TransAccountLvtc(tx *sql.Tx, txid, from, to, value int64) (bool, int) {
+func TransAccountLvtc(tx *sql.Tx, dth *DTTXHistory) (bool, int) {
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
-	f, c := CheckAndInitAsset(from)
+	f, c := CheckAndInitAsset(dth.From)
 	if !f {
 		return f, c
 	}
-	return TransAccountLvtcByTx(txid, from, to, value, tx)
+	f, c = TransAccountLvtcByTx(dth.Id, dth.From, dth.To, dth.Value, tx)
+	if !f {
+		return f, c
+	}
+	err := InsertLVTCCommited(dth)
+	if CheckDup(err) {
+		return true, constants.TRANS_ERR_SUCC
+	}
+	return false, constants.TRANS_ERR_SYS
 }
 
 func TransAccountLvtByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
@@ -1188,7 +1196,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	}
 
 	toEth := config.GetWithdrawalConfig().EthAcceptAccount
-	txIdFee, e := EthTransCommit(uid, toEth, ethFee, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
+	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFee, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
 	if txIdFee <= 0 {
 		tx.Rollback()
 		switch e {
@@ -1368,7 +1376,7 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 	return &alres
 }
 
-func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
+func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
@@ -1408,20 +1416,16 @@ func EthTransCommit(from, to, value int64, tradeNo string, tradeType int, tx *sq
 		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
 		return 0, constants.TRANS_ERR_SYS
 	}
-	txid := GenerateTxID()
 
-	if txid == -1 {
-		logger.Error("can not get txid")
-		return 0, constants.TRANS_ERR_SYS
+	if txid < 0 {
+		txid = GenerateTxID()
+		if txid < 0 {
+			logger.Error("can not get txid")
+			return 0, constants.TRANS_ERR_SYS
+		}
 	}
 	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
-		txid,
-		tradeType,
-		tradeNo,
-		from,
-		to,
-		value,
-		ts,
+		txid, tradeType, tradeNo, from, to, value, ts,
 	)
 	if err3 != nil {
 		logger.Error("sql error ", err3.Error())
@@ -1445,9 +1449,9 @@ func InsertTradePending(txid, from, to int64, tradeNo, bizContent string, value 
 	return err
 }
 
-func GetTradePendingByTradeNo(tradeNo string, uid int64) (*TradePending, error) {
-	sql := "select * from trade_pending where trade_no = ? and from = ?"
-	row, err := gDBAsset.QueryRow(sql, tradeNo, uid)
+func GetTradePendingByTxid(txid string, uid int64) (*TradePending, error) {
+	sql := "select * from trade_pending where txid = ? and from = ?"
+	row, err := gDBAsset.QueryRow(sql, txid, uid)
 	if err != nil {
 		logger.Error("query trade_pending error", err.Error())
 		return nil, err
@@ -1460,6 +1464,7 @@ func ConvTradePending(row map[string]string) *TradePending {
 		return nil
 	}
 	tp := new(TradePending)
+	tp.Txid = row["txid"]
 	tp.TradeNo = row["trade_no"]
 	tp.BizContent = row["biz_content"]
 	tp.From = utils.Str2Int64(row["from"])
@@ -1513,8 +1518,32 @@ func CheckEthPending(tradeNo string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
+func CheckEthPendingByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from trade_pending where txid = ?", txid)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
 func CheckEthHistory(tradeNo string) bool {
 	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where trade_no = ?", tradeNo)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckEthHistoryByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where txid = ?", txid)
 	if err != nil {
 		logger.Error("query db error", err.Error())
 		return false

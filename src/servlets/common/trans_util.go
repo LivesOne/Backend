@@ -1,7 +1,9 @@
 package common
 
 import (
+	"database/sql"
 	"servlets/constants"
+	"strings"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -181,13 +183,13 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 func CommitLVTCTrans(uidStr, txIdStr, currency string) ( retErr constants.Error ) {
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
+	if currency != CURRENCY_LVTC {
+		return constants.RC_PARAM_ERR
+	}
 	perPending, flag := FindAndModifyLVTCPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		return constants.RC_TRANS_IN_PROGRESS
-	}
-	if currency != ""  && perPending.Currency != currency {
-		return constants.RC_PARAM_ERR
 	}
 	// 只有转账进行限制
 	if perPending.Type == constants.TX_TYPE_TRANS {
@@ -230,80 +232,20 @@ func CommitLVTCTrans(uidStr, txIdStr, currency string) ( retErr constants.Error 
 		}
 	}()
 	// 正常转账流程
-	var feeTxid int64
+	var feeTxid, transFeeAcc int64
 	var feeTradeNo string
-	ok, intErr := TransAccountLvtc(tx, txid, perPending.From, perPending.To, perPending.Value)
-	if ok {
+	var feeSubType int
+	_, intErr := TransAccountLvtc(tx, perPending)
+	if intErr == constants.TRANS_ERR_SUCC  {
 		// 手续费转账流程
 		if bizContent.Fee > 0 {
-			// 转账subType 待定
-			feeTradeNo = GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_TYPE_TRANS)
-			feeTxid = GenerateTxID()
-			transFeeAcc := config.GetConfig().PenaltyMoneyAccountUid
-			switch bizContent.FeeCurrency {
-			case CURRENCY_ETH:
-			case CURRENCY_LVTC:
-				ok, intErr = TransAccountLvtc(tx, feeTxid, perPending.From, transFeeAcc, bizContent.Fee)
-			default:
-				return constants.RC_TRANS_IN_PROGRESS
-			}
+			feeTxid, feeTradeNo, feeSubType, transFeeAcc, intErr =
+				TransFeeCommit(tx, perPending.From, bizContent.Fee, bizContent.FeeCurrency)
 		}
 	}
-	if ok {
-		//成功 插入commited
-		err := InsertLVTCCommited(perPending)
-		if CheckDup(err) {
-			//删除pending
-			DeleteLVTCPendingByInfo(perPending)
-			//不删除数据库中的txid
-
-			//识别类型进行操作
-			switch perPending.Type {
-			case constants.TX_TYPE_TRANS:
-				if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
-					SetTotalTransfer(perPending.From, perPending.Value)
-				}
-			}
-			var tradesArray []TradeInfo
-			trade := TradeInfo{
-				TradeNo: perPending.TradeNo,
-				Txid: perPending.Id,
-				Status: perPending.Status,
-				Type: constants.TRADE_TYPE_TRANSFER,
-				From: perPending.From,
-				To: perPending.To,
-				Amount: perPending.Value,
-				Decimal: 8,
-				Currency: perPending.Currency,
-				CreateTime: perPending.Ts,
-				FinishTime: utils.GetTimestamp13(),
-			}
-			tradesArray = append(tradesArray, trade)
-			if feeTxid > 0 && len(feeTradeNo) > 0 {
-				feeTrade := TradeInfo{
-					TradeNo: feeTradeNo,
-					Txid: feeTxid,
-					Status: perPending.Status,
-					Type: constants.TRADE_TYPE_FEE,
-					From: perPending.From,
-					To: perPending.To,
-					Amount: perPending.Value,
-					Decimal: 8,
-					Currency: CURRENCY_LVTC,
-					CreateTime: perPending.Ts,
-					FinishTime: utils.GetTimestamp13(),
-				}
-				tradesArray = append(tradesArray, feeTrade)
-			}
-			err = InsertTradeInfo(tradesArray...)
-			if err != nil {
-				logger.Error("insert mongo db:dt_trades error ", err.Error())
-				//return "", constants.RC_SYSTEM_ERR
-			}
-		}
-	} else {
-		//删除pending
-		DeleteLVTCPendingByInfo(perPending)
+	if intErr != constants.TRANS_ERR_SUCC  {
+		//删除dt_pending
+		//DeleteLVTCPendingByInfo(perPending)
 		//失败设置返回信息
 		switch intErr {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
@@ -312,6 +254,43 @@ func CommitLVTCTrans(uidStr, txIdStr, currency string) ( retErr constants.Error 
 			return constants.RC_TRANS_IN_PROGRESS
 		case constants.TRANS_ERR_ASSET_LIMITED:
 			return constants.RC_ACCOUNT_ACCESS_LIMITED
+		default:
+			return constants.RC_SYSTEM_ERR
+		}
+	}
+	//删除pending
+	DeleteLVTCPendingByInfo(perPending)
+	//识别类型进行操作
+	switch perPending.Type {
+	case constants.TX_TYPE_TRANS:
+		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+			SetTotalTransfer(perPending.From, perPending.Value)
+		}
+		var tradesArray []TradeInfo
+		finishTime := utils.GetTimestamp13()
+		// 插入交易记录单：转账
+		trade := TradeInfo{
+			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TX_STATUS_COMMIT,
+			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
+			To: perPending.To, Amount: perPending.Value, Decimal: 8,
+			Currency: currency, CreateTime: perPending.Ts, FinishTime: finishTime,
+		}
+		tradesArray = append(tradesArray, trade)
+		if feeTxid > 0 && len(feeTradeNo) > 0 {
+			// 插入交易记录单：手续费
+			trade.FeeTradeNo = feeTradeNo
+			feeTrade := TradeInfo{
+				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+				Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: 8,
+				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
+			}
+			tradesArray = append(tradesArray, feeTrade)
+		}
+		err = InsertTradeInfo(tradesArray...)
+		if err != nil {
+			logger.Error("insert mongo db:dt_trades error ", err.Error())
+			return constants.RC_SYSTEM_ERR
 		}
 	}
 	return constants.RC_OK
@@ -332,19 +311,18 @@ func PrepareETHTrans(from, to int64, valueStr string, txTpye int, bizContent str
 	}
 	return utils.Int642Str(txid), tradeNo, constants.RC_OK
 }
-func CommitETHTrans(uidStr, tradeNo string) constants.Error {
+func CommitETHTrans(uidStr, txidStr, currency string ) (retErr constants.Error) {
 
 	uid := utils.Str2Int64(uidStr)
 
-	tp, err := GetTradePendingByTradeNo(tradeNo, uid)
+	tp, err := GetTradePendingByTxid(txidStr, uid)
 	if err != nil {
 		return constants.RC_SYSTEM_ERR
 	}
-	if tp == nil {
+	if tp == nil || currency != CURRENCY_ETH {
 		return constants.RC_PARAM_ERR
 	}
 	ts := utils.GetTimestamp13()
-
 	//暂时写死10秒
 	if ts-tp.Ts > TRANS_TIMEOUT {
 		//删除pending
@@ -354,7 +332,7 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 
 	var (
 		to         int64
-		bizContent map[string]string
+		bizContent TransBizContent
 	)
 	//识别类型进行操作
 	switch tp.Type {
@@ -379,10 +357,33 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 	if err != nil {
 		return constants.RC_SYSTEM_ERR
 	}
-	txId, e := EthTransCommit(uid, to, tp.Value, tp.TradeNo, tp.Type, tx)
-	if txId <= 0 {
-		tx.Rollback()
-		switch e {
+	defer func() {
+		if retErr != constants.RC_OK {
+			tx.Rollback()
+		} else {
+			tx.Commit()
+		}
+	}()
+
+	var feeTxid int64
+	var feeTradeNo string
+	var feeSubType = constants.TX_TYPE_TRANS
+	transFeeAcc := config.GetConfig().PenaltyMoneyAccountUid
+
+	txid := utils.Str2Int64(txidStr)
+	_, intErr := EthTransCommit(txid, tp.From, to, tp.Value, tp.TradeNo, tp.Type, tx)
+	if intErr == constants.TRANS_ERR_SUCC {
+		// 手续费转账流程
+		if bizContent.Fee > 0 {
+			feeTxid, feeTradeNo, feeSubType, transFeeAcc, intErr =
+				TransFeeCommit(tx, tp.From, bizContent.Fee, bizContent.FeeCurrency)
+		}
+	}
+	if intErr != constants.TRANS_ERR_SUCC {
+		//删除trade_pending
+		//DeleteTradePending(tp.TradeNo, uid, tx)
+		//失败设置返回信息
+		switch intErr {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
 			return constants.RC_INSUFFICIENT_BALANCE
 		case constants.TRANS_ERR_SYS:
@@ -392,73 +393,60 @@ func CommitETHTrans(uidStr, tradeNo string) constants.Error {
 		default:
 			return constants.RC_SYSTEM_ERR
 		}
-
 	}
-
-	//识别类型进行操作
-	/*
-	switch tp.Type {
-	case constants.TX_TYPE_BUY_COIN_CARD:
-		quota := utils.FloatStrToLVTint(bizContent["quota"])
-		// 用卡记录
-		wcu := &UserWithdrawalCardUse{
-			TradeNo:    tp.TradeNo,
-			Uid:        uid,
-			Quota:      quota,
-			Cost:       tp.Value,
-			CreateTime: utils.TXIDToTimeStamp13(txId),
-			Type:       constants.WITHDRAW_CARD_TYPE_DIV,
-			Txid:       txId,
-			Currency:   CURRENCY_ETH,
-		}
-
-		if err = InsertWithdrawalCardUseByTx(wcu, tx); err != nil {
-			tx.Rollback()
-			return constants.RC_SYSTEM_ERR
-		}
-		//临时额度
-		if wr := InitUserWithdrawalByTx(uid, tx); wr != nil {
-			if ok, _ := IncomeUserWithdrawalCasualQuotaByTx(uid, quota, tx); !ok {
-				tx.Rollback()
-				return constants.RC_SYSTEM_ERR
-			}
-		} else {
-			tx.Rollback()
-			return constants.RC_SYSTEM_ERR
-		}
-	default:
-		tx.Rollback()
-		return constants.RC_PARAM_ERR
-	}
-	*/
 	err = DeleteTradePending(tp.TradeNo, uid, tx)
 	if err != nil {
-		tx.Rollback()
 		return constants.RC_SYSTEM_ERR
 	}
-	newTradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
+	var tradesArray []TradeInfo
+	finishTime := utils.GetTimestamp13()
+	// 插入交易记录单：转账
 	trade := TradeInfo{
-		TradeNo: newTradeNo,
-		Txid: txId,
-		Status: constants.TX_STATUS_COMMIT,
-		Type: constants.TRADE_TYPE_TRANSFER,
-		From: tp.From,
-		To: tp.To,
-		Amount: tp.Value,
-		Decimal: 8,
-		Currency: CURRENCY_ETH,
-		CreateTime: tp.Ts,
-		FinishTime: utils.GetTimestamp13(),
+		TradeNo: tp.TradeNo, Txid: txid, Status: constants.TX_STATUS_COMMIT, Currency: currency,
+		Type: constants.TRADE_TYPE_TRANSFER, SubType: tp.Type, From: tp.From, To: tp.To,
+		Amount: tp.Value, Decimal: 8, CreateTime: tp.Ts, FinishTime: finishTime,
+	}
+	tradesArray = append(tradesArray, trade)
+	if feeTxid > 0 && len(feeTradeNo) > 0 {
+		// 插入交易记录单：手续费
+		trade.FeeTradeNo = feeTradeNo
+		feeTrade := TradeInfo{
+			TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
+			Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+			From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: 8,
+			Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
+		}
+		tradesArray = append(tradesArray, feeTrade)
 	}
 	err = InsertTradeInfo(trade)
 	if err != nil {
 		logger.Error("insert mongo db:dt_trades error ", err.Error())
-		//return "", constants.RC_SYSTEM_ERR
-	}
-
-	err = tx.Commit()
-	if err != nil {
 		return constants.RC_SYSTEM_ERR
 	}
 	return constants.RC_OK
+}
+
+func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string, int, int64, int) {
+	// 转账subType 待定
+	feeSubType := constants.TX_TYPE_TRANS
+	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, feeSubType)
+	feeTxid := GenerateTxID()
+	transFeeAcc := config.GetConfig().LvtcTransFeeAccountUid
+	currency = strings.ToUpper(currency)
+	var intErr = constants.TRANS_ERR_SYS
+	switch currency {
+	case CURRENCY_ETH:
+		transFeeAcc = config.GetConfig().ETHTransFeeAccountUid
+		_, intErr = EthTransCommit(feeTxid, from, transFeeAcc,
+			fee, feeTradeNo, feeSubType, tx)
+	case CURRENCY_LVTC:
+		feeDth := &DTTXHistory{
+			Id: feeTxid, TradeNo: feeTradeNo, Status: constants.TX_STATUS_COMMIT,
+			Type: feeSubType, From: from, To: transFeeAcc,
+			Value: fee, Ts: utils.TXIDToTimeStamp13(feeTxid),
+			Code: constants.TX_CODE_SUCC, BizContent: "",
+		}
+		_, intErr = TransAccountLvtc(tx, feeDth)
+	}
+	return feeTxid, feeTradeNo, feeSubType, transFeeAcc, intErr
 }
