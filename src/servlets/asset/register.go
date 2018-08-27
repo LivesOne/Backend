@@ -37,4 +37,5 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ASSET_REWARD_DETAIL, &rewardDetailHandler{})
 	server.RegisterHandler(constants.ASSET_COMMON_TRANS_PREPARE, &commonTransPrepareHandler{})
 	server.RegisterHandler(constants.ASSET_COMMON_TRANS_COMMIT, &commonTransCommitHandler{})
+	server.RegisterHandler(constants.ASSET_COMMON_TRANS_RESULT, &commonTransResultHandler{})
 }

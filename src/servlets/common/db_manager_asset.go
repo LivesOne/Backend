@@ -1518,8 +1518,32 @@ func CheckEthPending(tradeNo string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
+func CheckEthPendingByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from trade_pending where txid = ?", txid)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
 func CheckEthHistory(tradeNo string) bool {
 	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where trade_no = ?", tradeNo)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckEthHistoryByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where txid = ?", txid)
 	if err != nil {
 		logger.Error("query db error", err.Error())
 		return false

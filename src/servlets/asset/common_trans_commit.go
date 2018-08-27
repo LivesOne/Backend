@@ -4,6 +4,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
+	"strings"
 	"utils"
 	"net/http"
 	"utils/logger"
@@ -82,12 +83,12 @@ func (handler *commonTransCommitHandler) Handle(request *http.Request, writer ht
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
-	switch requestData.Param.Currency {
+	currency := strings.ToUpper(requestData.Param.Currency)
+	switch currency {
 	case common.CURRENCY_ETH:
-		response.SetResponseBase(common.CommitETHTrans(uidStr, txid, requestData.Param.Currency))
+		response.SetResponseBase(common.CommitETHTrans(uidStr, txid, currency))
 	case common.CURRENCY_LVTC:
-		response.SetResponseBase(common.CommitLVTCTrans(uidStr, txid, requestData.Param.Currency))
+		response.SetResponseBase(common.CommitLVTCTrans(uidStr, txid, currency))
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return

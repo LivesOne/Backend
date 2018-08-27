@@ -6,6 +6,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
+	"strings"
 	"utils"
 	"utils/logger"
 	"utils/vcode"
@@ -171,13 +172,14 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	var txid string
 	var resErr constants.Error
 	bizContent := common.TransBizContent{
-		FeeCurrency: secret.FeeCurrency,
+		FeeCurrency: strings.ToUpper(secret.FeeCurrency),
 		Fee:         utils.FloatStrToLVTint(secret.Fee),
 		Remark:      requestData.Param.Remark,
 	}
 	bizContentStr := utils.ToJSON(bizContent)
 	// 转账分币种进行
-	switch secret.Currency {
+	currency := strings.ToUpper(secret.Currency)
+	switch currency {
 	case common.CURRENCY_ETH:
 		txid, _, resErr = common.PrepareETHTrans(from, to, secret.Value, constants.TX_TYPE_TRANS, bizContentStr)
 	case common.CURRENCY_LVTC:

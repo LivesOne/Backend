@@ -3,6 +3,7 @@ package common
 import (
 	"database/sql"
 	"servlets/constants"
+	"strings"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -182,13 +183,13 @@ func CommitLVTTrans(uidStr, txIdStr string) constants.Error {
 func CommitLVTCTrans(uidStr, txIdStr, currency string) ( retErr constants.Error ) {
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
+	if currency != CURRENCY_LVTC {
+		return constants.RC_PARAM_ERR
+	}
 	perPending, flag := FindAndModifyLVTCPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		return constants.RC_TRANS_IN_PROGRESS
-	}
-	if currency != ""  && perPending.Currency != currency {
-		return constants.RC_PARAM_ERR
 	}
 	// 只有转账进行限制
 	if perPending.Type == constants.TX_TYPE_TRANS {
@@ -272,7 +273,7 @@ func CommitLVTCTrans(uidStr, txIdStr, currency string) ( retErr constants.Error 
 			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TX_STATUS_COMMIT,
 			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To: perPending.To, Amount: perPending.Value, Decimal: 8,
-			Currency: perPending.Currency, CreateTime: perPending.Ts, FinishTime: finishTime,
+			Currency: currency, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		tradesArray = append(tradesArray, trade)
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
@@ -431,6 +432,7 @@ func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string,
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, feeSubType)
 	feeTxid := GenerateTxID()
 	transFeeAcc := config.GetConfig().LvtcTransFeeAccountUid
+	currency = strings.ToUpper(currency)
 	var intErr = constants.TRANS_ERR_SYS
 	switch currency {
 	case CURRENCY_ETH:
