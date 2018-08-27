@@ -92,7 +92,7 @@ func commonConvTrans(uid, systemUid, lvt, lvtc int64, tx *sql.Tx) (bool, constan
 			DeleteCommited(txid)
 			return false, e
 		}
-		addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo, systemUid, uid, lvt, txid)
+		addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo, systemUid, uid, lvtc, txid)
 	}
 	return true, constants.RC_OK
 }
