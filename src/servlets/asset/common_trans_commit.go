@@ -85,6 +85,7 @@ func (handler *commonTransCommitHandler) Handle(request *http.Request, writer ht
 
 	switch requestData.Param.Currency {
 	case common.CURRENCY_ETH:
+		response.SetResponseBase(common.CommitETHTrans(uidStr, txid, requestData.Param.Currency))
 	case common.CURRENCY_LVTC:
 		response.SetResponseBase(common.CommitLVTCTrans(uidStr, txid, requestData.Param.Currency))
 	default:

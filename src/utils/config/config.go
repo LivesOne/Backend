@@ -104,6 +104,8 @@ type Configuration struct {
 	LvtcHashrateScale             int
 	Lvt2LvtcSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
+	LvtcTransFeeAccountUid int64
+	ETHTransFeeAccountUid int64
 }
 
 // configuration data

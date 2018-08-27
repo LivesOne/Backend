@@ -142,6 +142,7 @@
     "AuthTelegramUrl":"http://tg-callback.lives.one/code/v1/verify",
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
-    "Lvt2LvtcDelaySystemAccountUid":181875000
-
+    "Lvt2LvtcDelaySystemAccountUid":181875000,
+    "LvtcTransFeeAccountUid":181270929,
+    "ETHTransFeeAccountUid": 181270929
 }
