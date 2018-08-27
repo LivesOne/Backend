@@ -427,8 +427,8 @@ func CommitETHTrans(uidStr, txidStr, currency string ) (retErr constants.Error) 
 }
 
 func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string, int, int64, int) {
-	// 转账subType 待定
-	feeSubType := constants.TX_TYPE_TRANS
+	// todo: lvtc/eth fee account
+	feeSubType := constants.Tx_TYPE_TRANS_FEE
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, feeSubType)
 	feeTxid := GenerateTxID()
 	transFeeAcc := config.GetConfig().LvtcTransFeeAccountUid
