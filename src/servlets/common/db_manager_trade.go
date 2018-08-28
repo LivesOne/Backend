@@ -35,10 +35,11 @@ func InsertTradeInfo(info ...TradeInfo) error {
 	defer session.Close()
 	session.SetSafe(sessionSafe)
 	collection := session.DB(tradeConfig.DBDatabase).C(TRADES)
-	err := collection.Insert(info)
-	if err != nil {
-		logger.Error("add trade info error, error:", err.Error())
-		return err
+	for i:=0;i<len(info);i++ {
+		err := collection.Insert(info[i])
+		if err != nil {
+			logger.Error("add trade info error, tradeNo:", info[i].TradeNo, "error:", err.Error())
+		}
 	}
 	return nil
 }
@@ -46,14 +47,14 @@ func InsertTradeInfo(info ...TradeInfo) error {
 func QueryTrades(query interface{}, limit int) []TradeInfo {
 	session := tradeSession.Clone()
 	defer session.Close()
-	logger.Debug("mongo query :", utils.ToJSONIndent(query))
-	collection := session.DB(txdbc.DBDatabase).C(TRADES)
+	logger.Debug("mongo query :", utils.ToJSON(query))
+	collection := session.DB(tradeConfig.DBDatabase).C(TRADES)
 	res := make([]TradeInfo,0)
 	err := collection.Find(query).Sort("-txid").Limit(limit).All(&res)
 	if err != nil && err != mgo.ErrNotFound {
 		logger.Error("query mongo db error ", err.Error())
 		return nil
 	}
-	logger.Debug("query res ", utils.ToJSONIndent(res))
+	logger.Debug("query res ", utils.ToJSON (res))
 	return res
 }

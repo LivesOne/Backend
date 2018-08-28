@@ -16,7 +16,7 @@
         "MaxConn" : 10,
         "RedisAddr" : "10.100.15.96:6379",
         "RedisAuth" : "lvt_serv",
-        "DBIndex":0
+        "DBIndex":1
     },
 
     "User" : 
@@ -34,7 +34,7 @@
         "DBHost" : "10.100.14.243:3306",
         "DBUser" : "root",
         "DBUserPwd" : "maxthon",
-        "DBDatabase" : "livesone_asset"
+        "DBDatabase" : "livesone_asset2"
     },
 
     "TxHistory" :

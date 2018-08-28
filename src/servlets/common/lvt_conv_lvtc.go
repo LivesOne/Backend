@@ -84,15 +84,16 @@ func commonConvTrans(uid, systemUid, lvt, lvtc int64, tx *sql.Tx) (bool, constan
 		logger.Error("build lvt tx history failed ,rollback the tx")
 		return false, e
 	} else {
-		lvtTradeNo := GenerateTradeNo(11, constants.TX_TYPE_ASSET_CONV)
-		lvtcTradeNo := GenerateTradeNo(11, constants.TX_TYPE_ASSET_CONV)
+		lvtTradeNo := GenerateTradeNo(constants.TRADE_TYPE_CONVERSION, constants.TX_SUB_TYPE_ASSET_CONV)
+		lvtcTradeNo := GenerateTradeNo(constants.TRADE_TYPE_CONVERSION, constants.TX_SUB_TYPE_ASSET_CONV)
 		addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo, uid, systemUid, lvt, txid)
-		if ok, e := buildLvtcTxHistory(uid, systemUid, lvt, lvtc, tx); !ok {
+		txidLvtc, e := buildLvtcTxHistory(uid, systemUid, lvt, lvtc, tx)
+		if txidLvtc < 0 {
 			logger.Error("build lvtc tx history failed ,rollback the tx")
 			DeleteCommited(txid)
 			return false, e
 		}
-		addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo, systemUid, uid, lvtc, txid)
+		addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo, systemUid, uid, lvtc, txidLvtc)
 	}
 	return true, constants.RC_OK
 }
@@ -111,7 +112,7 @@ func buildLvtTxHistory(uid, systemUid, lvt int64, tx *sql.Tx) (int64, constants.
 		txh := &DTTXHistory{
 			Id:     txid,
 			Status: constants.TX_STATUS_DEFAULT,
-			Type:   constants.TX_TYPE_ASSET_CONV,
+			Type:   constants.TX_SUB_TYPE_ASSET_CONV,
 			From:   uid,
 			To:     systemUid,
 			Value:  lvt,
@@ -129,12 +130,12 @@ func buildLvtTxHistory(uid, systemUid, lvt int64, tx *sql.Tx) (int64, constants.
 	return txid, constants.RC_OK
 }
 
-func buildLvtcTxHistory(uid, systemUid, lvt, lvtc int64, tx *sql.Tx) (bool, constants.Error) {
+func buildLvtcTxHistory(uid, systemUid, lvt, lvtc int64, tx *sql.Tx) (int64, constants.Error) {
 	txid := GenerateTxID()
 
 	if txid == -1 {
 		logger.Error("get txid error")
-		return false, constants.RC_SYSTEM_ERR
+		return txid, constants.RC_SYSTEM_ERR
 	}
 
 	f, c := ConvAccountLvtcByTx(txid, systemUid, uid, lvt, lvtc, tx)
@@ -153,27 +154,27 @@ func buildLvtcTxHistory(uid, systemUid, lvt, lvtc int64, tx *sql.Tx) (bool, cons
 		err := InsertLVTCCommited(txh)
 		if !CheckDup(err) {
 			logger.Error("insert mongo error", err.Error())
-			return false, constants.RC_SYSTEM_ERR
+			return -1, constants.RC_SYSTEM_ERR
 		}
 	} else {
-		return false, getConvResCode(c)
+		return -1, getConvResCode(c)
 	}
-	return true, constants.RC_OK
+	return txid, constants.RC_OK
 }
 
 //status为成功
 func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid int64) {
 	lvtTradeInfo := TradeInfo{
 		TradeNo:         lvtTradeNo,
-		Type:            11,
-		SubType:         constants.TX_TYPE_ASSET_CONV,
+		Type:            constants.TRADE_TYPE_CONVERSION,
+		SubType:         constants.TX_SUB_TYPE_ASSET_CONV,
 		From:            from,
 		To:              to,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        "LVT",
 		CreateTime:      utils.TXIDToTimeStamp13(txid),
-		Status:          2,
+		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 		OriginalTradeNo: lvtcTradeNo,
 	}
@@ -184,15 +185,15 @@ func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid in
 func addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo string, from, to, amount, txid int64) {
 	lvtcTradeInfo := TradeInfo{
 		TradeNo:         lvtcTradeNo,
-		Type:            11,
-		SubType:         constants.TX_TYPE_ASSET_CONV,
+		Type:            constants.TRADE_TYPE_CONVERSION,
+		SubType:         constants.TX_SUB_TYPE_ASSET_CONV,
 		From:            from,
 		To:              to,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        "LVTC",
 		CreateTime:      utils.TXIDToTimeStamp13(txid),
-		Status:          2,
+		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 		OriginalTradeNo: lvtTradeNo,
 	}
