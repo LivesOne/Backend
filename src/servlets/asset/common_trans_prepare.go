@@ -41,7 +41,7 @@ type commonTransPrepareRequest struct {
 }
 
 type commonTransPrepareResData struct {
-	Txid string `json:"txid"`
+	Txid     string `json:"txid"`
 	Currency string `json:"currency"`
 }
 
@@ -182,8 +182,17 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	switch currency {
 	case common.CURRENCY_ETH:
 		txid, _, resErr = common.PrepareETHTrans(from, to, secret.Value, constants.TX_TYPE_TRANS, bizContentStr)
+	case common.CURRENCY_LVT:
+		if err := common.VerifyLVTTrans(from, to, secret.Value); err != constants.RC_OK {
+			response.SetResponseBase(err)
+			return
+		}
+		txid, resErr = common.PrepareLVTTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
 	case common.CURRENCY_LVTC:
-		//调用统一提交流程
+		if err := common.VerifyLVTCTrans(from, to, secret.Value); err != constants.RC_OK {
+			response.SetResponseBase(err)
+			return
+		}
 		txid, resErr = common.PrepareLVTCTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
@@ -191,7 +200,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	}
 	if resErr == constants.RC_OK {
 		response.Data = commonTransPrepareResData{
-			Txid: txid,
+			Txid:     txid,
 			Currency: secret.Currency,
 		}
 	} else {

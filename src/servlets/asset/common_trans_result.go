@@ -52,6 +52,19 @@ func (handler *commonTransResultHandler) Handle(request *http.Request, writer ht
 			//都未查到，返回无效的txid
 			response.SetResponseBase(constants.RC_INVALID_TXID)
 			return
+		case common.CURRENCY_LVT:
+			//数据库存在 返回成功
+			if common.CheckTXID(txid) {
+				return
+			}
+			//pending存在 返回处理中
+			if common.CheckPending(txid) {
+				response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
+				return
+			}
+			//都未查到，返回无效的txid
+			response.SetResponseBase(constants.RC_INVALID_TXID)
+			return
 		case common.CURRENCY_LVTC:
 			//数据库存在 返回成功
 			if common.CheckTXID(txid) {

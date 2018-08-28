@@ -137,31 +137,23 @@ func QueryBalanceEth(uid int64) (int64, int64, int64, error) {
 	return 0, 0, 0, err
 }
 
-func TransAccountLvt(txid, from, to, value int64) (bool, int) {
+func TransAccountLvt(tx *sql.Tx, dth *DTTXHistory) (bool, int) {
 	//检测资产初始化情况
 	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
-	f, c := CheckAndInitAsset(from)
+	f, c := CheckAndInitAsset(dth.From)
 	if !f {
 		return f, c
 	}
 
-	tx, err := gDBAsset.Begin()
-	if err != nil {
-		logger.Error("db pool begin error ", err.Error())
-		return false, constants.TRANS_ERR_SYS
+	f, c = TransAccountLvtByTx(dth.Id, dth.From, dth.To, dth.Value, tx)
+	if !f {
+		return f, c
 	}
-
-	var (
-		ok bool
-		e  int
-	)
-
-	if ok, e = TransAccountLvtByTx(txid, from, to, value, tx); ok {
-		tx.Commit()
-	} else {
-		tx.Rollback()
+	err := InsertCommited(dth)
+	if CheckDup(err) {
+		return true, constants.TRANS_ERR_SUCC
 	}
-	return ok, e
+	return false, constants.TRANS_ERR_SYS
 }
 
 func TransAccountLvtc(tx *sql.Tx, dth *DTTXHistory) (bool, int) {

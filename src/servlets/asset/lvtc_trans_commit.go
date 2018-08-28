@@ -79,6 +79,6 @@ func (handler *lvtcTransCommitHandler) Handle(request *http.Request, writer http
 	log.Info("txid", txIdStr)
 
 	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitLVTCTrans(uidStr, txIdStr, ""))
+	response.SetResponseBase(common.CommitLVTCTrans(uidStr, txIdStr))
 
 }
