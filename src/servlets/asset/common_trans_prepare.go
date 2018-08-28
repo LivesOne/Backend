@@ -183,13 +183,13 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	case common.CURRENCY_ETH:
 		txid, _, resErr = common.PrepareETHTrans(from, to, secret.Value, constants.TX_TYPE_TRANS, bizContentStr)
 	case common.CURRENCY_LVT:
-		if err := common.VerifyLVTTrans(from, to, secret.Value); err != constants.RC_OK {
+		if err := common.VerifyLVTTrans(from, to, secret.Value, true); err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}
 		txid, resErr = common.PrepareLVTTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
 	case common.CURRENCY_LVTC:
-		if err := common.VerifyLVTCTrans(from, to, secret.Value); err != constants.RC_OK {
+		if err := common.VerifyLVTCTrans(from, to, secret.Value, true); err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}

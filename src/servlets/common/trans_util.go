@@ -75,9 +75,24 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		return constants.RC_TRANS_IN_PROGRESS
 
 	}
+	// 只有转账进行限制
 	var bizContent TransBizContent
-	if perPending.BizContent != "" {
-		utils.FromJson(perPending.BizContent, &bizContent)
+	if perPending.Type == constants.TX_TYPE_TRANS {
+		//非系统账号才进行限额校验
+		e := VerifyLVTTrans(perPending.From, perPending.To,
+			utils.LVTintToFloatStr(perPending.Value), false)
+		if e != constants.RC_OK {
+			DeletePendingByInfo(perPending)
+			return e
+		}
+		if perPending.BizContent != "" {
+			err := utils.FromJson(perPending.BizContent, &bizContent)
+			if err != nil {
+				logger.Info("dt_pending uid:", uidStr,
+					" biz_content unmarshal to json failed,", err)
+				return constants.RC_SYSTEM_ERR
+			}
+		}
 	}
 	//txid 时间戳检测
 	ts := utils.GetTimestamp13()
@@ -197,6 +212,25 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		return constants.RC_TRANS_IN_PROGRESS
 	}
+	// 只有转账进行限制
+	var bizContent TransBizContent
+	if perPending.Type == constants.TX_TYPE_TRANS {
+		//非系统账号才进行限额校验
+		e := VerifyLVTCTrans(perPending.From, perPending.To,
+			utils.LVTintToFloatStr(perPending.Value), false)
+		if e != constants.RC_OK {
+			DeletePendingByInfo(perPending)
+			return e
+		}
+		if perPending.BizContent != "" {
+			err := utils.FromJson(perPending.BizContent, &bizContent)
+			if err != nil {
+				logger.Info("dt_pending uid:", uidStr,
+					" biz_content unmarshal to json failed,", err)
+				return constants.RC_SYSTEM_ERR
+			}
+		}
+	}
 	//txid 时间戳检测
 	ts := utils.GetTimestamp13()
 	txid_ts := utils.TXIDToTimeStamp13(txid)
@@ -209,10 +243,6 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	//存在就检测资产初始化状况，未初始化的用户给初始化
 	CheckAndInitAsset(perPending.To)
 
-	var bizContent TransBizContent
-	if perPending.BizContent != "" {
-		utils.FromJson(perPending.BizContent, &bizContent)
-	}
 	tx, err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("db pool begin error ", err.Error())
@@ -372,32 +402,38 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 	if err != nil {
 		return constants.RC_SYSTEM_ERR
 	}
-	var tradesArray []TradeInfo
-	finishTime := utils.GetTimestamp13()
-	// 插入交易记录单：转账
-	trade := TradeInfo{
-		TradeNo: tp.TradeNo, Txid: txid, Status: constants.TX_STATUS_COMMIT,
-		Currency: constants.TRADE_CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
-		SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
-		Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
-	}
-	tradesArray = append(tradesArray, trade)
-	if feeTxid > 0 && len(feeTradeNo) > 0 {
-		// 插入交易记录单：手续费
-		trade.FeeTradeNo = feeTradeNo
-		feeTrade := TradeInfo{
-			TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
-			Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-			From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
-			Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
+
+	//识别类型进行操作
+	switch tp.Type {
+	case constants.TX_TYPE_TRANS:
+		var tradesArray []TradeInfo
+		finishTime := utils.GetTimestamp13()
+		// 插入交易记录单：转账
+		trade := TradeInfo{
+			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TX_STATUS_COMMIT,
+			Currency: constants.TRADE_CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
+			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
+			Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
 		}
-		tradesArray = append(tradesArray, feeTrade)
+		tradesArray = append(tradesArray, trade)
+		if feeTxid > 0 && len(feeTradeNo) > 0 {
+			// 插入交易记录单：手续费
+			trade.FeeTradeNo = feeTradeNo
+			feeTrade := TradeInfo{
+				TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
+				Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
+			}
+			tradesArray = append(tradesArray, feeTrade)
+		}
+		err = InsertTradeInfo(trade)
+		if err != nil {
+			logger.Error("insert mongo db:dt_trades error ", err.Error())
+			return constants.RC_SYSTEM_ERR
+		}
 	}
-	err = InsertTradeInfo(trade)
-	if err != nil {
-		logger.Error("insert mongo db:dt_trades error ", err.Error())
-		return constants.RC_SYSTEM_ERR
-	}
+
 	return constants.RC_OK
 }
 
@@ -422,13 +458,13 @@ func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string,
 		_, intErr = EthTransCommit(feeTxid, from, transFeeAcc,
 			fee, feeTradeNo, feeSubType, tx)
 	case CURRENCY_LVT:
-		err = VerifyLVTTrans(from, transFeeAcc, utils.Int642Str(fee))
+		err = VerifyLVTTrans(from, transFeeAcc, utils.Int642Str(fee), false)
 		if err != constants.RC_OK {
 			return 0, "", 0, 0, err
 		}
 		_, intErr = TransAccountLvt(tx, feeDth)
 	case CURRENCY_LVTC:
-		err = VerifyLVTCTrans(from, transFeeAcc, utils.Int642Str(fee))
+		err = VerifyLVTCTrans(from, transFeeAcc, utils.Int642Str(fee), false)
 		if err != constants.RC_OK {
 			return 0, "", 0, 0, err
 		}
@@ -452,7 +488,7 @@ func transInt2Error(intErr int) constants.Error {
 	return constants.RC_SYSTEM_ERR
 }
 
-func VerifyLVTTrans(from, to int64, valueStr string) constants.Error {
+func VerifyLVTTrans(from, to int64, valueStr string, prepare bool) constants.Error {
 	// 非交易员禁止lvt转账
 	level := GetTransLevel(from)
 	if level == 0 {
@@ -461,42 +497,54 @@ func VerifyLVTTrans(from, to int64, valueStr string) constants.Error {
 	}
 	//目标账号非系统账号才校验额度
 	if !config.GetConfig().CautionMoneyIdsExist(to) {
-		//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
-		transLevelOfTo := GetTransLevel(to)
-		if transLevelOfTo == 0 && ! CanBeTo(to) {
-			logger.Info("asset trans prepare: target account has't receipt rights, to:", to)
-			return constants.RC_INVALID_OBJECT_ACCOUNT
-		}
-		//金额校验
-		if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
-			logger.Info("asset trans prepare: transfer out amount level limit exceeded, from:", from)
-			return e
-		}
-		//校验用户的交易限制
-		if f, e := CheckPrepareLimit(from, level); !f {
-			logger.Info("asset trans prepare: transfer out amount day limit exceeded, from:", from)
-			return e
+		if prepare {
+			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
+			transLevelOfTo := GetTransLevel(to)
+			if transLevelOfTo == 0 && ! CanBeTo(to) {
+				logger.Info("asset trans prepare: target account has't receipt rights, to:", to)
+				return constants.RC_INVALID_OBJECT_ACCOUNT
+			}
+			//金额校验
+			if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
+				logger.Info("asset trans prepare: transfer out amount level limit exceeded, from:", from)
+				return e
+			}
+			//校验用户的交易限制
+			if f, e := CheckPrepareLimit(from, level); !f {
+				logger.Info("asset trans prepare: transfer out amount day limit exceeded, from:", from)
+				return e
+			}
+		} else {
+			if f, e := CheckCommitLimit(from, level); !f {
+				return e
+			}
 		}
 	}
 	return constants.RC_OK
 }
 
-func VerifyLVTCTrans(from, to int64, valueStr string) constants.Error {
+func VerifyLVTCTrans(from, to int64, valueStr string, prepare bool) constants.Error {
 	//目标账号非系统账号才校验额度
 	if !config.GetConfig().CautionMoneyIdsExist(to) {
-		//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
-		transLevelOfTo := GetTransLevel(to)
-		if transLevelOfTo == 0 && ! CanBeTo(to) {
-			return constants.RC_INVALID_OBJECT_ACCOUNT
-		}
-		//金额校验
 		level := GetTransLevel(from)
-		if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
-			return e
-		}
-		//校验用户的交易限制
-		if f, e := CheckPrepareLimit(from, level); !f {
-			return e
+		if prepare {
+			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
+			transLevelOfTo := GetTransLevel(to)
+			if transLevelOfTo == 0 && ! CanBeTo(to) {
+				return constants.RC_INVALID_OBJECT_ACCOUNT
+			}
+			//金额校验
+			if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
+				return e
+			}
+			//校验用户的交易限制
+			if f, e := CheckPrepareLimit(from, level); !f {
+				return e
+			}
+		} else {
+			if f, e := CheckCommitLimit(from, level); !f {
+				return e
+			}
 		}
 	}
 	return constants.RC_OK
