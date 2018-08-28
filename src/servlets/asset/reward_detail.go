@@ -35,7 +35,7 @@ type rewardDetailResData struct {
 	Yesterday string        `json:"yesterday"`
 	Ts        int64         `json:"ts"`
 	Days      int           `json:"days"`
-	Miner     []rewardMiner `json:"miner,omitempty"`
+	Miner     []rewardMiner `json:"miner"`
 }
 
 // rewardDetailHandler

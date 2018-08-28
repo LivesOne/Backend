@@ -46,14 +46,14 @@ func InsertTradeInfo(info ...TradeInfo) error {
 func QueryTrades(query interface{}, limit int) []TradeInfo {
 	session := tradeSession.Clone()
 	defer session.Close()
-	logger.Debug("mongo query :", utils.ToJSONIndent(query))
-	collection := session.DB(txdbc.DBDatabase).C(TRADES)
+	logger.Debug("mongo query :", utils.ToJSON(query))
+	collection := session.DB(tradeConfig.DBDatabase).C(TRADES)
 	res := make([]TradeInfo,0)
 	err := collection.Find(query).Sort("-txid").Limit(limit).All(&res)
 	if err != nil && err != mgo.ErrNotFound {
 		logger.Error("query mongo db error ", err.Error())
 		return nil
 	}
-	logger.Debug("query res ", utils.ToJSONIndent(res))
+	logger.Debug("query res ", utils.ToJSON (res))
 	return res
 }
