@@ -1157,8 +1157,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	//大类型使用交易系统中定义的交易类型
-	tradeNo := GenerateTradeNo(3, constants.TX_TYPE_WITHDRAW_LVT)
+	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
 
 	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
 	ethFee := utils.FloatStrToLVTint(ethFeeString)
@@ -1180,7 +1179,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			return "", constants.RC_SYSTEM_ERR
 		}
 	}
-	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txId, constants.TX_TYPE_WITHDRAW_LVT, tradeNo, uid, toLvt, amount, timestamp)
+	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txId, constants.TX_SUB_TYPE_WITHDRAW, tradeNo, uid, toLvt, amount, timestamp)
 	if err3 != nil {
 		tx.Rollback()
 		logger.Error("insert tx_history_lvt_tmp error ", err3.Error())
@@ -1188,7 +1187,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 	}
 
 	toEth := config.GetWithdrawalConfig().EthAcceptAccount
-	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFee, tradeNo, constants.TX_TYPE_WITHDRAW_ETH_FEE, tx)
+	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFee, tradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if txIdFee <= 0 {
 		tx.Rollback()
 		switch e {
@@ -1217,7 +1216,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		txh := &DTTXHistory{
 			Id:       txId,
 			TradeNo:  tradeNo,
-			Type:     constants.TX_TYPE_WITHDRAW_LVT,
+			Type:     constants.TX_SUB_TYPE_WITHDRAW,
 			From:     uid,
 			To:       toLvt,
 			Value:    amount,
@@ -1231,12 +1230,12 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		} else {
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
-		feeTradeNo := GenerateTradeNo(6, constants.TX_TYPE_WITHDRAW_ETH_FEE)
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, 6, constants.TX_TYPE_WITHDRAW_ETH_FEE, uid, toEth, ethFee, "ETH", timestamp)
+		feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFee, "ETH", timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, 3, constants.TX_TYPE_WITHDRAW_LVT, uid, toLvt, address, amount, "LVTC", feeTradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toLvt, address, amount, "LVTC", feeTradeNo, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1246,7 +1245,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 
 }
 
-//tatus为成功
+//status为成功
 func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, ts int64) error {
 	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
@@ -1259,7 +1258,7 @@ func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string,
 		Decimal:         8,
 		Currency:        currency,
 		CreateTime:      ts,
-		Status:          2,
+		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 	}
 	return InsertTradeInfo(tradeInfo)
