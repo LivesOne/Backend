@@ -174,7 +174,7 @@ func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid in
 		Decimal:         8,
 		Currency:        "LVT",
 		CreateTime:      utils.TXIDToTimeStamp13(txid),
-		Status:          2,
+		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 		OriginalTradeNo: lvtcTradeNo,
 	}
@@ -193,7 +193,7 @@ func addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo string, from, to, amount, txid i
 		Decimal:         8,
 		Currency:        "LVTC",
 		CreateTime:      utils.TXIDToTimeStamp13(txid),
-		Status:          2,
+		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 		OriginalTradeNo: lvtTradeNo,
 	}

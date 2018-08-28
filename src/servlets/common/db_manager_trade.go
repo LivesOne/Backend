@@ -35,10 +35,11 @@ func InsertTradeInfo(info ...TradeInfo) error {
 	defer session.Close()
 	session.SetSafe(sessionSafe)
 	collection := session.DB(tradeConfig.DBDatabase).C(TRADES)
-	err := collection.Insert(info)
-	if err != nil {
-		logger.Error("add trade info error, error:", err.Error())
-		return err
+	for i:=0;i<len(info);i++ {
+		err := collection.Insert(info[i])
+		if err != nil {
+			logger.Error("add trade info error, tradeNo:", info[i].TradeNo, "error:", err.Error())
+		}
 	}
 	return nil
 }
