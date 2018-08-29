@@ -30,8 +30,8 @@ func ConfigDbInit() error {
 }
 
 func QueryTransFee(currency, feeCurrency string) (*DtTransferFee, error) {
-	row, err := gDbUser.QueryRow(`select * 
-		from account 
+	row, err := gDBConfig.QueryRow(`select * 
+		from dt_transfer_fee 
 		where currency = ? and fee_currency = ?`,
 		currency, feeCurrency)
 	if err != nil {
