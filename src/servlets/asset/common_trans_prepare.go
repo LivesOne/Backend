@@ -8,6 +8,7 @@ import (
 	"servlets/token"
 	"strings"
 	"utils"
+	"utils/config"
 	"utils/logger"
 	"utils/vcode"
 )
@@ -153,6 +154,47 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 		return
 	}
 
+	currency := strings.ToUpper(secret.Currency)
+	feeCurrency := strings.ToUpper(secret.FeeCurrency)
+	var feeTransToAcc int64
+	switch currency {
+	case common.CURRENCY_ETH:
+		// 校验ETH 日限额及单笔交易额限制
+		if err := common.VerifyEthTrans(secret.Value, true); err != constants.RC_OK {
+			response.SetResponseBase(err)
+			return
+		}
+		feeTransToAcc = config.GetConfig().EthTransFeeAccountUid
+	case common.CURRENCY_LVT:
+		// 校验LVT 用户每日prepare次数限制及额度限制
+		if err := common.VerifyLVTTrans(from, to, secret.Value, true); err != constants.RC_OK {
+			response.SetResponseBase(err)
+			return
+		}
+		feeTransToAcc = config.GetConfig().LvtTransFeeAccountUid
+	case common.CURRENCY_LVTC:
+		// 校验LVTC 日限额及单笔交易额限制、目标账号收款权限
+		if err := common.VerifyLVTCTrans(from, to, secret.Value, true); err != constants.RC_OK {
+			response.SetResponseBase(err)
+			return
+		}
+		feeTransToAcc = config.GetConfig().LvtcTransFeeAccountUid
+	default:
+		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
+		return
+	}
+	if currency == feeCurrency && from == feeTransToAcc {
+		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
+		return
+	}
+
+	// 手续费校验
+	err := common.CheckTransFee(secret.Value, secret.Fee, currency, secret.FeeCurrency)
+	if err != constants.RC_OK {
+		response.SetResponseBase(err)
+		return
+	}
+
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
@@ -172,31 +214,19 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	var txid string
 	var resErr constants.Error
 	bizContent := common.TransBizContent{
-		FeeCurrency: strings.ToUpper(secret.FeeCurrency),
+		FeeCurrency: feeCurrency,
 		Fee:         utils.FloatStrToLVTint(secret.Fee),
 		Remark:      requestData.Param.Remark,
 	}
 	bizContentStr := utils.ToJSON(bizContent)
 	// 转账分币种进行
-	currency := strings.ToUpper(secret.Currency)
 	switch currency {
 	case common.CURRENCY_ETH:
 		txid, _, resErr = common.PrepareETHTrans(from, to, secret.Value, constants.TX_TYPE_TRANS, bizContentStr)
 	case common.CURRENCY_LVT:
-		if err := common.VerifyLVTTrans(from, to, secret.Value, true); err != constants.RC_OK {
-			response.SetResponseBase(err)
-			return
-		}
 		txid, resErr = common.PrepareLVTTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
 	case common.CURRENCY_LVTC:
-		if err := common.VerifyLVTCTrans(from, to, secret.Value, true); err != constants.RC_OK {
-			response.SetResponseBase(err)
-			return
-		}
 		txid, resErr = common.PrepareLVTCTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
-	default:
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
 	}
 	if resErr == constants.RC_OK {
 		response.Data = commonTransPrepareResData{

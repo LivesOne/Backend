@@ -75,6 +75,7 @@ type Configuration struct {
 	NewTxHistory MongoConfig
 	Miner        MongoConfig
 	Trade        MongoConfig
+	Config       MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制
@@ -104,8 +105,13 @@ type Configuration struct {
 	LvtcHashrateScale             int
 	Lvt2LvtcSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
-	LvtcTransFeeAccountUid int64
-	ETHTransFeeAccountUid int64
+	LvtcTransFeeAccountUid		  int64
+	EthTransFeeAccountUid		  int64
+	LvtTransFeeAccountUid		  int64
+	LvtcTransSingleLimit		  int64
+	LvtcTransDailyLimit			  int64
+	EthTransSingleLimit			  int64
+	EthTransDailyLimit			  int64
 }
 
 // configuration data

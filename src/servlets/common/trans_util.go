@@ -31,6 +31,7 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (stri
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
+		Currency:	CURRENCY_LVT,
 	}
 	err := InsertPending(&txh)
 	if err != nil {
@@ -57,6 +58,7 @@ func PrepareLVTCTrans(from, to int64, txTpye int, value, bizContent string) (str
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
+		Currency:	CURRENCY_LVTC,
 	}
 	err := InsertLVTCPending(txh)
 	if err != nil {
@@ -106,7 +108,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	}
 	//存在就检测资产初始化状况，未初始化的用户给初始化
 	CheckAndInitAsset(perPending.To)
-
+	CheckAndInitAsset(perPending.From)
 	tx, err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("db pool begin error ", err.Error())
@@ -155,7 +157,6 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
 			Currency: constants.TRADE_CURRENCY_LVT, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
-		tradesArray = append(tradesArray, trade)
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
@@ -167,6 +168,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 			}
 			tradesArray = append(tradesArray, feeTrade)
 		}
+		tradesArray = append(tradesArray, trade)
 		err = InsertTradeInfo(tradesArray...)
 		if err != nil {
 			logger.Error("insert mongo db:dt_trades error ", err.Error())
@@ -203,7 +205,6 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	return constants.RC_OK
 }
 
-
 func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
@@ -216,12 +217,12 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	var bizContent TransBizContent
 	if perPending.Type == constants.TX_TYPE_TRANS {
 		//非系统账号才进行限额校验
-		e := VerifyLVTCTrans(perPending.From, perPending.To,
-			utils.LVTintToFloatStr(perPending.Value), false)
-		if e != constants.RC_OK {
-			DeletePendingByInfo(perPending)
-			return e
-		}
+		//e := VerifyLVTCTrans(perPending.From, perPending.To,
+		//	utils.LVTintToFloatStr(perPending.Value), false)
+		//if e != constants.RC_OK {
+		//	DeletePendingByInfo(perPending)
+		//	return e
+		//}
 		if perPending.BizContent != "" {
 			err := utils.FromJson(perPending.BizContent, &bizContent)
 			if err != nil {
@@ -242,6 +243,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	}
 	//存在就检测资产初始化状况，未初始化的用户给初始化
 	CheckAndInitAsset(perPending.To)
+	CheckAndInitAsset(perPending.From)
 
 	tx, err := gDBAsset.Begin()
 	if err != nil {
@@ -278,9 +280,6 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	//识别类型进行操作
 	switch perPending.Type {
 	case constants.TX_TYPE_TRANS:
-		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
-			SetTotalTransfer(perPending.From, perPending.Value)
-		}
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
@@ -288,9 +287,8 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TX_STATUS_COMMIT,
 			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
-			Currency: constants.TRADE_CURRENCY_LVTC, CreateTime: perPending.Ts, FinishTime: finishTime,
+			Currency: CURRENCY_LVTC, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
-		tradesArray = append(tradesArray, trade)
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
@@ -302,10 +300,15 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 			}
 			tradesArray = append(tradesArray, feeTrade)
 		}
+		tradesArray = append(tradesArray, trade)
 		err = InsertTradeInfo(tradesArray...)
 		if err != nil {
 			logger.Error("insert mongo db:dt_trades error ", err.Error())
 			return constants.RC_SYSTEM_ERR
+		}
+		// 设置日限额
+		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
+			SetDailyTransAmount(CURRENCY_LVTC, perPending.Value)
 		}
 	}
 	return constants.RC_OK
@@ -361,7 +364,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 
 	//存在就检测资产初始化状况，未初始化的用户给初始化
 	CheckAndInitAsset(to)
-
+	CheckAndInitAsset(tp.From)
 	if tp.BizContent != "" {
 		//解析业务数据，拿到具体数值
 		if je := utils.FromJson(tp.BizContent, &bizContent); je != nil {
@@ -411,11 +414,10 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 		// 插入交易记录单：转账
 		trade := TradeInfo{
 			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TX_STATUS_COMMIT,
-			Currency: constants.TRADE_CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
+			Currency: CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
 			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
 			Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
 		}
-		tradesArray = append(tradesArray, trade)
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
@@ -427,11 +429,14 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 			}
 			tradesArray = append(tradesArray, feeTrade)
 		}
+		tradesArray = append(tradesArray, trade)
 		err = InsertTradeInfo(trade)
 		if err != nil {
 			logger.Error("insert mongo db:dt_trades error ", err.Error())
 			return constants.RC_SYSTEM_ERR
 		}
+		// 设置日限额
+		SetDailyTransAmount(CURRENCY_ETH, tp.Value)
 	}
 
 	return constants.RC_OK
@@ -442,32 +447,32 @@ func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string,
 	feeSubType := constants.TX_SUB_TYPE_TRANSFER_FEE
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, feeSubType)
 	feeTxid := GenerateTxID()
-	transFeeAcc := config.GetConfig().LvtcTransFeeAccountUid
+	var transFeeAcc int64
 	currency = strings.ToUpper(currency)
 	var err = constants.RC_OK
 	var intErr = constants.TRANS_ERR_SYS
 	feeDth := &DTTXHistory{
 		Id: feeTxid, TradeNo: feeTradeNo, Status: constants.TX_STATUS_COMMIT,
-		Type: feeSubType, From: from, To: transFeeAcc,
+		Type: feeSubType, From: from, Currency: currency,
 		Value: fee, Ts: utils.TXIDToTimeStamp13(feeTxid),
 		Code: constants.TX_CODE_SUCC, BizContent: "",
 	}
 	switch currency {
 	case CURRENCY_ETH:
-		transFeeAcc = config.GetConfig().ETHTransFeeAccountUid
+		transFeeAcc = config.GetConfig().EthTransFeeAccountUid
 		_, intErr = EthTransCommit(feeTxid, from, transFeeAcc,
 			fee, feeTradeNo, feeSubType, tx)
 	case CURRENCY_LVT:
-		err = VerifyLVTTrans(from, transFeeAcc, utils.Int642Str(fee), false)
-		if err != constants.RC_OK {
-			return 0, "", 0, 0, err
-		}
+		transFeeAcc = config.GetConfig().LvtTransFeeAccountUid
+		feeDth.To = transFeeAcc
 		_, intErr = TransAccountLvt(tx, feeDth)
 	case CURRENCY_LVTC:
+		transFeeAcc = config.GetConfig().LvtcTransFeeAccountUid
 		err = VerifyLVTCTrans(from, transFeeAcc, utils.Int642Str(fee), false)
 		if err != constants.RC_OK {
 			return 0, "", 0, 0, err
 		}
+		feeDth.To = transFeeAcc
 		_, intErr = TransAccountLvtc(tx, feeDth)
 	}
 	if intErr != constants.TRANS_ERR_SUCC {
@@ -526,26 +531,70 @@ func VerifyLVTTrans(from, to int64, valueStr string, prepare bool) constants.Err
 func VerifyLVTCTrans(from, to int64, valueStr string, prepare bool) constants.Error {
 	//目标账号非系统账号才校验额度
 	if !config.GetConfig().CautionMoneyIdsExist(to) {
-		level := GetTransLevel(from)
+		value := utils.FloatStrToLVTint(valueStr)
+		//level := GetTransLevel(from)
 		if prepare {
+			// 校验单笔最低限额
+			if e := CheckSingleTransAmount(CURRENCY_LVTC, value); e != constants.RC_OK {
+				return e
+			}
+			// 校验转账日限额
+			if f, e := CheckDailyTransAmount(CURRENCY_LVTC, value); !f {
+				return e
+			}
 			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
 			transLevelOfTo := GetTransLevel(to)
-			if transLevelOfTo == 0 && ! CanBeTo(to) {
+			if transLevelOfTo == 0 && !CanBeTo(to) {
 				return constants.RC_INVALID_OBJECT_ACCOUNT
 			}
 			//金额校验
-			if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
-				return e
-			}
+			//if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
+			//	return e
+			//}
 			//校验用户的交易限制
-			if f, e := CheckPrepareLimit(from, level); !f {
-				return e
-			}
+			//if f, e := CheckPrepareLimit(from, level); !f {
+			//	return e
+			//}
 		} else {
-			if f, e := CheckCommitLimit(from, level); !f {
-				return e
-			}
+			//if f, e := CheckCommitLimit(from, level); !f {
+			//	return e
+			//}
 		}
+	}
+	return constants.RC_OK
+}
+
+func VerifyEthTrans(valueStr string, prepare bool) constants.Error {
+	value := utils.FloatStrToLVTint(valueStr)
+	if prepare {
+		// 校验单笔最低限额
+		if e := CheckSingleTransAmount(CURRENCY_ETH, value); e != constants.RC_OK {
+			return e
+		}
+		// 校验转账日限额
+		if f, e := CheckDailyTransAmount(CURRENCY_ETH, value); !f {
+			return e
+		}
+	}
+	return constants.RC_OK
+}
+
+func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
+	transfee, err := QueryTransFee(currency, feeCurrency)
+	if err != nil {
+		return constants.RC_SYSTEM_ERR
+	}
+	if transfee == nil {
+		return constants.RC_INVALID_CURRENCY
+	}
+	valueFloat := utils.Str2Float64(value)
+	feeFloat := utils.Str2Float64(fee)
+	if feeFloat > float64(transfee.FeeMax) {
+		return constants.RC_TRANSFER_FEE_ERROR
+	}
+	realFee := valueFloat * transfee.FeeRate * transfee.Discount
+	if realFee != feeFloat {
+		return constants.RC_TRANSFER_FEE_ERROR
 	}
 	return constants.RC_OK
 }

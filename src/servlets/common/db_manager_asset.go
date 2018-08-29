@@ -138,14 +138,7 @@ func QueryBalanceEth(uid int64) (int64, int64, int64, error) {
 }
 
 func TransAccountLvt(tx *sql.Tx, dth *DTTXHistory) (bool, int) {
-	//检测资产初始化情况
-	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
-	f, c := CheckAndInitAsset(dth.From)
-	if !f {
-		return f, c
-	}
-
-	f, c = TransAccountLvtByTx(dth.Id, dth.From, dth.To, dth.Value, tx)
+	f, c := TransAccountLvtByTx(dth.Id, dth.From, dth.To, dth.Value, tx)
 	if !f {
 		return f, c
 	}
@@ -157,13 +150,7 @@ func TransAccountLvt(tx *sql.Tx, dth *DTTXHistory) (bool, int) {
 }
 
 func TransAccountLvtc(tx *sql.Tx, dth *DTTXHistory) (bool, int) {
-	//检测资产初始化情况
-	//from 的资产如果没有初始化，初始化并返回false--》 上层检测到false会返回余额不足
-	f, c := CheckAndInitAsset(dth.From)
-	if !f {
-		return f, c
-	}
-	f, c = TransAccountLvtcByTx(dth.Id, dth.From, dth.To, dth.Value, tx)
+	f, c := TransAccountLvtcByTx(dth.Id, dth.From, dth.To, dth.Value, tx)
 	if !f {
 		return f, c
 	}

@@ -11,6 +11,8 @@ const (
 	DAILY_PREPARE_KEY_PROXY        = "tl:dp:"
 	DAILY_COMMIT_KEY_PROXY         = "tl:dc:"
 	DAILY_TOTAL_TRANSFER_KEY_PROXY = "tl:dt:"
+	DAILY_TRANS_LVTC_KEY_PROXY     = "tl:dtc:lvtc"
+	DAILY_TRANS_ETH_KEY_PROXY      = "tl:dtc:eth"
 	USER_TRANS_KEY_PROXY           = "tx:uid:"
 	USER_LEVEL_KEY_PROXY           = "tx:ul:"
 	TS                             = 1000
@@ -94,6 +96,72 @@ func CheckCommitLimit(lvtUid int64, level int) (bool, constants.Error) {
 		limit = limitConfig.DailyCommitAccess
 	}
 	return checkLimit(key, limit, false)
+}
+
+func CheckSingleTransAmount(currency string, amount int64) constants.Error {
+	var singleLimit int64
+	switch currency {
+	case CURRENCY_LVTC:
+		singleLimit = config.GetConfig().LvtcTransDailyLimit
+	case CURRENCY_ETH:
+		singleLimit = config.GetConfig().EthTransDailyLimit
+	default:
+		return constants.RC_INVALID_CURRENCY
+	}
+	if singleLimit > -1 && amount < singleLimit * CONV_LVT {
+		return constants.RC_TRANS_AMOUNT_TOO_LITTLE
+	}
+	return constants.RC_OK
+}
+
+func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error) {
+	var key string
+	var limit int64
+	switch currency {
+	case CURRENCY_LVTC:
+		key = DAILY_TRANS_LVTC_KEY_PROXY
+		limit = config.GetConfig().LvtcTransDailyLimit
+	case CURRENCY_ETH:
+		key = DAILY_TRANS_ETH_KEY_PROXY
+		limit = config.GetConfig().EthTransDailyLimit
+	default:
+		return false, constants.RC_INVALID_CURRENCY
+	}
+	t, e := ttl(key)
+	if e != nil {
+		logger.Error("ttl error ", e.Error())
+		return false, constants.RC_SYSTEM_ERR
+	}
+	if t < 0 {
+		setAndExpire(key, 0, getTime())
+	} else {
+		c, e := rdsGet64(key)
+		if e != nil {
+			logger.Error("redis get:", key, " error ", e.Error())
+			return false, constants.RC_SYSTEM_ERR
+		}
+		if limit > -1 && (c + amount) > limit * CONV_LVT {
+			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
+		}
+	}
+	return true, constants.RC_OK
+}
+
+func SetDailyTransAmount(currency string, amount int64) (bool, constants.Error) {
+	var key string
+	switch currency {
+	case CURRENCY_LVTC:
+		key = DAILY_TRANS_LVTC_KEY_PROXY
+	case CURRENCY_ETH:
+		key = DAILY_TRANS_ETH_KEY_PROXY
+	default:
+		return false, constants.RC_INVALID_CURRENCY
+	}
+	_, err := incrby(key, amount)
+	if err != nil {
+		return false, constants.RC_SYSTEM_ERR
+	}
+	return true, constants.RC_OK
 }
 
 func checkTotalTransfer(lvtUid, amount int64, limit *config.TransferLimit) (bool, constants.Error) {
