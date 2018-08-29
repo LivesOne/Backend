@@ -1125,52 +1125,137 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 	}
 }
 
-func Withdraw(uid int64, amount int64, address string, quotaType int) (string, constants.Error) {
-	tx, _ := gDBAsset.Begin()
+func Withdraw(uid, amount int64, address string, currency string) (string, constants.Error) {
 
-	row := tx.QueryRow("select count(1) from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
-	processingCount := int64(-1)
-	errQuery := row.Scan(&processingCount)
-	if errQuery != nil {
-		logger.Error("count processing reqeust from user_withdrawal_request error ")
-		tx.Rollback()
+
+	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
+	//processingCount := int64(-1)
+	//errQuery := row.Scan(&processingCount)
+	//if errQuery != nil {
+	//	logger.Error("count processing reqeust from user_withdrawal_request error ")
+	//	tx.Rollback()
+	//	return "", constants.RC_SYSTEM_ERR
+	//}
+
+	if err != nil {
+		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
 		return "", constants.RC_SYSTEM_ERR
 	}
 
-	if processingCount > 0 {
-		tx.Rollback()
+	if utils.Str2Int(row["count"]) > 0 {
+		//tx.Rollback()
 		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
 	}
 
-	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
-
 	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
 
+	error := constants.RC_OK
+	switch currency {
+	case "LVTC":
+		error = withdrawLVTC(uid, amount, address, tradeNo)
+	case "ETH":
+		error = withdrawETH(uid, amount, address, tradeNo)
+	default:
+		error = constants.RC_PARAM_ERR
+	}
+
+	return tradeNo, error
+
+}
+
+func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
+	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
+	ethFee := utils.FloatStrToLVTint(ethFeeString)
+	timestamp := utils.GetTimestamp13()
+	toETH := config.GetWithdrawalConfig().LvtAcceptAccount
+
+	tx, _ := gDBAsset.Begin()
+	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
+
+	txId, e := EthTransCommit(-1, uid, toETH, ethFee, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+	if txId <= 0 {
+		tx.Rollback()
+		switch e {
+		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
+			return constants.RC_INSUFFICIENT_BALANCE
+		case constants.TRANS_ERR_SYS:
+			return constants.RC_TRANS_IN_PROGRESS
+		case constants.TRANS_ERR_ASSET_LIMITED:
+			return constants.RC_ACCOUNT_ACCESS_LIMITED
+		default:
+			return constants.RC_SYSTEM_ERR
+		}
+	}
+
+	feeToETH := config.GetWithdrawalConfig().EthAcceptAccount
+	txIdFee, e := EthTransCommit(-1, uid, feeToETH, ethFee, tradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	if txIdFee <= 0 {
+		tx.Rollback()
+		switch e {
+		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
+			return constants.RC_INSUFFICIENT_BALANCE
+		case constants.TRANS_ERR_SYS:
+			return constants.RC_TRANS_IN_PROGRESS
+		case constants.TRANS_ERR_ASSET_LIMITED:
+			return constants.RC_ACCOUNT_ACCESS_LIMITED
+		default:
+			return constants.RC_SYSTEM_ERR
+		}
+	}
+
+	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err := tx.Exec(sql, tradeNo, uid, amount, address, txId, txIdFee, timestamp, timestamp, 0, toETH, "ETH")
+	if err != nil {
+		logger.Error("add user_withdrawal_request error ", err.Error())
+		tx.Rollback()
+		return constants.RC_SYSTEM_ERR
+	}
+	tx.Commit()
+
+	go func() {
+		feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFee, "ETH", timestamp)
+		if err != nil {
+			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+		}
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toETH, address, amount, "ETH", feeTradeNo, timestamp)
+		if err != nil {
+			logger.Error("withdraw insert trade database error, error:", err.Error())
+		}
+	}()
+
+	return constants.RC_OK
+}
+
+func withdrawLVTC(uid, amount int64, address, tradeNo string) constants.Error {
 	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
 	ethFee := utils.FloatStrToLVTint(ethFeeString)
 	timestamp := utils.GetTimestamp13()
 	txId := GenerateTxID()
 	toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
 
+	tx, _ := gDBAsset.Begin()
+	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
+
 	transLvtResult, e := TransAccountLvtcByTx(txId, uid, toLvt, amount, tx)
 	if !transLvtResult {
 		tx.Rollback()
 		switch e {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
-			return "", constants.RC_INSUFFICIENT_BALANCE
+			return constants.RC_INSUFFICIENT_BALANCE
 		case constants.TRANS_ERR_SYS:
-			return "", constants.RC_TRANS_IN_PROGRESS
+			return constants.RC_TRANS_IN_PROGRESS
 		case constants.TRANS_ERR_ASSET_LIMITED:
-			return "", constants.RC_ACCOUNT_ACCESS_LIMITED
+			return constants.RC_ACCOUNT_ACCESS_LIMITED
 		default:
-			return "", constants.RC_SYSTEM_ERR
+			return constants.RC_SYSTEM_ERR
 		}
 	}
 	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txId, constants.TX_SUB_TYPE_WITHDRAW, tradeNo, uid, toLvt, amount, timestamp)
 	if err3 != nil {
 		tx.Rollback()
 		logger.Error("insert tx_history_lvt_tmp error ", err3.Error())
-		return "", constants.RC_SYSTEM_ERR
+		return constants.RC_SYSTEM_ERR
 	}
 
 	toEth := config.GetWithdrawalConfig().EthAcceptAccount
@@ -1179,22 +1264,22 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 		tx.Rollback()
 		switch e {
 		case constants.TRANS_ERR_INSUFFICIENT_BALANCE:
-			return "", constants.RC_INSUFFICIENT_BALANCE
+			return constants.RC_INSUFFICIENT_BALANCE
 		case constants.TRANS_ERR_SYS:
-			return "", constants.RC_TRANS_IN_PROGRESS
+			return constants.RC_TRANS_IN_PROGRESS
 		case constants.TRANS_ERR_ASSET_LIMITED:
-			return "", constants.RC_ACCOUNT_ACCESS_LIMITED
+			return constants.RC_ACCOUNT_ACCESS_LIMITED
 		default:
-			return "", constants.RC_SYSTEM_ERR
+			return constants.RC_SYSTEM_ERR
 		}
 	}
 
-	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, quota_type, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txId, txIdFee, timestamp, timestamp, 0, ethFee, quotaType, "LVTC")
+	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txId, txIdFee, timestamp, timestamp, 0, ethFee, "LVTC")
 	if err1 != nil {
 		logger.Error("add user_withdrawal_request error ", err1.Error())
 		tx.Rollback()
-		return "", constants.RC_SYSTEM_ERR
+		return constants.RC_SYSTEM_ERR
 	}
 	tx.Commit()
 
@@ -1227,9 +1312,7 @@ func Withdraw(uid int64, amount int64, address string, quotaType int) (string, c
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
 	}()
-
-	return tradeNo, constants.RC_OK
-
+	return constants.RC_OK
 }
 
 //status为成功
