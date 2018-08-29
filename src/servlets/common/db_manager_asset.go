@@ -443,29 +443,30 @@ func GetUserAssetTranslevelByUid(uid int64) int {
 }
 
 func ckeckBalance(uid int64, value int64, tx *sql.Tx) bool {
-	var balance int64
+	var balance, income int64
 	var locked int64
-	row := tx.QueryRow("select balance,locked from user_asset where uid  = ?", uid)
-	row.Scan(&balance, &locked)
-	logger.Info("balance", balance, "locked", locked)
-	return balance > 0 && (balance-locked) >= value
+	row := tx.QueryRow("select balance,locked,income from user_asset where uid  = ?", uid)
+	row.Scan(&balance, &locked, &income)
+	logger.Info("balance", balance, "locked", locked, "income", income)
+	return balance > 0 && (balance-locked-income) >= value
 }
 
 func ckeckBalanceOfLvtc(uid int64, value int64, tx *sql.Tx) bool {
-	var balance int64
+	var balance, income int64
 	var locked int64
-	row := tx.QueryRow("select balance,locked from user_asset_lvtc where uid  = ?", uid)
-	row.Scan(&balance, &locked)
-	logger.Info("balance", balance, "locked", locked)
-	return balance > 0 && (balance-locked) >= value
+	row := tx.QueryRow("select balance,locked,income from user_asset_lvtc where uid  = ?", uid)
+	row.Scan(&balance, &locked, &income)
+	logger.Info("balance", balance, "locked", locked, "income", income)
+	return balance > 0 && (balance-locked-income) >= value
 }
 
 func ckeckEthBalance(uid int64, value int64, tx *sql.Tx) bool {
-	var balance int64
+	var balance, income int64
 	var locked int64
-	row := tx.QueryRow("select balance,locked from user_asset_eth where uid  = ?", uid)
-	row.Scan(&balance, &locked)
-	return balance > 0 && (balance-locked) >= value
+	row := tx.QueryRow("select balance,locked,income from user_asset_eth where uid  = ?", uid)
+	row.Scan(&balance, &locked, &income)
+	logger.Info("balance", balance, "locked", locked, "income", income)
+	return balance > 0 && (balance-locked-income) >= value
 }
 
 func CreateAssetLockByTx(assetLock *AssetLockLvtc, tx *sql.Tx) (bool, int) {

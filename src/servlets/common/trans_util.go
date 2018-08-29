@@ -77,6 +77,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		return constants.RC_TRANS_IN_PROGRESS
 
 	}
+	perPending.Status = constants.TX_STATUS_COMMIT
 	// 只有转账进行限制
 	var bizContent TransBizContent
 	if perPending.Type == constants.TX_TYPE_TRANS {
@@ -152,7 +153,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
 		trade := TradeInfo{
-			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TX_STATUS_COMMIT,
+			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
 			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
 			Currency: constants.TRADE_CURRENCY_LVT, CreateTime: perPending.Ts, FinishTime: finishTime,
@@ -162,7 +163,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
 				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
-				Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
 				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
@@ -213,6 +214,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		return constants.RC_TRANS_IN_PROGRESS
 	}
+	perPending.Status = constants.TX_STATUS_COMMIT
 	// 只有转账进行限制
 	var bizContent TransBizContent
 	if perPending.Type == constants.TX_TYPE_TRANS {
@@ -284,7 +286,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
 		trade := TradeInfo{
-			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TX_STATUS_COMMIT,
+			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
 			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
 			Currency: CURRENCY_LVTC, CreateTime: perPending.Ts, FinishTime: finishTime,
@@ -294,7 +296,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
 				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
-				Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
 				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
@@ -413,7 +415,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
 		trade := TradeInfo{
-			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TX_STATUS_COMMIT,
+			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
 			Currency: CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
 			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
 			Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
@@ -423,7 +425,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
 				TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
-				Status: constants.TX_STATUS_COMMIT, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
 				From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
@@ -588,12 +590,12 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 		return constants.RC_INVALID_CURRENCY
 	}
 	valueFloat := utils.Str2Float64(value)
-	feeFloat := utils.Str2Float64(fee)
-	if feeFloat > float64(transfee.FeeMax) {
+	feeInt := utils.FloatStrToLVTint(fee)
+	if feeInt > int64(transfee.FeeMax) * CONV_LVT {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}
 	realFee := valueFloat * transfee.FeeRate * transfee.Discount
-	if realFee != feeFloat {
+	if int64(realFee * CONV_LVT) != feeInt {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}
 	return constants.RC_OK
