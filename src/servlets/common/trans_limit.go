@@ -102,9 +102,9 @@ func CheckSingleTransAmount(currency string, amount int64) constants.Error {
 	var singleLimit int64
 	switch currency {
 	case CURRENCY_LVTC:
-		singleLimit = config.GetConfig().LvtcTransDailyLimit
+		singleLimit = config.GetConfig().LvtcTransSingleLimit
 	case CURRENCY_ETH:
-		singleLimit = config.GetConfig().EthTransDailyLimit
+		singleLimit = config.GetConfig().EthTransSingleLimit
 	default:
 		return constants.RC_INVALID_CURRENCY
 	}
