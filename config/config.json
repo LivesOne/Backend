@@ -152,7 +152,7 @@
     "Lvt2LvtcDelaySystemAccountUid":181875000,
     "TransFeeAccountUid":181875000,
     "LvtcTransSingleLimit": 1,
-    "LvtcTransDailyLimit": 100,
+    "LvtcTransDailyLimit": 100000,
     "EthTransSingleLimit": 1,
-    "EthTransDailyLimit": 100
+    "EthTransDailyLimit": 100000
 }
