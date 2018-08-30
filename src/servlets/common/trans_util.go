@@ -585,12 +585,17 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 		return constants.RC_INVALID_CURRENCY
 	}
 	valueFloat := utils.Str2Float64(value)
-	feeInt := utils.FloatStrToLVTint(fee)
-	if feeInt > int64(transfee.FeeMax) * CONV_LVT {
+	feeInt64 := utils.FloatStrToLVTint(fee)
+	feeMaxInt64 := int64(transfee.FeeMax) * CONV_LVT
+	if feeInt64 > feeMaxInt64 {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}
 	realFee := valueFloat * transfee.FeeRate * transfee.Discount
-	if int64(realFee * CONV_LVT) != feeInt {
+	realFeeInt64 := int64(realFee * CONV_LVT)
+	if realFeeInt64 > feeMaxInt64 {
+		realFeeInt64 = feeMaxInt64
+	}
+	if feeMaxInt64 != feeInt64 {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}
 	return constants.RC_OK
