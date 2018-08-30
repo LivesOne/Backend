@@ -1783,8 +1783,13 @@ func lvt2LvtcInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 	//获取转换汇率
 	lvtcHashrateScale := int64(config.GetConfig().LvtcHashrateScale)
 
+	income := 1
+	if CheckCreditScore(uid, DEF_SCORE) && CheckUserLevel(uid, DEF_LEVEL) {
+		income = 0
+	}
 	//锁仓转换
-	_, err = tx.Exec("update user_asset_lock set `value` = `value` / ?,currency = ?  where uid = ? and currency = ? ", lvtcHashrateScale, CURRENCY_LVTC, uid, CURRENCY_LVT)
+	_, err = tx.Exec("update user_asset_lock set `value` = `value` / ?,currency = ?,income = ?  where uid = ? and currency = ? ", lvtcHashrateScale, CURRENCY_LVTC, income, uid, CURRENCY_LVT)
+
 	if err != nil {
 		logger.Error("modify user_asset_lock error", err.Error())
 		return 0, 0, err
@@ -1863,6 +1868,11 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 	lockValue := balance / 20 / 100 * 100
 	lockValueStr := utils.LVTintToFloatStr(lockValue)
 	lvtScale := config.GetConfig().LvtcHashrateScale
+
+	income := 1
+	if CheckCreditScore(uid, DEF_SCORE) && CheckUserLevel(uid, DEF_LEVEL) {
+		income = 0
+	}
 	for i := 0; i < 19; i++ {
 		month := i + 5
 		//计算结束时间
@@ -1878,6 +1888,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 			End:         end,
 			Currency:    CURRENCY_LVTC,
 			AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
+			Income:		 income,
 		}
 		if err := CreateAssetLockConv(assetLock, tx); err != nil {
 			logger.Error("Create Asset Lock error", err.Error())
@@ -1901,6 +1912,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		End:         end,
 		Currency:    CURRENCY_LVTC,
 		AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
+		Income:		 income,
 	}
 	if err := CreateAssetLockConv(assetLock, tx); err != nil {
 		logger.Error("Create Asset Lock error", err.Error())
@@ -1958,7 +1970,7 @@ func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
 		return sql.ErrNoRows
 	}
 
-	sql := "insert into user_asset_lock (uid,value,month,hashrate,begin,end,currency,allow_unlock) values (?,?,?,?,?,?,?,?)"
+	sql := "insert into user_asset_lock (uid,value,month,hashrate,begin,end,currency,allow_unlock,income) values (?,?,?,?,?,?,?,?,?)"
 	params := []interface{}{
 		assetLock.Uid,
 		assetLock.ValueInt,
@@ -1968,6 +1980,7 @@ func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
 		assetLock.End,
 		assetLock.Currency,
 		assetLock.AllowUnlock,
+		assetLock.Income,
 	}
 	res, err := tx.Exec(sql, params...)
 	if err != nil {

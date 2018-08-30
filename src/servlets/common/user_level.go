@@ -9,6 +9,7 @@ import (
 const (
 	LOCK_ASSET_MONTH = 3
 	DEF_SCORE        = 70
+	DEF_LEVEL        = 2
 )
 
 func UserUpgrade(uid string) (bool, int) {
@@ -152,4 +153,9 @@ func getUserLimit(uid int64) *config.UserLevelLimit {
 	limit := config.GetLimitByLevel(level)
 	logger.Info("user level", level, "limit", utils.ToJSON(*limit))
 	return limit
+}
+
+func CheckUserLevel(uid int64, level int) bool {
+	userLevel := GetUserLevel(uid)
+	return userLevel >= level
 }
