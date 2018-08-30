@@ -432,7 +432,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 			tradesArray = append(tradesArray, feeTrade)
 		}
 		tradesArray = append(tradesArray, trade)
-		err = InsertTradeInfo(trade)
+		err = InsertTradeInfo(tradesArray...)
 		if err != nil {
 			logger.Error("insert mongo db:dt_trades error ", err.Error())
 			return constants.RC_SYSTEM_ERR
