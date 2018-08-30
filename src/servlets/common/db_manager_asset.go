@@ -1504,7 +1504,7 @@ func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 func InsertTradePending(txid, from, to int64, tradeNo, bizContent string, value int64, tradeType int) error {
 	tradeSql := `insert into 
 		trade_pending (txid,trade_no,from,to,type,biz_content,value,ts) 
-		values (?,?,?,?,?,?,?)`
+		values (?,?,?,?,?,?,?,?)`
 	_, err := gDBAsset.Exec(tradeSql,
 		txid, tradeNo, from, to, tradeType,
 		bizContent, value, utils.GetTimestamp13())
