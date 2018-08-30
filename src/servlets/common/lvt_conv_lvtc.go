@@ -164,6 +164,10 @@ func buildLvtcTxHistory(uid, systemUid, lvt, lvtc int64, tx *sql.Tx) (int64, con
 
 //status为成功
 func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid int64) {
+	conversion := TradeConversion{
+		OriginalCurrency: "LVT",
+		TargetCurrency:   "LVTC",
+	}
 	lvtTradeInfo := TradeInfo{
 		TradeNo:         lvtTradeNo,
 		Type:            constants.TRADE_TYPE_CONVERSION,
@@ -177,12 +181,17 @@ func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid in
 		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 		OriginalTradeNo: lvtcTradeNo,
+		Conversion:      &conversion,
 	}
 	InsertTradeInfo(lvtTradeInfo)
 }
 
 //status为成功
 func addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo string, from, to, amount, txid int64) {
+	conversion := TradeConversion{
+		OriginalCurrency: "LVT",
+		TargetCurrency:   "LVTC",
+	}
 	lvtcTradeInfo := TradeInfo{
 		TradeNo:         lvtcTradeNo,
 		Type:            constants.TRADE_TYPE_CONVERSION,
@@ -196,6 +205,7 @@ func addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo string, from, to, amount, txid i
 		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 		OriginalTradeNo: lvtTradeNo,
+		Conversion:      &conversion,
 	}
 	InsertTradeInfo(lvtcTradeInfo)
 }
