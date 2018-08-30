@@ -20,7 +20,12 @@ type (
 		ReturnUrl      string `json:"return_url,omitempty" bson:"return_url,omitempty"`
 		NotifyUrl      string `json:"notify_url,omitempty" bson:"notify_url,omitempty"`
 		Body           string `json:"body,omitempty" bson:"body,omitempty"`
-		TimeoutExpired int64  `json:"timeout_expired,omitempty" bson:"timeout_expired,omitempty"`
+		TimeoutExpired string `json:"timeout_expired,omitempty" bson:"timeout_expired,omitempty"`
+	}
+
+	TradeConversion struct {
+		OriginalCurrency string `json:"original_currency" bson:"original_currency,omitempty"`
+		TargetCurrency   string `json:"target_currency" bson:"target_currency,omitempty"`
 	}
 
 	TradeRecharge struct {
@@ -47,13 +52,14 @@ type (
 		Subject         string           `json:"subject,omitempty" bson:"subject,omitempty"`
 		Txid            int64            `json:"txid,omitempty" bson:"txid,omitempty"`
 		OutTradeNo      string           `json:"out_trade_no,omitempty" bson:"out_trade_no,omitempty"`
-		OutRequest      string           `json:"out_request,omitempty" bson:"out_request_no,omitempty"`
+		OutRequestNo    string           `json:"out_request_no,omitempty" bson:"out_request_no,omitempty"`
 		RefundTradeNo   string           `json:"refund_trade_no,omitempty" bson:"refund_trade_no,omitempty"`
 		OriginalTradeNo string           `json:"original_trade_no,omitempty" bson:"original_trade_no,omitempty"`
 		FeeTradeNo      string           `json:"fee_trade_no,omitempty" bson:"fee_trade_no,omitempty"`
 		FinishTime      int64            `json:"finish_time,omitempty" bson:"finish_time,omitempty"`
 		Miner           []TradeMiner     `json:"miner,omitempty" bson:"miner,omitempty"`
 		Pay             *TradePay        `json:"pay,omitempty" bson:"pay,omitempty"`
+		Conversion      *TradeConversion `json:"conversion,omitempty" bson:"conversion,omitempty"`
 		Recharge        *TradeRecharge   `json:"recharge,omitempty" bson:"recharge,omitempty"`
 		Withdrawal      *TradeWithdrawal `json:"withdrawal,omitempty" bson:"withdrawal,omitempty"`
 	}
@@ -66,6 +72,9 @@ func (tradeInfo *TradeInfo) TryLock(value int64) bool {
 	if err != nil {
 		logger.Error("lock the order error for pay, key:", key)
 		return false
+	}
+	if nx == 1 {
+		rdsExpire(key, 300)
 	}
 	return nx == 1
 }
