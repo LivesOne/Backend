@@ -156,7 +156,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 
 	currency := strings.ToUpper(secret.Currency)
 	feeCurrency := strings.ToUpper(secret.FeeCurrency)
-	var feeTransToAcc int64
+	feeTransToAcc := config.GetConfig().TransFeeAccountUid
 	switch currency {
 	case common.CURRENCY_ETH:
 		// 校验ETH 日限额及单笔交易额限制
@@ -164,21 +164,18 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 			response.SetResponseBase(err)
 			return
 		}
-		feeTransToAcc = config.GetConfig().EthTransFeeAccountUid
 	case common.CURRENCY_LVT:
 		// 校验LVT 用户每日prepare次数限制及额度限制
 		if err := common.VerifyLVTTrans(from, to, secret.Value, true); err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}
-		feeTransToAcc = config.GetConfig().LvtTransFeeAccountUid
 	case common.CURRENCY_LVTC:
 		// 校验LVTC 日限额及单笔交易额限制、目标账号收款权限
 		if err := common.VerifyLVTCTrans(from, to, secret.Value, true); err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}
-		feeTransToAcc = config.GetConfig().LvtcTransFeeAccountUid
 	default:
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 		return

@@ -449,32 +449,27 @@ func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string,
 	feeSubType := constants.TX_SUB_TYPE_TRANSFER_FEE
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, feeSubType)
 	feeTxid := GenerateTxID()
-	var transFeeAcc int64
+	transFeeAcc := config.GetConfig().TransFeeAccountUid
 	currency = strings.ToUpper(currency)
 	var err = constants.RC_OK
 	var intErr = constants.TRANS_ERR_SYS
 	feeDth := &DTTXHistory{
 		Id: feeTxid, TradeNo: feeTradeNo, Status: constants.TX_STATUS_COMMIT,
-		Type: feeSubType, From: from, Currency: currency,
+		Type: feeSubType, From: from, To: transFeeAcc, Currency: currency,
 		Value: fee, Ts: utils.TXIDToTimeStamp13(feeTxid),
 		Code: constants.TX_CODE_SUCC, BizContent: "",
 	}
 	switch currency {
 	case CURRENCY_ETH:
-		transFeeAcc = config.GetConfig().EthTransFeeAccountUid
 		_, intErr = EthTransCommit(feeTxid, from, transFeeAcc,
 			fee, feeTradeNo, feeSubType, tx)
 	case CURRENCY_LVT:
-		transFeeAcc = config.GetConfig().LvtTransFeeAccountUid
-		feeDth.To = transFeeAcc
 		_, intErr = TransAccountLvt(tx, feeDth)
 	case CURRENCY_LVTC:
-		transFeeAcc = config.GetConfig().LvtcTransFeeAccountUid
 		err = VerifyLVTCTrans(from, transFeeAcc, utils.Int642Str(fee), false)
 		if err != constants.RC_OK {
 			return 0, "", 0, 0, err
 		}
-		feeDth.To = transFeeAcc
 		_, intErr = TransAccountLvtc(tx, feeDth)
 	}
 	if intErr != constants.TRANS_ERR_SUCC {
