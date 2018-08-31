@@ -101,40 +101,40 @@ func QueryLvtcReward(uid int64) (*Reward, error) {
 
 }
 
-func QueryBalance(uid int64) (int64, int64, error) {
-	row, err := gDBAsset.QueryRow("select balance,locked from user_asset where uid = ?", uid)
+func QueryBalance(uid int64) (int64, int64, int64, int64, int, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), nil
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), utils.Str2Int64(row["lastmodify"]), utils.Str2Int(row["status"]), nil
 	}
-	return 0, 0, err
+	return 0, 0, 0, 0, 0, err
 }
 
-func QueryBalanceLvtc(uid int64) (int64, int64, int64, error) {
-	row, err := gDBAsset.QueryRow("select balance,locked,income from user_asset_lvtc where uid = ?", uid)
+func QueryBalanceLvtc(uid int64) (int64, int64, int64, int64, int, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset_lvtc where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), nil
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), utils.Str2Int64(row["lastmodify"]), utils.Str2Int(row["status"]), nil
 	}
-	return 0, 0, 0, err
+	return 0, 0, 0, 0, 0, err
 }
 
-func QueryBalanceEth(uid int64) (int64, int64, int64, error) {
-	row, err := gDBAsset.QueryRow("select balance,locked,income from user_asset_eth where uid = ?", uid)
+func QueryBalanceEth(uid int64) (int64, int64, int64, int64, int, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset_eth where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
 
 	if row != nil {
-		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), nil
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), utils.Str2Int64(row["lastmodify"]), utils.Str2Int(row["status"]), nil
 	}
-	return 0, 0, 0, err
+	return 0, 0, 0, 0, 0, err
 }
 
 func TransAccountLvt(tx *sql.Tx, dth *DTTXHistory) (bool, int) {
@@ -1128,7 +1128,6 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 
 func Withdraw(uid, amount int64, address string, currency string) (string, constants.Error) {
 
-
 	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
 	//processingCount := int64(-1)
 	//errQuery := row.Scan(&processingCount)
@@ -1886,7 +1885,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 			End:         end,
 			Currency:    CURRENCY_LVTC,
 			AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
-			Income:		 income,
+			Income:      income,
 		}
 		if err := CreateAssetLockConv(assetLock, tx); err != nil {
 			logger.Error("Create Asset Lock error", err.Error())
@@ -1910,7 +1909,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		End:         end,
 		Currency:    CURRENCY_LVTC,
 		AllowUnlock: constants.ASSET_LOCK_UNLOCK_TYPE_ALLOW,
-		Income:		 income,
+		Income:      income,
 	}
 	if err := CreateAssetLockConv(assetLock, tx); err != nil {
 		logger.Error("Create Asset Lock error", err.Error())
@@ -1938,7 +1937,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 
 }
 
-func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
+func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) error {
 	//锁定记录
 	tx.Exec("select * from user_asset_lvtc where uid = ? for update", assetLock.Uid)
 
@@ -2000,7 +1999,7 @@ func CreateAssetLockConv(assetLock *AssetLockLvtc, tx *sql.Tx) (error) {
 	return nil
 }
 
-func ExtractIncomeLvtc(uid, income int64) (bool) {
+func ExtractIncomeLvtc(uid, income int64) bool {
 	tx, err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("db pool begin error ", err.Error())
@@ -2017,7 +2016,7 @@ func ExtractIncomeLvtc(uid, income int64) (bool) {
 	return ok
 }
 
-func ExtractIncomeEth(uid, income int64) (bool) {
+func ExtractIncomeEth(uid, income int64) bool {
 	tx, err := gDBAsset.Begin()
 	if err != nil {
 		logger.Error("db pool begin error ", err.Error())
@@ -2034,7 +2033,7 @@ func ExtractIncomeEth(uid, income int64) (bool) {
 	return ok
 }
 
-func ExtractIncomeLvtcByTx(uid, income int64, tx *sql.Tx) (bool) {
+func ExtractIncomeLvtcByTx(uid, income int64, tx *sql.Tx) bool {
 	tx.Exec("select * from user_asset_lvtc where uid = ? for update", uid)
 
 	ts := utils.GetTimestamp13()
@@ -2055,7 +2054,7 @@ func ExtractIncomeLvtcByTx(uid, income int64, tx *sql.Tx) (bool) {
 	return true
 }
 
-func ExtractIncomeEthByTx(uid, income int64, tx *sql.Tx) (bool) {
+func ExtractIncomeEthByTx(uid, income int64, tx *sql.Tx) bool {
 	tx.Exec("select * from user_asset_eth where uid = ? for update", uid)
 
 	ts := utils.GetTimestamp13()

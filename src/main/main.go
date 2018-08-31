@@ -36,8 +36,6 @@ func initialize(cfgPath string) {
 		configDir = "../config"
 	)
 
-	fmt.Println("-----" + utils.Sha256(utils.Sha256("111111") + "180753870"))
-
 	appbase := utils.GetAppBaseDir()
 
 	cfgDir := filepath.Join(appbase, configDir)

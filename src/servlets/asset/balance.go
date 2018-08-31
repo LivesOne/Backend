@@ -18,15 +18,14 @@ type balanceRequest struct {
 	Param *balanceParam    `json:"param"`
 }
 
-type balanceResData struct {
+
+type balanceDetial struct {
+	Currency string `json:"currency"`
 	Balance     string `json:"balance"`
 	Locked      string `json:"locked"`
-	LvtcBalance string `json:"lvtc_balance"`
-	LvtcLocked  string `json:"lvtc_locked"`
-	LvtcIncome  string `json:"lvtc_income"`
-	EthBalance  string `json:"eth_balance"`
-	EthLocked   string `json:"eth_locked"`
-	EthIncome   string `json:"eth_income"`
+	Income  string `json:"income"`
+	Lastmodify int64 `json:"lastmodify"`
+	Status int `json:"status"`
 }
 
 // sendVCodeHandler
@@ -80,22 +79,55 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
-	balance, locked, err := common.QueryBalance(uid)
-	lvtcBalance, lvtcLocked, lvtcIncome, errLvtc := common.QueryBalanceLvtc(uid)
-	ethBalance, ethLocked, ethIncome, errEth := common.QueryBalanceEth(uid)
-	if err != nil || errLvtc != nil || errEth != nil {
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-	} else {
-		response.Data = balanceResData{
-			Balance:     utils.LVTintToFloatStr(balance),
-			Locked:      utils.LVTintToFloatStr(locked),
-			LvtcBalance: utils.LVTintToFloatStr(lvtcBalance),
-			LvtcLocked:  utils.LVTintToFloatStr(lvtcLocked),
-			LvtcIncome:  utils.LVTintToFloatStr(lvtcIncome),
-			EthBalance:  utils.LVTintToFloatStr(ethBalance),
-			EthLocked:   utils.LVTintToFloatStr(ethLocked),
-			EthIncome:   utils.LVTintToFloatStr(ethIncome),
+	currencyList := []string{constants.TRADE_CURRENCY_LVT,constants.TRADE_CURRENCY_LVTC,constants.TRADE_CURRENCY_ETH}
+	response.Data = buildAllBalanceDetail(currencyList,uid)
+
+}
+
+
+func buildAllBalanceDetail(currencyList []string,uid int64)[]balanceDetial{
+
+	bds := make([]balanceDetial,0)
+	for _,v := range currencyList {
+		switch v {
+		case constants.TRADE_CURRENCY_LVT:
+			balance, locked,income,lastmodify,status,err := common.QueryBalance(uid)
+			if err != nil {
+				logger.Error("query balance error",err.Error())
+				return nil
+			}
+			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
+			bds = append(bds,bd)
+		case constants.TRADE_CURRENCY_LVTC:
+			balance, locked,income,lastmodify,status,err := common.QueryBalanceLvtc(uid)
+			if err != nil {
+				logger.Error("query balance error",err.Error())
+				return nil
+			}
+			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
+			bds = append(bds,bd)
+		case constants.TRADE_CURRENCY_ETH:
+			balance, locked,income,lastmodify,status,err := common.QueryBalanceEth(uid)
+			if err != nil {
+				logger.Error("query balance error",err.Error())
+				return nil
+			}
+			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
+			bds = append(bds,bd)
 		}
 	}
 
+	return bds
+}
+
+
+func buildSingleBalanceDetail(balance,locked,income,lastmodify int64 ,status int,currency string)balanceDetial{
+	return balanceDetial{
+		Currency:   currency,
+		Balance:    utils.LVTintToFloatStr(balance),
+		Locked:      utils.LVTintToFloatStr(locked),
+		Income:      utils.LVTintToFloatStr(income),
+		Lastmodify: lastmodify,
+		Status:     status,
+	}
 }

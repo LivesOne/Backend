@@ -146,7 +146,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	var ok  = true
 	var err error
 	if currency == common.CURRENCY_ETH {
-		_, _, income, err = common.QueryBalanceEth(uid)
+		_, _, income,_,_, err = common.QueryBalanceEth(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -155,7 +155,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 			ok = common.ExtractIncomeEth(uid, income)
 		}
 	} else {
-		_, _, income, err = common.QueryBalanceLvtc(uid)
+		_, _, income,_,_, err = common.QueryBalanceLvtc(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
