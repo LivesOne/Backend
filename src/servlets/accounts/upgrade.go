@@ -86,7 +86,7 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 			// 微信二次验证
 			uid := utils.Str2Int64(uidString)
 			//未绑定返回验升级失败
-			openId, unionId, _ := common.GetUserExtendByUid(uid)
+			openId, unionId, _, _, _ := common.GetUserExtendByUid(uid)
 			if len(openId) == 0 || len(unionId) == 0 {
 				log.Error("user is not bind wx")
 				response.SetResponseBase(constants.RC_UPGRAD_FAILED)

@@ -17,6 +17,7 @@ type profileResponse struct {
 	CreditScore   int    `json:"credit_score"`
 	BindTg        bool   `json:"bind_tg"`
 	WalletAddress string `json:"wallet_address"`
+	AvatarUrl     string `json:"avatar_url"`
 }
 
 // getProfileHandler
@@ -40,7 +41,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	uid, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if  err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		logger.Info("get user profile: get uid from token cache failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -59,6 +60,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	bindWx, bindTg, creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
+	_, _, _, walletAddress, avatarUrl := common.GetUserExtendByUid(account.UID)
 	//提前获取交易等级
 	profile := profileResponse{
 		HavePayPwd:    (len(account.PaymentPassword) > 0),
@@ -66,7 +68,8 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		BindWx:        bindWx,
 		CreditScore:   creditScore,
 		BindTg:        bindTg,
-		WalletAddress: common.GetUserWalletAddressByUid(account.UID),
+		WalletAddress: walletAddress,
+		AvatarUrl:     avatarUrl,
 	}
 
 	account.ID = 0
@@ -75,7 +78,6 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.PaymentPassword = ""
 	account.From = ""
 	account.RegisterType = 0
-	//account.WalletAddress = common.GetUserWalletAddressByUid(account.UID)
 	profile.Account = *account
 
 	response.Data = profile
