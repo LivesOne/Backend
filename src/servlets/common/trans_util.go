@@ -81,13 +81,6 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	// 只有转账进行限制
 	var bizContent TransBizContent
 	if perPending.Type == constants.TX_TYPE_TRANS {
-		//非系统账号才进行限额校验
-		e := VerifyLVTTrans(perPending.From, perPending.To,
-			utils.LVTintToFloatStr(perPending.Value), false)
-		if e != constants.RC_OK {
-			DeletePendingByInfo(perPending)
-			return e
-		}
 		if perPending.BizContent != "" {
 			err := utils.FromJson(perPending.BizContent, &bizContent)
 			if err != nil {
@@ -466,10 +459,6 @@ func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string,
 	case CURRENCY_LVT:
 		_, intErr = TransAccountLvt(tx, feeDth)
 	case CURRENCY_LVTC:
-		err = VerifyLVTCTrans(from, transFeeAcc, utils.Int642Str(fee), false)
-		if err != constants.RC_OK {
-			return 0, "", 0, 0, err
-		}
 		_, intErr = TransAccountLvtc(tx, feeDth)
 	}
 	if intErr != constants.TRANS_ERR_SUCC {
@@ -490,88 +479,38 @@ func transInt2Error(intErr int) constants.Error {
 	return constants.RC_SYSTEM_ERR
 }
 
-func VerifyLVTTrans(from, to int64, valueStr string, prepare bool) constants.Error {
+func VerifyLVTTrans(from int64) constants.Error {
 	// 非交易员禁止lvt转账
 	level := GetTransLevel(from)
 	if level == 0 {
 		logger.Info("uid:", from, " not a trader, has no transfer permission.")
 		return constants.RC_PERMISSION_DENIED
 	}
-	//目标账号非系统账号才校验额度
-	if !config.GetConfig().CautionMoneyIdsExist(to) {
-		if prepare {
-			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
-			transLevelOfTo := GetTransLevel(to)
-			if transLevelOfTo == 0 && ! CanBeTo(to) {
-				logger.Info("asset trans prepare: target account has't receipt rights, to:", to)
-				return constants.RC_INVALID_OBJECT_ACCOUNT
-			}
-			//金额校验
-			//if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
-			//	logger.Info("asset trans prepare: transfer out amount level limit exceeded, from:", from)
-			//	return e
-			//}
-			//校验用户的交易限制
-			//if f, e := CheckPrepareLimit(from, level); !f {
-			//	logger.Info("asset trans prepare: transfer out amount day limit exceeded, from:", from)
-			//	return e
-			//}
-		} else {
-			//if f, e := CheckCommitLimit(from, level); !f {
-			//	return e
-			//}
-		}
-	}
 	return constants.RC_OK
 }
 
-func VerifyLVTCTrans(from, to int64, valueStr string, prepare bool) constants.Error {
-	//目标账号非系统账号才校验额度
-	if !config.GetConfig().CautionMoneyIdsExist(to) {
-		value := utils.FloatStrToLVTint(valueStr)
-		//level := GetTransLevel(from)
-		if prepare {
-			// 校验单笔最低限额
-			if e := CheckSingleTransAmount(CURRENCY_LVTC, value); e != constants.RC_OK {
-				return e
-			}
-			// 校验转账日限额
-			if f, e := CheckDailyTransAmount(CURRENCY_LVTC, value); !f {
-				return e
-			}
-			//在转账的情况下，目标为非系统账号，要校验目标用户是否有收款权限，交易员不受收款权限限制
-			transLevelOfTo := GetTransLevel(to)
-			if transLevelOfTo == 0 && !CanBeTo(to) {
-				return constants.RC_INVALID_OBJECT_ACCOUNT
-			}
-			//金额校验
-			//if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
-			//	return e
-			//}
-			//校验用户的交易限制
-			//if f, e := CheckPrepareLimit(from, level); !f {
-			//	return e
-			//}
-		} else {
-			//if f, e := CheckCommitLimit(from, level); !f {
-			//	return e
-			//}
-		}
-	}
-	return constants.RC_OK
-}
-
-func VerifyEthTrans(valueStr string, prepare bool) constants.Error {
+func VerifyLVTCTrans(valueStr string) constants.Error {
 	value := utils.FloatStrToLVTint(valueStr)
-	if prepare {
-		// 校验单笔最低限额
-		if e := CheckSingleTransAmount(CURRENCY_ETH, value); e != constants.RC_OK {
-			return e
-		}
-		// 校验转账日限额
-		if f, e := CheckDailyTransAmount(CURRENCY_ETH, value); !f {
-			return e
-		}
+	// 校验单笔最低限额
+	if e := CheckSingleTransAmount(CURRENCY_LVTC, value); e != constants.RC_OK {
+		return e
+	}
+	// 校验转账日限额
+	if f, e := CheckDailyTransAmount(CURRENCY_LVTC, value); !f {
+		return e
+	}
+	return constants.RC_OK
+}
+
+func VerifyEthTrans(valueStr string) constants.Error {
+	value := utils.FloatStrToLVTint(valueStr)
+	// 校验单笔最低限额
+	if e := CheckSingleTransAmount(CURRENCY_ETH, value); e != constants.RC_OK {
+		return e
+	}
+	// 校验转账日限额
+	if f, e := CheckDailyTransAmount(CURRENCY_ETH, value); !f {
+		return e
 	}
 	return constants.RC_OK
 }
