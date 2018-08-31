@@ -135,6 +135,7 @@ func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error
 		logger.Error("ttl error ", e.Error())
 		return false, constants.RC_SYSTEM_ERR
 	}
+	var curAmount int64
 	if t < 0 {
 		setAndExpire(key, 0, getTime())
 	} else {
@@ -143,9 +144,10 @@ func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error
 			logger.Error("redis get:", key, " error ", e.Error())
 			return false, constants.RC_SYSTEM_ERR
 		}
-		if limit > -1 && (c + amount) > limit {
-			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
-		}
+		curAmount = c
+	}
+	if limit > -1 && (curAmount + amount) > limit {
+		return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 	return true, constants.RC_OK
 }
@@ -174,19 +176,19 @@ func checkTotalTransfer(lvtUid, amount int64, limit *config.TransferLimit) (bool
 		logger.Error("ttl error ", e.Error())
 		return false, constants.RC_SYSTEM_ERR
 	}
+	var total int
 	if t < 0 {
 		setAndExpire(key, 0, getTime())
 	} else {
-		total, err := rdsGet(key)
+		c, err := rdsGet(key)
 		if err != nil {
 			logger.Error("redis get error ", err.Error())
 			return false, constants.RC_SYSTEM_ERR
 		}
-
-		if (limit.DailyAmountMax > -1) && (amount+int64(total)) > (limit.DailyAmountMax*LVT_CONV) {
-			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
-		}
-
+		total = c
+	}
+	if (limit.DailyAmountMax > -1) && (amount+int64(total)) > (limit.DailyAmountMax*LVT_CONV) {
+		return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 	return true, constants.RC_OK
 }
@@ -198,18 +200,19 @@ func checkTotalTransferByUserLevel(lvtUid, amount int64, limit *config.UserLevel
 		logger.Error("ttl error ", e.Error())
 		return false, constants.RC_SYSTEM_ERR
 	}
+	var total int
 	if t < 0 {
 		setAndExpire(key, 0, getTime())
 	} else {
-		total, err := rdsGet(key)
+		c, err := rdsGet(key)
 		if err != nil {
 			logger.Error("redis get error ", err.Error())
 			return false, constants.RC_SYSTEM_ERR
 		}
-		if (limit.DailyAmountMax() > -1) && (amount+int64(total)) > (limit.DailyAmountMax()*LVT_CONV) {
-			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
-		}
-
+		total = c
+	}
+	if (limit.DailyAmountMax() > -1) && (amount+int64(total)) > (limit.DailyAmountMax()*LVT_CONV) {
+		return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 	return true, constants.RC_OK
 }
