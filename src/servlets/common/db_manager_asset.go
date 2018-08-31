@@ -1188,7 +1188,8 @@ func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
 	}
 
 	feeToETH := config.GetWithdrawalConfig().EthAcceptAccount
-	txIdFee, e := EthTransCommit(-1, uid, feeToETH, ethFee, tradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+	txIdFee, e := EthTransCommit(-1, uid, feeToETH, ethFee, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if txIdFee <= 0 {
 		tx.Rollback()
 		switch e {
@@ -1213,7 +1214,6 @@ func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
 	tx.Commit()
 
 	go func() {
-		feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFee, "ETH", timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
@@ -1259,7 +1259,8 @@ func withdrawLVTC(uid, amount int64, address, tradeNo string) constants.Error {
 	}
 
 	toEth := config.GetWithdrawalConfig().EthAcceptAccount
-	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFee, tradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFee, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if txIdFee <= 0 {
 		tx.Rollback()
 		switch e {
@@ -1302,7 +1303,7 @@ func withdrawLVTC(uid, amount int64, address, tradeNo string) constants.Error {
 		} else {
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
-		feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+
 		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFee, "ETH", timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
