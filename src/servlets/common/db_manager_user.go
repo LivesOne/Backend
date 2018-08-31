@@ -429,7 +429,7 @@ func GetUserLevel(uid int64) int {
 }
 
 func CheckBindWXByUidAndCreditScore(uid int64, country int) (bool, bool, int) {
-	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?", uid)
+	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score,wallet_address,avatar_url from account_extend where uid = ?", uid)
 	if err != nil {
 		return false, false, 0
 	}
@@ -460,16 +460,16 @@ func GetUserRegisterTime(uid int64) int64 {
 	return utils.Str2Int64(row["register_time"])
 }
 
-func GetUserExtendByUid(uid int64) (string, string, int) {
-	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?", uid)
+func GetUserExtendByUid(uid int64) (string, string, int, string, string) {
+	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score,wallet_address,avatar_url from account_extend where uid = ?", uid)
 	if err != nil {
-		return "", "", 0
+		return "", "", 0, "", ""
 	}
 	if row == nil {
 		InitAccountExtend(uid)
-		return "", "", 70
+		return "", "", 70, "", ""
 	}
-	return row["wx_openid"], row["wx_unionid"], utils.Str2Int(row["credit_score"])
+	return row["wx_openid"], row["wx_unionid"], utils.Str2Int(row["credit_score"]), row["wallet_address"], row["avatar_url"]
 }
 
 func DeductionCreditScore(uid int64, score int) bool {
@@ -514,6 +514,17 @@ func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
 		InitAccountExtend(uid)
 	}
 	result, err := gDbUser.Exec("update account_extend set wallet_address = ?, update_time = ? where uid = ?", walletAddress, utils.GetTimestamp13(), uid)
+	if err != nil {
+		logger.Error("exec sql error", err.Error())
+		return 0, err
+	}
+	rowsAffected, _ := result.RowsAffected()
+	return rowsAffected, err
+
+}
+
+func SetAvatarUrl(uid int64, avatarUrl string) (int64, error) {
+	result, err := gDbUser.Exec("update account_extend set avatar_url = ?, update_time = ? where uid = ?", avatarUrl, utils.GetTimestamp13(), uid)
 	if err != nil {
 		logger.Error("exec sql error", err.Error())
 		return 0, err

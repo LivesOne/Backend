@@ -108,7 +108,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 
 		if len(secret.WxCode) > 0 {
 			// 微信二次验证，未绑定返回验提取失败
-			openId, unionId, _ := common.GetUserExtendByUid(uid)
+			openId, unionId, _, _, _ := common.GetUserExtendByUid(uid)
 			if len(openId) == 0 || len(unionId) == 0 {
 				log.Error("asset reward extract: user is not bind wx")
 				response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
