@@ -163,7 +163,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	switch currency {
 	case common.CURRENCY_ETH:
 		// 校验ETH 日限额及单笔交易额限制
-		if err := common.VerifyEthTrans(secret.Value); err != constants.RC_OK {
+		if err := common.VerifyEthTrans(from, secret.Value); err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}
@@ -183,7 +183,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 		secret.Fee = "0"
 	case common.CURRENCY_LVTC:
 		// 校验LVTC 日限额及单笔交易额限制、目标账号收款权限
-		if err := common.VerifyLVTCTrans(secret.Value); err != constants.RC_OK {
+		if err := common.VerifyLVTCTrans(from, secret.Value); err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}

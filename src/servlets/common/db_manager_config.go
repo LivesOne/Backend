@@ -48,10 +48,53 @@ func convRowMap2DtTransFee(row map[string]string) *DtTransferFee {
 			FeeCurrency: row["fee_currency"],
 			FeeRate: utils.Str2Float64(row["fee_rate"]),
 			Discount: utils.Str2Float64(row["discount"]),
-			FeeMax: utils.Str2Int(row["fee_max"]),
+			FeeMin: utils.Str2Float64(row["fee_min"]),
+			FeeMax: utils.Str2Float64(row["fee_max"]),
 			UpdateTime: utils.Str2Int64(row["update_time"]),
 		}
 		return transfee
 	}
 	return nil
 }
+
+func QueryTransAmount(currency string) (*DtTransferAmount, error) {
+	row, err := gDBConfig.QueryRow(`select * 
+		from dt_transfer_amount 
+		where currency = ?`,
+		currency)
+	if err != nil {
+		logger.Error("query dt_transfer_amount err,", err.Error())
+		return nil, err
+	}
+	return convRowMap2DtTransAmount(row), err
+}
+
+func convRowMap2DtTransAmount(row map[string]string) *DtTransferAmount {
+	if row != nil && len(row) > 0 {
+		transAmount := &DtTransferAmount{
+			Currency: row["currency"],
+			SingleAmountMin: utils.Str2Float64(row["single_amount_min"]),
+			DailyAmountMax: utils.Str2Float64(row["daily_amount_max"]),
+			UpdateTime: utils.Str2Int64(row["update_time"]),
+		}
+		return transAmount
+	}
+	return nil
+}
+
+func QueryTransSingleAmountMin(currency string) (float64, error) {
+	dtAmount, err := QueryTransAmount(currency)
+	if err != nil {
+		return 0, err
+	}
+	return dtAmount.SingleAmountMin, nil
+}
+
+func QueryTransDailyAmountMax(currency string) (float64, error) {
+	dtAmount, err := QueryTransAmount(currency)
+	if err != nil {
+		return 0, err
+	}
+	return dtAmount.DailyAmountMax, nil
+}
+

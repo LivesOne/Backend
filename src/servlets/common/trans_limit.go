@@ -9,18 +9,22 @@ import (
 )
 
 const (
-	DAILY_PREPARE_KEY_PROXY        = "tl:dp:"
-	DAILY_COMMIT_KEY_PROXY         = "tl:dc:"
-	DAILY_TOTAL_TRANSFER_KEY_PROXY = "tl:dt:"
-	DAILY_TRANS_LVTC_KEY_PROXY     = "tl:dtc:lvtc"
-	DAILY_TRANS_ETH_KEY_PROXY      = "tl:dtc:eth"
-	USER_TRANS_KEY_PROXY           = "tx:uid:"
-	USER_LEVEL_KEY_PROXY           = "tx:ul:"
-	TS                             = 1000
-	DAY_S                          = 24 * 3600
-	DAY_30                         = DAY_S * 30
-	DAY_TS                         = DAY_S * TS
-	LVT_CONV                       = 100000000
+	DAILY_PREPARE_KEY_PROXY         = "tl:dp:"
+	DAILY_COMMIT_KEY_PROXY          = "tl:dc:"
+	DAILY_TOTAL_TRANSFER_KEY_PROXY  = "tl:dt:"
+	DAILY_TRANS_LVTC_KEY_PROXY      = "tl:dt:lvtc:"
+	DAILY_TRANS_ETH_KEY_PROXY       = "tl:dt:eth:"
+	TRANS_SINGLE_MIN_LVTC_KEY_PROXY = "tl:tsm:lvtc"
+	TRANS_SINGLE_MIN_ETH_KEY_PROXY  = "tl:tsm:eth"
+	TRANS_DAILY_MAX_LVTC_KEY_PROXY = "tl:tdm:lvtc"
+	TRANS_DAILY_MAX_ETH_KEY_PROXY  = "tl:tdm:eth"
+	USER_TRANS_KEY_PROXY            = "tx:uid:"
+	USER_LEVEL_KEY_PROXY            = "tx:ul:"
+	TS                              = 1000
+	DAY_S                           = 24 * 3600
+	DAY_30                          = DAY_S * 30
+	DAY_TS                          = DAY_S * TS
+	LVT_CONV                        = 100000000
 )
 
 var cfg map[int]config.TransferLimit
@@ -99,37 +103,80 @@ func CheckCommitLimit(lvtUid int64, level int) (bool, constants.Error) {
 	return checkLimit(key, limit, false)
 }
 
+func checkTransAmount(key, currency string, maxAmount bool) (int64, constants.Error) {
+	t, e := ttl(key)
+	if e != nil {
+		logger.Error("ttl error ", e.Error())
+		return 0, constants.RC_SYSTEM_ERR
+	}
+	var limit int64
+	if t < 0 {
+		var amount float64
+		var err error
+		if maxAmount {
+			amount, err = QueryTransDailyAmountMax(currency)
+		} else {
+			amount, err = QueryTransSingleAmountMin(currency)
+		}
+		if err != nil {
+			return 0, constants.RC_SYSTEM_ERR
+		}
+		limitStr := strconv.FormatFloat(amount, 'f', -1, 64)
+		limitInt := utils.FloatStrToLVTint(limitStr)
+		setAndExpire64(key, limitInt, getTime())
+		limit = limitInt
+	} else {
+		c, e := rdsGet64(key)
+		if e != nil {
+			logger.Error("redis get:", key, " error ", e.Error())
+			return 0, constants.RC_SYSTEM_ERR
+		}
+		limit = c
+	}
+	return limit, constants.RC_OK
+}
+
 func CheckSingleTransAmount(currency string, amount int64) constants.Error {
-	var limitStr string
+	var key string
 	switch currency {
 	case CURRENCY_LVTC:
-		limitStr = strconv.FormatFloat(config.GetConfig().LvtcTransSingleLimit, 'f', -1, 64)
+		key = TRANS_SINGLE_MIN_LVTC_KEY_PROXY
 	case CURRENCY_ETH:
-		limitStr = strconv.FormatFloat(config.GetConfig().EthTransSingleLimit, 'f', -1, 64)
+		key = TRANS_SINGLE_MIN_ETH_KEY_PROXY
 	default:
 		return constants.RC_INVALID_CURRENCY
 	}
-	singleLimit := utils.FloatStrToLVTint(limitStr)
-	if singleLimit > -1 && amount < singleLimit {
+	// 获取单笔转账限额
+	limit, err := checkTransAmount(key, currency, false)
+	if err != constants.RC_OK {
+		return err
+	}
+
+	if limit > -1 && amount < limit {
 		return constants.RC_TRANS_AMOUNT_TOO_LITTLE
 	}
 	return constants.RC_OK
 }
 
-func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error) {
-	var key string
-	var limitStr string
+func CheckDailyTransAmount(uid int64, currency string, amount int64) (bool, constants.Error) {
+	var key, keyMaxLimit string
 	switch currency {
 	case CURRENCY_LVTC:
 		key = DAILY_TRANS_LVTC_KEY_PROXY
-		limitStr = strconv.FormatFloat(config.GetConfig().LvtcTransDailyLimit, 'f', -1, 64)
+		keyMaxLimit = TRANS_DAILY_MAX_LVTC_KEY_PROXY
 	case CURRENCY_ETH:
 		key = DAILY_TRANS_ETH_KEY_PROXY
-		limitStr = strconv.FormatFloat(config.GetConfig().EthTransDailyLimit, 'f', -1, 64)
+		keyMaxLimit = TRANS_DAILY_MAX_ETH_KEY_PROXY
 	default:
 		return false, constants.RC_INVALID_CURRENCY
 	}
-	limit := utils.FloatStrToLVTint(limitStr)
+	key += utils.Int642Str(uid)
+	// 获取日转账限额
+	limit, err := checkTransAmount(keyMaxLimit, currency, true)
+	if err != constants.RC_OK {
+		return false, err
+	}
+
 	t, e := ttl(key)
 	if e != nil {
 		logger.Error("ttl error ", e.Error())
@@ -146,13 +193,13 @@ func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error
 		}
 		curAmount = c
 	}
-	if limit > -1 && (curAmount + amount) > limit {
+	if limit > -1 && (curAmount+amount) > limit {
 		return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 	return true, constants.RC_OK
 }
 
-func SetDailyTransAmount(currency string, amount int64) (bool, constants.Error) {
+func SetDailyTransAmount(uid int64, currency string, amount int64) (bool, constants.Error) {
 	var key string
 	switch currency {
 	case CURRENCY_LVTC:
@@ -162,6 +209,7 @@ func SetDailyTransAmount(currency string, amount int64) (bool, constants.Error) 
 	default:
 		return false, constants.RC_INVALID_CURRENCY
 	}
+	key += utils.Int642Str(uid)
 	_, err := incrby(key, amount)
 	if err != nil {
 		return false, constants.RC_SYSTEM_ERR

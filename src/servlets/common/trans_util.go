@@ -3,6 +3,7 @@ package common
 import (
 	"database/sql"
 	"servlets/constants"
+	"strconv"
 	"strings"
 	"utils"
 	"utils/config"
@@ -139,9 +140,6 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	//识别类型进行操作
 	switch perPending.Type {
 	case constants.TX_TYPE_TRANS:
-		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
-			SetTotalTransfer(perPending.From, perPending.Value)
-		}
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
@@ -211,13 +209,6 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	// 只有转账进行限制
 	var bizContent TransBizContent
 	if perPending.Type == constants.TX_TYPE_TRANS {
-		//非系统账号才进行限额校验
-		//e := VerifyLVTCTrans(perPending.From, perPending.To,
-		//	utils.LVTintToFloatStr(perPending.Value), false)
-		//if e != constants.RC_OK {
-		//	DeletePendingByInfo(perPending)
-		//	return e
-		//}
 		if perPending.BizContent != "" {
 			err := utils.FromJson(perPending.BizContent, &bizContent)
 			if err != nil {
@@ -302,9 +293,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 			return constants.RC_SYSTEM_ERR
 		}
 		// 设置日限额
-		if !config.GetConfig().CautionMoneyIdsExist(perPending.To) {
-			SetDailyTransAmount(CURRENCY_LVTC, perPending.Value)
-		}
+		SetDailyTransAmount(uid, CURRENCY_LVTC, perPending.Value)
 	}
 	return constants.RC_OK
 }
@@ -431,7 +420,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 			return constants.RC_SYSTEM_ERR
 		}
 		// 设置日限额
-		SetDailyTransAmount(CURRENCY_ETH, tp.Value)
+		SetDailyTransAmount(uid, CURRENCY_ETH, tp.Value)
 	}
 
 	return constants.RC_OK
@@ -489,27 +478,27 @@ func VerifyLVTTrans(from int64) constants.Error {
 	return constants.RC_OK
 }
 
-func VerifyLVTCTrans(valueStr string) constants.Error {
+func VerifyLVTCTrans(uid int64, valueStr string) constants.Error {
 	value := utils.FloatStrToLVTint(valueStr)
 	// 校验单笔最低限额
 	if e := CheckSingleTransAmount(CURRENCY_LVTC, value); e != constants.RC_OK {
 		return e
 	}
 	// 校验转账日限额
-	if f, e := CheckDailyTransAmount(CURRENCY_LVTC, value); !f {
+	if f, e := CheckDailyTransAmount(uid, CURRENCY_LVTC, value); !f {
 		return e
 	}
 	return constants.RC_OK
 }
 
-func VerifyEthTrans(valueStr string) constants.Error {
+func VerifyEthTrans(uid int64, valueStr string) constants.Error {
 	value := utils.FloatStrToLVTint(valueStr)
 	// 校验单笔最低限额
 	if e := CheckSingleTransAmount(CURRENCY_ETH, value); e != constants.RC_OK {
 		return e
 	}
 	// 校验转账日限额
-	if f, e := CheckDailyTransAmount(CURRENCY_ETH, value); !f {
+	if f, e := CheckDailyTransAmount(uid, CURRENCY_ETH, value); !f {
 		return e
 	}
 	return constants.RC_OK
@@ -525,15 +514,25 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 	}
 	valueFloat := utils.Str2Float64(value)
 	feeInt64 := utils.FloatStrToLVTint(fee)
-	feeMaxInt64 := int64(transfee.FeeMax) * CONV_LVT
+	feeMaxStr := strconv.FormatFloat(transfee.FeeMax, 'f', -1, 64)
+	feeMinStr := strconv.FormatFloat(transfee.FeeMin, 'f', -1, 64)
+	feeMaxInt64 := utils.FloatStrToLVTint(feeMaxStr)
+	feeMinInt64 := utils.FloatStrToLVTint(feeMinStr)
 	if feeInt64 > feeMaxInt64 {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}
+
 	realFee := valueFloat * transfee.FeeRate * transfee.Discount
-	realFeeInt64 := int64(realFee * CONV_LVT)
+	realFeeStr := strconv.FormatFloat(realFee, 'f', -1, 64)
+	realFeeInt64 := utils.FloatStrToLVTint(realFeeStr)
 	if realFeeInt64 > feeMaxInt64 {
+		// 大于转账费率最大值，实际转账费率等于最大值
 		realFeeInt64 = feeMaxInt64
+	} else if realFeeInt64 < feeMinInt64 {
+		// 小于转账费率最小值，实际转账费率等于最小值
+		realFeeInt64 = feeMinInt64
 	}
+
 	if realFeeInt64 != feeInt64 {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}

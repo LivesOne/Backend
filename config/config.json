@@ -150,9 +150,5 @@
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
     "Lvt2LvtcDelaySystemAccountUid":181875000,
-    "TransFeeAccountUid":181875000,
-    "LvtcTransSingleLimit": 1,
-    "LvtcTransDailyLimit": 100000,
-    "EthTransSingleLimit": 1,
-    "EthTransDailyLimit": 100000
+    "TransFeeAccountUid":181875000
 }

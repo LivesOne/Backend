@@ -127,6 +127,11 @@ func setAndExpire(key string, value, expire int) error {
 	return err
 }
 
+func setAndExpire64(key string, value int64, expire int) error {
+	_, err := rdsDo("SET", key, value, "EX", expire)
+	return err
+}
+
 func setnx(key string,value int64) (int,error) {
 	return redis.Int(rdsDo("SETNX",key,value))
 }
