@@ -32,8 +32,11 @@ type commonTransPrepareSecret struct {
 }
 
 func (tps *commonTransPrepareSecret) isValid() bool {
+	if tps.Fee == "" {
+		tps.Fee = "0"
+	}
 	return len(tps.To) > 0 && len(tps.Value) > 0 && len(tps.Currency) > 0 &&
-		len(tps.FeeCurrency) > 0 && len(tps.Fee) > 0 && len(tps.Pwd) > 0
+		len(tps.FeeCurrency) > 0 && len(tps.Pwd) > 0
 }
 
 type commonTransPrepareRequest struct {
