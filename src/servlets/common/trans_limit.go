@@ -135,6 +135,7 @@ func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error
 		logger.Error("ttl error ", e.Error())
 		return false, constants.RC_SYSTEM_ERR
 	}
+	var curAmount int64
 	if t < 0 {
 		setAndExpire(key, 0, getTime())
 	} else {
@@ -143,9 +144,10 @@ func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error
 			logger.Error("redis get:", key, " error ", e.Error())
 			return false, constants.RC_SYSTEM_ERR
 		}
-		if limit > -1 && (c + amount) > limit {
-			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
-		}
+		curAmount = c
+	}
+	if limit > -1 && (curAmount + amount) > limit {
+		return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 	return true, constants.RC_OK
 }
