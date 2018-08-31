@@ -164,15 +164,29 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 			response.SetResponseBase(err)
 			return
 		}
+		// 手续费校验
+		err := common.CheckTransFee(secret.Value, secret.Fee, currency, secret.FeeCurrency)
+		if err != constants.RC_OK {
+			response.SetResponseBase(err)
+			return
+		}
 	case common.CURRENCY_LVT:
 		// 校验LVT 用户每日prepare次数限制及额度限制
 		if err := common.VerifyLVTTrans(from, to, secret.Value, true); err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}
+		// lvt 交易员不限制转账额度，不收转账手续费
+		secret.Fee = "0"
 	case common.CURRENCY_LVTC:
 		// 校验LVTC 日限额及单笔交易额限制、目标账号收款权限
 		if err := common.VerifyLVTCTrans(from, to, secret.Value, true); err != constants.RC_OK {
+			response.SetResponseBase(err)
+			return
+		}
+		// 手续费校验
+		err := common.CheckTransFee(secret.Value, secret.Fee, currency, secret.FeeCurrency)
+		if err != constants.RC_OK {
 			response.SetResponseBase(err)
 			return
 		}
@@ -182,13 +196,6 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	}
 	if currency == feeCurrency && from == feeTransToAcc {
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
-		return
-	}
-
-	// 手续费校验
-	err := common.CheckTransFee(secret.Value, secret.Fee, currency, secret.FeeCurrency)
-	if err != constants.RC_OK {
-		response.SetResponseBase(err)
 		return
 	}
 

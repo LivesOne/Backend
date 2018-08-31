@@ -507,19 +507,19 @@ func VerifyLVTTrans(from, to int64, valueStr string, prepare bool) constants.Err
 				return constants.RC_INVALID_OBJECT_ACCOUNT
 			}
 			//金额校验
-			if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
-				logger.Info("asset trans prepare: transfer out amount level limit exceeded, from:", from)
-				return e
-			}
+			//if f, e := CheckAmount(from, utils.FloatStrToLVTint(valueStr), level); !f {
+			//	logger.Info("asset trans prepare: transfer out amount level limit exceeded, from:", from)
+			//	return e
+			//}
 			//校验用户的交易限制
-			if f, e := CheckPrepareLimit(from, level); !f {
-				logger.Info("asset trans prepare: transfer out amount day limit exceeded, from:", from)
-				return e
-			}
+			//if f, e := CheckPrepareLimit(from, level); !f {
+			//	logger.Info("asset trans prepare: transfer out amount day limit exceeded, from:", from)
+			//	return e
+			//}
 		} else {
-			if f, e := CheckCommitLimit(from, level); !f {
-				return e
-			}
+			//if f, e := CheckCommitLimit(from, level); !f {
+			//	return e
+			//}
 		}
 	}
 	return constants.RC_OK
@@ -595,7 +595,7 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 	if realFeeInt64 > feeMaxInt64 {
 		realFeeInt64 = feeMaxInt64
 	}
-	if feeMaxInt64 != feeInt64 {
+	if realFeeInt64 != feeInt64 {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}
 	return constants.RC_OK

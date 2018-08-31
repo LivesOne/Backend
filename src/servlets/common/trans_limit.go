@@ -2,6 +2,7 @@ package common
 
 import (
 	"servlets/constants"
+	"strconv"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -99,16 +100,17 @@ func CheckCommitLimit(lvtUid int64, level int) (bool, constants.Error) {
 }
 
 func CheckSingleTransAmount(currency string, amount int64) constants.Error {
-	var singleLimit int64
+	var limitStr string
 	switch currency {
 	case CURRENCY_LVTC:
-		singleLimit = config.GetConfig().LvtcTransSingleLimit
+		limitStr = strconv.FormatFloat(config.GetConfig().LvtcTransSingleLimit, 'f', -1, 64)
 	case CURRENCY_ETH:
-		singleLimit = config.GetConfig().EthTransSingleLimit
+		limitStr = strconv.FormatFloat(config.GetConfig().EthTransSingleLimit, 'f', -1, 64)
 	default:
 		return constants.RC_INVALID_CURRENCY
 	}
-	if singleLimit > -1 && amount < singleLimit * CONV_LVT {
+	singleLimit := utils.FloatStrToLVTint(limitStr)
+	if singleLimit > -1 && amount < singleLimit {
 		return constants.RC_TRANS_AMOUNT_TOO_LITTLE
 	}
 	return constants.RC_OK
@@ -116,17 +118,18 @@ func CheckSingleTransAmount(currency string, amount int64) constants.Error {
 
 func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error) {
 	var key string
-	var limit int64
+	var limitStr string
 	switch currency {
 	case CURRENCY_LVTC:
 		key = DAILY_TRANS_LVTC_KEY_PROXY
-		limit = config.GetConfig().LvtcTransDailyLimit
+		limitStr = strconv.FormatFloat(config.GetConfig().LvtcTransDailyLimit, 'f', -1, 64)
 	case CURRENCY_ETH:
 		key = DAILY_TRANS_ETH_KEY_PROXY
-		limit = config.GetConfig().EthTransDailyLimit
+		limitStr = strconv.FormatFloat(config.GetConfig().EthTransDailyLimit, 'f', -1, 64)
 	default:
 		return false, constants.RC_INVALID_CURRENCY
 	}
+	limit := utils.FloatStrToLVTint(limitStr)
 	t, e := ttl(key)
 	if e != nil {
 		logger.Error("ttl error ", e.Error())
@@ -140,7 +143,7 @@ func CheckDailyTransAmount(currency string, amount int64) (bool, constants.Error
 			logger.Error("redis get:", key, " error ", e.Error())
 			return false, constants.RC_SYSTEM_ERR
 		}
-		if limit > -1 && (c + amount) > limit * CONV_LVT {
+		if limit > -1 && (c + amount) > limit {
 			return false, constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}

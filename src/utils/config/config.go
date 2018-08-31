@@ -106,10 +106,10 @@ type Configuration struct {
 	Lvt2LvtcSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
 	TransFeeAccountUid            int64
-	LvtcTransSingleLimit          int64
-	LvtcTransDailyLimit           int64
-	EthTransSingleLimit           int64
-	EthTransDailyLimit            int64
+	LvtcTransSingleLimit          float64
+	LvtcTransDailyLimit           float64
+	EthTransSingleLimit           float64
+	EthTransDailyLimit            float64
 }
 
 // configuration data
