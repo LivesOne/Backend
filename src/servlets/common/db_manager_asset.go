@@ -1149,7 +1149,7 @@ func Withdraw(uid int64, amount string, address string, currency string) (string
 	case "ETH":
 		error = withdrawETH(uid, amount, address, tradeNo)
 	default:
-		error = constants.RC_PARAM_ERR
+		error = constants.RC_INVALID_CURRENCY
 	}
 
 	return tradeNo, error
@@ -1256,7 +1256,7 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 			return constants.RC_SYSTEM_ERR
 		}
 	}
-	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txId, constants.TX_SUB_TYPE_WITHDRAW, tradeNo, uid, toLvt, amount, timestamp)
+	_, err3 := tx.Exec("insert into tx_history_lvt_tmp (txid, type, trade_no, `from`, `to`, value, ts) VALUES (?, ?, ?, ?, ?, ?, ?)", txId, constants.TX_SUB_TYPE_WITHDRAW, tradeNo, uid, toLvt, amountInt, timestamp)
 	if err3 != nil {
 		tx.Rollback()
 		logger.Error("insert tx_history_lvt_tmp error ", err3.Error())
@@ -1281,7 +1281,7 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 	}
 
 	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err1 := tx.Exec(sql, tradeNo, uid, amount, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, ethFee, "LVTC")
+	_, err1 := tx.Exec(sql, tradeNo, uid, amountInt, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, ethFee, "LVTC")
 	if err1 != nil {
 		logger.Error("add user_withdrawal_request error ", err1.Error())
 		tx.Rollback()
@@ -1331,8 +1331,8 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 	}
 
 	if withdrawQuota.DailyAmountMax > 0 {
-		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and create_time >= ?"
-		row, err := gDBAsset.QueryRow(sql, uid, utils.GetTimestamp13())
+		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and status <> ? and create_time >= ?"
+		row, err := gDBAsset.QueryRow(sql, uid, constants.USER_WITHDRAWAL_REQUEST_FAIL, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
 		if err != nil {
 			logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
 		}
@@ -1367,7 +1367,7 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 
 func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 	withdrawQuota := new(WithdrawQuota)
-	results, _ := redis.Strings(rdsDo("GET", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, 0))
+	results, _ := redis.Strings(rdsDo("GET", constants.WITHDRAW_QUOTA_FEE_KEY))
 	if results != nil && len(results) >= 2 {
 		if err := utils.FromJson(results[1], withdrawQuota); err == nil {
 			return withdrawQuota
@@ -1376,7 +1376,7 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 	} else {
 		withdrawQuota = GetWithdrawQuotaByCurrency(withdrawCurrency)
 		tomorrow,_ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02"), time.Local)
-		rdsDo("SET", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(withdrawQuota), "EX", tomorrow.UnixNano() / 1000000 - utils.GetTimestamp13())
+		rdsDo("SET", constants.WITHDRAW_QUOTA_FEE_KEY, utils.ToJSON(withdrawQuota), "EX", tomorrow.UnixNano() / 1000000 - utils.GetTimestamp13())
 		return withdrawQuota
 	}
 }

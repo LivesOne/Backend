@@ -114,7 +114,7 @@ func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
 
 	withdrawFeeArray := make([]WithdrawFee, 0)
 	sql = "select * from dt_withdrawal_fee where currency = ?"
-	rows := gDBConfig.Query(sql)
+	rows := gDBConfig.Query(sql, currency)
 	for _, row = range rows {
 		withdrawFee := WithdrawFee{
 			Id:          utils.Str2Int64(row["id"]),
