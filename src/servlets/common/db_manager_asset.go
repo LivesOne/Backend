@@ -1281,7 +1281,7 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 	}
 
 	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err1 := tx.Exec(sql, tradeNo, uid, amountInt, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, ethFee, "LVTC")
+	_, err1 := tx.Exec(sql, tradeNo, uid, amountInt, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, ethFeeInt, "LVTC")
 	if err1 != nil {
 		logger.Error("add user_withdrawal_request error ", err1.Error())
 		tx.Rollback()
