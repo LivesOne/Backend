@@ -75,8 +75,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	perPending, flag := FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
-		return constants.RC_TRANS_IN_PROGRESS
-
+		return constants.RC_TRANS_TIMEOUT
 	}
 	perPending.Status = constants.TX_STATUS_COMMIT
 	// 只有转账进行限制
@@ -203,7 +202,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 	perPending, flag := FindAndModifyLVTCPending(txid, uid, constants.TX_STATUS_COMMIT)
 	//未查到数据，返回处理中
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
-		return constants.RC_TRANS_IN_PROGRESS
+		return constants.RC_TRANS_TIMEOUT
 	}
 	perPending.Status = constants.TX_STATUS_COMMIT
 	// 只有转账进行限制
