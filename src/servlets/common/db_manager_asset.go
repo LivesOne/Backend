@@ -1375,8 +1375,8 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 		return nil
 	} else {
 		withdrawQuota = GetWithdrawQuotaByCurrency(withdrawCurrency)
-		tomorrow,_ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02"), time.Local)
-		rdsDo("SET", constants.WITHDRAW_QUOTA_FEE_KEY, utils.ToJSON(withdrawQuota), "EX", tomorrow.UnixNano() / 1000000 - utils.GetTimestamp13())
+		tomorrow,_ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02") + " 23:59:59", time.Local)
+		rdsDo("SET", constants.WITHDRAW_QUOTA_FEE_KEY, utils.ToJSON(withdrawQuota), "EX", tomorrow.Unix() + 1 - utils.GetTimestamp10())
 		return withdrawQuota
 	}
 }
