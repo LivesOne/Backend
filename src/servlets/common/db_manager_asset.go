@@ -1379,7 +1379,7 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 			return withdrawQuota
 		}
 		return nil
-	} else if  err != nil {
+	} else if  err != nil && err != redis.ErrNil {
 		return nil
 	} else {
 		withdrawQuota = GetWithdrawQuotaByCurrency(withdrawCurrency)
