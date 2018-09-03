@@ -133,7 +133,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		}
 	} else {
 		//失败设置返回信息
-		transInt2Error(intErr)
+		return transInt2Error(intErr)
 	}
 	//删除pending
 	DeletePendingByInfo(perPending)
