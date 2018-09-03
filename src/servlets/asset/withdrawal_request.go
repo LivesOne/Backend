@@ -172,12 +172,12 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	withdrawAmount := utils.FloatStrToLVTint(secret.Value)
+	//withdrawAmount := utils.FloatStrToLVTint()
 	address := strings.ToLower(secret.Address)
 	if !strings.HasPrefix(address, "0x") {
 		address = "0x" + address
 	}
-	tradeNo, err := common.Withdraw(uid, withdrawAmount, address, strings.ToUpper(secret.Currency))
+	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
 			TradeNo: tradeNo,
