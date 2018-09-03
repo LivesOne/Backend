@@ -98,3 +98,38 @@ func QueryTransDailyAmountMax(currency string) (float64, error) {
 	return dtAmount.DailyAmountMax, nil
 }
 
+
+func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
+	sql := "select * from dt_withdrawal_amount where currency = ?"
+	row, err := gDBConfig.QueryRow(sql, currency)
+	if err != nil {
+		logger.Error("query quota from dt_withdrawal_amount by currency error, currency:", currency, ", error:", err.Error())
+	}
+	withdrawQuota := WithdrawQuota{
+		Currency:        currency,
+		SingleAmountMin: utils.Str2Float64(row["single_amount_min"]),
+		DailyAmountMax:  utils.Str2Float64(row["daily_amount_max"]),
+		UpdateTime:      utils.Str2Int64(row["update_time"]),
+	}
+
+	withdrawFeeArray := make([]WithdrawFee, 0)
+	sql = "select * from dt_withdrawal_fee where currency = ?"
+	rows := gDBConfig.Query(sql)
+	for _, row = range rows {
+		withdrawFee := WithdrawFee{
+			Id:          utils.Str2Int64(row["id"]),
+			Currency:    row["currency"],
+			FeeCurrency: row["fee_currency"],
+			FeeType:     utils.Str2Int(row["fee_type"]),
+			FeeFixed:    utils.Str2Float64(row["fee_fixed"]),
+			FeeRate:     utils.Str2Float64(row["fee_rate"]),
+			FeeMin:      utils.Str2Float64(row["fee_min"]),
+			FeeMax:      utils.Str2Float64(row["fee_max"]),
+			Discount:    utils.Str2Float64(row["discount"]),
+			UpdateTime:  utils.Str2Int64(row["update_time"]),
+		}
+		withdrawFeeArray = append(withdrawFeeArray, withdrawFee)
+	}
+	withdrawQuota.Fee = withdrawFeeArray
+	return &withdrawQuota
+}

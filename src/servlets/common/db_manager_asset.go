@@ -6,11 +6,13 @@ import (
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"servlets/constants"
-	"strconv"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
+	"github.com/shopspring/decimal"
+	"github.com/garyburd/redigo/redis"
+	time "time"
 )
 
 const (
@@ -1126,16 +1128,8 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 	}
 }
 
-func Withdraw(uid, amount int64, address string, currency string) (string, constants.Error) {
-
+func Withdraw(uid int64, amount string, address string, currency string) (string, constants.Error) {
 	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
-	//processingCount := int64(-1)
-	//errQuery := row.Scan(&processingCount)
-	//if errQuery != nil {
-	//	logger.Error("count processing reqeust from user_withdrawal_request error ")
-	//	tx.Rollback()
-	//	return "", constants.RC_SYSTEM_ERR
-	//}
 
 	if err != nil {
 		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
@@ -1143,7 +1137,6 @@ func Withdraw(uid, amount int64, address string, currency string) (string, const
 	}
 
 	if utils.Str2Int(row["count"]) > 0 {
-		//tx.Rollback()
 		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
 	}
 
@@ -1163,16 +1156,22 @@ func Withdraw(uid, amount int64, address string, currency string) (string, const
 
 }
 
-func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
-	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
-	ethFee := utils.FloatStrToLVTint(ethFeeString)
+func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
 	toETH := config.GetWithdrawalConfig().LvtAcceptAccount
+	amountInt := utils.FloatStrToLVTint(amount)
 
 	tx, _ := gDBAsset.Begin()
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
 
-	txId, e := EthTransCommit(-1, uid, toETH, ethFee, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+	ethFee, error := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), "ETH", "ETH", CONV_LVT)
+	if error.Rc != constants.RC_OK.Rc {
+		tx.Rollback()
+		return error
+	}
+	ethFeeInt := decimal.NewFromFloat(ethFee).Mul(decimal.NewFromFloat(CONV_LVT)).IntPart()
+
+	txId, e := EthTransCommit(-1, uid, toETH, amountInt, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
 	if txId <= 0 {
 		tx.Rollback()
 		switch e {
@@ -1189,7 +1188,7 @@ func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
 
 	feeToETH := config.GetWithdrawalConfig().EthAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
-	txIdFee, e := EthTransCommit(-1, uid, feeToETH, ethFee, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	txIdFee, e := EthTransCommit(-1, uid, feeToETH, ethFeeInt, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if txIdFee <= 0 {
 		tx.Rollback()
 		switch e {
@@ -1205,7 +1204,7 @@ func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
 	}
 
 	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err := tx.Exec(sql, tradeNo, uid, amount, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, toETH, "ETH")
+	_, err := tx.Exec(sql, tradeNo, uid, amountInt, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, toETH, "ETH")
 	if err != nil {
 		logger.Error("add user_withdrawal_request error ", err.Error())
 		tx.Rollback()
@@ -1214,11 +1213,11 @@ func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
 	tx.Commit()
 
 	go func() {
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFee, "ETH", timestamp)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFeeInt, "ETH", timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toETH, address, amount, "ETH", feeTradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toETH, address, amountInt, "ETH", feeTradeNo, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1227,17 +1226,23 @@ func withdrawETH(uid, amount int64, address, tradeNo string) constants.Error {
 	return constants.RC_OK
 }
 
-func withdrawLVTC(uid, amount int64, address, tradeNo string) constants.Error {
-	ethFeeString := strconv.FormatFloat(config.GetWithdrawalConfig().WithdrawalEthFee, 'f', -1, 64)
-	ethFee := utils.FloatStrToLVTint(ethFeeString)
+func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
 	txId := GenerateTxID()
 	toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
+	amountInt := utils.FloatStrToLVTint(amount)
 
 	tx, _ := gDBAsset.Begin()
 	tx.Exec("select * from user_withdrawal_request where uid = ? for update", uid)
+	ethFee, err := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), "LVTC", "ETH", CONV_LVT)
+	if err.Rc != constants.RC_OK.Rc {
+		tx.Rollback()
+		return err
+	}
 
-	transLvtResult, e := TransAccountLvtcByTx(txId, uid, toLvt, amount, tx)
+	ethFeeInt := decimal.NewFromFloat(ethFee).Mul(decimal.NewFromFloat(CONV_LVT)).IntPart()
+
+	transLvtResult, e := TransAccountLvtcByTx(txId, uid, toLvt, amountInt, tx)
 	if !transLvtResult {
 		tx.Rollback()
 		switch e {
@@ -1260,7 +1265,7 @@ func withdrawLVTC(uid, amount int64, address, tradeNo string) constants.Error {
 
 	toEth := config.GetWithdrawalConfig().EthAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
-	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFee, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFeeInt, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if txIdFee <= 0 {
 		tx.Rollback()
 		switch e {
@@ -1292,7 +1297,7 @@ func withdrawLVTC(uid, amount int64, address, tradeNo string) constants.Error {
 			Type:     constants.TX_SUB_TYPE_WITHDRAW,
 			From:     uid,
 			To:       toLvt,
-			Value:    amount,
+			Value:    amountInt,
 			Ts:       timestamp,
 			Currency: "LVTC",
 		}
@@ -1304,16 +1309,76 @@ func withdrawLVTC(uid, amount int64, address, tradeNo string) constants.Error {
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
 
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFee, "ETH", timestamp)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFeeInt, "ETH", timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toLvt, address, amount, "LVTC", feeTradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toLvt, address, amountInt, "LVTC", feeTradeNo, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
 	}()
 	return constants.RC_OK
+}
+
+func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, withdrawCurrency, feeCurrency string, withdrawCurrencyDecimal int) (float64, constants.Error) {
+	withdrawQuota := getWithdrawQuota(withdrawCurrency)
+	if withdrawAmount <= 0 {
+		return float64(0), constants.RC_PARAM_ERR
+	}
+	if withdrawQuota.SingleAmountMin > 0 && withdrawQuota.SingleAmountMin < withdrawAmount {
+		return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
+	}
+
+	if withdrawQuota.DailyAmountMax > 0 {
+		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and create_time >= ?"
+		row, err := gDBAsset.QueryRow(sql, uid, utils.GetTimestamp13())
+		if err != nil {
+			logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
+		}
+		totalAmount := utils.Str2Int64(row["total_value"])
+		totalAmountFloat, _ := decimal.New(totalAmount, 0).DivRound(decimal.New(int64(withdrawCurrencyDecimal), 0), int32(withdrawCurrencyDecimal)).Float64()
+		if withdrawQuota.DailyAmountMax < totalAmountFloat + withdrawAmount {
+			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
+		}
+	}
+	var feeOfWithdraw float64
+	for _, fee := range withdrawQuota.Fee {
+		if fee.FeeCurrency == feeCurrency {
+			switch fee.FeeType {
+			case 0:
+				feeOfWithdraw = fee.FeeFixed
+			case 1:
+				feeOfWithdraw = withdrawAmount * fee.FeeRate
+				if feeOfWithdraw < fee.FeeMin {
+					feeOfWithdraw = fee.FeeMin
+				}
+				if feeOfWithdraw > fee.FeeMax {
+					feeOfWithdraw = fee.FeeMax
+				}
+			default:
+				logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
+				return float64(0), constants.RC_INVALID_CURRENCY
+			}
+		}
+	}
+	return feeOfWithdraw, constants.RC_OK
+}
+
+func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
+	withdrawQuota := new(WithdrawQuota)
+	results, _ := redis.Strings(rdsDo("GET", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, 0))
+	if results != nil && len(results) >= 2 {
+		if err := utils.FromJson(results[1], withdrawQuota); err == nil {
+			return withdrawQuota
+		}
+		return nil
+	} else {
+		withdrawQuota = GetWithdrawQuotaByCurrency(withdrawCurrency)
+		tomorrow,_ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02"), time.Local)
+		rdsDo("SET", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(withdrawQuota), "EX", tomorrow.UnixNano() / 1000000 - utils.GetTimestamp13())
+		return withdrawQuota
+	}
 }
 
 //status为成功
