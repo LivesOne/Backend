@@ -1204,7 +1204,7 @@ func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Er
 	}
 
 	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err := tx.Exec(sql, tradeNo, uid, amountInt, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, toETH, constants.TRADE_CURRENCY_ETH)
+	_, err := tx.Exec(sql, tradeNo, uid, amountInt, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, ethFeeInt, constants.TRADE_CURRENCY_ETH)
 	if err != nil {
 		logger.Error("add user_withdrawal_request error ", err.Error())
 		tx.Rollback()
@@ -1377,8 +1377,8 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 	if len(results) > 0 {
 		if err := utils.FromJson(results, withdrawQuota); err != nil {
 			logger.Error("get withdraw quota from redis error, error:", err.Error())
+			flag = true
 		}
-		flag = true
 	}
 	if flag {
 		withdrawQuota = GetWithdrawQuotaByCurrency(withdrawCurrency)

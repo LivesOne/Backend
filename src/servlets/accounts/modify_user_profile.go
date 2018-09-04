@@ -136,7 +136,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		}
 	}
 	if len(secret.AvatarUrl) > 0 {
-		_, dbErr := common.SetWalletAddress(uid, secret.AvatarUrl)
+		_, dbErr := common.SetAvatarUrl(uid, secret.AvatarUrl)
 		if dbErr != nil {
 			log.Info("modify user profile : save avatar_url to db error:", dbErr)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
