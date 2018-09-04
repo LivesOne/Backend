@@ -1881,8 +1881,9 @@ func lvt2LvtcInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		return 0, 0, err
 	}
 	balance := int64(0)
-	row := tx.QueryRow("select balance from user_asset where uid = ?", uid)
-	err = row.Scan(&balance)
+	incomeAsset := int64(0)
+	row := tx.QueryRow("select balance,income from user_asset where uid = ?", uid)
+	err = row.Scan(&balance, &incomeAsset)
 	if err != nil {
 		logger.Error("query balance error", err.Error())
 		return 0, 0, err
@@ -1917,8 +1918,18 @@ func lvt2LvtcInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 
 	//修改锁仓
 	//此处不对余额进行处理，交由上层统一走转账流程
+	incomeAsset = incomeAsset / lvtcHashrateScale
+	var updateLvtcSql string
+	var updateLvtcParam []interface{}
+	if incomeAsset > 0 {
+		updateLvtcSql = "update user_asset_lvtc set locked = ?,income = income + ?,lastmodify = ? where uid = ?"
+		updateLvtcParam = []interface{}{lvtcLockCount, incomeAsset, ts, uid}
+	} else {
+		updateLvtcSql = "update user_asset_lvtc set locked = ?,lastmodify = ? where uid = ?"
+		updateLvtcParam = []interface{}{lvtcLockCount, ts, uid}
+	}
 
-	_, err = tx.Exec("update user_asset_lvtc set locked = ?,lastmodify = ? where uid = ?", lvtcLockCount, ts, uid)
+	_, err = tx.Exec(updateLvtcSql, updateLvtcParam...)
 	if err != nil {
 		logger.Error("modify locked error", err.Error())
 		return 0, 0, err
@@ -1926,7 +1937,7 @@ func lvt2LvtcInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 
 	//修改锁仓
 	//此处不对余额进行处理，交由上层统一走转账流程
-	_, err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?", ts, uid)
+	_, err = tx.Exec("update user_asset set locked = 0, income = 0,lastmodify = ? where uid = ?", ts, uid)
 	if err != nil {
 		logger.Error("modify locked error", err.Error())
 		return 0, 0, err
@@ -1966,7 +1977,7 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 		return 0, 0, err
 	}
 
-	_, err = tx.Exec("update user_asset set locked = 0,lastmodify = ? where uid = ?", ts, uid)
+	_, err = tx.Exec("update user_asset set locked = 0,income = 0,lastmodify = ? where uid = ?", ts, uid)
 	if err != nil {
 		logger.Error("modify locked error", err.Error())
 		return 0, 0, err
