@@ -43,7 +43,9 @@ type (
 		Type            int              `json:"type,omitempty" bson:"type,omitempty"`
 		SubType         int              `json:"sub_type,omitempty" bson:"sub_type,omitempty"`
 		From            int64            `json:"from,omitempty" bson:"from,omitempty"`
+		FromName        int64            `json:"from_name,omitempty" bson:"from_name,omitempty"`
 		To              int64            `json:"to,omitempty" bson:"to,omitempty"`
+		ToName          int64            `json:"to_name,omitempty" bson:"to_name,omitempty"`
 		Amount          int64            `json:"amount,omitempty" bson:"amount,omitempty"`
 		Decimal         int              `json:"decimal,omitempty" bson:"decimal,omitempty"`
 		Currency        string           `json:"currency,omitempty" bson:"currency,omitempty"`
