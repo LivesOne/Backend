@@ -1372,21 +1372,21 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 	key := constants.WITHDRAW_QUOTA_FEE_KEY + "_" + withdrawCurrency
 	withdrawQuota := new(WithdrawQuota)
-	results, err := redis.String(rdsDo("GET", key))
-	//results, _ := rdsGet(constants.WITHDRAW_QUOTA_FEE_KEY)
+	results, _ := redis.String(rdsDo("GET", key))
+	flag := false
 	if len(results) > 0 {
-		if err := utils.FromJson(results, withdrawQuota); err == nil {
-			return withdrawQuota
+		if err := utils.FromJson(results, withdrawQuota); err != nil {
+			logger.Error("get withdraw quota from redis error, error:", err.Error())
 		}
-		return nil
-	} else if  err != nil && err != redis.ErrNil {
-		return nil
-	} else {
+		flag = true
+	}
+	if flag {
 		withdrawQuota = GetWithdrawQuotaByCurrency(withdrawCurrency)
 		tomorrow,_ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02") + " 23:59:59", time.Local)
 		rdsDo("SET", key, utils.ToJSON(withdrawQuota), "EX", tomorrow.Unix() + 1 - utils.GetTimestamp10())
-		return withdrawQuota
+
 	}
+	return withdrawQuota
 }
 
 //status为成功
