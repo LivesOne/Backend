@@ -90,7 +90,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
+	common.ActiveUser(utils.Str2Int64(uid))
 	response.Data = &responseLogin{
 		UID:    uid,
 		Expire: expire,

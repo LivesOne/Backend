@@ -18,6 +18,7 @@ type profileResponse struct {
 	BindTg        bool   `json:"bind_tg"`
 	WalletAddress string `json:"wallet_address"`
 	AvatarUrl     string `json:"avatar_url"`
+	ActiveDays    int    `json:"active_days"`
 }
 
 // getProfileHandler
@@ -61,6 +62,8 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 
 	bindWx, bindTg, creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
 	_, _, _, walletAddress, avatarUrl := common.GetUserExtendByUid(account.UID)
+	//从缓存中获取用户活跃天数信息
+	activeDays, _ := common.GetCacheUserField(account.UID, common.USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS)
 	//提前获取交易等级
 	profile := profileResponse{
 		HavePayPwd:    (len(account.PaymentPassword) > 0),
@@ -70,6 +73,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		BindTg:        bindTg,
 		WalletAddress: walletAddress,
 		AvatarUrl:     avatarUrl,
+		ActiveDays:    utils.Str2Int(activeDays),
 	}
 
 	account.ID = 0
