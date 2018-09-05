@@ -154,9 +154,6 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 			TradeNo:  perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
 			Type:     constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To:       perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
-			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
-			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
-			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
 			FromName: fromName, ToName: toName,
 			Currency: constants.TRADE_CURRENCY_LVT, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
@@ -171,9 +168,6 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 				TradeNo:  feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
 				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
 				From:     perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
-				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
-				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				FromName: fromName, ToName: feeToName,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
