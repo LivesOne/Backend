@@ -9,7 +9,6 @@ import (
 	"servlets/token"
 	"strings"
 	"utils"
-	"utils/config"
 	"utils/logger"
 	"utils/vcode"
 )
@@ -165,14 +164,6 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	level := common.GetTransUserLevel(uid)
-	limitConfig := config.GetLimitByLevel(level)
-	if !limitConfig.Withdrawal() {
-		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
-		return
-	}
-
-	//withdrawAmount := utils.FloatStrToLVTint()
 	address := strings.ToLower(secret.Address)
 	if !strings.HasPrefix(address, "0x") {
 		address = "0x" + address
