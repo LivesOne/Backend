@@ -144,8 +144,8 @@ func hmset(key string, p map[string]string) (string, error) {
 	return redis.String(rdsDo("HMSET", args...))
 }
 
-func hset(key string, fieldName,fieldValue string) (string, error) {
-	return redis.String(rdsDo("HSET", fieldName,fieldValue))
+func hset(key string, fieldName,fieldValue string) (int, error) {
+	return redis.Int(rdsDo("HSET", fieldName,fieldValue))
 }
 
 func hgetall(key string) (map[string]string, error) {
