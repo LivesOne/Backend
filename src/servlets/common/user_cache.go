@@ -2,8 +2,6 @@ package common
 
 import (
 	"errors"
-	"github.com/garyburd/redigo/redis"
-	"servlets/common"
 	"utils"
 	"utils/logger"
 )
@@ -55,7 +53,7 @@ func ttlAndInit(uid int64) error {
 		return e
 	}
 	if c < -1 {
-		u, e := common.QueryCacheUser(uid)
+		u, e := QueryCacheUser(uid)
 		if e != nil {
 			return e
 		}
