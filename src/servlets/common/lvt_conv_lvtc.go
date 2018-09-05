@@ -168,12 +168,16 @@ func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid in
 		OriginalCurrency: "LVT",
 		TargetCurrency:   "LVTC",
 	}
+	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	lvtTradeInfo := TradeInfo{
 		TradeNo:         lvtTradeNo,
 		Type:            constants.TRADE_TYPE_CONVERSION,
 		SubType:         constants.TX_SUB_TYPE_ASSET_CONV,
 		From:            from,
+		FromName:        fromName,
 		To:              to,
+		ToName:          toName,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        "LVT",
@@ -192,12 +196,16 @@ func addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo string, from, to, amount, txid i
 		OriginalCurrency: "LVT",
 		TargetCurrency:   "LVTC",
 	}
+	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	lvtcTradeInfo := TradeInfo{
 		TradeNo:         lvtcTradeNo,
 		Type:            constants.TRADE_TYPE_CONVERSION,
 		SubType:         constants.TX_SUB_TYPE_ASSET_CONV,
 		From:            from,
+		FromName:        fromName,
 		To:              to,
+		ToName:          toName,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        "LVTC",

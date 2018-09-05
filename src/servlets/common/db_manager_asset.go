@@ -1159,7 +1159,7 @@ func Withdraw(uid int64, amount string, address string, currency string) (string
 
 func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
- 	toETH := config.GetWithdrawalConfig().LvtAcceptAccount
+	toETH := config.GetWithdrawalConfig().LvtAcceptAccount
 	amountInt := utils.FloatStrToLVTint(amount)
 	feeToETH := config.GetWithdrawalConfig().EthAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
@@ -1179,7 +1179,7 @@ func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Er
 		return constants.RC_SYSTEM_ERR
 	}
 	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
-	if !ckeckEthBalance(uid, amountInt + ethFeeInt, tx) {
+	if !ckeckEthBalance(uid, amountInt+ethFeeInt, tx) {
 		tx.Rollback()
 		return constants.RC_INSUFFICIENT_BALANCE
 	}
@@ -1369,8 +1369,8 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 	}
 
 	if withdrawQuota.DailyAmountMax > 0 {
-		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?) and create_time >= ?"
-		row, err := gDBAsset.QueryRow(sql, uid, withdrawCurrency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
+		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?, ?) and create_time >= ?"
+		row, err := gDBAsset.QueryRow(sql, uid, withdrawCurrency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
 		if err != nil {
 			logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
 		}
@@ -1380,10 +1380,11 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 		dailyAmount = dailyAmount.Mul(dailyAmount, big.NewFloat(float64(withdrawCurrencyDecimal)))
 		withdrawAmountBig := big.NewFloat(withdrawAmount)
 		withdrawAmountBig = withdrawAmountBig.Mul(withdrawAmountBig, big.NewFloat(float64(withdrawCurrencyDecimal)))
+
+		withdrawAmountInt64, _ := withdrawAmountBig.Int64()
+		dailyAmountInt64, _ := dailyAmount.Int64()
+		logger.Info("daily quota out limit, withdraw amount:", withdrawAmountInt64, ",that day withdraw total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
 		if dailyAmount.Cmp(withdrawAmountBig.Add(withdrawAmountBig, big.NewFloat(float64(totalAmount)))) < 0 {
-			withdrawAmountInt64,_ := withdrawAmountBig.Int64()
-			dailyAmountInt64,_ := dailyAmount.Int64()
-			logger.Info("daily quota out limit, withdraw amount:", withdrawAmountInt64, ",that day withdraw total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
@@ -1426,21 +1427,25 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 	}
 	if reload {
 		withdrawQuota = GetWithdrawQuotaByCurrency(withdrawCurrency)
-		tomorrow,_ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02") + " 23:59:59", time.Local)
-		rdsDo("SET", key, utils.ToJSON(withdrawQuota), "EX", tomorrow.Unix() + 1 - utils.GetTimestamp10())
+		tomorrow, _ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02")+" 23:59:59", time.Local)
+		rdsDo("SET", key, utils.ToJSON(withdrawQuota), "EX", tomorrow.Unix()+1-utils.GetTimestamp10())
 	}
 	return withdrawQuota
 }
 
 //status为成功
 func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, ts int64) error {
+	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
 		OriginalTradeNo: originalTradeNo,
 		Type:            tradeType,
 		SubType:         subType,
 		From:            from,
+		FromName:        fromName,
 		To:              to,
+		ToName:          toName,
 		Amount:          amount,
 		Decimal:         8,
 		Currency:        currency,
@@ -1456,12 +1461,16 @@ func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, fr
 	withdraw := TradeWithdrawal{
 		Address: address,
 	}
+	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	tradeInfo := TradeInfo{
 		TradeNo:    tradeNo,
 		Type:       tradeType,
 		SubType:    subType,
 		From:       from,
+		FromName:   fromName,
 		To:         to,
+		ToName:     toName,
 		Amount:     amount,
 		Decimal:    8,
 		Currency:   currency,
