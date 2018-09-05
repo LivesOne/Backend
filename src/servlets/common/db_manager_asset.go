@@ -1369,8 +1369,8 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 	}
 
 	if withdrawQuota.DailyAmountMax > 0 {
-		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status <> ? and create_time >= ?"
-		row, err := gDBAsset.QueryRow(sql, uid, withdrawCurrency, constants.USER_WITHDRAWAL_REQUEST_FAIL, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
+		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?) and create_time >= ?"
+		row, err := gDBAsset.QueryRow(sql, uid, withdrawCurrency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
 		if err != nil {
 			logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
 		}
@@ -1383,7 +1383,7 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 		if dailyAmount.Cmp(withdrawAmountBig.Add(withdrawAmountBig, big.NewFloat(float64(totalAmount)))) < 0 {
 			withdrawAmountInt64,_ := withdrawAmountBig.Int64()
 			dailyAmountInt64,_ := dailyAmount.Int64()
-			logger.Info("daily quota out limit, withdraw amount:", withdrawAmountInt64, "that day withdraw total amount:", totalAmount, "daily amount:", dailyAmountInt64)
+			logger.Info("daily quota out limit, withdraw amount:", withdrawAmountInt64, ",that day withdraw total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
