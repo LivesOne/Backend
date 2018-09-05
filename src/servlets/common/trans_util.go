@@ -23,7 +23,7 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (stri
 	}
 	txh := DTTXHistory{
 		Id:         txid,
-		TradeNo:	tradeNo,
+		TradeNo:    tradeNo,
 		Status:     constants.TX_STATUS_DEFAULT,
 		Type:       txTpye,
 		From:       from,
@@ -32,7 +32,7 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (stri
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
-		Currency:	CURRENCY_LVT,
+		Currency:   CURRENCY_LVT,
 	}
 	err := InsertPending(&txh)
 	if err != nil {
@@ -50,7 +50,7 @@ func PrepareLVTCTrans(from, to int64, txTpye int, value, bizContent string) (str
 	}
 	txh := &DTTXHistory{
 		Id:         txid,
-		TradeNo: tradeNo,
+		TradeNo:    tradeNo,
 		Status:     constants.TX_STATUS_DEFAULT,
 		Type:       txTpye,
 		From:       from,
@@ -59,7 +59,7 @@ func PrepareLVTCTrans(from, to int64, txTpye int, value, bizContent string) (str
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
-		Currency:	CURRENCY_LVTC,
+		Currency:   CURRENCY_LVTC,
 	}
 	err := InsertLVTCPending(txh)
 	if err != nil {
@@ -143,18 +143,18 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
 		trade := TradeInfo{
-			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
-			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
-			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
+			TradeNo:  perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
+			Type:     constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
+			To:       perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
 			Currency: constants.TRADE_CURRENCY_LVT, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
-				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
-				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				TradeNo:  feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From:     perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
 			tradesArray = append(tradesArray, feeTrade)
@@ -196,7 +196,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	return constants.RC_OK
 }
 
-func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
+func CommitLVTCTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
 	perPending, flag := FindAndModifyLVTCPending(txid, uid, constants.TX_STATUS_COMMIT)
@@ -269,18 +269,18 @@ func CommitLVTCTrans(uidStr, txIdStr string) ( retErr constants.Error ) {
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
 		trade := TradeInfo{
-			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
-			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
-			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
+			TradeNo:  perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
+			Type:     constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
+			To:       perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
 			Currency: CURRENCY_LVTC, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
-				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
-				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				TradeNo:  feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From:     perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
 			tradesArray = append(tradesArray, feeTrade)
@@ -396,18 +396,18 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
 		trade := TradeInfo{
-			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
+			TradeNo:  tp.TradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
 			Currency: CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
-			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
-			Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
+			SubType:  tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
+			Amount:   tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
-				TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
-				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				TradeNo:  feeTradeNo, OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
+				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From:     tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
 			tradesArray = append(tradesArray, feeTrade)
@@ -425,7 +425,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 	return constants.RC_OK
 }
 
-func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string, int, int64, constants.Error) {
+func TransFeeCommit(tx *sql.Tx, from, fee int64, currency string) (int64, string, int, int64, constants.Error) {
 	// todo: lvtc/eth fee account
 	feeSubType := constants.TX_SUB_TYPE_TRANSFER_FEE
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, feeSubType)
@@ -435,10 +435,10 @@ func TransFeeCommit(tx *sql.Tx,from, fee int64, currency string) (int64, string,
 	var err = constants.RC_OK
 	var intErr = constants.TRANS_ERR_SYS
 	feeDth := &DTTXHistory{
-		Id: feeTxid, TradeNo: feeTradeNo, Status: constants.TX_STATUS_COMMIT,
-		Type: feeSubType, From: from, To: transFeeAcc, Currency: currency,
+		Id:    feeTxid, TradeNo: feeTradeNo, Status: constants.TX_STATUS_COMMIT,
+		Type:  feeSubType, From: from, To: transFeeAcc, Currency: currency,
 		Value: fee, Ts: utils.TXIDToTimeStamp13(feeTxid),
-		Code: constants.TX_CODE_SUCC, BizContent: "",
+		Code:  constants.TX_CODE_SUCC, BizContent: "",
 	}
 	switch currency {
 	case CURRENCY_ETH:
