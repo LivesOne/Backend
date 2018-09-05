@@ -14,6 +14,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"math/big"
 	"time"
+	"math"
 )
 
 const (
@@ -1379,7 +1380,7 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 		dailyAmount := big.NewFloat(withdrawQuota.DailyAmountMax)
 		dailyAmount = dailyAmount.Mul(dailyAmount,  big.NewFloat(float64(10 ^ withdrawCurrencyDecimal)))
 		withdrawAmountBig := big.NewFloat(withdrawAmount)
-		withdrawAmountBig = withdrawAmountBig.Mul(withdrawAmountBig,  big.NewFloat(float64(10 ^ withdrawCurrencyDecimal)))
+		withdrawAmountBig = withdrawAmountBig.Mul(withdrawAmountBig,  big.NewFloat(math.Pow10(withdrawCurrencyDecimal)))
 		if dailyAmount.Cmp(withdrawAmountBig.Add(withdrawAmountBig, big.NewFloat(float64(totalAmount)))) < 0 {
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
