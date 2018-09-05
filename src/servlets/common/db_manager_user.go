@@ -545,5 +545,5 @@ func SetAvatarUrl(uid int64, avatarUrl string) (int64, error) {
 
 
 func QueryCacheUser(uid int64)(map[string]string,error){
-	return gDbUser.QueryRow("select ta.uid,ta.nickname,ta.email,ta.country,ta.phone,ta.level,tae.credit_score,tae.avatar_url from account as ta left join account_extend as tae on ta.uid = tae.uid where ta.uid = ?", uid)
+	return gDbUser.QueryRow("select ta.uid,ta.nickname,ta.email,ta.country,ta.phone,ta.level,tae.credit_score,tae.avatar_url,tae.active_days from account as ta left join account_extend as tae on ta.uid = tae.uid where ta.uid = ?", uid)
 }

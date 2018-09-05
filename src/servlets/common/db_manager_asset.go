@@ -2202,3 +2202,34 @@ func ExtractIncomeEthByTx(uid, income int64, tx *sql.Tx) bool {
 
 	return true
 }
+
+
+func GetMinerDays(uid int64)[]int{
+	sql := `
+		select days from user_reward_lvtc where uid = ?
+		union all
+		select days from user_reward where uid = ?
+
+	`
+	rows := gDBAsset.Query(sql,uid,uid)
+	if len(rows) > 0 {
+		r := make([]int ,0)
+		for _,v := range rows {
+			r = append(r,utils.Str2Int(v["days"]))
+		}
+		return r
+	}
+	return nil
+}
+
+func MoveMinerDays(uid int64)int{
+	dayss := GetMinerDays(uid)
+	if dayss != nil || len(dayss) > 0 {
+		for _,v := range dayss {
+			if v > 0 {
+				return v + 1
+			}
+		}
+	}
+	return 1
+}

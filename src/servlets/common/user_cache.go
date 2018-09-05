@@ -19,6 +19,7 @@ const (
 	USER_CACHE_REDIS_FIELD_NAME_LEVEL         = "level"
 	USER_CACHE_REDIS_FIELD_NAME_CREDITR_SCORE = "credit_score"
 	USER_CACHE_REDIS_FIELD_NAME_AVATAR_URL    = "avatar_url"
+	USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS   = "active_days"
 )
 
 func GetCacheUser(uid int64) (map[string]string, error) {
