@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 	"utils/logger"
+	"reflect"
 )
 
 const (
@@ -269,4 +270,56 @@ func GetLockHashrate(lvtcScale,monnth int, value string) int {
 		}
 	}
 	return constants.ASSET_LOCK_MAX_VALUE
+}
+
+
+
+func StructConvMap(p interface{}) map[string]string {
+	v,t := GetStructValueAndType(p)
+
+	var data = make(map[string]string)
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		name := f.Tag.Get("json")
+		if name == "-" {
+			continue
+		}
+		if len(name) == 0 {
+			name = f.Name
+		}
+
+		value :=  convStructField(v.Field(i).Interface())
+		if nss := strings.Split(name,",");len(nss)>1{
+			name = nss[0]
+			if nss[1] == "omitempty" {
+				if len(value) == 0 {
+					continue
+				}
+			}
+		}
+		data[name] = value
+	}
+	return data
+}
+
+func GetStructValueAndType(p interface{})(reflect.Value,reflect.Type){
+	v := reflect.ValueOf(p)
+	if v.Kind() == reflect.Ptr {
+		v = reflect.Indirect(v)
+	}
+	return v,v.Type()
+}
+
+
+func convStructField(p interface{}) string {
+	switch p.(type) {
+	case int:
+		return Int2Str(p.(int))
+	case int64:
+		return Int642Str(p.(int64))
+	case float64:
+		return strconv.FormatFloat(p.(float64), 'f', 8, 64)
+	default:
+		return p.(string)
+	}
 }
