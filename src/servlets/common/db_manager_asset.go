@@ -1436,7 +1436,7 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 //status为成功
 func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, ts int64) error {
 	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
-	toName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
 		OriginalTradeNo: originalTradeNo,
@@ -1462,7 +1462,7 @@ func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, fr
 		Address: address,
 	}
 	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
-	toName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	tradeInfo := TradeInfo{
 		TradeNo:    tradeNo,
 		Type:       tradeType,
