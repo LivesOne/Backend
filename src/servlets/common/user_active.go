@@ -23,7 +23,7 @@ func queryUserActiveDays(uid int64)(bool,int){
 	}
 
 	if c == 0 {
-		tx.Exec("insert into account_extend (uid,credit_score) values (?,70,?)",uid)
+		tx.Exec("insert into account_extend (uid,credit_score) values (?,70)",uid)
 		days = MoveMinerDays(uid)
 	}else{
 		row := tx.QueryRow("select active_days,update_time from account_extend where uid = ?",uid)
@@ -67,4 +67,13 @@ func ActiveUser(uid int64){
 		SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS,utils.Int2Str(days))
 		setAndExpire(key,1,int(utils.GetTomorrowStartTs10()))
 	}
+}
+
+func QueryUserActiveDaysByCache(uid int64) int64 {
+	dayStr, err := GetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS)
+	if err != nil {
+		logger.Info("get uid:", uid, " nick name err,", err)
+		return 0
+	}
+	return utils.Str2Int64(dayStr)
 }
