@@ -9,6 +9,7 @@ import (
 const (
 	USER_CACHE_REDIS_KEY_PROXY                = "cache:user:info:"
 	INFO_OK                                   = "OK"
+	HSET_OK                                   = 1
 	USER_CACHE_EXPIRE_30DAY                   = 3600 * 24 * 30
 	USER_CACHE_REDIS_FIELD_NAME_UID           = "uid"
 	USER_CACHE_REDIS_FIELD_NAME_NICKNAME      = "nickname"
@@ -39,7 +40,7 @@ func SetCacheUserField(uid int64, fieldName, fieldValue string) bool {
 		return false
 	}
 	info, err := hset(buildKey(uid), fieldName, fieldValue)
-	if err != nil || info != INFO_OK {
+	if err != nil || info != HSET_OK {
 		return false
 	}
 	return true
@@ -65,7 +66,7 @@ func ttlAndInit(uid int64) error {
 			return err
 		}
 		if info != INFO_OK {
-			return errors.New("can save user to redis by uid " + utils.Int642Str(uid))
+			return errors.New("can not save user to redis by uid " + utils.Int642Str(uid))
 		}
 		rdsExpire(key, USER_CACHE_EXPIRE_30DAY)
 	}

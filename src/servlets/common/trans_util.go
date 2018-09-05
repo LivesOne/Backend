@@ -142,19 +142,39 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
+		fromName, err := GetCacheUserField(perPending.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		if err != nil {
+			logger.Info("get uid:", perPending.From, " nick name err,", err)
+		}
+		toName, err := GetCacheUserField(perPending.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		if err != nil {
+			logger.Info("get uid:", perPending.To, " nick name err,", err)
+		}
 		trade := TradeInfo{
 			TradeNo:  perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
 			Type:     constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To:       perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
+			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
+			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
+			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
+			FromName: fromName, ToName: toName,
 			Currency: constants.TRADE_CURRENCY_LVT, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
+			feeToName, err := GetCacheUserField(transFeeAcc, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+			if err != nil {
+				logger.Info("get uid:", transFeeAcc, " nick name err,", err)
+			}
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
 				TradeNo:  feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
 				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
 				From:     perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				FromName: fromName, ToName: feeToName,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
 			tradesArray = append(tradesArray, feeTrade)
@@ -268,19 +288,33 @@ func CommitLVTCTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
+		fromName, err := GetCacheUserField(perPending.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		if err != nil {
+			logger.Info("get uid:", perPending.From, " nick name err,", err)
+		}
+		toName, err := GetCacheUserField(perPending.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		if err != nil {
+			logger.Info("get uid:", perPending.To, " nick name err,", err)
+		}
 		trade := TradeInfo{
-			TradeNo:  perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
-			Type:     constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
-			To:       perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
+			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
+			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
+			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
+			FromName: fromName, ToName: toName,
 			Currency: CURRENCY_LVTC, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
+			feeToName, err := GetCacheUserField(transFeeAcc, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+			if err != nil {
+				logger.Info("get uid:", transFeeAcc, " nick name err,", err)
+			}
 			feeTrade := TradeInfo{
-				TradeNo:  feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
-				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From:     perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				FromName: fromName, ToName: feeToName,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
 			tradesArray = append(tradesArray, feeTrade)
@@ -395,19 +429,33 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
+		fromName, err := GetCacheUserField(tp.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		if err != nil {
+			logger.Info("get uid:", tp.From, " nick name err,", err)
+		}
+		toName, err := GetCacheUserField(tp.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		if err != nil {
+			logger.Info("get uid:", tp.To, " nick name err,", err)
+		}
 		trade := TradeInfo{
-			TradeNo:  tp.TradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
+			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
 			Currency: CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
-			SubType:  tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
-			Amount:   tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
+			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
+			FromName: fromName, ToName: toName,
+			Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
+			feeToName, err := GetCacheUserField(transFeeAcc, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+			if err != nil {
+				logger.Info("get uid:", transFeeAcc, " nick name err,", err)
+			}
 			feeTrade := TradeInfo{
-				TradeNo:  feeTradeNo, OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
-				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From:     tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
+				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				FromName: fromName, ToName: feeToName,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
 			tradesArray = append(tradesArray, feeTrade)
