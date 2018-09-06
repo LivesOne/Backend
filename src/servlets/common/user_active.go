@@ -52,7 +52,7 @@ func queryUserActiveDays(uid int64)(bool,int){
 
 
 func ActiveUser(uid int64){
-	key := USER_CACHE_REDIS_KEY_PROXY + utils.Int642Str(uid)
+	key := USER_ACTIVE_REDIS_KEY_PROXY + utils.Int642Str(uid)
 	c,e := ttl(key)
 	if e !=nil {
 		logger.Error("ttl redis error",e.Error())
