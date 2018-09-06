@@ -18,6 +18,7 @@ func queryUserActiveDays(uid int64)(bool,int){
 	}
 	row := tx.QueryRow("select count(1) as c from account_extend where uid = ?",uid)
 	if err := row.Scan(&c);err != nil {
+		logger.Error("select count error",err.Error())
 		tx.Rollback()
 		return false,0
 	}
@@ -67,6 +68,7 @@ func ActiveUser(uid int64){
 		SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS,utils.Int2Str(days))
 		ts := utils.GetTomorrowStartTs10() - utils.GetTimestamp10()
 		setAndExpire(key,1,int(ts))
+		logger.Info("save user active days key:",key,"expire",ts)
 	}
 }
 
