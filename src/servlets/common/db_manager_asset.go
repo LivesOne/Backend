@@ -863,7 +863,30 @@ func RemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int64) (
 		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
-
+	fromName, err := GetCacheUserField(txh.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	if err != nil {
+		logger.Info("get uid:", txh.From, " nick name err,", err)
+	}
+	toName, err := GetCacheUserField(txh.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	if err != nil {
+		logger.Info("get uid:", txh.To, " nick name err,", err)
+	}
+	penaltyTradeNo := GenerateTradeNo(constants.TRADE_TYPE_LIQUIDATED_DAMAGES,
+		constants.TX_SUB_TYPE_LOCKD_LIQUIDATED_DAMAGES)
+	trade := TradeInfo{
+		TradeNo:  penaltyTradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
+		Type:     constants.TRADE_TYPE_LIQUIDATED_DAMAGES,
+		SubType: constants.TX_SUB_TYPE_LOCKD_LIQUIDATED_DAMAGES,
+		From: txh.From, To: txh.To, FromName: fromName, ToName: toName,
+		Decimal: constants.TRADE_DECIMAIL, Amount: txh.Value,
+		Currency: constants.TRADE_CURRENCY_LVTC, CreateTime: txh.Ts, FinishTime: txh.Ts,
+	}
+	err = InsertTradeInfo(trade)
+	if err != nil {
+		tx.Rollback()
+		logger.Error("insert mongo db:dt_trades error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
 	err = tx.Commit()
 	if err != nil {
 		logger.Error("mysql commit  error ", err.Error())
