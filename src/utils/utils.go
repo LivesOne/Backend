@@ -327,7 +327,7 @@ func convStructField(p interface{}) string {
 
 func GetTomorrowStartTs10()int64{
 	k := time.Now().UTC()
-	d, _ := time.ParseDuration("+1d")
+	d, _ := time.ParseDuration("+24h")
 	k = k.Add(d)
 	return GetTimestamp10ByTime(GetDayStart(GetTimestamp13ByTime(k)))
 }
