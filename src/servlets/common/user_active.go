@@ -65,7 +65,8 @@ func ActiveUser(uid int64){
 
 	if ok,days := queryUserActiveDays(uid);ok{
 		SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS,utils.Int2Str(days))
-		setAndExpire(key,1,int(utils.GetTomorrowStartTs10()))
+		ts := utils.GetTomorrowStartTs10() - utils.GetTimestamp10()
+		setAndExpire(key,1,int(ts))
 	}
 }
 
