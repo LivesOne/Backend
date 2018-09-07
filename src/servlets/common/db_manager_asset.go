@@ -1387,7 +1387,7 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 	if withdrawQuota == nil {
 		return float64(0), constants.RC_PARAM_ERR
 	}
-	if withdrawQuota.SingleAmountMin > 0 && withdrawQuota.SingleAmountMin < withdrawAmount {
+	if withdrawQuota.SingleAmountMin > 0 && withdrawQuota.SingleAmountMin > withdrawAmount {
 		return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 
