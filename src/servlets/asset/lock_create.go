@@ -116,10 +116,10 @@ func (handler *lockCreateHandler) Handle(request *http.Request, writer http.Resp
 
 	uid := utils.Str2Int64(uidString)
 	//校验用户等级是否可以锁仓
-	if !common.CanLockAsset(uid) {
-		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
-		return
-	}
+	//if !common.CanLockAsset(uid) {
+	//	response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
+	//	return
+	//}
 
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {

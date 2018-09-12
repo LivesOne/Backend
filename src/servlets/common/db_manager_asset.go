@@ -4,16 +4,16 @@ import (
 	"database/sql"
 	sqlBase "database/sql"
 	"errors"
+	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/shopspring/decimal"
+	"math/big"
 	"servlets/constants"
+	"time"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"github.com/shopspring/decimal"
-	"github.com/garyburd/redigo/redis"
-	"math/big"
-	"time"
 )
 
 const (
@@ -874,10 +874,10 @@ func RemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int64) (
 	penaltyTradeNo := GenerateTradeNo(constants.TRADE_TYPE_LIQUIDATED_DAMAGES,
 		constants.TX_SUB_TYPE_LOCKD_LIQUIDATED_DAMAGES)
 	trade := TradeInfo{
-		TradeNo:  penaltyTradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
-		Type:     constants.TRADE_TYPE_LIQUIDATED_DAMAGES,
+		TradeNo: penaltyTradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
+		Type:    constants.TRADE_TYPE_LIQUIDATED_DAMAGES,
 		SubType: constants.TX_SUB_TYPE_LOCKD_LIQUIDATED_DAMAGES,
-		From: txh.From, To: txh.To, FromName: fromName, ToName: toName,
+		From:    txh.From, To: txh.To, FromName: fromName, ToName: toName,
 		Decimal: constants.TRADE_DECIMAIL, Amount: txh.Value,
 		Currency: constants.TRADE_CURRENCY_LVTC, CreateTime: txh.Ts, FinishTime: txh.Ts,
 	}
@@ -1182,9 +1182,9 @@ func Withdraw(uid int64, amount string, address string, currency string) (string
 
 func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
-	toETH := config.GetWithdrawalConfig().LvtAcceptAccount
+	toETH := config.GetWithdrawalConfig().WithdrawalAcceptAccount
 	amountInt := utils.FloatStrToLVTint(amount)
-	feeToETH := config.GetWithdrawalConfig().EthAcceptAccount
+	feeToETH := config.GetWithdrawalConfig().FeeAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 	txId := GenerateTxID()
 	txIdFee := GenerateTxID()
@@ -1288,7 +1288,7 @@ func ethTransfer(txId, from, to, amount, timestamp int64, tradeNo string, tradeT
 func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
 	txId := GenerateTxID()
-	toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
+	toLvt := config.GetWithdrawalConfig().WithdrawalAcceptAccount
 	amountInt := utils.FloatStrToLVTint(amount)
 	ethFee, err := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), constants.TRADE_CURRENCY_LVTC, constants.TRADE_CURRENCY_ETH, CONV_LVT)
 	if err.Rc != constants.RC_OK.Rc {
@@ -1321,7 +1321,7 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 		return constants.RC_SYSTEM_ERR
 	}
 
-	toEth := config.GetWithdrawalConfig().EthAcceptAccount
+	toEth := config.GetWithdrawalConfig().FeeAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFeeInt, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if txIdFee <= 0 {
@@ -1387,7 +1387,7 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 	if withdrawQuota == nil {
 		return float64(0), constants.RC_PARAM_ERR
 	}
-	if withdrawQuota.SingleAmountMin > 0 && withdrawQuota.SingleAmountMin < withdrawAmount {
+	if withdrawQuota.SingleAmountMin > 0 && withdrawQuota.SingleAmountMin > withdrawAmount {
 		return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 
@@ -1473,13 +1473,14 @@ func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string,
 		Decimal:         8,
 		Currency:        currency,
 		CreateTime:      ts,
+		FinishTime:      ts,
 		Status:          constants.TRADE_STATUS_SUCC,
 		Txid:            txid,
 	}
 	return InsertTradeInfo(tradeInfo)
 }
 
-//tatus为处理中
+//status为处理中
 func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, from int64, to int64, address string, amount int64, currency string, FeeTradeNo string, ts int64) error {
 	withdraw := TradeWithdrawal{
 		Address: address,
@@ -2235,29 +2236,28 @@ func ExtractIncomeEthByTx(uid, income int64, tx *sql.Tx) bool {
 	return true
 }
 
-
-func GetMinerDays(uid int64)[]int{
+func GetMinerDays(uid int64) []int {
 	sql := `
 		select days from user_reward_lvtc where uid = ?
 		union all
 		select days from user_reward where uid = ?
 
 	`
-	rows := gDBAsset.Query(sql,uid,uid)
+	rows := gDBAsset.Query(sql, uid, uid)
 	if len(rows) > 0 {
-		r := make([]int ,0)
-		for _,v := range rows {
-			r = append(r,utils.Str2Int(v["days"]))
+		r := make([]int, 0)
+		for _, v := range rows {
+			r = append(r, utils.Str2Int(v["days"]))
 		}
 		return r
 	}
 	return nil
 }
 
-func MoveMinerDays(uid int64)int{
+func MoveMinerDays(uid int64) int {
 	dayss := GetMinerDays(uid)
 	if dayss != nil || len(dayss) > 0 {
-		for _,v := range dayss {
+		for _, v := range dayss {
 			if v > 0 {
 				return v + 1
 			}
