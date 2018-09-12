@@ -12,7 +12,6 @@ type WithdrawalConfig struct {
 	FeeAcceptAccount               int64
 	WithdrawalCardEthAcceptAccount int64
 	WithdrawalCardEthUnitPrice     float64
-	WithdrawalFromAddress          string
 }
 
 var withdrawalConfig *WithdrawalConfig
@@ -41,8 +40,7 @@ func (cfg *WithdrawalConfig) isValid() bool {
 	return cfg.WithdrawalAcceptAccount > 0 &&
 		cfg.FeeAcceptAccount > 0 &&
 		cfg.WithdrawalCardEthUnitPrice > 0 &&
-		cfg.WithdrawalCardEthAcceptAccount > 0 &&
-		len(cfg.WithdrawalFromAddress) > 0
+		cfg.WithdrawalCardEthAcceptAccount > 0
 }
 
 func GetWithdrawalConfig() *WithdrawalConfig {
