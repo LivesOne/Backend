@@ -57,6 +57,8 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+
+	log.Info("user login cache token-hash",httpHeader.TokenHash,"uid",uidString,"key",aesKey)
 	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset reward extract: get info from cache error:", err)
 		response.SetResponseBase(err)

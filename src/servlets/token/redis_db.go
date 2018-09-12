@@ -131,7 +131,9 @@ func (r *RedisDB) GetAll(hash string) (uid, key, token string, ret int) {
 		// logger.Info("------------------------, read cache error: ERR_INT_TK_NOTEXISTS")
 		return "", "", "", constants.ERR_INT_TK_NOTEXISTS
 	} else {
-		return reply["uid"], reply["key"], reply["token"], constants.ERR_INT_OK
+		uid,key,token := reply["uid"], reply["key"], reply["token"]
+		logger.Info("user login cache token-hash",hash,"uid",uid,"key",key)
+		return uid,key,token, constants.ERR_INT_OK
 	}
 
 }
