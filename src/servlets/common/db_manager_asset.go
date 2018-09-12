@@ -1182,7 +1182,7 @@ func Withdraw(uid int64, amount string, address string, currency string) (string
 
 func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
-	toETH := config.GetWithdrawalConfig().LvtAcceptAccount
+	toETH := config.GetWithdrawalConfig().EthWithdrawAcceptAccount
 	amountInt := utils.FloatStrToLVTint(amount)
 	feeToETH := config.GetWithdrawalConfig().EthAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)

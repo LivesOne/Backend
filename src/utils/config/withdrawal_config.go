@@ -10,6 +10,7 @@ import (
 type WithdrawalConfig struct {
 	LvtAcceptAccount               int64
 	EthAcceptAccount               int64
+	EthWithdrawAcceptAccount       int64
 	WithdrawalCardEthAcceptAccount int64
 	WithdrawalEthFee               float64
 	WithdrawalCardEthUnitPrice     float64
