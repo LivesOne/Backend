@@ -1,7 +1,6 @@
 {
-  "LvtAcceptAccount": 181875000,
-  "EthAcceptAccount": 181875000,
-  "EthWithdrawAcceptAccount": 181875000,
+  "WithdrawalAcceptAccount": 181875000,
+  "FeeAcceptAccount": 181875000,
   "WithdrawalEthFee": 0.000001,
   "WithdrawalCardEthUnitPrice": 0.00001,
   "WithdrawalCardEthAcceptAccount": 181875000,

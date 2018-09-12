@@ -1182,9 +1182,9 @@ func Withdraw(uid int64, amount string, address string, currency string) (string
 
 func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
-	toETH := config.GetWithdrawalConfig().EthWithdrawAcceptAccount
+	toETH := config.GetWithdrawalConfig().WithdrawalAcceptAccount
 	amountInt := utils.FloatStrToLVTint(amount)
-	feeToETH := config.GetWithdrawalConfig().EthAcceptAccount
+	feeToETH := config.GetWithdrawalConfig().FeeAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 	txId := GenerateTxID()
 	txIdFee := GenerateTxID()
@@ -1288,7 +1288,7 @@ func ethTransfer(txId, from, to, amount, timestamp int64, tradeNo string, tradeT
 func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
 	txId := GenerateTxID()
-	toLvt := config.GetWithdrawalConfig().LvtAcceptAccount
+	toLvt := config.GetWithdrawalConfig().WithdrawalAcceptAccount
 	amountInt := utils.FloatStrToLVTint(amount)
 	ethFee, err := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), constants.TRADE_CURRENCY_LVTC, constants.TRADE_CURRENCY_ETH, CONV_LVT)
 	if err.Rc != constants.RC_OK.Rc {
@@ -1321,7 +1321,7 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 		return constants.RC_SYSTEM_ERR
 	}
 
-	toEth := config.GetWithdrawalConfig().EthAcceptAccount
+	toEth := config.GetWithdrawalConfig().FeeAcceptAccount
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 	txIdFee, e := EthTransCommit(-1, uid, toEth, ethFeeInt, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if txIdFee <= 0 {
