@@ -112,13 +112,13 @@ func upTwo(acc *Account) (bool, int) {
 
 /**
 3
-miner_days>90
+miner_days>100
 lock_asset:month>=3,value>=20w
 */
 func upThree(acc *Account) (bool, int) {
 	// check miner days
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if QueryUserActiveDaysByCache(acc.UID) >= 90 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
+	if QueryUserActiveDaysByCache(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(200000) / lvtcScale
 		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
