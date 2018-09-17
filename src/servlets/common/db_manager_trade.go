@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	TRADES = "dt_trades"
+	TRADES = "dt_trade"
 )
 
 var sessionSafe = &mgo.Safe{WMode: "majority"}
