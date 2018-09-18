@@ -231,9 +231,9 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	case common.CURRENCY_ETH:
 		txid, _, resErr = common.PrepareETHTrans(from, to, secret.Value, constants.TX_TYPE_TRANS, bizContentStr)
 	case common.CURRENCY_LVT:
-		txid, resErr = common.PrepareLVTTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
+		txid, resErr = common.PrepareLVTTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr, bizContent.Remark)
 	case common.CURRENCY_LVTC:
-		txid, resErr = common.PrepareLVTCTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr)
+		txid, resErr = common.PrepareLVTCTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr, bizContent.Remark)
 	}
 	if resErr == constants.RC_OK {
 		response.Data = commonTransPrepareResData{

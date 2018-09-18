@@ -14,7 +14,7 @@ const (
 	TRANS_TIMEOUT = 10 * 1000
 )
 
-func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (string, constants.Error) {
+func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent, remark string) (string, constants.Error) {
 	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 	txid := GenerateTxID()
 	if txid == -1 {
@@ -32,6 +32,7 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (stri
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
+		Remark:		remark,
 		Currency:   CURRENCY_LVT,
 	}
 	err := InsertPending(&txh)
@@ -41,7 +42,7 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent string) (stri
 	}
 	return utils.Int642Str(txid), constants.RC_OK
 }
-func PrepareLVTCTrans(from, to int64, txTpye int, value, bizContent string) (string, constants.Error) {
+func PrepareLVTCTrans(from, to int64, txTpye int, value, bizContent, remark string) (string, constants.Error) {
 	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, constants.TX_TYPE_TRANS)
 	txid := GenerateTxID()
 	if txid == -1 {
@@ -59,6 +60,7 @@ func PrepareLVTCTrans(from, to int64, txTpye int, value, bizContent string) (str
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
+		Remark:		remark,
 		Currency:   CURRENCY_LVTC,
 	}
 	err := InsertLVTCPending(txh)
@@ -154,7 +156,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 			TradeNo:  perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
 			Type:     constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To:       perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
-			FromName: fromName, ToName: toName,
+			FromName: fromName, ToName: toName, Subject: bizContent.Remark,
 			Currency: constants.TRADE_CURRENCY_LVT, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
@@ -294,7 +296,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) (retErr constants.Error) {
 			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
 			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
 			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
-			FromName: fromName, ToName: toName,
+			FromName: fromName, ToName: toName, Subject: bizContent.Remark,
 			Currency: CURRENCY_LVTC, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
@@ -435,7 +437,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
 			Currency: CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
 			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
-			FromName: fromName, ToName: toName,
+			FromName: fromName, ToName: toName, Subject: bizContent.Remark,
 			Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
