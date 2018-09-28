@@ -1,11 +1,11 @@
 package asset
 
 import (
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"utils"
-	"gopkg.in/mgo.v2/bson"
 )
 
 
@@ -78,7 +78,6 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	m := make([]rewardMiner, 0)
 
 	t := re.Lastmodify
 	nt := utils.GetTimestamp13()
@@ -88,7 +87,6 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 		Yesterday: "0.00000000",
 		Ts:        t,
 		Days:      re.Days,
-		Miner:     m,
 	}
 
 	//如果时间戳不是昨天，返回0
@@ -103,16 +101,15 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 		records := common.QueryTrades(q, 1)
 
 		//获取工资明细miner
-		m = buildMinerData(records)
+		rData.Miner = buildMinerData(records)
 	}
-	response.Data =rData
+	response.Data = rData
 
 }
 
 
 func buildMinerData(records []common.TradeInfo) []rewardMiner {
 	m := make([]rewardMiner, 0)
-
 	if records != nil && len(records) > 0 {
 		for _, v := range records {
 			if len(v.Miner) > 0 {
