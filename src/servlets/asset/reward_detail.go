@@ -97,7 +97,7 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 
 		q := bson.M{
 			"to":intUid,
-			"type":constants.TRADE_TYPE_REWARD,
+			"type":constants.TRADE_TYPE_MINER,
 			"sub_type":constants.TX_SUB_TYPE_WAGE,
 		}
 		records := common.QueryTrades(q, 1)
