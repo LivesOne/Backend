@@ -2,7 +2,7 @@ package constants
 
 const (
 	//trade type
-	TRADE_TYPE_BASE               = iota
+	TRADE_TYPE_BASE = iota
 	TRADE_TYPE_MINER
 	TRADE_TYPE_RECHARGE
 	TRADE_TYPE_WITHDRAWAL
@@ -14,7 +14,7 @@ const (
 	TRADE_TYPE_REWARD
 	TRADE_TYPE_ADVERTISING_FEE
 	TRADE_TYPE_CONVERSION
-	TRADE_TYPE_OTHER              = 99
+	TRADE_TYPE_OTHER = 99
 )
 
 const (
@@ -31,11 +31,10 @@ const (
 const (
 	//trade sub type
 	TX_SUB_TYPE_ALL                         = 0
-	TX_SUB_TYPE_WAGE                       = 1
+	TX_SUB_TYPE_WAGE                        = 1
 	TX_SUB_TYPE_PRIVATE_PLACEMENT           = 2
 	TX_SUB_TYPE_ACTIVITY_REWARD             = 3
 	TX_SUB_TYPE_TRANS                       = 4
-	TX_SUB_TYPE_REWARD                      = 1
 	TX_SUB_TYPE_RECEIVABLES                 = 5
 	TX_SUB_TYPE_LOCKD_LIQUIDATED_DAMAGES    = 6
 	TX_SUB_TYPE_MERCHANT_LIQUIDATED_DAMAGES = 8
@@ -55,9 +54,9 @@ const (
 	TX_SUB_TYPE_BUY_FEE                     = 27
 	TX_SUB_TYPE_MERCHANT_FEE                = 28
 	TX_SUB_TYPE_ASSET_CONV_FEE              = 29
-	TX_SUB_TYPE_WAGE_OF_DAY_PAY_SUM        = 198
-	TX_SUB_TYPE_WAGE_OF_DAY_PAY_DESTROY    = 199
-	)
+	TX_SUB_TYPE_WAGE_OF_DAY_PAY_SUM         = 198
+	TX_SUB_TYPE_WAGE_OF_DAY_PAY_DESTROY     = 199
+)
 
 const (
 	//other

@@ -8,13 +8,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type tradeParam struct {
-	Txid  string `json:"txid"`
-	Type  int    `json:"type"`
-	Begin int64  `json:"begin"`
-	End   int64  `json:"end"`
-	Max   int    `json:"max"`
-}
 
 type rewardDetailParam struct {
 	Uid string `json:"uid"`
@@ -85,92 +78,37 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	yesterday := "0.00000000"
 	m := make([]rewardMiner, 0)
 
 	t := re.Lastmodify
 	nt := utils.GetTimestamp13()
 
-	//如果时间戳不是昨天，返回0
-	if utils.IsToday(t, nt) {
-		yesterday = utils.LVTintToFloatStr(re.Yesterday)
-
-		tradeParam := &tradeParam{
-			Type: constants.TX_TYPE_REWARD ,
-		}
-
-		q := buildTradeQuery(intUid, tradeParam)
-		records := common.QueryTrades(q, 1)
-
-		//获取工资明细miner
-		m = buildMinerData(records)
-	}
-	response.Data = rewardDetailResData{
+	rData := &rewardDetailResData{
 		Total:     utils.LVTintToFloatStr(re.Total),
-		Yesterday: yesterday,
+		Yesterday: "0.00000000",
 		Ts:        t,
 		Days:      re.Days,
 		Miner:     m,
 	}
 
-}
+	//如果时间戳不是昨天，返回0
+	if utils.IsToday(t, nt) {
+		rData.Yesterday = utils.LVTintToFloatStr(re.Yesterday)
 
-func buildTradeQuery(uid int64, param *tradeParam) bson.M {
-	query := bson.M{}
+		q := bson.M{
+			"to":intUid,
+			"type":constants.TRADE_TYPE_REWARD,
+			"sub_type":constants.TX_SUB_TYPE_WAGE,
+		}
+		records := common.QueryTrades(q, 1)
 
-	if len(param.Txid) > 0 {
-		query["txid"] = utils.Str2Int64(param.Txid)
-	} else {
-		//判断时间参数
-		ts := []bson.M{}
-		if param.Begin > 0 {
-			begin := bson.M{
-				"txid": bson.M{
-					"$gt": utils.TimestampToTxid(param.Begin, 0),
-				},
-			}
-			ts = append(ts, begin)
-		}
-		if param.End > 0 {
-			//end +1 毫秒 为了保证当前毫秒数的记录可以查出来  后22位置0 +1毫秒后的记录不会查出
-			end := bson.M{
-				"txid": bson.M{
-					"$lt": utils.TimestampToTxid(param.End+1, 0),
-				},
-			}
-			ts = append(ts, end)
-		}
-		if len(ts) > 0 {
-			query["$and"] = ts
-		}
-		//判断查询类型
-		//生成不同的查询条件
-		switch {
-		case param.Type == constants.TX_TYPE_REWARD ||
-			param.Type == constants.TX_TYPE_ACTIVITY_REWARD ||
-			param.Type == constants.TX_TYPE_PRIVATE_PLACEMENT:
-			query["to"] = uid
-			query["type"] = param.Type
-		case param.Type == constants.TX_TYPE_RECEIVABLES:
-			query["to"] = uid
-			query["type"] = constants.TX_TYPE_TRANS
-		case param.Type == constants.TX_TYPE_TRANS:
-			query["from"] = uid
-			query["type"] = constants.TX_TYPE_TRANS
-		default:
-			query["$or"] = []bson.M{
-				bson.M{
-					"from": uid,
-				},
-				bson.M{
-					"to": uid,
-				},
-			}
-		}
+		//获取工资明细miner
+		m = buildMinerData(records)
 	}
+	response.Data =rData
 
-	return query
 }
+
 
 func buildMinerData(records []common.TradeInfo) []rewardMiner {
 	m := make([]rewardMiner, 0)

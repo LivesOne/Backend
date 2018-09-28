@@ -50,7 +50,7 @@ func QueryTrades(query interface{}, limit int) []TradeInfo {
 	logger.Debug("mongo query :", utils.ToJSON(query))
 	collection := session.DB(tradeConfig.DBDatabase).C(TRADES)
 	res := make([]TradeInfo,0)
-	err := collection.Find(query).Sort("-txid").Limit(limit).All(&res)
+	err := collection.Find(query).Sort("-finish_time").Limit(limit).All(&res)
 	if err != nil && err != mgo.ErrNotFound {
 		logger.Error("query mongo db error ", err.Error())
 		return nil
