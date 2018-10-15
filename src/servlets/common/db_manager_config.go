@@ -133,3 +133,18 @@ func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
 	withdrawQuota.Fee = withdrawFeeArray
 	return &withdrawQuota
 }
+
+func QueryCurrencyPrice(currency, currency2 string) (string, string, error) {
+	row, err := gDBConfig.QueryRow(
+		"select format(current,8) as cur,format(average,8) as avg from dt_currency_price where currency=? and currency2 = ?",
+		currency, currency2)
+	if err != nil {
+		logger.Warn("query currency price error:", err)
+		return "", "", err
+	}
+	if row != nil {
+		return row["cur"], row["avg"], nil
+	}
+	logger.Info("currency price not found:", currency, ",", currency2)
+	return "", "", nil
+}

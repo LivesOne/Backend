@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/shopspring/decimal"
 	"io/ioutil"
 	"math"
@@ -330,4 +331,10 @@ func GetTomorrowStartTs10()int64{
 	d, _ := time.ParseDuration("+24h")
 	k = k.Add(d)
 	return GetTimestamp10ByTime(GetDayStart(GetTimestamp13ByTime(k)))
+}
+
+func Scientific2Str(srcStr string) string {
+	var new float64
+	fmt.Sscanf(srcStr, "%e", &new)
+	return strconv.FormatFloat(new,'f',-1,64)
 }

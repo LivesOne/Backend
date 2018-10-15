@@ -160,4 +160,6 @@ const (
 	ASSET_COMMON_TRANS_COMMIT= "/asset/v1/transfer/commit"
 
 	ASSET_COMMON_TRANS_RESULT= "/asset/v1/transfer/result"
+
+	CURRENCY_PRICE_QUERY = "/config/v1/currency/price"
 )
