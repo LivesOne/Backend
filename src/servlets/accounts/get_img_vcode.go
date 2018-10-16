@@ -56,17 +56,17 @@ func (handler *getImgVCodeHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
-	vcodeRes := vcode.GetImgVCode(params.Param.Width,
+	vcodeRes, _ := vcode.GetImgVCode(params.Param.Width,
 		params.Param.Height,
 		params.Param.Length,
 		params.Param.Expire)
 
-	if vcodeRes != nil && vcodeRes.Ret == 0 {
+	if vcodeRes != nil && vcodeRes.Code == 0 {
 		response.Data = &responseImg{
-			ImgId:   vcodeRes.Data.VCode.Id,
-			ImgSize: vcodeRes.Data.VCode.Size,
-			ImgData: vcodeRes.Data.ImgBase,
-			Expire:  vcodeRes.Data.VCode.Expire,
+			ImgId:   vcodeRes.Id,
+			ImgSize: vcodeRes.Size,
+			ImgData: vcodeRes.Data,
+			Expire:  vcodeRes.Expire,
 		}
 	} else {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)

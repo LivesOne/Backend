@@ -102,7 +102,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 					}
 				}
 			case EMAIL:
-				svrRes := vcode.SendMailVCode(requestData.Param.EMail, requestData.Param.Ln, requestData.Param.Expire)
+				svrRes, _ := vcode.SendMailVCode(requestData.Param.EMail, requestData.Param.Ln, requestData.Param.Expire)
 				if svrRes != nil {
 					response.Data = &sendVCodeRes{
 						Vcode_id: svrRes.Id,

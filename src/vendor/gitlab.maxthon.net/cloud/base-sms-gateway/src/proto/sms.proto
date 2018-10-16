@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package smspb;
+
+service SmsService {
+    rpc SmsSendMsg(MsgRequest) returns (SmsResponse) {}
+    rpc SmsSendVoiceMsg(VoiceMsgRequest) returns (SmsResponse) {}
+    rpc SmsValidate(ValidateRequest) returns (SmsResponse) {}
+}
+
+message MsgRequest {
+    int32 country = 1;
+    string phone = 2;
+    string message = 3;
+    string ip = 4;
+}
+
+message VoiceMsgRequest {
+    string ip = 1;
+    int32 country = 2;
+    string lan = 3;
+    string phone = 4;
+    int32 vid = 5;
+    int32 expired = 6;
+    int32 voice_code = 7;
+}
+
+message ValidateRequest {
+    int32 country = 1;
+    string phone = 2;
+    string flag = 3;
+    string validation_code = 4;
+}
+
+message SmsResponse {
+    int32 code = 1;
+    string msg = 2;
+}

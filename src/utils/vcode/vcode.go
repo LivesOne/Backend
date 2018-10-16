@@ -2,15 +2,21 @@ package vcode
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
-	"encoding/json"
+	"errors"
 	"fmt"
+	"gitlab.maxthon.net/cloud/base-sms-gateway/src/proto"
+	"gitlab.maxthon.net/cloud/base-vcode/src/proto"
+	"google.golang.org/grpc"
+	"log"
 	"math/rand"
 	"servlets/common"
 	"servlets/constants"
 	"sort"
 	"utils"
 	"utils/config"
+	"utils/consul"
 	"utils/logger"
 	"utils/lvthttp"
 )
@@ -130,7 +136,20 @@ type (
 		Phone   string `json:"mobile"`
 		Code    string `json:"code"`
 	}
+	ImgMailRes struct {
+		Id     string
+		Code   int
+		Size   int
+		Data   string
+		Expire int
+	}
 )
+
+var (
+	vcodeClient      vcodeproto.ImgEmailServiceClient
+	grpcSmsClient    smspb.SmsServiceClient
+)
+
 
 func isNotNull(s string) bool {
 	return len(s) > 0
@@ -143,54 +162,72 @@ func convSmsLn(ln string) string {
 	}
 }
 
-func GetImgVCode(w, h, len, expire int) *httpImgVCodeResParam {
-	typeData := httpImgReqParam{
-		W:      w,
-		H:      h,
-		Len:    len,
-		Expire: expire,
+func getSmsClient(addr string) smspb.SmsServiceClient {
+	if len(addr) == 0 {
+		logger.Info("consul addr is empty")
+		return nil
 	}
-	url := config.GetConfig().ImgSvrAddr + IMG_URL_PATH
-	svrResStr, err := lvthttp.JsonPost(url, typeData)
-	if err != nil {
-		logger.Error("url ---> ", url, " http send error ", err.Error())
-	} else {
-		svrRes := httpImgVCodeResParam{}
-		err := json.Unmarshal([]byte(svrResStr), &svrRes)
+	if grpcSmsClient == nil {
+		servName := config.GetConfig().SmsSvrName
+		r := consul.NewResolver(servName)
+		b := grpc.RoundRobin(r)
+		conn, err := grpc.Dial(addr,
+			grpc.WithBalancer(b),
+			grpc.WithBlock(),
+			grpc.WithInsecure())
 		if err != nil {
-			logger.Info("ParseHttpBodyParams, parse body param error: ", err)
+			log.Println("conn grpc server failed, addr: ", addr, "error info: ", err)
+			return nil
 		}
-		return &svrRes
+		grpcSmsClient = smspb.NewSmsServiceClient(conn)
 	}
-	return nil
+	return grpcSmsClient
+}
+
+func getVcodeClient(addr string) vcodeproto.ImgEmailServiceClient {
+	if len(addr) == 0 {
+		logger.Info("consul addr is empty")
+		return nil
+	}
+	if vcodeClient == nil {
+		servName := config.GetConfig().ImgEmailSvrName
+		r := consul.NewResolver(servName)
+		b := grpc.RoundRobin(r)
+		conn, err := grpc.Dial(addr,
+			grpc.WithBalancer(b),
+			grpc.WithBlock(),
+			grpc.WithInsecure())
+		if err != nil {
+			logger.Error("conn grpc server failed, addr: ", addr, "error info: ", err)
+			return nil
+		}
+		vcodeClient = vcodeproto.NewImgEmailServiceClient(conn)
+	}
+	return vcodeClient
 }
 
 func messageServerReq(phone string, country int, ln string, expire int, voiceCode int) (bool, error) {
 	if isNotNull(phone) && country > 0 {
-		//{"area_code":86,"lan":"cn","phone_no":"13901008888","vid":2,"expired":3600,"voice_code":0}
-
-		req := httpReqMessageParam{
-			AreaCode:  country,
-			Lan:       convSmsLn(ln),
-			PhoneNo:   phone,
-			Vid:       MESSAGE_VID,
-			Expire:    expire,
-			VoiceCode: voiceCode,
+		cli := getSmsClient(config.GetConfig().RegistryAddr)
+		if cli != nil {
+			req := &smspb.VoiceMsgRequest{
+				Country:   int32(country),
+				Lan:       convSmsLn(ln),
+				Phone:     phone,
+				Vid:       MESSAGE_VID,
+				Expired:   int32(expire),
+				VoiceCode: int32(voiceCode),
+			}
+			resp, err := cli.SmsSendVoiceMsg(context.Background(), req)
+			if err != nil {
+				logger.Error("grpc SmsSendVoiceMsg request error: ", err)
+				return false, err
+			} else {
+				return resp.Code == 1, nil
+			}
 		}
-		url := config.GetConfig().SmsSvrAddr + SMS_URL_PATH
-		jsonRes, err := lvthttp.JsonPost(url, req)
-		if err != nil {
-			logger.Error("post error ---> ", err.Error())
-			return false, err
-		} else {
-			httpRes := httpResSms{}
-			json.Unmarshal([]byte(jsonRes), &httpRes)
-			return httpRes.Code == 1, nil
-		}
-	} else {
-
-		return false, nil
 	}
+	return false, nil
 }
 
 func SendSmsVCode(phone string, country int, ln string, expire int) (bool, error) {
@@ -201,51 +238,74 @@ func SendCallVCode(phone string, country int, ln string, expire int) (bool, erro
 	return messageServerReq(phone, country, ln, expire, VOICE_CODE_CALL)
 }
 
-func SendMailVCode(email string, ln string, expire int) *httpReqVCode {
-	if isNotNull(email) {
-		req := httpReqMailParam{
-			Mail:   email,
-			Tpl:    MAIL_TOL_LVT,
-			Ln:     ln,
-			Expire: expire,
+func GetImgVCode(w, h, len, expire int) (*ImgMailRes, error) {
+	cli := getVcodeClient(config.GetConfig().RegistryAddr)
+	if cli != nil {
+		reqData := &vcodeproto.ImgVcodeReq{
+			W:      int32(w),
+			H:      int32(h),
+			Len:    int32(len),
+			Expire: int32(expire),
 		}
-		url := config.GetConfig().MailSvrAddr + MAIL_URL_PATH
-		jsonRes, err := lvthttp.JsonPost(url, req)
-		if err != nil {
-			logger.Error("post error ---> ", err.Error())
+		resp, err := cli.SendImgVcode(context.Background(), reqData)
+		if err != nil || resp == nil {
+			logger.Error("grpc SendImgVcode request error: ", err)
+			return nil, err
 		} else {
-			svrRes := httpMailVCodeResParam{}
-			err := json.Unmarshal([]byte(jsonRes), &svrRes)
-			if err != nil {
-				logger.Info("ParseHttpBodyParams, parse body param error: ", err)
-			}
-			return svrRes.Data
-
+			return &ImgMailRes{
+				Id:     resp.Data.Vcode.Id,
+				Code:   int(resp.Code),
+				Size:   int(resp.Data.Vcode.Size),
+				Data:   resp.Data.ImgBase,
+				Expire: int(resp.Data.Vcode.Expire),
+			}, nil
 		}
-	} else {
-		logger.Error("email can not be null")
 	}
-	return nil
+	return nil, errors.New("can not conn to rpc service")
+}
+
+func SendMailVCode(email string, ln string, expire int) (*ImgMailRes, error) {
+	cli := getVcodeClient(config.GetConfig().RegistryAddr)
+	if cli != nil {
+		reqData := &vcodeproto.EmailVcodeReq{
+			Mail:   email,
+			Ln:     ln,
+			Tpl:    MAIL_TOL_LVT,
+			Expire: int32(expire),
+		}
+		resp, err := cli.SendEmailVcode(context.Background(), reqData)
+		if err != nil || resp == nil {
+			logger.Error("grpc SendEmailVcode request error: ", err)
+			return nil, err
+		} else {
+			return &ImgMailRes{
+				Id:     resp.Data.Id,
+				Code:   int(resp.Code),
+				Size:   int(resp.Data.Size),
+				Expire: int(resp.Data.Expire),
+			}, nil
+		}
+	}
+	return nil, errors.New("can not conn to rpc service")
 }
 
 func validateImgVCode(id string, vcode string) (bool, int) {
-	url := config.GetConfig().ImgSvrAddr + VALIDATE_URL_PATH
-	typeData := httpVReqParam{
-		Id:   id,
-		Code: vcode,
+	cli := getVcodeClient(config.GetConfig().RegistryAddr)
+	if cli != nil {
+		reqData := &vcodeproto.ValidateRequest{
+			Id:   id,
+			Code: vcode,
+			Vm:   0,
+		}
+		resp, err := cli.ValidateVcode(context.Background(), reqData)
+		if err != nil {
+			logger.Error("grpc ValidateVcode request error: ", err)
+			return false, HTTP_ERR
+		} else {
+			return resp.Code == SUCCESS, int(resp.Code)
+		}
 	}
-	svrResStr, err := lvthttp.JsonPost(url, typeData)
-	if err != nil {
-		logger.Error("url ---> ", url, " http send error ", err.Error())
-		return false, HTTP_ERR
-	}
-	svrRes := httpResParam{}
-	err1 := json.Unmarshal([]byte(svrResStr), &svrRes)
-	if err1 != nil {
-		logger.Info("ParseHttpBodyParams, parse body param error: ", err)
-		return false, JSON_PARSE_ERR
-	}
-	return svrRes.Ret == SUCCESS, svrRes.Ret
+	return false, HTTP_ERR
 }
 
 func ValidateImgVCode(id, vcode string) (bool, int) {
@@ -259,55 +319,48 @@ func ValidateImgVCode(id, vcode string) (bool, int) {
 
 func ValidateSmsAndCallVCode(phone string, country int, code string, expire int, flag int) (bool, int) {
 	if isNotNull(phone) && country > 0 {
-		//{"area_code":86,"lan":"cn","phone_no":"13901008888","vid":2,"expired":3600,"voice_code":0}
-
-		req := httpReqValidateMessageParam{
-			AreaCode:       country,
-			ValidationCode: code,
-			PhoneNo:        phone,
-			Vid:            MESSAGE_VID,
-			Flag:           utils.Int2Str(flag),
+		cli := getSmsClient(config.GetConfig().RegistryAddr)
+		if cli != nil {
+			req := &smspb.ValidateRequest{
+				Country:        int32(country),
+				Phone:          phone,
+				Flag:           utils.Int2Str(flag),
+				ValidationCode: code}
+			resp, err := cli.SmsValidate(context.Background(), req)
+			if err != nil {
+				logger.Error("grpc SmsSendMsg request error: ", err)
+				return false, SMS_PROTOCOL_ERR
+			} else {
+				return resp.Code == SMS_SUCC, int(resp.Code)
+			}
 		}
-		url := config.GetConfig().SmsSvrAddr + SMS_VALIDATE_URL_PATH
-		jsonRes, err := lvthttp.JsonPost(url, req)
-		if err != nil {
-			logger.Error("post error ---> ", err.Error())
-			return false, SMS_PROTOCOL_ERR
-		} else {
-			httpRes := httpResSms{}
-			json.Unmarshal([]byte(jsonRes), &httpRes)
-			return httpRes.Code == SMS_SUCC, httpRes.Code
-		}
-	} else {
-		return false, SMS_PROTOCOL_ERR
 	}
+	return false, SMS_PROTOCOL_ERR
 }
 
 func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 	if len(id) > 0 && len(vcode) > 0 && len(email) > 0 {
-		url := config.GetConfig().ImgSvrAddr + VALIDATE_URL_PATH
-		typeData := httpVReqParam{
-			Id:    id,
-			Code:  vcode,
-			Email: email,
+		cli := getVcodeClient(config.GetConfig().RegistryAddr)
+		if cli != nil {
+			reqData := &vcodeproto.ValidateRequest{
+				Id:    id,
+				Code:  vcode,
+				Email: email,
+				Vm:    0,
+			}
+			resp, err := cli.ValidateVcode(context.Background(), reqData)
+			if err != nil {
+				logger.Error("grpc ValidateVcode request error: ", err)
+				return false, HTTP_ERR
+			} else {
+				return resp.Code == SUCCESS, int(resp.Code)
+			}
 		}
-		svrResStr, err := lvthttp.JsonPost(url, typeData)
-		if err != nil {
-			logger.Error("url ---> ", url, " http send error ", err.Error())
-			return false, HTTP_ERR
-		}
-		svrRes := httpResParam{}
-		err1 := json.Unmarshal([]byte(svrResStr), &svrRes)
-		if err1 != nil {
-			logger.Info("ParseHttpBodyParams, parse body param error: ", err)
-			return false, JSON_PARSE_ERR
-		}
-		return svrRes.Ret == SUCCESS, svrRes.Ret
-	} else {
-		logger.Error("vcode_id||vcode||email can not be empty")
-		logger.Error("id --> ", id, " code --> ", vcode, " email --> ", email)
-		return false, PARAMS_ERR
+		return false, HTTP_ERR
 	}
+	logger.Error("vcode_id||vcode||email can not be empty")
+	logger.Error("id --> ", id, " code --> ", vcode, " email --> ", email)
+	return false, PARAMS_ERR
 }
 
 func genSignature(secretKey string, params map[string]string) string {
