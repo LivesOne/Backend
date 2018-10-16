@@ -16,7 +16,7 @@
         "MaxConn" : 10,
         "RedisAddr" : "10.100.15.96:6379",
         "RedisAuth" : "lvt_serv",
-        "DBIndex":0
+        "DBIndex":1
     },
 
     "User" : 
@@ -34,7 +34,7 @@
         "DBHost" : "10.100.14.243:3306",
         "DBUser" : "root",
         "DBUserPwd" : "maxthon",
-        "DBDatabase" : "livesone_asset"
+        "DBDatabase" : "livesone_asset2"
     },
 
     "TxHistory" :
@@ -60,6 +60,20 @@
         "DBUser" : "",
         "DBUserPwd" : "",
         "DBDatabase" : "miner"
+    },
+    "Trade":{
+        "MaxConn" : 10,
+        "DBHost" : "10.100.13.6:20000",
+        "DBUser" : "",
+        "DBUserPwd" : "",
+        "DBDatabase" : "db_livesone_trade"
+    },
+    "Config":{
+        "MaxConn" : 10,
+        "DBHost" : "10.100.14.243:3306",
+        "DBUser" : "root",
+        "DBUserPwd" : "maxthon",
+        "DBDatabase" : "db_livesone_config"
     },
   
     "SmsSvrAddr":"http://10.0.5.248:9099",
@@ -135,6 +149,6 @@
     "AuthTelegramUrl":"http://tg-callback.lives.one/code/v1/verify",
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
-    "Lvt2LvtcDelaySystemAccountUid":181875000
-
+    "Lvt2LvtcDelaySystemAccountUid":181875000,
+    "TransFeeAccountUid":181875000
 }

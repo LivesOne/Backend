@@ -9,6 +9,7 @@ import (
 const (
 	LOCK_ASSET_MONTH = 3
 	DEF_SCORE        = 70
+	DEF_LEVEL        = 2
 )
 
 func UserUpgrade(uid string) (bool, int) {
@@ -43,7 +44,7 @@ func upZero(acc *Account) (bool, int) {
 	// check base info
 	if len(acc.Nickname) > 0 && len(acc.PaymentPassword) > 0 && len(acc.Phone) > 0 {
 		// check miner days
-		if QueryLvtcCountMinerByUid(acc.UID) >= 3 && CheckCreditScore(acc.UID, DEF_SCORE) {
+		if QueryUserActiveDaysByCache(acc.UID) >= 3 && CheckCreditScore(acc.UID, DEF_SCORE) {
 			// set level up
 			level := 1
 			err := SetUserLevel(acc.UID, level)
@@ -67,7 +68,7 @@ func upOne(acc *Account) (bool, int) {
 	// check miner days and bind wxid
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
 	if CheckCreditScore(acc.UID, DEF_SCORE) && CheckBindWx(acc.UID) &&
-		QueryLvtcCountMinerByUid(acc.UID) >= 7 && lvtcScale > 0 {
+		QueryUserActiveDaysByCache(acc.UID) >= 7 && lvtcScale > 0 {
 		//check asset lock month and value
 		lvtc := utils.CONV_LVT * int64(1000) / lvtcScale
 		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvtc {
@@ -92,7 +93,7 @@ lock_asset:month>=3,value>=5w
 func upTwo(acc *Account) (bool, int) {
 	// check miner days
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if QueryLvtcCountMinerByUid(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
+	if QueryUserActiveDaysByCache(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(50000) / lvtcScale
 		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
@@ -117,7 +118,7 @@ lock_asset:month>=3,value>=20w
 func upThree(acc *Account) (bool, int) {
 	// check miner days
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if QueryLvtcCountMinerByUid(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
+	if QueryUserActiveDaysByCache(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(200000) / lvtcScale
 		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
@@ -152,4 +153,9 @@ func getUserLimit(uid int64) *config.UserLevelLimit {
 	limit := config.GetLimitByLevel(level)
 	logger.Info("user level", level, "limit", utils.ToJSON(*limit))
 	return limit
+}
+
+func CheckUserLevel(uid int64, level int) bool {
+	userLevel := GetUserLevel(uid)
+	return userLevel >= level
 }

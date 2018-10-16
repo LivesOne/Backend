@@ -15,6 +15,7 @@ import (
 type profileSecret struct {
 	Nickname      string `json:"nickname"`
 	WalletAddress string `json:"wallet_address"`
+	AvatarUrl     string `json:"avatar_url"`
 }
 
 type modifyProfileParam struct {
@@ -132,6 +133,13 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 			}
 		} else {
 			response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
+		}
+	}
+	if len(secret.AvatarUrl) > 0 {
+		_, dbErr := common.SetAvatarUrl(uid, secret.AvatarUrl)
+		if dbErr != nil {
+			log.Info("modify user profile : save avatar_url to db error:", dbErr)
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 	}
 

@@ -205,7 +205,7 @@ func FindAndModifyLVTCPending(txid, from, status int64) (*DTTXHistory, bool) {
 		Update: bson.M{
 			"$bit": bson.M{
 				"status": bson.M{
-					"or": constants.TX_STATUS_COMMIT,
+					"or": status,
 				},
 			},
 		},

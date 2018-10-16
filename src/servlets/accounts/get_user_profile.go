@@ -17,6 +17,8 @@ type profileResponse struct {
 	CreditScore   int    `json:"credit_score"`
 	BindTg        bool   `json:"bind_tg"`
 	WalletAddress string `json:"wallet_address"`
+	AvatarUrl     string `json:"avatar_url"`
+	ActiveDays    int    `json:"active_days"`
 }
 
 // getProfileHandler
@@ -40,7 +42,7 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	uid, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if  err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		logger.Info("get user profile: get uid from token cache failed")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -59,6 +61,9 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	bindWx, bindTg, creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
+	_, _, _, walletAddress, avatarUrl := common.GetUserExtendByUid(account.UID)
+	//从缓存中获取用户活跃天数信息
+	activeDays, _ := common.GetCacheUserField(account.UID, common.USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS)
 	//提前获取交易等级
 	profile := profileResponse{
 		HavePayPwd:    (len(account.PaymentPassword) > 0),
@@ -66,7 +71,9 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		BindWx:        bindWx,
 		CreditScore:   creditScore,
 		BindTg:        bindTg,
-		WalletAddress: common.GetUserWalletAddressByUid(account.UID),
+		WalletAddress: walletAddress,
+		AvatarUrl:     avatarUrl,
+		ActiveDays:    utils.Str2Int(activeDays),
 	}
 
 	account.ID = 0
@@ -75,7 +82,6 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	account.PaymentPassword = ""
 	account.From = ""
 	account.RegisterType = 0
-	//account.WalletAddress = common.GetUserWalletAddressByUid(account.UID)
 	profile.Account = *account
 
 	response.Data = profile

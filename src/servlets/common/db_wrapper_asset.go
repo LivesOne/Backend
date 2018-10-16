@@ -10,6 +10,7 @@ const (
 	CURRENCY_LVT         = "LVT"
 	CURRENCY_ETH         = "ETH"
 	CURRENCY_LVTC        = "LVTC"
+	ASSET_INCOME_MINING = 1
 )
 
 type (
@@ -46,6 +47,7 @@ type (
 		ValueInt    int64  `json:"-" bson:"value"`
 		Currency    string `json:"currency" bson:"currency"`
 		AllowUnlock int    `json:"allow_unlock" bson:"allow_unlock"`
+		Income int    `json:"-" bson:"income,omitempty"`
 	}
 
 	UserWithdrawalQuota struct {
@@ -66,8 +68,10 @@ type (
 		Ts      int64  `json:"ts"`
 	}
 	TradePending struct {
+		Txid string `json:"txid"`
 		TradeNo    string `json:"trade_no"`
-		Uid        int64  `json:"uid"`
+		From        int64  `json:"from"`
+		To        int64  `json:"to"`
 		BizContent string `json:"biz_content"`
 		Ts         int64  `json:"ts"`
 		Value      int64  `json:"-"`
@@ -118,6 +122,13 @@ type (
 		UseTime    int64  `json:"use_time"`
 		Status     int    `json:"status"`
 	}
+
+	TransBizContent struct {
+	FeeCurrency string `json:"fee_currency"`
+	Fee         int64 `json:"fee"`
+	Remark      string `json:"remark"`
+	}
+
 )
 
 func (al *AssetLock) IsOk() bool {

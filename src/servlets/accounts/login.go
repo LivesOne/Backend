@@ -169,7 +169,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
+	common.ActiveUser(account.UID)
 	response.Data = &responseLogin{
 		UID:    account.UIDString,
 		Token:  newtoken,

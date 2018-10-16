@@ -22,6 +22,7 @@ type userinfoResData struct {
 	Level        int    `json:"level"`
 	NickName     string `json:"nick_name"`
 	Country      int    `json:"country"`
+	AvatarUrl    string `json:"avatar_url"`
 	Phone        string `json:"phone"`
 	Email        string `json:"email"`
 	Hashrate     int    `json:"hashrate"`
@@ -82,11 +83,14 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
+	_, _, _, _, avatarUrl := common.GetUserExtendByUid(utils.Str2Int64(param.Uid))
+
 	response.Data = userinfoResData{
 		RegisterTime: utils.GetTs13(acc.RegisterTime),
 		Level:        acc.Level,
 		NickName:     acc.Nickname,
-		Country:	  acc.Country,
+		Country:      acc.Country,
+		AvatarUrl:    avatarUrl,
 		Phone:        acc.Phone,
 		Email:        acc.Email,
 		Ts:           acc.UpdateTime,

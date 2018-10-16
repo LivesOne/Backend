@@ -2,6 +2,7 @@ package log_cleaner
 
 import (
 	"math/rand"
+	"servlets/common"
 	"time"
 	"utils"
 	"utils/logger"
@@ -19,6 +20,15 @@ func StartJob() {
 		for {
 			startLvtcTask()
 		}
+	}()
+
+	go func() {
+		logger.Info("start Listen Txhistory Queue job ---> ", utils.GetFormatDateNow())
+		common.ListenTxhistoryQueue()
+	}()
+	go func() {
+		logger.Info("start Push TxHistory ByTimer job ---> ", utils.GetFormatDateNow())
+		common.PushTxHistoryByTimer()
 	}()
 }
 

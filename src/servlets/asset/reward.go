@@ -80,6 +80,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	if utils.IsToday(t, nt) {
 		yesterday = utils.LVTintToFloatStr(re.Yesterday)
 	}
+	common.ActiveUser(intUid)
 	response.Data = rewardResData{
 		Total:     utils.LVTintToFloatStr(re.Total),
 		Yesterday: yesterday,

@@ -279,6 +279,10 @@ func SetEmail(uid int64, email string) error {
 
 func SetNickname(uid int64, nickname string) error {
 	_, err := gDbUser.Exec("update account set nickname = ? where uid = ?", nickname, uid)
+	//修改缓存数据
+	if err == nil {
+		SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_NICKNAME,nickname)
+	}
 	return err
 }
 
@@ -303,6 +307,10 @@ func SetAssetStatus(uid int64, status int) error {
 
 func SetUserLevel(uid int64, level int) error {
 	_, err := gDbUser.Exec("update account set level = ? where uid = ?", level, uid)
+	//修改缓存数据
+	if err == nil {
+		SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_LEVEL,utils.Int2Str(level))
+	}
 	return err
 }
 
@@ -429,7 +437,7 @@ func GetUserLevel(uid int64) int {
 }
 
 func CheckBindWXByUidAndCreditScore(uid int64, country int) (bool, bool, int) {
-	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?", uid)
+	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score,wallet_address,avatar_url from account_extend where uid = ?", uid)
 	if err != nil {
 		return false, false, 0
 	}
@@ -460,16 +468,16 @@ func GetUserRegisterTime(uid int64) int64 {
 	return utils.Str2Int64(row["register_time"])
 }
 
-func GetUserExtendByUid(uid int64) (string, string, int) {
-	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score from account_extend where uid = ?", uid)
+func GetUserExtendByUid(uid int64) (string, string, int, string, string) {
+	row, err := gDbUser.QueryRow("select wx_openid,wx_unionid,tg_id,credit_score,wallet_address,avatar_url from account_extend where uid = ?", uid)
 	if err != nil {
-		return "", "", 0
+		return "", "", 0, "", ""
 	}
 	if row == nil {
 		InitAccountExtend(uid)
-		return "", "", 70
+		return "", "", 70, "", ""
 	}
-	return row["wx_openid"], row["wx_unionid"], utils.Str2Int(row["credit_score"])
+	return row["wx_openid"], row["wx_unionid"], utils.Str2Int(row["credit_score"]), row["wallet_address"], row["avatar_url"]
 }
 
 func DeductionCreditScore(uid int64, score int) bool {
@@ -521,4 +529,21 @@ func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
 	rowsAffected, _ := result.RowsAffected()
 	return rowsAffected, err
 
+}
+
+func SetAvatarUrl(uid int64, avatarUrl string) (int64, error) {
+	result, err := gDbUser.Exec("update account_extend set avatar_url = ?, update_time = ? where uid = ?", avatarUrl, utils.GetTimestamp13(), uid)
+	if err != nil {
+		logger.Error("exec sql error", err.Error())
+		return 0, err
+	}
+	//修改缓存用户数据
+	SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_AVATAR_URL,avatarUrl)
+	rowsAffected, _ := result.RowsAffected()
+	return rowsAffected, err
+}
+
+
+func QueryCacheUser(uid int64)(map[string]string,error){
+	return gDbUser.QueryRow("select ta.uid,ta.nickname,ta.email,ta.country,ta.phone,ta.level,tae.credit_score,tae.avatar_url,tae.active_days from account as ta left join account_extend as tae on ta.uid = tae.uid where ta.uid = ?", uid)
 }

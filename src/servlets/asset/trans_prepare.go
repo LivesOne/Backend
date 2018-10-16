@@ -220,7 +220,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 	bizContent :=  utils.ToJSON(secret.BizContent)
 	//调用统一提交流程
-	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value,bizContent); resErr == constants.RC_OK {
+	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value,bizContent, ""); resErr == constants.RC_OK {
 		response.Data = transPrepareResData{
 			Txid: txid,
 		}

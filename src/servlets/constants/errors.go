@@ -64,6 +64,8 @@ var (
 	RC_USE_CARD_FAILED                = Error{21014, "invalid withdrawal card password"}
 	RC_USE_CARD_ALREADY_USED          = Error{21015, "withdrawal card already used"}
 	RC_USE_CARD_EXPIRE                = Error{21016, "withdrawal card expired"}
+	RC_INVALID_CURRENCY		          = Error{21017, "currency not supported"}
+	RC_TRANSFER_FEE_ERROR             = Error{21018, "transfer fee error"}
 
 	RC_DEVICE_DUP_BIND       = Error{23001, "duplicate bind"}
 	RC_DEVICE_BIND_TOO_SHORT = Error{23002, "bind interval too short"}

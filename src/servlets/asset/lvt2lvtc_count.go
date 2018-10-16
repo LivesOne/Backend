@@ -69,7 +69,7 @@ func (handler *lvt2lvtcCountHandler) Handle(request *http.Request, writer http.R
 	}
 
 
-	balance,_,err := common.QueryBalance(uid)
+	balance,_,_,_,_,err := common.QueryBalance(uid)
 	if err != nil {
 		log.Error("query mysql error",err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)

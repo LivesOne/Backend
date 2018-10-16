@@ -9,7 +9,6 @@ import (
 	"servlets/token"
 	"strings"
 	"utils"
-	"utils/config"
 	"utils/logger"
 	"utils/vcode"
 )
@@ -28,9 +27,10 @@ type withdrawRequest struct {
 }
 
 type withdrawRequestSecret struct {
-	Address string `json:"address"`
-	Value   string `json:"value"`
-	Pwd     string `json:"pwd"`
+	Address  string `json:"address"`
+	Currency string `json:"currency"`
+	Value    string `json:"value"`
+	Pwd      string `json:"pwd"`
 }
 
 type withdrawRequestResponseData struct {
@@ -38,7 +38,7 @@ type withdrawRequestResponseData struct {
 }
 
 func (wqs *withdrawRequestSecret) isValid() bool {
-	return len(wqs.Address) > 0 && len(wqs.Value) > 0 && len(wqs.Pwd) > 0
+	return len(wqs.Address) > 0 && len(wqs.Value) > 0 && len(wqs.Pwd) > 0 && len(wqs.Currency) > 0
 }
 
 type withdrawRequestHandler struct {
@@ -164,19 +164,11 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	level := common.GetTransUserLevel(uid)
-	limitConfig := config.GetLimitByLevel(level)
-	if !limitConfig.Withdrawal() {
-		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
-		return
-	}
-
-	withdrawAmount := utils.FloatStrToLVTint(secret.Value)
 	address := strings.ToLower(secret.Address)
 	if !strings.HasPrefix(address, "0x") {
 		address = "0x" + address
 	}
-	tradeNo, err := common.Withdraw(uid, withdrawAmount, address, requestData.Param.QuotaType)
+	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
 			TradeNo: tradeNo,

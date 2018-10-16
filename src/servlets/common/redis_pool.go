@@ -127,6 +127,31 @@ func setAndExpire(key string, value, expire int) error {
 	return err
 }
 
+func setAndExpire64(key string, value int64, expire int) error {
+	_, err := rdsDo("SET", key, value, "EX", expire)
+	return err
+}
+
 func setnx(key string,value int64) (int,error) {
 	return redis.Int(rdsDo("SETNX",key,value))
+}
+
+func hmset(key string, p map[string]string) (string, error) {
+	args := []interface{}{key}
+	for i, v := range p {
+		args = append(args, i, v)
+	}
+	return redis.String(rdsDo("HMSET", args...))
+}
+
+func hset(key string, fieldName,fieldValue string) (int, error) {
+	return redis.Int(rdsDo("HSET",key,fieldName,fieldValue))
+}
+
+func hgetall(key string) (map[string]string, error) {
+	return redis.StringMap(rdsDo("HGETALL", key))
+}
+
+func hget(key string, fieldName string) (string, error) {
+	return redis.String(rdsDo("HGET", key,fieldName))
 }
