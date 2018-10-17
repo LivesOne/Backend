@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"strings"
 	"utils/logger"
 	"utils/vcode"
 )
@@ -71,12 +72,15 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 		response.SetResponseBase(rcErr)
 	} else {
 		//validate img vcode
-
+		lan := strings.Trim(requestData.Param.Ln, "")
+		if len(lan) == 0 {
+			lan = "en-us"
+		}
 		succFlag, code := vcode.ValidateImgVCode(requestData.Param.IMG_id, requestData.Param.IMG_vcode)
 		if succFlag {
 			switch requestData.Param.Type {
 			case MESSAGE:
-				f, _ := vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				f, _ := vcode.SendSmsVCode(requestData.Param.Phone, requestData.Param.Country, lan, requestData.Param.Expire)
 				if f {
 					response.Data = &sendVCodeRes{
 						Vcode_id: "maxthonVCodeId",
@@ -89,7 +93,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 					}
 				}
 			case CALL:
-				f, _ := vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, requestData.Param.Ln, requestData.Param.Expire)
+				f, _ := vcode.SendCallVCode(requestData.Param.Phone, requestData.Param.Country, lan, requestData.Param.Expire)
 				if f {
 					response.Data = &sendVCodeRes{
 						Vcode_id: "maxthonVCodeId",
@@ -102,7 +106,7 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 					}
 				}
 			case EMAIL:
-				svrRes, _ := vcode.SendMailVCode(requestData.Param.EMail, requestData.Param.Ln, requestData.Param.Expire)
+				svrRes, _ := vcode.SendMailVCode(requestData.Param.EMail, lan, requestData.Param.Expire)
 				if svrRes != nil {
 					response.Data = &sendVCodeRes{
 						Vcode_id: svrRes.Id,
