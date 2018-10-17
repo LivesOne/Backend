@@ -11,14 +11,20 @@ import (
 
 type profileResponse struct {
 	common.Account
-	HavePayPwd    bool   `json:"have_pay_pwd"`
-	TransLevel    int    `json:"trans_level"`
-	BindWx        bool   `json:"bind_wx"`
-	CreditScore   int    `json:"credit_score"`
-	BindTg        bool   `json:"bind_tg"`
-	WalletAddress string `json:"wallet_address"`
-	AvatarUrl     string `json:"avatar_url"`
-	ActiveDays    int    `json:"active_days"`
+	HavePayPwd     bool             `json:"have_pay_pwd"`
+	TransLevel     int              `json:"trans_level"`
+	BindWx         bool             `json:"bind_wx"`
+	CreditScore    int              `json:"credit_score"`
+	BindTg         bool             `json:"bind_tg"`
+	WalletAddress  string           `json:"wallet_address"`
+	AvatarUrl      string           `json:"avatar_url"`
+	ActiveDays     int              `json:"active_days"`
+	HashrateDetial []hashrateDetial `json:"hashrate"`
+}
+
+type hashrateDetial struct {
+	Type  int `json:"type"`
+	Value int `json:"value"`
 }
 
 // getProfileHandler
@@ -66,14 +72,15 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	activeDays, _ := common.GetCacheUserField(account.UID, common.USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS)
 	//提前获取交易等级
 	profile := profileResponse{
-		HavePayPwd:    (len(account.PaymentPassword) > 0),
-		TransLevel:    common.GetUserAssetTranslevelByUid(account.UID),
-		BindWx:        bindWx,
-		CreditScore:   creditScore,
-		BindTg:        bindTg,
-		WalletAddress: walletAddress,
-		AvatarUrl:     avatarUrl,
-		ActiveDays:    utils.Str2Int(activeDays),
+		HavePayPwd:     (len(account.PaymentPassword) > 0),
+		TransLevel:     common.GetUserAssetTranslevelByUid(account.UID),
+		BindWx:         bindWx,
+		CreditScore:    creditScore,
+		BindTg:         bindTg,
+		WalletAddress:  walletAddress,
+		AvatarUrl:      avatarUrl,
+		ActiveDays:     utils.Str2Int(activeDays),
+		HashrateDetial: buildHashrateDetial(account.UID),
 	}
 
 	account.ID = 0
@@ -85,4 +92,21 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 	profile.Account = *account
 
 	response.Data = profile
+}
+
+func buildHashrateDetial(uid int64) []hashrateDetial {
+	re := make([]hashrateDetial, 0)
+
+	rows := common.QueryHashRateDetailByUid(uid)
+	for _, item := range rows {
+		t := utils.Str2Int(item["type"])
+		v := utils.Str2Int(item["sh"])
+		entity := hashrateDetial{
+			Type:  t,
+			Value: v,
+		}
+		re = append(re, entity)
+	}
+
+	return re
 }
