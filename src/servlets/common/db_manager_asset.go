@@ -2265,3 +2265,23 @@ func MoveMinerDays(uid int64) int {
 	}
 	return 1
 }
+
+func QueryHashRateDetailByUid(uid int64) []map[string]string {
+	sql := `select t.type, if(sum(t.h) is null,0,sum(t.h)) as sh from (
+				select uh1.type, max(uh1.hashrate) as h from user_hashrate as uh1 where uh1.uid = ? and uh1.end = 0 group by uh1.type
+				union all
+				select uh2.type, uh2.hashrate as h from user_hashrate as uh2 where uh2.uid = ? and uh2.end >= ?
+			) as t
+			group by t.type
+			`
+
+	params := []interface{}{
+		uid,
+		uid,
+		utils.GetTimestamp13(),
+	}
+
+	rows := gDBAsset.Query(sql, params...)
+
+	return rows
+}

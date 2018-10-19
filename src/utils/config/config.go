@@ -60,6 +60,11 @@ type WXAuth struct {
 	Secret string
 }
 
+type ReChargeAddr struct {
+	Currency string
+	Address  string
+}
+
 // Configuration holds all config data
 type Configuration struct {
 	ServerAddr string //"[ip]:port"
@@ -112,6 +117,7 @@ type Configuration struct {
 	Lvt2LvtcSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
 	TransFeeAccountUid            int64
+	ReChargeAddress               []ReChargeAddr
 }
 
 // configuration data

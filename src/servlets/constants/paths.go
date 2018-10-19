@@ -80,6 +80,12 @@ const (
 	ACCOUNT_BIND_TG = "/user/v1/profile/bind_tg"
 
 	ACCOUNT_PROFILE_USERINFO = "/user/v1/profile/userinfo"
+
+	ACCOUNT_RECHARGE_ADDRESS = "/user/v1/profile/recharge_address"
+
+	ACCOUNT_BIND_WALLET_ADDRESS = "/user/v1/profile/wallet_address/bind"
+
+	ACCOUNT_WALLET_ADDRESS_LIST = "/user/v1/profile/wallet_address/list"
 	// Contacts Sync APIs
 
 	//Assets Management APIs

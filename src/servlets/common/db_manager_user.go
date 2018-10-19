@@ -547,3 +547,23 @@ func SetAvatarUrl(uid int64, avatarUrl string) (int64, error) {
 func QueryCacheUser(uid int64)(map[string]string,error){
 	return gDbUser.QueryRow("select ta.uid,ta.nickname,ta.email,ta.country,ta.phone,ta.level,tae.credit_score,tae.avatar_url,tae.active_days from account as ta left join account_extend as tae on ta.uid = tae.uid where ta.uid = ?", uid)
 }
+
+func ExistsWalletAddress(uid int64, address string) bool {
+	row, _ := gDbUser.QueryRow("select count(1) as c from user_wallet_address where uid = ? and address = ?",
+		uid, address)
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func InsertUserWalletAddr(uid int64, addr string) error {
+	_, err := gDbUser.Exec("insert into user_wallet_address (uid,address,create_time) values (?,?,?)", uid, addr, utils.GetTimestamp13())
+	return err
+}
+
+func GetWalletAddrList(uid int64) ([]map[string]string, error) {
+	return gDbUser.QueryRows("select address,create_time from user_wallet_address where uid = ?",
+		uid)
+}
+
