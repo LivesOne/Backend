@@ -54,3 +54,12 @@ func ModifyContact(p map[string]interface{},uid,contactId int64)error{
 	md := bson.M{"$set":p}
 	return collection.Update(selector,md)
 }
+
+
+func DeleteContact(uid int64, contactId int64)error{
+	session := tSession.Clone()
+	defer session.Close()
+	collection := session.DB(cConfig.DBDatabase).C(DT_CONTACTS)
+	selector := bson.M{"uid":uid,"contact_id":contactId}
+	return collection.Remove(selector)
+}
