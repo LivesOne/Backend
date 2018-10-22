@@ -6,6 +6,7 @@ import (
 	"servlets/asset"
 	"servlets/config"
 	"servlets/constants"
+	"servlets/contacts"
 	"servlets/device"
 )
 
@@ -16,6 +17,7 @@ func RegisterHandlers() {
 
 	// register accounts handlers
 	accounts.RegisterHandlers()
+	contacts.RegisterHandlers()
 	asset.RegisterHandlers()
 	device.RegisterHandlers()
 	config.RegisterHandlers()

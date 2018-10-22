@@ -1,8 +1,7 @@
 package contacts
 
 import (
-	"github.com/gin-gonic/gin"
-	"server"
+	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
@@ -12,52 +11,58 @@ import (
 
 type (
 	contactModifyHandler struct {
-		server.DefHttpHandler
+
 	}
 )
 
-func (vh *contactModifyHandler) Handle(c *gin.Context) {
 
-	log := logger.NewLvtLogger(true, "contactCreateHandler")
+func (handler *contactModifyHandler) Method() string {
+	return http.MethodPost
+}
+
+func (handler *contactModifyHandler) Handle(request *http.Request, writer http.ResponseWriter) {
+
+	log := logger.NewLvtLogger(true, "contactListHandler")
 	defer log.InfoAll()
 
 	res := common.NewResponseData()
-	defer vh.RJson(c, res)
-	header := vh.GetHeadParams(c)
+	defer common.FlushJSONData2Client(res,writer)
+	header := common.ParseHttpHeaderParams(request)
+
 	if !header.IsValid() {
 		log.Warn("header is not valid", utils.ToJSON(header))
-		res.SetResponseBase(constants.CODE_PARAM_ERR)
+		res.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	uidStr, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.CODE_OK {
+	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("get info from cache error:", err)
 		res.SetResponseBase(err)
 		return
 	}
 
 	reqData := new(contactCreateReqData)
-	if err := c.ShouldBindJSON(reqData); err != nil {
-		log.Info("decode json str error", err)
-		res.SetResponseBase(constants.CODE_PROTOCOL_ERR)
+	if common.ParseHttpBodyParams(request,reqData) {
+		log.Info("decode json str error")
+		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
 	}
 	if !reqData.IsValid() {
 		log.Info("required param is nil")
-		res.SetResponseBase(constants.CODE_PARAM_ERR)
+		res.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if len(aesKey) != constants.AES_totalLen {
 		log.Info(" get aeskey from cache error:", len(aesKey))
-		res.SetResponseBase(constants.CODE_SYSTEM_ERR)
+		res.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
 	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
 		log.Info("validate sign failed ")
-		res.SetResponseBase(constants.CODE_INVALID_SIGN)
+		res.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
 	}
 
@@ -68,7 +73,7 @@ func (vh *contactModifyHandler) Handle(c *gin.Context) {
 
 	if err := utils.DecodeSecret(reqData.Param.Secret, key, iv, secret); err != nil {
 		log.Info("decide secret failed")
-		res.SetResponseBase(constants.CODE_PARAM_ERR)
+		res.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
@@ -76,7 +81,7 @@ func (vh *contactModifyHandler) Handle(c *gin.Context) {
 	uid := utils.Str2Int64(uidStr)
 	if err := common.ModifyContact(mdfMap,uid,secret.ContactId);err != nil {
 		log.Error("insert mongo  failed",err.Error())
-		res.SetResponseBase(constants.CODE_SYSTEM_ERR)
+		res.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 }
