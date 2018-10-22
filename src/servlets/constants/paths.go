@@ -87,6 +87,13 @@ const (
 
 	ACCOUNT_WALLET_ADDRESS_LIST = "/user/v1/profile/wallet_address/list"
 	// Contacts Sync APIs
+	ACCOUNT_CONTACTS_LIST  = "/user/v1/contact/list"
+
+	ACCOUNT_CONTACTS_CREATE   = "/user/v1/contact/create"
+
+	ACCOUNT_CONTACTS_MODIFY = "/user/v1/contact/modify"
+
+	ACCOUNT_CONTACTS_DELETE = "/user/v1/contact/delete"
 
 	//Assets Management APIs
 

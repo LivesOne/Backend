@@ -81,6 +81,7 @@ type Configuration struct {
 	Miner        MongoConfig
 	Trade        MongoConfig
 	Config       MongoConfig
+	Contacts     MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制

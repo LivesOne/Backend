@@ -75,7 +75,13 @@
         "DBUserPwd" : "maxthon",
         "DBDatabase" : "db_livesone_config"
     },
-  
+    "Contacts" : {
+      "MaxConn" : 10,
+      "DBHost" : "10.100.13.6:20000",
+      "DBUser" : "",
+      "DBUserPwd" : "",
+      "DBDatabase" : "db_livesone_profile"
+    },
     "SmsSvrAddr":"http://10.0.5.248:9099",
     "MailSvrAddr":"http://10.0.5.248:9080/vcode",
     "ImgSvrAddr":"http://10.0.5.248:9080/vcode",
