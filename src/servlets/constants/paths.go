@@ -80,6 +80,12 @@ const (
 	ACCOUNT_BIND_TG = "/user/v1/profile/bind_tg"
 
 	ACCOUNT_PROFILE_USERINFO = "/user/v1/profile/userinfo"
+
+	ACCOUNT_RECHARGE_ADDRESS = "/user/v1/profile/recharge_address"
+
+	ACCOUNT_BIND_WALLET_ADDRESS = "/user/v1/profile/wallet_address/bind"
+
+	ACCOUNT_WALLET_ADDRESS_LIST = "/user/v1/profile/wallet_address/list"
 	// Contacts Sync APIs
 	ACCOUNT_CONTACTS_LIST  = "/user/v1/contact/list"
 
@@ -167,4 +173,6 @@ const (
 	ASSET_COMMON_TRANS_COMMIT= "/asset/v1/transfer/commit"
 
 	ASSET_COMMON_TRANS_RESULT= "/asset/v1/transfer/result"
+
+	CURRENCY_PRICE_QUERY = "/config/v1/currency/price"
 )
