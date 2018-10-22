@@ -275,10 +275,10 @@ func GetLockHashrate(lvtcScale,monnth int, value string) int {
 
 
 
-func StructConvMap(p interface{}) map[string]string {
+func StructConvMap(p interface{}) map[string]interface{} {
 	v,t := GetStructValueAndType(p)
 
-	var data = make(map[string]string)
+	var data = make(map[string]interface{})
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		name := f.Tag.Get("json")
@@ -289,11 +289,12 @@ func StructConvMap(p interface{}) map[string]string {
 			name = f.Name
 		}
 
-		value :=  convStructField(v.Field(i).Interface())
+		value :=  v.Field(i).Interface()
+		valueStr := convStructField(value)
 		if nss := strings.Split(name,",");len(nss)>1{
 			name = nss[0]
 			if nss[1] == "omitempty" {
-				if len(value) == 0 {
+				if len(valueStr) == 0 {
 					continue
 				}
 			}
@@ -315,14 +316,24 @@ func GetStructValueAndType(p interface{})(reflect.Value,reflect.Type){
 func convStructField(p interface{}) string {
 	switch p.(type) {
 	case int:
-		return Int2Str(p.(int))
+		s := p.(int)
+		if s != 0 {
+			return Int2Str(s)
+		}
 	case int64:
-		return Int642Str(p.(int64))
+		s := p.(int64)
+		if s != 0 {
+			return Int642Str(s)
+		}
 	case float64:
-		return strconv.FormatFloat(p.(float64), 'f', 8, 64)
-	default:
+		s := p.(float64)
+		if s != 0 {
+			return  strconv.FormatFloat(s,'f', 8, 64)
+		}
+	case string:
 		return p.(string)
 	}
+	return ""
 }
 
 

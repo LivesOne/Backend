@@ -24,7 +24,7 @@ func (handler *walletAddrHandler) Handle(
 	request *http.Request, writer http.ResponseWriter) {
 
 	response := common.NewResponseData()
-	response.Data = new(map[string]string)
+	//response.Data = new(map[string]string)
 	defer common.FlushJSONData2Client(response, writer)
 
 	httpHeader := common.ParseHttpHeaderParams(request)

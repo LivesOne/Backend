@@ -19,6 +19,11 @@ type reChargeAddrRequest struct {
 	Param reChargeAddrParam `json:"param"`
 }
 
+type reChargeAddrRespData struct {
+	Currency string `json:"currency,omitempty"`
+	Address  string `json:"address,omitempty"`
+}
+
 // bindEMailHandler
 type reChargeAddrHandler struct {
 }
@@ -28,7 +33,7 @@ func (handler *reChargeAddrHandler) Method() string {
 }
 
 func (handler *reChargeAddrHandler) Handle(
-request *http.Request, writer http.ResponseWriter) {
+	request *http.Request, writer http.ResponseWriter) {
 
 	response := common.NewResponseData()
 	defer common.FlushJSONData2Client(response, writer)
@@ -41,6 +46,7 @@ request *http.Request, writer http.ResponseWriter) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+	currency := strings.ToUpper(requestData.Param.Currency)
 
 	// 判断用户身份
 	_, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
@@ -56,7 +62,6 @@ request *http.Request, writer http.ResponseWriter) {
 
 	// 返回充值地址
 	var addr string
-	currency := strings.ToUpper(requestData.Param.Currency)
 	for _, rechargeAddr := range config.GetConfig().ReChargeAddress {
 		if rechargeAddr.Currency == currency {
 			addr = rechargeAddr.Address
@@ -68,6 +73,10 @@ request *http.Request, writer http.ResponseWriter) {
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 		return
 	}
+	respData := new(reChargeAddrRespData)
+	respData.Currency = currency
+	respData.Address = addr
+	response.Data = respData
 	// send response
 	response.SetResponseBase(constants.RC_OK)
 	return
