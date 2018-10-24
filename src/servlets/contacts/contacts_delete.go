@@ -55,7 +55,7 @@ func (handler *contactDeleteHandler) Handle(request *http.Request, writer http.R
 
 	reqData := new(contactDeleteReqData)
 
-	if common.ParseHttpBodyParams(request,reqData) {
+	if !common.ParseHttpBodyParams(request,reqData) {
 		log.Info("decode json str error")
 		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
