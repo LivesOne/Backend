@@ -55,11 +55,14 @@ func (handler *walletAddrHandler) Handle(
 	} else if addrList != nil {
 		var walletList []walletAddrParam
 		for _, wallet := range addrList {
-			walletList = append(walletList,
-				walletAddrParam{
-					Address: wallet["address"],
-					CreateTime: utils.Str2Int64(wallet["create_time"]),
-			})
+			addr := wallet["address"]
+			if len(addr) > 0 {
+				walletList = append(walletList,
+					walletAddrParam{
+						Address: wallet["address"],
+						CreateTime: utils.Str2Int64(wallet["create_time"]),
+					})
+			}
 		}
 		response.Data = walletList
 	}
