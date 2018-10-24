@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	sqlBase "database/sql"
 	"errors"
-	"fmt"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
@@ -479,6 +478,24 @@ func ckeckEthBalance(uid int64, value int64, tx *sql.Tx) bool {
 	var balance, income int64
 	var locked int64
 	row := tx.QueryRow("select balance,locked,income from user_asset_eth where uid  = ?", uid)
+	row.Scan(&balance, &locked, &income)
+	logger.Info("balance", balance, "locked", locked, "income", income)
+	return balance > 0 && (balance-locked-income) >= value
+}
+
+func ckeckEosBalance(uid int64, value int64, tx *sql.Tx) bool {
+	var balance, income int64
+	var locked int64
+	row := tx.QueryRow("select balance,locked,income from user_asset_eos where uid  = ?", uid)
+	row.Scan(&balance, &locked, &income)
+	logger.Info("balance", balance, "locked", locked, "income", income)
+	return balance > 0 && (balance-locked-income) >= value
+}
+
+func ckeckBtcBalance(uid int64, value int64, tx *sql.Tx) bool {
+	var balance, income int64
+	var locked int64
+	row := tx.QueryRow("select balance,locked,income from user_asset_btc where uid  = ?", uid)
 	row.Scan(&balance, &locked, &income)
 	logger.Info("balance", balance, "locked", locked, "income", income)
 	return balance > 0 && (balance-locked-income) >= value
@@ -1599,25 +1616,23 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 	return &alres
 }
 
-func transCommit(txid, from, to, value int64, tradeNo, assetTable, txHistoryTable string, tradeType int, tx *sql.Tx) (int64, int) {
+func BtcTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
 
-	sql := fmt.Sprintf("select * from %s where uid in (?,?) for update", assetTable)
-	tx.Exec(sql, from, to)
+	tx.Exec("select * from user_asset_btc where uid in (?,?) for update", from, to)
 
 	ts := utils.GetTimestamp13()
 
 	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
-	if !ckeckEthBalance(from, value, tx) {
+	if !ckeckBtcBalance(from, value, tx) {
 		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
 
 	//扣除转出方balance
-	sql = fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTable)
-	info1, err1 := tx.Exec(sql, value, ts, from)
+	info1, err1 := tx.Exec("update user_asset_btc set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
 	if err1 != nil {
 		logger.Error("sql error ", err1.Error())
 		return 0, constants.TRANS_ERR_SYS
@@ -1630,8 +1645,7 @@ func transCommit(txid, from, to, value int64, tradeNo, assetTable, txHistoryTabl
 	}
 
 	//增加目标的balance
-	sql = fmt.Sprintf("update %s set balance = balance + ?,lastmodify = ? where uid = ?", assetTable)
-	info2, err2 := tx.Exec(sql, value, ts, to)
+	info2, err2 := tx.Exec("update user_asset_btc set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
 	if err2 != nil {
 		logger.Error("sql error ", err2.Error())
 		return 0, constants.TRANS_ERR_SYS
@@ -1650,33 +1664,145 @@ func transCommit(txid, from, to, value int64, tradeNo, assetTable, txHistoryTabl
 			return 0, constants.TRANS_ERR_SYS
 		}
 	}
-	sql = fmt.Sprintf("insert into %s (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)", txHistoryTable)
-	info3, err3 := tx.Exec(sql, txid, tradeType, tradeNo, from, to, value, ts)
+	info3, err3 := tx.Exec("insert into tx_history_btc (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
+		txid, tradeType, tradeNo, from, to, value, ts,
+	)
 	if err3 != nil {
 		logger.Error("sql error ", err3.Error())
 		return 0, constants.TRANS_ERR_SYS
 	}
 	rsa, _ = info3.RowsAffected()
 	if rsa == 0 {
-		logger.Error("insert" + txHistoryTable + "failed")
+		logger.Error("insert btc tx history failed")
 		return 0, constants.TRANS_ERR_SYS
 	}
 	return txid, constants.TRANS_ERR_SUCC
 }
 
-func BtcTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
-	return transCommit(txid, from, to, value, tradeNo,
-		"user_asset_btc", "tx_history_btc", tradeType, tx)
-}
-
 func EosTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
-	return transCommit(txid, from, to, value, tradeNo,
-		"user_asset_eos", "tx_history_eos", tradeType, tx)
+	if tx == nil {
+		tx, _ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
+
+	tx.Exec("select * from user_asset_eos where uid in (?,?) for update", from, to)
+
+	ts := utils.GetTimestamp13()
+
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckEosBalance(from, value, tx) {
+		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_eos set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_eos set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	if txid < 0 {
+		txid = GenerateTxID()
+		if txid < 0 {
+			logger.Error("can not get txid")
+			return 0, constants.TRANS_ERR_SYS
+		}
+	}
+	info3, err3 := tx.Exec("insert into tx_history_eos (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
+		txid, tradeType, tradeNo, from, to, value, ts,
+	)
+	if err3 != nil {
+		logger.Error("sql error ", err3.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	rsa, _ = info3.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert eos tx history failed")
+		return 0, constants.TRANS_ERR_SYS
+	}
+	return txid, constants.TRANS_ERR_SUCC
 }
 
 func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
-	return transCommit(txid, from, to, value, tradeNo,
-		"user_asset_eth", "tx_history_eth", tradeType, tx)
+	if tx == nil {
+		tx, _ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
+
+	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
+
+	ts := utils.GetTimestamp13()
+
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckEthBalance(from, value, tx) {
+		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_eth set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_eth set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	if txid < 0 {
+		txid = GenerateTxID()
+		if txid < 0 {
+			logger.Error("can not get txid")
+			return 0, constants.TRANS_ERR_SYS
+		}
+	}
+	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
+		txid, tradeType, tradeNo, from, to, value, ts,
+	)
+	if err3 != nil {
+		logger.Error("sql error ", err3.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	rsa, _ = info3.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert eth tx history failed")
+		return 0, constants.TRANS_ERR_SYS
+	}
+	return txid, constants.TRANS_ERR_SUCC
 }
 
 func InsertTradePending(txid, from, to int64, tradeNo, bizContent string, value int64, tradeType int) error {
