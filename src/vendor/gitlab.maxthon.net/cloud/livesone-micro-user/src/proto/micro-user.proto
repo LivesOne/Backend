@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package microuser;
+
+import "micro-user-message.proto";
+
+service UserService {
+    rpc RegisterUser(RegUserInfo) returns (ResMsg) {}
+    rpc SetUserInfo(SetUserInfoReq) returns (ResMsg) {}
+    rpc GetUserInfo(GetUserInfoReq) returns (GetUserInfoRes) {}
+    rpc GetUserAllInfo(GetUserAllInfoReq) returns (GetUserAllInfoRes) {}
+    rpc UserActive(UserActiveReq) returns (ResMsg) {}
+}
+
+
+service UserLoginService {
+    rpc Login(LoginUserReq) returns (LoginUserRes) {}
+    rpc AutoLogin(AutoLoginReq) returns (AutoLoginRes) {}
+    rpc Logout(TokenReq) returns (ResMsg) {}
+    rpc GetLoginInfo(GetLoginInfoReq) returns (GetLoginInfoRes) {}
+}
+
+
+service UserWalletService {
+    rpc BindWallet(WalletBindReq) returns (ResMsg) {}
+    rpc QueryWallet(WalletQueryReq) returns (WalletQueryRes) {}
+}
