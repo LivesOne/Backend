@@ -74,6 +74,13 @@ var (
 	RC_NOT_FOUND_DEVICE      = Error{23005, "not found device"}
 	RC_DEVICE_UNBIND_TOO_SHORT      = Error{23006, "unbind interval too short"}
 
+
+
+
+
+	RC_DUP_CONTACT_ID      = Error{24001, "duplicate contact id"}
+	RC_CONTACT_ID_NOT_EXISTS     = Error{24002, "contact id not exists"}
+
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}
 	// RC_TOKEN_DB                        = Error{20103, "token db not connect"}

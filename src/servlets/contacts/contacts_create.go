@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"gopkg.in/mgo.v2"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
@@ -101,9 +102,19 @@ func (handler *contactCreateHandler) Handle(request *http.Request, writer http.R
 
 	insertMap := convmap(secret)
 	insertMap["uid"] = utils.Str2Int64(uidStr)
+	insertMap["create_time"] = utils.GetTimestamp13()
 	if err := common.CreateContact(insertMap); err != nil {
 		log.Error("insert mongo  failed", err.Error())
-		res.SetResponseBase(constants.RC_PARAM_ERR)
+		if mgo.IsDup(err) {
+			res.SetResponseBase(constants.RC_DUP_CONTACT_ID)
+			return
+		}
+
+		if err == mgo.ErrNotFound {
+			res.SetResponseBase(constants.RC_CONTACT_ID_NOT_EXISTS)
+			return
+		}
+		res.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 }
