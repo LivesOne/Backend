@@ -101,6 +101,7 @@ func (handler *contactCreateHandler) Handle(request *http.Request, writer http.R
 
 	insertMap := convmap(secret)
 	insertMap["uid"] = utils.Str2Int64(uidStr)
+	insertMap["create_time"] = utils.GetTimestamp13()
 	if err := common.CreateContact(insertMap); err != nil {
 		log.Error("insert mongo  failed", err.Error())
 		res.SetResponseBase(constants.RC_PARAM_ERR)
