@@ -5,7 +5,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"utils/logger"
-	"utils/vcode"
+	"servlets/vcode"
 )
 
 type imgParam struct {

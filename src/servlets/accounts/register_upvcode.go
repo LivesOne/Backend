@@ -10,7 +10,7 @@ import (
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"utils/vcode"
+	"servlets/vcode"
 )
 
 type registerUpVcodeParam struct {

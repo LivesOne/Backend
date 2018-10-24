@@ -7,7 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/db_factory"
-	"utils/vcode"
+	"servlets/vcode"
 )
 
 type bindEMailParam struct {

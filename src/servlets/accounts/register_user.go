@@ -11,7 +11,7 @@ import (
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"utils/vcode"
+	"servlets/vcode"
 )
 
 // registerParam holds the request "param" field

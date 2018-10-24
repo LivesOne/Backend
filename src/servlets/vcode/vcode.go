@@ -8,15 +8,13 @@ import (
 	"fmt"
 	"gitlab.maxthon.net/cloud/base-sms-gateway/src/proto"
 	"gitlab.maxthon.net/cloud/base-vcode/src/proto"
-	"google.golang.org/grpc"
-	"log"
 	"math/rand"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
 	"sort"
 	"utils"
 	"utils/config"
-	"utils/consul"
 	"utils/logger"
 	"utils/lvthttp"
 )
@@ -145,10 +143,6 @@ type (
 	}
 )
 
-var (
-	vcodeClient      vcodeproto.ImgEmailServiceClient
-	grpcSmsClient    smspb.SmsServiceClient
-)
 
 
 func isNotNull(s string) bool {
@@ -162,53 +156,9 @@ func convSmsLn(ln string) string {
 	}
 }
 
-func getSmsClient(addr string) smspb.SmsServiceClient {
-	if len(addr) == 0 {
-		logger.Info("consul addr is empty")
-		return nil
-	}
-	if grpcSmsClient == nil {
-		servName := config.GetConfig().SmsSvrName
-		r := consul.NewResolver(servName)
-		b := grpc.RoundRobin(r)
-		conn, err := grpc.Dial(addr,
-			grpc.WithBalancer(b),
-			grpc.WithBlock(),
-			grpc.WithInsecure())
-		if err != nil {
-			log.Println("conn grpc server failed, addr: ", addr, "error info: ", err)
-			return nil
-		}
-		grpcSmsClient = smspb.NewSmsServiceClient(conn)
-	}
-	return grpcSmsClient
-}
-
-func getVcodeClient(addr string) vcodeproto.ImgEmailServiceClient {
-	if len(addr) == 0 {
-		logger.Info("consul addr is empty")
-		return nil
-	}
-	if vcodeClient == nil {
-		servName := config.GetConfig().ImgEmailSvrName
-		r := consul.NewResolver(servName)
-		b := grpc.RoundRobin(r)
-		conn, err := grpc.Dial(addr,
-			grpc.WithBalancer(b),
-			grpc.WithBlock(),
-			grpc.WithInsecure())
-		if err != nil {
-			logger.Error("conn grpc server failed, addr: ", addr, "error info: ", err)
-			return nil
-		}
-		vcodeClient = vcodeproto.NewImgEmailServiceClient(conn)
-	}
-	return vcodeClient
-}
-
 func messageServerReq(phone string, country int, ln string, expire int, voiceCode int) (bool, error) {
 	if isNotNull(phone) && country > 0 {
-		cli := getSmsClient(config.GetConfig().RegistryAddr)
+		cli := rpc.GetSmsClient()
 		if cli != nil {
 			req := &smspb.VoiceMsgRequest{
 				Country:   int32(country),
@@ -239,7 +189,7 @@ func SendCallVCode(phone string, country int, ln string, expire int) (bool, erro
 }
 
 func GetImgVCode(w, h, len, expire int) (*ImgMailRes, error) {
-	cli := getVcodeClient(config.GetConfig().RegistryAddr)
+	cli := rpc.GetVcodeClient()
 	if cli != nil {
 		reqData := &vcodeproto.ImgVcodeReq{
 			W:      int32(w),
@@ -265,7 +215,7 @@ func GetImgVCode(w, h, len, expire int) (*ImgMailRes, error) {
 }
 
 func SendMailVCode(email string, ln string, expire int) (*ImgMailRes, error) {
-	cli := getVcodeClient(config.GetConfig().RegistryAddr)
+	cli := rpc.GetVcodeClient()
 	if cli != nil {
 		reqData := &vcodeproto.EmailVcodeReq{
 			Mail:   email,
@@ -290,7 +240,7 @@ func SendMailVCode(email string, ln string, expire int) (*ImgMailRes, error) {
 }
 
 func validateImgVCode(id string, vcode string) (bool, int) {
-	cli := getVcodeClient(config.GetConfig().RegistryAddr)
+	cli := rpc.GetVcodeClient()
 	if cli != nil {
 		reqData := &vcodeproto.ValidateRequest{
 			Id:   id,
@@ -319,7 +269,7 @@ func ValidateImgVCode(id, vcode string) (bool, int) {
 
 func ValidateSmsAndCallVCode(phone string, country int, code string, expire int, flag int) (bool, int) {
 	if isNotNull(phone) && country > 0 {
-		cli := getSmsClient(config.GetConfig().RegistryAddr)
+		cli := rpc.GetSmsClient()
 		if cli != nil {
 			req := &smspb.ValidateRequest{
 				Country:        int32(country),
@@ -340,7 +290,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 
 func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 	if len(id) > 0 && len(vcode) > 0 && len(email) > 0 {
-		cli := getVcodeClient(config.GetConfig().RegistryAddr)
+		cli := rpc.GetVcodeClient()
 		if cli != nil {
 			reqData := &vcodeproto.ValidateRequest{
 				Id:    id,
