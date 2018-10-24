@@ -49,7 +49,7 @@ func (handler *contactListHandler) Handle(request *http.Request, writer http.Res
 		res.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	if len(contactList) == 0 {
+	if len(contactList) > 0 {
 		res.Data = contactList
 	}
 
