@@ -561,6 +561,9 @@ func InsertUserWalletAddr(uid int64, addr string) error {
 		return constants.WALLET_DUP_BIND
 	}
 	_, err := gDbUser.Exec("insert into user_wallet_address (uid,address,create_time) values (?,?,?)", uid, addr, utils.GetTimestamp13())
+	if err == nil {
+		return nil
+	}
 	if db_factory.CheckDuplicateByColumn(err, "address") {
 		return constants.WALLET_DUP_BIND
 	}
@@ -573,6 +576,6 @@ func GetWalletAddrList(uid int64) ([]map[string]string, error) {
 		union all 
 		select address,create_time from user_wallet_address where uid = ?
 	`
-	return gDbUser.QueryRows(sql,uid)
+	return gDbUser.QueryRows(sql,uid,uid)
 }
 
