@@ -39,20 +39,46 @@ func (handler *commonTransResultHandler) Handle(request *http.Request, writer ht
 		txid := utils.Str2Int64(requestData.Param.Txid)
 		currency := strings.ToUpper(requestData.Param.Currency)
 		switch currency {
-		case common.CURRENCY_ETH:
+		case constants.TRADE_CURRENCY_EOS:
 			//数据库存在 返回成功
-			if common.CheckEthHistoryByTxid(txid) {
+			if common.CheckEosHistoryByTxid(txid) {
 				return
 			}
 			//pending存在 返回处理中
-			if common.CheckEthPendingByTxid(txid) {
+			if common.CheckTradePendingByTxid(txid) {
 				response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
 				return
 			}
 			//都未查到，返回无效的txid
 			response.SetResponseBase(constants.RC_INVALID_TXID)
 			return
-		case common.CURRENCY_LVT:
+		case constants.TRADE_CURRENCY_BTC:
+			//数据库存在 返回成功
+			if common.CheckBtcHistoryByTxid(txid) {
+				return
+			}
+			//pending存在 返回处理中
+			if common.CheckTradePendingByTxid(txid) {
+				response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
+				return
+			}
+			//都未查到，返回无效的txid
+			response.SetResponseBase(constants.RC_INVALID_TXID)
+			return
+		case constants.TRADE_CURRENCY_ETH:
+			//数据库存在 返回成功
+			if common.CheckEthHistoryByTxid(txid) {
+				return
+			}
+			//pending存在 返回处理中
+			if common.CheckTradePendingByTxid(txid) {
+				response.SetResponseBase(constants.RC_TRANS_IN_PROGRESS)
+				return
+			}
+			//都未查到，返回无效的txid
+			response.SetResponseBase(constants.RC_INVALID_TXID)
+			return
+		case constants.TRADE_CURRENCY_LVT:
 			//数据库存在 返回成功
 			if common.CheckTXID(txid) {
 				return
@@ -65,7 +91,7 @@ func (handler *commonTransResultHandler) Handle(request *http.Request, writer ht
 			//都未查到，返回无效的txid
 			response.SetResponseBase(constants.RC_INVALID_TXID)
 			return
-		case common.CURRENCY_LVTC:
+		case constants.TRADE_CURRENCY_LVTC:
 			//数据库存在 返回成功
 			if common.CheckTXID(txid) {
 				return

@@ -187,7 +187,7 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 
 	//调用统一提交流程
 	bizContent := utils.ToJSON(secret.BizContent)
-	if _, tradeNo, resErr := common.PrepareETHTrans(from, to, secret.Value, requestData.Param.TxType, bizContent); resErr == constants.RC_OK {
+	if _, tradeNo, resErr := common.PrepareTradePending(from, to, secret.Value, requestData.Param.TxType, bizContent); resErr == constants.RC_OK {
 		response.Data = ethTransPrepareResData{
 			TradeNo: tradeNo,
 		}

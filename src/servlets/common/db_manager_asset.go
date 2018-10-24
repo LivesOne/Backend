@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	sqlBase "database/sql"
 	"errors"
+	"fmt"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
@@ -331,16 +332,17 @@ func CheckAndInitAsset(uid int64) (bool, int) {
 		return false, constants.TRANS_ERR_SYS
 	}
 
-	//_, err = InsertReward(uid)
-	//if err != nil {
-	//	logger.Error("init reward error ", err.Error())
-	//	return false, constants.TRANS_ERR_SYS
-	//}
-	//_, err = InsertRewardLvtc(uid)
-	//if err != nil {
-	//	logger.Error("init reward error ", err.Error())
-	//	return false, constants.TRANS_ERR_SYS
-	//}
+	_, err = InsertAssetEos(uid)
+	if err != nil {
+		logger.Error("init asset eth error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	_, err = InsertAssetBtc(uid)
+	if err != nil {
+		logger.Error("init asset eth error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
 
 	if rowsCount == 0 {
 		return true, constants.TRANS_ERR_SUCC
@@ -386,6 +388,16 @@ func InsertAssetLvtc(uid int64) (sql.Result, error) {
 }
 func InsertAssetEth(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_asset_eth (uid,balance,lastmodify) values (?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0)
+}
+
+func InsertAssetEos(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_asset_eos (uid,balance,lastmodify) values (?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0)
+}
+
+func InsertAssetBtc(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_asset_btc (uid,balance,lastmodify) values (?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0)
 }
 
@@ -1587,13 +1599,14 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 	return &alres
 }
 
-func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
+func transCommit(txid, from, to, value int64, tradeNo, assetTable, txHistoryTable string, tradeType int, tx *sql.Tx) (int64, int) {
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()
 		defer tx.Commit()
 	}
 
-	tx.Exec("select * from user_asset_eth where uid in (?,?) for update", from, to)
+	sql := fmt.Sprintf("select * from %s where uid in (?,?) for update", assetTable)
+	tx.Exec(sql, from, to)
 
 	ts := utils.GetTimestamp13()
 
@@ -1603,7 +1616,8 @@ func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 	}
 
 	//扣除转出方balance
-	info1, err1 := tx.Exec("update user_asset_eth set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
+	sql = fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTable)
+	info1, err1 := tx.Exec(sql, value, ts, from)
 	if err1 != nil {
 		logger.Error("sql error ", err1.Error())
 		return 0, constants.TRANS_ERR_SYS
@@ -1616,7 +1630,8 @@ func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 	}
 
 	//增加目标的balance
-	info2, err2 := tx.Exec("update user_asset_eth set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	sql = fmt.Sprintf("update %s set balance = balance + ?,lastmodify = ? where uid = ?", assetTable)
+	info2, err2 := tx.Exec(sql, value, ts, to)
 	if err2 != nil {
 		logger.Error("sql error ", err2.Error())
 		return 0, constants.TRANS_ERR_SYS
@@ -1635,19 +1650,33 @@ func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 			return 0, constants.TRANS_ERR_SYS
 		}
 	}
-	info3, err3 := tx.Exec("insert into tx_history_eth (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
-		txid, tradeType, tradeNo, from, to, value, ts,
-	)
+	sql = fmt.Sprintf("insert into %s (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)", txHistoryTable)
+	info3, err3 := tx.Exec(sql, txid, tradeType, tradeNo, from, to, value, ts)
 	if err3 != nil {
 		logger.Error("sql error ", err3.Error())
 		return 0, constants.TRANS_ERR_SYS
 	}
 	rsa, _ = info3.RowsAffected()
 	if rsa == 0 {
-		logger.Error("insert eth tx history failed")
+		logger.Error("insert" + txHistoryTable + "failed")
 		return 0, constants.TRANS_ERR_SYS
 	}
 	return txid, constants.TRANS_ERR_SUCC
+}
+
+func BtcTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
+	return transCommit(txid, from, to, value, tradeNo,
+		"user_asset_btc", "tx_history_btc", tradeType, tx)
+}
+
+func EosTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
+	return transCommit(txid, from, to, value, tradeNo,
+		"user_asset_eos", "tx_history_eos", tradeType, tx)
+}
+
+func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
+	return transCommit(txid, from, to, value, tradeNo,
+		"user_asset_eth", "tx_history_eth", tradeType, tx)
 }
 
 func InsertTradePending(txid, from, to int64, tradeNo, bizContent string, value int64, tradeType int) error {
@@ -1727,7 +1756,7 @@ func CheckEthPending(tradeNo string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
-func CheckEthPendingByTxid(txid int64) bool {
+func CheckTradePendingByTxid(txid int64) bool {
 	row, err := gDBAsset.QueryRow("select count(1) as c from trade_pending where txid = ?", txid)
 	if err != nil {
 		logger.Error("query db error", err.Error())
@@ -1753,6 +1782,30 @@ func CheckEthHistory(tradeNo string) bool {
 
 func CheckEthHistoryByTxid(txid int64) bool {
 	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where txid = ?", txid)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckEosHistoryByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eos where txid = ?", txid)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckBtcHistoryByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_btc where txid = ?", txid)
 	if err != nil {
 		logger.Error("query db error", err.Error())
 		return false
