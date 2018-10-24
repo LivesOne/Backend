@@ -11,7 +11,6 @@ import (
 
 type (
 	contactCreateHandler struct {
-
 	}
 	extendInfo struct {
 		Key   string `json:"key"`
@@ -23,7 +22,7 @@ type (
 		Name          string       `json:"name,omitempty"`
 		Country       int          `json:"country,omitempty"`
 		Phone         string       `json:"phone,omitempty"`
-		LivesoneUid   int64        `json:"livesone_uid,omitempty"`
+		LivesoneUid   string       `json:"livesone_uid,omitempty"`
 		WalletAddress string       `json:"wallet_address,omitempty"`
 		Extend        []extendInfo `json:"extend,omitempty"`
 	}
@@ -49,7 +48,7 @@ func (handler *contactCreateHandler) Handle(request *http.Request, writer http.R
 	defer log.InfoAll()
 
 	res := common.NewResponseData()
-	defer common.FlushJSONData2Client(res,writer)
+	defer common.FlushJSONData2Client(res, writer)
 	header := common.ParseHttpHeaderParams(request)
 	if !header.IsValid() {
 		log.Warn("header is not valid", utils.ToJSON(header))
@@ -66,7 +65,7 @@ func (handler *contactCreateHandler) Handle(request *http.Request, writer http.R
 
 	reqData := new(contactCreateReqData)
 
-	if !common.ParseHttpBodyParams(request,reqData) {
+	if !common.ParseHttpBodyParams(request, reqData) {
 		log.Info("decode json str error")
 		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return

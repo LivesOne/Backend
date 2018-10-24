@@ -563,7 +563,11 @@ func InsertUserWalletAddr(uid int64, addr string) error {
 }
 
 func GetWalletAddrList(uid int64) ([]map[string]string, error) {
-	return gDbUser.QueryRows("select address,create_time from user_wallet_address where uid = ?",
-		uid)
+	sql := `
+		select wallet_address,update_time from account_extend where uid = ?
+		union all 
+		select address,create_time from user_wallet_address where uid = ?
+	`
+	return gDbUser.QueryRows(sql,uid)
 }
 

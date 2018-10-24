@@ -22,7 +22,7 @@ type (
 		Email         string        `json:"email,omitempty" bson:"email,omitempty"`
 		Country       int           `json:"country,omitempty" bson:"country,omitempty"`
 		Phone         string        `json:"phone,omitempty" bson:"phone,omitempty"`
-		LivesoneUid   int64         `json:"livesone_uid,omitempty" bson:"livesone_uid,omitempty"`
+		LivesoneUid   string        `json:"livesone_uid,omitempty" bson:"livesone_uid,omitempty"`
 		WalletAddress string        `json:"wallet_address,omitempty" bson:"wallet_address,omitempty"`
 		UpdateTime    int64         `json:"update_time,omitempty" bson:"update_time,omitempty"`
 		CreateTime    int64         `json:"create_time,omitempty" bson:"create_time,omitempty"`
