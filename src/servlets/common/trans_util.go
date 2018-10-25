@@ -474,7 +474,7 @@ func CommitTransfer(uidStr, txidStr, currency string) (retErr constants.Error) {
 			return constants.RC_SYSTEM_ERR
 		}
 		// 设置日限额
-		SetDailyTransAmount(uid, CURRENCY_ETH, tp.Value)
+		SetDailyTransAmount(uid, currency, tp.Value)
 	}
 
 	return constants.RC_OK
