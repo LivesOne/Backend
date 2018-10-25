@@ -29,6 +29,7 @@ const (
 	DayDuration         = 24 * time.Hour
 	TwoDayDuration      = 2 * DayDuration
 	CONV_LVT            = 1e8
+	CONV_EOS            = 1e4
 	DB_CONV_CHAIN_VALUE = 1e10
 
 )
@@ -142,6 +143,18 @@ func FloatStrToLVTint(lvt string) int64 {
 		return 0
 	}
 	d3 := d2.Mul(decimal.NewFromFloat(CONV_LVT))
+
+	return d3.IntPart()
+}
+
+func FloatStrToEOSint(eos string) int64 {
+
+	d2, err := decimal.NewFromString(eos)
+	if err != nil {
+		logger.Error("decimal conv folat error", err.Error())
+		return 0
+	}
+	d3 := d2.Mul(decimal.NewFromFloat(CONV_EOS))
 
 	return d3.IntPart()
 }

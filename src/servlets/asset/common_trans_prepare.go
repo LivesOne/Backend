@@ -160,6 +160,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	currency := strings.ToUpper(secret.Currency)
 	feeCurrency := strings.ToUpper(secret.FeeCurrency)
 	feeTransToAcc := config.GetConfig().TransFeeAccountUid
+	var feeInt int64
 	switch currency {
 	case constants.TRADE_CURRENCY_EOS:
 		// 校验Eos 日限额及单笔交易额限制
@@ -173,6 +174,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 			response.SetResponseBase(err)
 			return
 		}
+		feeInt = utils.FloatStrToEOSint(secret.Fee)
 	case constants.TRADE_CURRENCY_BTC:
 		// 校验Btc 日限额及单笔交易额限制
 		if err := common.VerifyBtcTrans(from, secret.Value); err != constants.RC_OK {
@@ -185,6 +187,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 			response.SetResponseBase(err)
 			return
 		}
+		feeInt = utils.FloatStrToLVTint(secret.Fee)
 	case constants.TRADE_CURRENCY_ETH:
 		// 校验ETH 日限额及单笔交易额限制
 		if err := common.VerifyEthTrans(from, secret.Value); err != constants.RC_OK {
@@ -197,6 +200,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 			response.SetResponseBase(err)
 			return
 		}
+		feeInt = utils.FloatStrToLVTint(secret.Fee)
 	case constants.TRADE_CURRENCY_LVT:
 		// 校验LVT 用户每日prepare次数限制及额度限制
 		if err := common.VerifyLVTTrans(from); err != constants.RC_OK {
@@ -204,7 +208,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 			return
 		}
 		// lvt 交易员不限制转账额度，不收转账手续费
-		secret.Fee = "0"
+		feeInt = 0
 	case constants.TRADE_CURRENCY_LVTC:
 		// 校验LVTC 日限额及单笔交易额限制、目标账号收款权限
 		if err := common.VerifyLVTCTrans(from, secret.Value); err != constants.RC_OK {
@@ -217,6 +221,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 			response.SetResponseBase(err)
 			return
 		}
+		feeInt = utils.FloatStrToLVTint(secret.Fee)
 	default:
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 		return
@@ -246,18 +251,21 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	var resErr constants.Error
 	bizContent := common.TransBizContent{
 		FeeCurrency: feeCurrency,
-		Fee:         utils.FloatStrToLVTint(secret.Fee),
+		Fee:         feeInt,
 		Remark:      requestData.Param.Remark,
 	}
 	bizContentStr := utils.ToJSON(bizContent)
 	// 转账分币种进行
 	switch currency {
 	case constants.TRADE_CURRENCY_EOS:
-		fallthrough
+		intValue := utils.FloatStrToEOSint(secret.Value)
+		txid, _, resErr = common.PrepareTradePending(from, to, intValue, constants.TX_TYPE_TRANS, bizContentStr)
 	case constants.TRADE_CURRENCY_BTC:
-		fallthrough
+		intValue := utils.FloatStrToLVTint(secret.Value)
+		txid, _, resErr = common.PrepareTradePending(from, to, intValue, constants.TX_TYPE_TRANS, bizContentStr)
 	case constants.TRADE_CURRENCY_ETH:
-		txid, _, resErr = common.PrepareTradePending(from, to, secret.Value, constants.TX_TYPE_TRANS, bizContentStr)
+		intValue := utils.FloatStrToLVTint(secret.Value)
+		txid, _, resErr = common.PrepareTradePending(from, to, intValue, constants.TX_TYPE_TRANS, bizContentStr)
 	case constants.TRADE_CURRENCY_LVT:
 		txid, resErr = common.PrepareLVTTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr, bizContent.Remark)
 	case constants.TRADE_CURRENCY_LVTC:
