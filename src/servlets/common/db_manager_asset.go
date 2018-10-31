@@ -142,6 +142,30 @@ func QueryBalanceEth(uid int64) (int64, int64, int64, int64, int, error) {
 	return 0, 0, 0, 0, 0, err
 }
 
+func QueryBalanceEos(uid int64) (int64, int64, int64, int64, int, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset_eos where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), utils.Str2Int64(row["lastmodify"]), utils.Str2Int(row["status"]), nil
+	}
+	return 0, 0, 0, 0, 0, err
+}
+
+func QueryBalanceBtc(uid int64) (int64, int64, int64, int64, int, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset_btc where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), utils.Str2Int64(row["lastmodify"]), utils.Str2Int(row["status"]), nil
+	}
+	return 0, 0, 0, 0, 0, err
+}
+
 func TransAccountLvt(tx *sql.Tx, dth *DTTXHistory) (bool, int) {
 	f, c := TransAccountLvtByTx(dth.Id, dth.From, dth.To, dth.Value, tx)
 	if !f {
