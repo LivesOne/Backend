@@ -579,3 +579,14 @@ func GetWalletAddrList(uid int64) ([]map[string]string, error) {
 	return gDbUser.QueryRows(sql,uid,uid)
 }
 
+func GetRechargeAddrList(uid int64, currency string) (string, error) {
+	sql := `select address from user_recharge_address where uid=? and currency=?`
+	row, err := gDbUser.QueryRow(sql,uid,currency)
+	if err != nil {
+		return "", err
+	}
+	if row == nil {
+		return "", nil
+	}
+	return row["address"], nil
+}
