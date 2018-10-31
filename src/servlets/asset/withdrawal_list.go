@@ -5,6 +5,7 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
+	"strings"
 	"utils"
 	"utils/logger"
 )
@@ -78,13 +79,21 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 	userWithdrawalRequestArray := common.QueryWithdrawalList(uid)
 	withdrawListResponseArray := make([]withdrawListResponse, 0)
 	for _, userWithdrawalRequest := range userWithdrawalRequestArray {
+		var value, fee string
+		if strings.EqualFold(userWithdrawalRequest.Currency, "EOS") {
+			value = utils.CoinsInt2FloatStr(userWithdrawalRequest.Value, utils.CONV_EOS)
+			fee = utils.CoinsInt2FloatStr(userWithdrawalRequest.Fee, utils.CONV_EOS)
+		} else {
+			value = utils.CoinsInt2FloatStr(userWithdrawalRequest.Value, utils.CONV_LVT)
+			fee = utils.CoinsInt2FloatStr(userWithdrawalRequest.Fee, utils.CONV_LVT)
+		}
 		withdrawListResponseArray = append(withdrawListResponseArray, withdrawListResponse{
 			Id:         utils.Int642Str(userWithdrawalRequest.Id),
 			TradeNo:    userWithdrawalRequest.TradeNo,
 			Currency:   userWithdrawalRequest.Currency,
 			Address:    userWithdrawalRequest.Address,
-			Value:      utils.LVTintToFloatStr(userWithdrawalRequest.Value),
-			Fee:        utils.LVTintToFloatStr(userWithdrawalRequest.Fee),
+			Value:      value,
+			Fee:        fee,
 			CreateTime: userWithdrawalRequest.CreateTime,
 			UpdateTime: userWithdrawalRequest.UpdateTime,
 			Status:     userWithdrawalRequest.Status,

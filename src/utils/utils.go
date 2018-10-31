@@ -130,6 +130,14 @@ func Timestamp13ToDate(timestamp int64) time.Time {
 	return timeUtc
 }
 
+func CoinsInt2FloatStr(coins, coinsDecimal int64) string {
+	return strconv.FormatFloat(float64(coins) / float64(coinsDecimal), 'f', 8, 64)
+}
+
+func FloatStr2CoinsInt (coins string, coinsDecimal int64) int64 {
+	return int64(Str2Float64(coins) * float64(coinsDecimal))
+}
+
 func LVTintToFloatStr(lvt int64) string {
 	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_LVT))
 	return d2.StringFixed(8)

@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	sqlBase "database/sql"
 	"errors"
+	"fmt"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
 	"math/big"
 	"servlets/constants"
+	"strings"
 	"time"
 	"utils"
 	"utils/config"
@@ -1181,32 +1183,185 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 	}
 }
 
-func Withdraw(uid int64, amount string, address string, currency string) (string, constants.Error) {
-	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
+//func Withdraw(uid int64, amount string, address string, currency string) (string, constants.Error) {
+//	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
+//
+//	if err != nil {
+//		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
+//		return "", constants.RC_SYSTEM_ERR
+//	}
+//
+//	if utils.Str2Int(row["count"]) > 0 {
+//		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
+//	}
+//
+//	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
+//
+//	error := constants.RC_OK
+//	switch currency {
+//	case "LVTC":
+//		error = withdrawLVTC(uid, amount, address, tradeNo)
+//	case "ETH":
+//		error = withdrawETH(uid, amount, address, tradeNo)
+//	default:
+//		error = constants.RC_INVALID_CURRENCY
+//	}
+//
+//	return tradeNo, error
+//
+//}
 
+func Withdraw(uid int64, amount, address, currency, feeCurrency string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
+	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
 	if err != nil {
 		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
 		return "", constants.RC_SYSTEM_ERR
 	}
-
 	if utils.Str2Int(row["count"]) > 0 {
 		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
 	}
 
 	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
-
-	error := constants.RC_OK
-	switch currency {
-	case "LVTC":
-		error = withdrawLVTC(uid, amount, address, tradeNo)
-	case "ETH":
-		error = withdrawETH(uid, amount, address, tradeNo)
-	default:
-		error = constants.RC_INVALID_CURRENCY
+	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+	timestamp := utils.GetTimestamp13()
+	fee, error := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
+	if error.Rc != constants.RC_OK.Rc {
+		return "", error
 	}
 
-	return tradeNo, error
+	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
 
+	tx, _ := gDBAsset.Begin()
+
+	txId := GenerateTxID()
+	txIdFee := GenerateTxID()
+	error = transfer(txId, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+	if error.Rc != constants.RC_OK.Rc {
+		tx.Rollback()
+		return "", error
+	}
+	error = transfer(txIdFee, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, timestamp, currency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	if error.Rc != constants.RC_OK.Rc {
+		tx.Rollback()
+		return "", error
+	}
+
+	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency)
+	if err != nil {
+		logger.Error("add user_withdrawal_request error ", err.Error())
+		tx.Rollback()
+		return "", constants.RC_SYSTEM_ERR
+	}
+	tx.Commit()
+
+	go func() {
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, timestamp)
+		if err != nil {
+			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+		}
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, timestamp)
+		if err != nil {
+			logger.Error("withdraw insert trade database error, error:", err.Error())
+		}
+		if strings.EqualFold(currency,"LVTC") {
+			txh := &DTTXHistory{
+				Id:       txId,
+				TradeNo:  tradeNo,
+				Type:     constants.TX_SUB_TYPE_WITHDRAW,
+				From:     uid,
+				To:       config.GetWithdrawalConfig().WithdrawalAcceptAccount,
+				Value:    feeInt,
+				Ts:       timestamp,
+				Currency: "LVTC",
+			}
+			err := InsertLVTCCommited(txh)
+			if err != nil {
+				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
+				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
+			} else {
+				DeleteTxhistoryLvtTmpByTxid(txId)
+			}
+		}
+	}()
+
+	return tradeNo, error
+}
+
+func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string, tradeType int, tx *sql.Tx) constants.Error {
+	assetTableName := ""
+	historyTableName := ""
+	switch currency {
+	case "BTC":
+		fallthrough
+	case "btc":
+		assetTableName = "user_asset_btc"
+		historyTableName = "tx_history_btc"
+	case "ETH":
+		fallthrough
+	case "eth":
+		assetTableName = "user_asset_eth"
+		historyTableName = "tx_history_eth"
+	case "EOS":
+		fallthrough
+	case "eos":
+		assetTableName = "user_asset_eos"
+		historyTableName = "tx_history_eos"
+	case "LVTC":
+		fallthrough
+	case "lvtc":
+		assetTableName = "user_asset_lvtc"
+		historyTableName = "tx_history_lvt_tmp"
+	default:
+		logger.Error("currency not supported, currency:", currency)
+	}
+	_, err := tx.Exec("select * from user_asset_eth where uid in (?, ?) for update", from, to)
+	if err != nil {
+		logger.Error("lock ", currency, " asset error, error:", err.Error())
+		tx.Rollback()
+		return constants.RC_SYSTEM_ERR
+	}
+
+	sql := fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTableName)
+	//扣除转出方balance
+	info, err := tx.Exec(sql, amount, timestamp, from)
+	if err != nil {
+		logger.Error("exec sql(", sql, ") error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user", currency, " balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return constants.RC_PARAM_ERR
+	}
+
+	sql = fmt.Sprintf("update %s set balance = balance + ?,lastmodify = ? where uid = ?", assetTableName)
+	//增加目标的balance
+	info, err = tx.Exec(sql, amount, timestamp, to)
+	if err != nil {
+		logger.Error("exec sql(", sql, ") error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user", currency, " balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return constants.RC_PARAM_ERR
+	}
+
+	sql = fmt.Sprintf("insert into %s (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)", historyTableName)
+	info, err = tx.Exec(sql, txId, tradeType, tradeNo, from, to, amount, timestamp)
+	if err != nil {
+		logger.Error("exec sql(", sql, ") error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	rsa, _ = info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert eth tx history failed, table:", historyTableName)
+		return constants.RC_PARAM_ERR
+	}
+	return constants.RC_OK
 }
 
 func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Error {
@@ -1440,25 +1595,68 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
-	var feeOfWithdraw float64
+	var feeOfWithdraw = float64(-1)
 	for _, fee := range withdrawQuota.Fee {
-		if fee.FeeCurrency == feeCurrency {
-			switch fee.FeeType {
-			case 0:
-				feeOfWithdraw = fee.FeeFixed
-			case 1:
-				feeOfWithdraw = withdrawAmount * fee.FeeRate
-				if feeOfWithdraw < fee.FeeMin {
-					feeOfWithdraw = fee.FeeMin
+		if strings.EqualFold(feeCurrency, "lvtc") {
+			if fee.FeeCurrency == withdrawCurrency {
+				switch fee.FeeType {
+				case 0:
+					feeOfWithdraw = fee.FeeFixed
+				case 1:
+					feeOfWithdraw = withdrawAmount * fee.FeeRate
+					if feeOfWithdraw < fee.FeeMin {
+						feeOfWithdraw = fee.FeeMin
+					}
+					if feeOfWithdraw > fee.FeeMax {
+						feeOfWithdraw = fee.FeeMax
+					}
+				default:
+					logger.Error("withdraw fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
+					return float64(0), constants.RC_INVALID_CURRENCY
 				}
-				if feeOfWithdraw > fee.FeeMax {
-					feeOfWithdraw = fee.FeeMax
+			}
+			cur, avg, err := QueryCurrencyPrice(withdrawCurrency, "LVTC")
+			if err != nil {
+				logger.Error("query ", withdrawCurrency, "to", feeCurrency, " price err, error:", err.Error())
+				return float64(0), constants.RC_TRANSFER_FEE_ERROR
+			}
+
+			//TODO 从配置中获取折扣率
+			discount := big.NewFloat(utils.Str2Float64("0"))
+			//TODO 检查配置确认使用当前汇率或者平均汇率
+			if config.GetConfig().WithdrawalConfig == "" {
+				feeBig := big.NewFloat(0)
+				feeBig = feeBig.Mul(big.NewFloat(feeOfWithdraw), big.NewFloat(utils.Str2Float64(cur)))
+				feeOfWithdraw, _ = feeBig.Mul(feeBig, discount).Float64()
+			} else {
+				feeBig := big.NewFloat(0)
+				feeBig = feeBig.Mul(big.NewFloat(feeOfWithdraw), big.NewFloat(utils.Str2Float64(avg)))
+				feeOfWithdraw, _ = feeBig.Mul(feeBig, discount).Float64()
+			}
+		} else {
+			if fee.FeeCurrency == feeCurrency {
+				switch fee.FeeType {
+				case 0:
+					feeOfWithdraw = fee.FeeFixed
+				case 1:
+					feeOfWithdraw = withdrawAmount * fee.FeeRate
+					if feeOfWithdraw < fee.FeeMin {
+						feeOfWithdraw = fee.FeeMin
+					}
+					if feeOfWithdraw > fee.FeeMax {
+						feeOfWithdraw = fee.FeeMax
+					}
+				default:
+					logger.Error("withdraw fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
+					return float64(0), constants.RC_INVALID_CURRENCY
 				}
-			default:
-				logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
-				return float64(0), constants.RC_INVALID_CURRENCY
 			}
 		}
+	}
+
+	if feeOfWithdraw < 0 {
+		logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
+		return float64(0), constants.RC_INVALID_CURRENCY
 	}
 
 	return feeOfWithdraw, constants.RC_OK
