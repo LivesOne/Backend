@@ -120,7 +120,7 @@ func buildAllBalanceDetail(currencyList []string,uid int64)[]balanceDetial{
 				logger.Error("query balance error",err.Error())
 				return nil
 			}
-			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
+			bd := buildSingleBalanceEOSDetail(balance, locked,income,lastmodify,status,v)
 			bds = append(bds,bd)
 		case constants.TRADE_CURRENCY_BTC:
 			balance, locked,income,lastmodify,status,err := common.QueryBalanceBtc(uid)
@@ -143,6 +143,17 @@ func buildSingleBalanceDetail(balance,locked,income,lastmodify int64 ,status int
 		Balance:    utils.LVTintToFloatStr(balance),
 		Locked:      utils.LVTintToFloatStr(locked),
 		Income:      utils.LVTintToFloatStr(income),
+		Lastmodify: lastmodify,
+		Status:     status,
+	}
+}
+
+func buildSingleBalanceEOSDetail(balance,locked,income,lastmodify int64 ,status int,currency string)balanceDetial{
+	return balanceDetial{
+		Currency:   currency,
+		Balance:    utils.LVTintToFloatEOSStr(balance),
+		Locked:      utils.LVTintToFloatEOSStr(locked),
+		Income:      utils.LVTintToFloatEOSStr(income),
 		Lastmodify: lastmodify,
 		Status:     status,
 	}
