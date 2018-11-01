@@ -82,9 +82,9 @@
       "DBUserPwd" : "",
       "DBDatabase" : "db_livesone_profile"
     },
-    "SmsSvrAddr":"http://10.0.5.248:9099",
-    "MailSvrAddr":"http://10.0.5.248:9080/vcode",
-    "ImgSvrAddr":"http://10.0.5.248:9080/vcode",
+    "SmsSvrName": "SmsService",
+    "ImgEmailSvrName": "ImgEmailService",
+    "RegistryAddr":"10.0.5.248:8500",
     "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
     "TransferLimit" : {
         "0":{

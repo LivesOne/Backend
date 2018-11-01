@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package microuser;
+
+
+enum ResCode {
+    OK = 0;
+    ERR_SYSTEM = 1;
+    ERR_PARAM = 2;
+    ERR_NOTFOUND = 3;
+    ERR_LIMITED = 4;
+    ERR_INVALID_TOKEN = 5;
+    ERR_DUP_DATA = 6;
+}
+
+enum UserField {
+    NICKNAME = 0;
+    EMAIL = 1;
+    COUNTRY = 2;
+    PHONE = 3;
+    LOGIN_PASSWORD = 4;
+    PAYMENT_PASSWORD = 5;
+    LANGUAGE = 6;
+    REGION = 7;
+    FROM = 8;
+    STATUS = 9;
+    LEVEL = 10;
+    CREDIT_SCORE = 11;
+    ACTIVE_DAYS = 12;
+    WX = 13;
+    TG = 14;
+    AVATAR_URL = 15;
+    REGISTER_TIME = 16;
+    UPDATE_TIME = 17;
+}

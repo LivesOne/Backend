@@ -7,7 +7,7 @@ import (
 	"servlets/token"
 	"utils"
 	"utils/logger"
-	"utils/vcode"
+	"servlets/vcode"
 )
 
 type setTxPwdParam struct {

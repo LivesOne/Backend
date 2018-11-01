@@ -89,12 +89,18 @@ type Configuration struct {
 	TransferLimit       map[int]TransferLimit
 	AppIDs              []int // app IDs read from configuration file
 
+	// 短信验证服务
+	SmsSvrName string
+	// 图片、邮件验证服务
+	ImgEmailSvrName string
+	// 服务注册发现地址
+	RegistryAddr string
 	// 短信验证网关相关
-	SmsSvrAddr string
+	//SmsSvrAddr string
 	// 邮件验证网关相关
-	MailSvrAddr string
+	//MailSvrAddr string
 	// 图像验证网关相关
-	ImgSvrAddr string
+	//ImgSvrAddr string
 	// 短信上行接口地址
 	SmsUpValidateSvrAddr string
 	// log相关
@@ -216,11 +222,11 @@ func (cfg *Configuration) isValid() bool {
 		cfg.User.isValid() &&
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
-		cfg.TxHistory.isValid() &&
-		//len(cfg.AppIDs) > 0 &&
-		len(cfg.SmsSvrAddr) > 0 &&
-		len(cfg.MailSvrAddr) > 0 &&
-		len(cfg.ImgSvrAddr) > 0
+		cfg.TxHistory.isValid()
+	//len(cfg.AppIDs) > 0 &&
+	//len(cfg.SmsSvrAddr) > 0 &&
+	//len(cfg.MailSvrAddr) > 0 &&
+	//len(cfg.ImgSvrAddr) > 0
 }
 
 func (cfg *Configuration) CautionMoneyIdsExist(uid int64) bool {

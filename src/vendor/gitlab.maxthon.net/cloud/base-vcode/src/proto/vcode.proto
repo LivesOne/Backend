@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package vcodeproto;
+
+service ImgEmailService {
+    rpc SendImgVcode(ImgVcodeReq) returns (ImgVcodeRes) {}
+    rpc SendEmailVcode(EmailVcodeReq) returns (EmailVcodeRes) {}
+    rpc ValidateVcode(ValidateRequest) returns (CommonResponse) {}
+}
+
+message ImgVcodeReq {
+    int32 w = 1;
+    int32 h = 2;
+    int32 len = 3;
+    int32 expire = 4;
+}
+
+message EmailVcodeReq {
+    string mail = 1;
+    string ln = 2;
+    int32 tpl = 3;
+    int32 expire = 4;
+}
+
+message ValidateRequest {
+    string id = 1;
+    string code = 2;
+    string email = 3;
+    int32 vm = 4;
+}
+
+message VcodeResData {
+    string id = 1;
+    int32 size = 2;
+    int32 expire = 3;
+}
+
+message ImgVcodeResData {
+    VcodeResData vcode = 1;
+    string imgBase = 2;
+}
+
+message CommonResponse {
+    int32 code = 1;
+    string msg = 2;
+}
+
+message ImgVcodeRes {
+     int32 code = 1;
+     string msg = 2;
+     ImgVcodeResData data = 3;
+}
+
+message EmailVcodeRes {
+     int32 code = 1;
+     string msg = 2;
+     VcodeResData data = 3;
+}
+
