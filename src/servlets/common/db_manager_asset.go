@@ -1597,59 +1597,21 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 	}
 	var feeOfWithdraw = float64(-1)
 	for _, fee := range withdrawQuota.Fee {
-		if strings.EqualFold(feeCurrency, "lvtc") {
-			if fee.FeeCurrency == withdrawCurrency {
-				switch fee.FeeType {
-				case 0:
-					feeOfWithdraw = fee.FeeFixed
-				case 1:
-					feeOfWithdraw = withdrawAmount * fee.FeeRate
-					if feeOfWithdraw < fee.FeeMin {
-						feeOfWithdraw = fee.FeeMin
-					}
-					if feeOfWithdraw > fee.FeeMax {
-						feeOfWithdraw = fee.FeeMax
-					}
-				default:
-					logger.Error("withdraw fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
-					return float64(0), constants.RC_INVALID_CURRENCY
+		if fee.FeeCurrency == feeCurrency {
+			switch fee.FeeType {
+			case 0:
+				feeOfWithdraw = fee.FeeFixed
+			case 1:
+				feeOfWithdraw = withdrawAmount * fee.FeeRate
+				if feeOfWithdraw < fee.FeeMin {
+					feeOfWithdraw = fee.FeeMin
 				}
-			}
-			cur, avg, err := QueryCurrencyPrice(withdrawCurrency, "LVTC")
-			if err != nil {
-				logger.Error("query ", withdrawCurrency, "to", feeCurrency, " price err, error:", err.Error())
-				return float64(0), constants.RC_TRANSFER_FEE_ERROR
-			}
-
-			//TODO 从配置中获取折扣率
-			discount := big.NewFloat(utils.Str2Float64("0"))
-			//TODO 检查配置确认使用当前汇率或者平均汇率
-			if config.GetConfig().WithdrawalConfig == "" {
-				feeBig := big.NewFloat(0)
-				feeBig = feeBig.Mul(big.NewFloat(feeOfWithdraw), big.NewFloat(utils.Str2Float64(cur)))
-				feeOfWithdraw, _ = feeBig.Mul(feeBig, discount).Float64()
-			} else {
-				feeBig := big.NewFloat(0)
-				feeBig = feeBig.Mul(big.NewFloat(feeOfWithdraw), big.NewFloat(utils.Str2Float64(avg)))
-				feeOfWithdraw, _ = feeBig.Mul(feeBig, discount).Float64()
-			}
-		} else {
-			if fee.FeeCurrency == feeCurrency {
-				switch fee.FeeType {
-				case 0:
-					feeOfWithdraw = fee.FeeFixed
-				case 1:
-					feeOfWithdraw = withdrawAmount * fee.FeeRate
-					if feeOfWithdraw < fee.FeeMin {
-						feeOfWithdraw = fee.FeeMin
-					}
-					if feeOfWithdraw > fee.FeeMax {
-						feeOfWithdraw = fee.FeeMax
-					}
-				default:
-					logger.Error("withdraw fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
-					return float64(0), constants.RC_INVALID_CURRENCY
+				if feeOfWithdraw > fee.FeeMax {
+					feeOfWithdraw = fee.FeeMax
 				}
+			default:
+				logger.Error("withdraw fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
+				return float64(0), constants.RC_INVALID_CURRENCY
 			}
 		}
 	}
