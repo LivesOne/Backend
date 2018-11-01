@@ -177,7 +177,13 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		currencyDecimal = utils.CONV_LVT
 		feeCurrencyDecimal = utils.CONV_LVT
 	}
-	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency), strings.ToUpper(secret.Currency), currencyDecimal, feeCurrencyDecimal)
+	feeCurrency := strings.ToUpper(secret.Currency)
+	if strings.EqualFold(secret.Currency,"lvtc") {
+		feeCurrency = "ETH"
+		feeCurrencyDecimal = utils.CONV_LVT
+	}
+
+	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency), feeCurrency, currencyDecimal, feeCurrencyDecimal)
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
 			TradeNo: tradeNo,
