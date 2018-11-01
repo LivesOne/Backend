@@ -19,6 +19,7 @@ type withdrawRequestParams struct {
 	VcodeType int    `json:"vcode_type"`
 	VcodeId   string `json:"vcode_id"`
 	Vcode     string `json:"vcode"`
+	Remark    string `json:"remark"`
 	Secret    string `json:"secret"`
 }
 
@@ -168,7 +169,21 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	if !strings.HasPrefix(address, "0x") {
 		address = "0x" + address
 	}
-	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
+	var currencyDecimal, feeCurrencyDecimal int
+	if strings.ToUpper(secret.Currency) == "EOS" {
+		currencyDecimal = utils.CONV_EOS
+		feeCurrencyDecimal = utils.CONV_EOS
+	} else {
+		currencyDecimal = utils.CONV_LVT
+		feeCurrencyDecimal = utils.CONV_LVT
+	}
+	feeCurrency := strings.ToUpper(secret.Currency)
+	if strings.EqualFold(secret.Currency,"lvtc") {
+		feeCurrency = "ETH"
+		feeCurrencyDecimal = utils.CONV_LVT
+	}
+
+	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency), feeCurrency, currencyDecimal, feeCurrencyDecimal)
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
 			TradeNo: tradeNo,

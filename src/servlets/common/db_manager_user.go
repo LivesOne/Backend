@@ -528,7 +528,6 @@ func SetWalletAddress(uid int64, walletAddress string) (int64, error) {
 	}
 	rowsAffected, _ := result.RowsAffected()
 	return rowsAffected, err
-
 }
 
 func SetAvatarUrl(uid int64, avatarUrl string) (int64, error) {
@@ -548,9 +547,9 @@ func QueryCacheUser(uid int64)(map[string]string,error){
 	return gDbUser.QueryRow("select ta.uid,ta.nickname,ta.email,ta.country,ta.phone,ta.level,tae.credit_score,tae.avatar_url,tae.active_days from account as ta left join account_extend as tae on ta.uid = tae.uid where ta.uid = ?", uid)
 }
 
-func ExistsWalletAddress(uid int64, address string) bool {
-	row, _ := gDbUser.QueryRow("select count(1) as c from user_wallet_address where uid = ? and address = ?",
-		uid, address)
+func ExistsWalletAddress(address string) bool {
+	row, _ := gDbUser.QueryRow("select count(1) as c from account_extend where wallet_address = ?",
+		address)
 	if row == nil {
 		return false
 	}
@@ -558,12 +557,36 @@ func ExistsWalletAddress(uid int64, address string) bool {
 }
 
 func InsertUserWalletAddr(uid int64, addr string) error {
+	if ExistsWalletAddress(addr) {
+		return constants.WALLET_DUP_BIND
+	}
 	_, err := gDbUser.Exec("insert into user_wallet_address (uid,address,create_time) values (?,?,?)", uid, addr, utils.GetTimestamp13())
+	if err == nil {
+		return nil
+	}
+	if db_factory.CheckDuplicateByColumn(err, "address") {
+		return constants.WALLET_DUP_BIND
+	}
 	return err
 }
 
 func GetWalletAddrList(uid int64) ([]map[string]string, error) {
-	return gDbUser.QueryRows("select address,create_time from user_wallet_address where uid = ?",
-		uid)
+	sql := `
+		select wallet_address as address,update_time as create_time from account_extend where uid = ?
+		union all 
+		select address,create_time from user_wallet_address where uid = ?
+	`
+	return gDbUser.QueryRows(sql,uid,uid)
 }
 
+func GetRechargeAddrList(uid int64, currency string) (string, error) {
+	sql := `select address from user_recharge_address where uid=? and currency=?`
+	row, err := gDbUser.QueryRow(sql,uid,currency)
+	if err != nil {
+		return "", err
+	}
+	if row == nil {
+		return "", nil
+	}
+	return row["address"], nil
+}

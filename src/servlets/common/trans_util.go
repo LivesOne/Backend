@@ -327,7 +327,7 @@ func CommitLVTCTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	return constants.RC_OK
 }
 
-func PrepareETHTrans(from, to int64, valueStr string, txTpye int, bizContent string) (
+func PrepareTradePending(from, to int64, value int64, txTpye int, bizContent string) (
 	string, string, constants.Error) {
 	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_TRANSFER, txTpye)
 	txid := GenerateTxID()
@@ -335,14 +335,14 @@ func PrepareETHTrans(from, to int64, valueStr string, txTpye int, bizContent str
 		logger.Error("txid is -1  ")
 		return "", "", constants.RC_SYSTEM_ERR
 	}
-	value := utils.FloatStrToLVTint(valueStr)
 	if err := InsertTradePending(txid, from, to, tradeNo, bizContent, value, txTpye); err != nil {
 		logger.Error("insert trade pending error", err.Error())
 		return "", "", constants.RC_SYSTEM_ERR
 	}
 	return utils.Int642Str(txid), tradeNo, constants.RC_OK
 }
-func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
+
+func CommitTransfer(uidStr, txidStr, currency string) (retErr constants.Error) {
 
 	uid := utils.Str2Int64(uidStr)
 
@@ -367,8 +367,6 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 	)
 	//识别类型进行操作
 	switch tp.Type {
-	//case constants.TX_TYPE_BUY_COIN_CARD:
-	//	to = config.GetWithdrawalConfig().WithdrawalCardEthAcceptAccount // 手续费收款账号
 	case constants.TX_TYPE_TRANS:
 		to = tp.To
 	default:
@@ -399,8 +397,21 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 	var feeTxid, transFeeAcc int64
 	var feeTradeNo string
 	var feeSubType int
+	var intErr int
+	var decimal, feeDecimal = constants.TRADE_DECIMAIL, constants.TRADE_DECIMAIL
 	txid := utils.Str2Int64(txidStr)
-	_, intErr := EthTransCommit(txid, tp.From, to, tp.Value, tp.TradeNo, tp.Type, tx)
+	switch currency {
+	case constants.TRADE_CURRENCY_EOS:
+		decimal = constants.TRADE_EOS_DECIMAIL
+		_, intErr = EosTransCommit(txid, tp.From, to, tp.Value, tp.TradeNo, tp.Type, tx)
+	case constants.TRADE_CURRENCY_BTC:
+		_, intErr = BtcTransCommit(txid, tp.From, to, tp.Value, tp.TradeNo, tp.Type, tx)
+	case constants.TRADE_CURRENCY_ETH:
+		_, intErr = EthTransCommit(txid, tp.From, to, tp.Value, tp.TradeNo, tp.Type, tx)
+	}
+	if bizContent.FeeCurrency == constants.TRADE_CURRENCY_EOS {
+		feeDecimal = constants.TRADE_EOS_DECIMAIL
+	}
 	if intErr == constants.TRANS_ERR_SUCC {
 		// 手续费转账流程
 		if bizContent.Fee > 0 {
@@ -435,8 +446,8 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 		}
 		trade := TradeInfo{
 			TradeNo: tp.TradeNo, Txid: txid, Status: constants.TRADE_STATUS_SUCC,
-			Currency: CURRENCY_ETH, Type: constants.TRADE_TYPE_TRANSFER,
-			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: constants.TRADE_DECIMAIL,
+			Currency: currency, Type: constants.TRADE_TYPE_TRANSFER,
+			SubType: tp.Type, From: tp.From, To: tp.To, Decimal: decimal,
 			FromName: fromName, ToName: toName, Subject: bizContent.Remark,
 			Amount: tp.Value, CreateTime: tp.Ts, FinishTime: finishTime,
 		}
@@ -450,7 +461,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 			feeTrade := TradeInfo{
 				TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
 				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: feeDecimal,
 				FromName: fromName, ToName: feeToName,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
@@ -463,7 +474,7 @@ func CommitETHTrans(uidStr, txidStr string) (retErr constants.Error) {
 			return constants.RC_SYSTEM_ERR
 		}
 		// 设置日限额
-		SetDailyTransAmount(uid, CURRENCY_ETH, tp.Value)
+		SetDailyTransAmount(uid, currency, tp.Value)
 	}
 
 	return constants.RC_OK
@@ -485,12 +496,18 @@ func TransFeeCommit(tx *sql.Tx, from, fee int64, currency string) (int64, string
 		Code:  constants.TX_CODE_SUCC, BizContent: "",
 	}
 	switch currency {
-	case CURRENCY_ETH:
+	case constants.TRADE_CURRENCY_EOS:
+		_, intErr = EosTransCommit(feeTxid, from, transFeeAcc,
+			fee, feeTradeNo, feeSubType, tx)
+	case constants.TRADE_CURRENCY_BTC:
+		_, intErr = BtcTransCommit(feeTxid, from, transFeeAcc,
+			fee, feeTradeNo, feeSubType, tx)
+	case constants.TRADE_CURRENCY_ETH:
 		_, intErr = EthTransCommit(feeTxid, from, transFeeAcc,
 			fee, feeTradeNo, feeSubType, tx)
-	case CURRENCY_LVT:
+	case constants.TRADE_CURRENCY_LVT:
 		_, intErr = TransAccountLvt(tx, feeDth)
-	case CURRENCY_LVTC:
+	case constants.TRADE_CURRENCY_LVTC:
 		_, intErr = TransAccountLvtc(tx, feeDth)
 	}
 	if intErr != constants.TRANS_ERR_SUCC {
@@ -534,17 +551,31 @@ func VerifyLVTCTrans(uid int64, valueStr string) constants.Error {
 	return constants.RC_OK
 }
 
-func VerifyEthTrans(uid int64, valueStr string) constants.Error {
-	value := utils.FloatStrToLVTint(valueStr)
+func verifyTrans(uid, value int64, currency string) constants.Error {
 	// 校验单笔最低限额
-	if e := CheckSingleTransAmount(CURRENCY_ETH, value); e != constants.RC_OK {
+	if e := CheckSingleTransAmount(currency, value); e != constants.RC_OK {
 		return e
 	}
 	// 校验转账日限额
-	if f, e := CheckDailyTransAmount(uid, CURRENCY_ETH, value); !f {
+	if f, e := CheckDailyTransAmount(uid, currency, value); !f {
 		return e
 	}
 	return constants.RC_OK
+}
+
+func VerifyEthTrans(uid int64, valueStr string) constants.Error {
+	value := utils.FloatStrToLVTint(valueStr)
+	return verifyTrans(uid, value, constants.TRADE_CURRENCY_ETH)
+}
+
+func VerifyEosTrans(uid int64, valueStr string) constants.Error {
+	value := utils.FloatStrToEOSint(valueStr)
+	return verifyTrans(uid, value, constants.TRADE_CURRENCY_EOS)
+}
+
+func VerifyBtcTrans(uid int64, valueStr string) constants.Error {
+	value := utils.FloatStrToLVTint(valueStr)
+	return verifyTrans(uid, value, constants.TRADE_CURRENCY_BTC)
 }
 
 func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
@@ -555,19 +586,28 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 	if transfee == nil {
 		return constants.RC_INVALID_CURRENCY
 	}
+
+	var feeInt64, realFeeInt64, feeMaxInt64, feeMinInt64 int64
 	valueFloat := utils.Str2Float64(value)
-	feeInt64 := utils.FloatStrToLVTint(fee)
 	feeMaxStr := strconv.FormatFloat(transfee.FeeMax, 'f', -1, 64)
 	feeMinStr := strconv.FormatFloat(transfee.FeeMin, 'f', -1, 64)
-	feeMaxInt64 := utils.FloatStrToLVTint(feeMaxStr)
-	feeMinInt64 := utils.FloatStrToLVTint(feeMinStr)
+	realFee := valueFloat * transfee.FeeRate * transfee.Discount
+	realFeeStr := strconv.FormatFloat(realFee, 'f', -1, 64)
+	if feeCurrency == constants.TRADE_CURRENCY_EOS {
+		feeInt64 = utils.FloatStrToEOSint(fee)
+		feeMaxInt64 = utils.FloatStrToEOSint(feeMaxStr)
+		feeMinInt64 = utils.FloatStrToEOSint(feeMinStr)
+		realFeeInt64 = utils.FloatStrToEOSint(realFeeStr)
+	} else {
+		feeInt64 = utils.FloatStrToLVTint(fee)
+		feeMaxInt64 = utils.FloatStrToLVTint(feeMaxStr)
+		feeMinInt64 = utils.FloatStrToLVTint(feeMinStr)
+		realFeeInt64 = utils.FloatStrToLVTint(realFeeStr)
+	}
+
 	if feeInt64 > feeMaxInt64 {
 		return constants.RC_TRANSFER_FEE_ERROR
 	}
-
-	realFee := valueFloat * transfee.FeeRate * transfee.Discount
-	realFeeStr := strconv.FormatFloat(realFee, 'f', -1, 64)
-	realFeeInt64 := utils.FloatStrToLVTint(realFeeStr)
 	if realFeeInt64 > feeMaxInt64 {
 		// 大于转账费率最大值，实际转账费率等于最大值
 		realFeeInt64 = feeMaxInt64

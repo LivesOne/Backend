@@ -31,4 +31,5 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_RECHARGE_ADDRESS, &reChargeAddrHandler{})
 	server.RegisterHandler(constants.ACCOUNT_BIND_WALLET_ADDRESS, &bindWalletAddrHandler{})
 	server.RegisterHandler(constants.ACCOUNT_WALLET_ADDRESS_LIST, &walletAddrHandler{})
+	server.RegisterHandler(constants.ACCOUNT_RECHARGE_MEMO, &rechargeMemoHandler{})
 }

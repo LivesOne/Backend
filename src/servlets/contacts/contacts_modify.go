@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"gopkg.in/mgo.v2"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
@@ -78,10 +79,25 @@ func (handler *contactModifyHandler) Handle(request *http.Request, writer http.R
 	}
 
 	mdfMap := convmap(secret)
+	mdfMap["update_time"] = utils.GetTimestamp13()
 	uid := utils.Str2Int64(uidStr)
-	if err := common.ModifyContact(mdfMap,uid,secret.ContactId);err != nil {
-		log.Error("insert mongo  failed",err.Error())
+	if err := common.ModifyContact(mdfMap,uid,secret.ContactId);err != nil  {
+		log.Error("update mongo  failed",err.Error())
+		if mgo.IsDup(err) {
+			res.SetResponseBase(constants.RC_DUP_CONTACT_ID)
+			return
+		}
+
+		if err == mgo.ErrNotFound {
+			res.SetResponseBase(constants.RC_CONTACT_ID_NOT_EXISTS)
+			return
+		}
 		res.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
+
+
+
+
+
 }

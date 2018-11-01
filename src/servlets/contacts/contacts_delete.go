@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"gopkg.in/mgo.v2"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
@@ -55,7 +56,7 @@ func (handler *contactDeleteHandler) Handle(request *http.Request, writer http.R
 
 	reqData := new(contactDeleteReqData)
 
-	if common.ParseHttpBodyParams(request,reqData) {
+	if !common.ParseHttpBodyParams(request,reqData) {
 		log.Info("decode json str error")
 		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
@@ -94,7 +95,16 @@ func (handler *contactDeleteHandler) Handle(request *http.Request, writer http.R
 
 	if err := common.DeleteContact(uid, contactId); err != nil {
 		log.Error("delete mongo failed", err.Error())
-		res.SetResponseBase(constants.RC_PARAM_ERR)
+		if mgo.IsDup(err) {
+			res.SetResponseBase(constants.RC_DUP_CONTACT_ID)
+			return
+		}
+
+		if err == mgo.ErrNotFound {
+			res.SetResponseBase(constants.RC_CONTACT_ID_NOT_EXISTS)
+			return
+		}
+		res.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 }

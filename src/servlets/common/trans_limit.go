@@ -14,10 +14,16 @@ const (
 	DAILY_TOTAL_TRANSFER_KEY_PROXY  = "tl:dt:"
 	DAILY_TRANS_LVTC_KEY_PROXY      = "tl:dt:lvtc:"
 	DAILY_TRANS_ETH_KEY_PROXY       = "tl:dt:eth:"
+	DAILY_TRANS_EOS_KEY_PROXY       = "tl:dt:eos:"
+	DAILY_TRANS_BTC_KEY_PROXY       = "tl:dt:btc:"
 	TRANS_SINGLE_MIN_LVTC_KEY_PROXY = "tl:tsm:lvtc"
 	TRANS_SINGLE_MIN_ETH_KEY_PROXY  = "tl:tsm:eth"
+	TRANS_SINGLE_MIN_EOS_KEY_PROXY  = "tl:tsm:eos"
+	TRANS_SINGLE_MIN_BTC_KEY_PROXY  = "tl:tsm:btc"
 	TRANS_DAILY_MAX_LVTC_KEY_PROXY = "tl:tdm:lvtc"
 	TRANS_DAILY_MAX_ETH_KEY_PROXY  = "tl:tdm:eth"
+	TRANS_DAILY_MAX_EOS_KEY_PROXY  = "tl:tdm:eos"
+	TRANS_DAILY_MAX_BTC_KEY_PROXY  = "tl:tdm:btc"
 	USER_TRANS_KEY_PROXY            = "tx:uid:"
 	USER_LEVEL_KEY_PROXY            = "tx:ul:"
 	TS                              = 1000
@@ -122,7 +128,12 @@ func checkTransAmount(key, currency string, maxAmount bool) (int64, constants.Er
 			return 0, constants.RC_SYSTEM_ERR
 		}
 		limitStr := strconv.FormatFloat(amount, 'f', -1, 64)
-		limitInt := utils.FloatStrToLVTint(limitStr)
+		var limitInt int64
+		if currency == constants.TRADE_CURRENCY_EOS {
+			limitInt = utils.FloatStrToEOSint(limitStr)
+		} else {
+			limitInt = utils.FloatStrToLVTint(limitStr)
+		}
 		setAndExpire64(key, limitInt, getTime())
 		limit = limitInt
 	} else {
@@ -139,10 +150,14 @@ func checkTransAmount(key, currency string, maxAmount bool) (int64, constants.Er
 func CheckSingleTransAmount(currency string, amount int64) constants.Error {
 	var key string
 	switch currency {
-	case CURRENCY_LVTC:
+	case constants.TRADE_CURRENCY_LVTC:
 		key = TRANS_SINGLE_MIN_LVTC_KEY_PROXY
-	case CURRENCY_ETH:
+	case constants.TRADE_CURRENCY_ETH:
 		key = TRANS_SINGLE_MIN_ETH_KEY_PROXY
+	case constants.TRADE_CURRENCY_EOS:
+		key = TRANS_SINGLE_MIN_EOS_KEY_PROXY
+	case constants.TRADE_CURRENCY_BTC:
+		key = TRANS_SINGLE_MIN_BTC_KEY_PROXY
 	default:
 		return constants.RC_INVALID_CURRENCY
 	}
@@ -161,12 +176,18 @@ func CheckSingleTransAmount(currency string, amount int64) constants.Error {
 func CheckDailyTransAmount(uid int64, currency string, amount int64) (bool, constants.Error) {
 	var key, keyMaxLimit string
 	switch currency {
-	case CURRENCY_LVTC:
+	case constants.TRADE_CURRENCY_LVTC:
 		key = DAILY_TRANS_LVTC_KEY_PROXY
 		keyMaxLimit = TRANS_DAILY_MAX_LVTC_KEY_PROXY
-	case CURRENCY_ETH:
+	case constants.TRADE_CURRENCY_ETH:
 		key = DAILY_TRANS_ETH_KEY_PROXY
 		keyMaxLimit = TRANS_DAILY_MAX_ETH_KEY_PROXY
+	case constants.TRADE_CURRENCY_EOS:
+		key = DAILY_TRANS_EOS_KEY_PROXY
+		keyMaxLimit = TRANS_DAILY_MAX_EOS_KEY_PROXY
+	case constants.TRADE_CURRENCY_BTC:
+		key = DAILY_TRANS_BTC_KEY_PROXY
+		keyMaxLimit = TRANS_DAILY_MAX_BTC_KEY_PROXY
 	default:
 		return false, constants.RC_INVALID_CURRENCY
 	}
@@ -202,10 +223,14 @@ func CheckDailyTransAmount(uid int64, currency string, amount int64) (bool, cons
 func SetDailyTransAmount(uid int64, currency string, amount int64) (bool, constants.Error) {
 	var key string
 	switch currency {
-	case CURRENCY_LVTC:
+	case constants.TRADE_CURRENCY_LVTC:
 		key = DAILY_TRANS_LVTC_KEY_PROXY
-	case CURRENCY_ETH:
+	case constants.TRADE_CURRENCY_ETH:
 		key = DAILY_TRANS_ETH_KEY_PROXY
+	case constants.TRADE_CURRENCY_EOS:
+		key = DAILY_TRANS_EOS_KEY_PROXY
+	case constants.TRADE_CURRENCY_BTC:
+		key = DAILY_TRANS_BTC_KEY_PROXY
 	default:
 		return false, constants.RC_INVALID_CURRENCY
 	}

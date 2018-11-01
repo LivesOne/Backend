@@ -29,6 +29,7 @@ const (
 	DayDuration         = 24 * time.Hour
 	TwoDayDuration      = 2 * DayDuration
 	CONV_LVT            = 1e8
+	CONV_EOS            = 1e4
 	DB_CONV_CHAIN_VALUE = 1e10
 
 )
@@ -129,9 +130,22 @@ func Timestamp13ToDate(timestamp int64) time.Time {
 	return timeUtc
 }
 
+func CoinsInt2FloatStr(coins, coinsDecimal int64) string {
+	return strconv.FormatFloat(float64(coins) / float64(coinsDecimal), 'f', 8, 64)
+}
+
+func FloatStr2CoinsInt (coins string, coinsDecimal int64) int64 {
+	return int64(Str2Float64(coins) * float64(coinsDecimal))
+}
+
 func LVTintToFloatStr(lvt int64) string {
 	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_LVT))
 	return d2.StringFixed(8)
+}
+
+func EOSintToFloatStr(lvt int64) string {
+	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_EOS))
+	return d2.StringFixed(4)
 }
 
 func FloatStrToLVTint(lvt string) int64 {
@@ -142,6 +156,18 @@ func FloatStrToLVTint(lvt string) int64 {
 		return 0
 	}
 	d3 := d2.Mul(decimal.NewFromFloat(CONV_LVT))
+
+	return d3.IntPart()
+}
+
+func FloatStrToEOSint(eos string) int64 {
+
+	d2, err := decimal.NewFromString(eos)
+	if err != nil {
+		logger.Error("decimal conv folat error", err.Error())
+		return 0
+	}
+	d3 := d2.Mul(decimal.NewFromFloat(CONV_EOS))
 
 	return d3.IntPart()
 }

@@ -86,6 +86,8 @@ const (
 	ACCOUNT_BIND_WALLET_ADDRESS = "/user/v1/profile/wallet_address/bind"
 
 	ACCOUNT_WALLET_ADDRESS_LIST = "/user/v1/profile/wallet_address/list"
+
+	ACCOUNT_RECHARGE_MEMO = "/user/v1/profile/recharge_memo"
 	// Contacts Sync APIs
 	ACCOUNT_CONTACTS_LIST  = "/user/v1/contact/list"
 

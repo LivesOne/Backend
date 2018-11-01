@@ -49,7 +49,7 @@ func (handler *reChargeAddrHandler) Handle(
 	currency := strings.ToUpper(requestData.Param.Currency)
 
 	// 判断用户身份
-	_, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 		return
@@ -60,6 +60,7 @@ func (handler *reChargeAddrHandler) Handle(
 		return
 	}
 
+	uid := utils.Str2Int64(uidStr)
 	// 返回充值地址
 	var addr string
 	for _, rechargeAddr := range config.GetConfig().ReChargeAddress {
@@ -70,8 +71,17 @@ func (handler *reChargeAddrHandler) Handle(
 		}
 	}
 	if addr == "" {
-		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
-		return
+		// 从user_recharge_address查询
+		rechAddr, err := common.GetRechargeAddrList(uid, currency)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		if rechAddr == "" {
+			response.SetResponseBase(constants.RC_INVALID_CURRENCY)
+			return
+		}
+		addr = rechAddr
 	}
 	respData := new(reChargeAddrRespData)
 	respData.Currency = currency
