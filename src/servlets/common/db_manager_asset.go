@@ -1207,112 +1207,112 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 	}
 }
 
-//func Withdraw(uid int64, amount string, address string, currency string) (string, constants.Error) {
-//	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
-//
-//	if err != nil {
-//		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
-//		return "", constants.RC_SYSTEM_ERR
-//	}
-//
-//	if utils.Str2Int(row["count"]) > 0 {
-//		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
-//	}
-//
-//	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
-//
-//	error := constants.RC_OK
-//	switch currency {
-//	case "LVTC":
-//		error = withdrawLVTC(uid, amount, address, tradeNo)
-//	case "ETH":
-//		error = withdrawETH(uid, amount, address, tradeNo)
-//	default:
-//		error = constants.RC_INVALID_CURRENCY
-//	}
-//
-//	return tradeNo, error
-//
-//}
-
-func Withdraw(uid int64, amount, address, currency, feeCurrency string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
+func Withdraw(uid int64, amount string, address string, currency string) (string, constants.Error) {
 	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
+
 	if err != nil {
 		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
 		return "", constants.RC_SYSTEM_ERR
 	}
+
 	if utils.Str2Int(row["count"]) > 0 {
 		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
 	}
 
 	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
-	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
-	timestamp := utils.GetTimestamp13()
-	fee, error := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
-	if error.Rc != constants.RC_OK.Rc {
-		return "", error
+
+	error := constants.RC_OK
+	switch currency {
+	case "LVTC":
+		error = withdrawLVTC(uid, amount, address, tradeNo)
+	case "ETH":
+		error = withdrawETH(uid, amount, address, tradeNo)
+	default:
+		error = constants.RC_INVALID_CURRENCY
 	}
-
-	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
-
-	tx, _ := gDBAsset.Begin()
-
-	txId := GenerateTxID()
-	txIdFee := GenerateTxID()
-	//扣除提币资产
-	error = transfer(txId, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
-	if error.Rc != constants.RC_OK.Rc {
-		tx.Rollback()
-		return "", error
-	}
-	//扣除手续费资产
-	error = transfer(txIdFee, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, timestamp, feeCurrency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
-	if error.Rc != constants.RC_OK.Rc {
-		tx.Rollback()
-		return "", error
-	}
-
-	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency)
-	if err != nil {
-		logger.Error("add user_withdrawal_request error ", err.Error())
-		tx.Rollback()
-		return "", constants.RC_SYSTEM_ERR
-	}
-	tx.Commit()
-
-	go func() {
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, timestamp)
-		if err != nil {
-			logger.Error("withdraw fee insert trade database error, error:", err.Error())
-		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, timestamp)
-		if err != nil {
-			logger.Error("withdraw insert trade database error, error:", err.Error())
-		}
-		if strings.EqualFold(currency,"LVTC") {
-			txh := &DTTXHistory{
-				Id:       txId,
-				TradeNo:  tradeNo,
-				Type:     constants.TX_SUB_TYPE_WITHDRAW,
-				From:     uid,
-				To:       config.GetWithdrawalConfig().WithdrawalAcceptAccount,
-				Value:    feeInt,
-				Ts:       timestamp,
-				Currency: "LVTC",
-			}
-			err := InsertLVTCCommited(txh)
-			if err != nil {
-				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
-				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
-			} else {
-				DeleteTxhistoryLvtTmpByTxid(txId)
-			}
-		}
-	}()
 
 	return tradeNo, error
+
 }
+
+//func Withdraw(uid int64, amount, address, currency, feeCurrency string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
+//	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
+//	if err != nil {
+//		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
+//		return "", constants.RC_SYSTEM_ERR
+//	}
+//	if utils.Str2Int(row["count"]) > 0 {
+//		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
+//	}
+//
+//	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
+//	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+//	timestamp := utils.GetTimestamp13()
+//	fee, error := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
+//	if error.Rc != constants.RC_OK.Rc {
+//		return "", error
+//	}
+//
+//	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
+//
+//	tx, _ := gDBAsset.Begin()
+//
+//	txId := GenerateTxID()
+//	txIdFee := GenerateTxID()
+//	//扣除提币资产
+//	error = transfer(txId, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+//	if error.Rc != constants.RC_OK.Rc {
+//		tx.Rollback()
+//		return "", error
+//	}
+//	//扣除手续费资产
+//	error = transfer(txIdFee, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, timestamp, feeCurrency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+//	if error.Rc != constants.RC_OK.Rc {
+//		tx.Rollback()
+//		return "", error
+//	}
+//
+//	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+//	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency)
+//	if err != nil {
+//		logger.Error("add user_withdrawal_request error ", err.Error())
+//		tx.Rollback()
+//		return "", constants.RC_SYSTEM_ERR
+//	}
+//	tx.Commit()
+//
+//	go func() {
+//		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, timestamp)
+//		if err != nil {
+//			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+//		}
+//		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, timestamp)
+//		if err != nil {
+//			logger.Error("withdraw insert trade database error, error:", err.Error())
+//		}
+//		if strings.EqualFold(currency,"LVTC") {
+//			txh := &DTTXHistory{
+//				Id:       txId,
+//				TradeNo:  tradeNo,
+//				Type:     constants.TX_SUB_TYPE_WITHDRAW,
+//				From:     uid,
+//				To:       config.GetWithdrawalConfig().WithdrawalAcceptAccount,
+//				Value:    feeInt,
+//				Ts:       timestamp,
+//				Currency: "LVTC",
+//			}
+//			err := InsertLVTCCommited(txh)
+//			if err != nil {
+//				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
+//				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
+//			} else {
+//				DeleteTxhistoryLvtTmpByTxid(txId)
+//			}
+//		}
+//	}()
+//
+//	return tradeNo, error
+//}
 
 func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string, tradeType int, tx *sql.Tx) constants.Error {
 	assetTableName := ""
@@ -1341,17 +1341,27 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 	default:
 		logger.Error("currency not supported, currency:", currency)
 	}
-	_, err := tx.Exec("select * from user_asset_eth where uid in (?, ?) for update", from, to)
+	sql := fmt.Sprintf("select * from %s where uid in (?, ?) for update", assetTableName)
+	_, err := tx.Exec(sql, from, to)
 	if err != nil {
 		logger.Error("lock ", currency, " asset error, error:", err.Error())
 		tx.Rollback()
 		return constants.RC_SYSTEM_ERR
 	}
 
-	sql := fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTableName)
+	sql = fmt.Sprintf("select balance-? %s where uid = ?", assetTableName)
+	row := tx.QueryRow(sql, amount, from)
+	var balance int64
+	row.Scan(&balance)
+	if balance < 0 {
+		return constants.RC_ACCOUNT_TEMP_LIMITED
+	}
+
+	sql = fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTableName)
 	//扣除转出方balance
 	info, err := tx.Exec(sql, amount, timestamp, from)
 	if err != nil {
+		logger.Error(strings.Contains(err.Error(), "1690"))
 		logger.Error("exec sql(", sql, ") error ", err.Error())
 		return constants.RC_SYSTEM_ERR
 	}
