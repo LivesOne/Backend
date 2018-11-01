@@ -1259,12 +1259,14 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency string, currency
 
 	txId := GenerateTxID()
 	txIdFee := GenerateTxID()
+	//扣除提币资产
 	error = transfer(txId, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
 	if error.Rc != constants.RC_OK.Rc {
 		tx.Rollback()
 		return "", error
 	}
-	error = transfer(txIdFee, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, timestamp, currency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	//扣除手续费资产
+	error = transfer(txIdFee, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, timestamp, feeCurrency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
 	if error.Rc != constants.RC_OK.Rc {
 		tx.Rollback()
 		return "", error

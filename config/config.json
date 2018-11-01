@@ -34,7 +34,7 @@
         "DBHost" : "10.100.14.243:3306",
         "DBUser" : "root",
         "DBUserPwd" : "maxthon",
-        "DBDatabase" : "livesone_asset2"
+        "DBDatabase" : "livesone_asset"
     },
 
     "TxHistory" :
