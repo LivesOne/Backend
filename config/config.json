@@ -34,7 +34,7 @@
         "DBHost" : "10.100.14.243:3306",
         "DBUser" : "root",
         "DBUserPwd" : "maxthon",
-        "DBDatabase" : "livesone_asset2"
+        "DBDatabase" : "livesone_asset"
     },
 
     "TxHistory" :
@@ -75,7 +75,13 @@
         "DBUserPwd" : "maxthon",
         "DBDatabase" : "db_livesone_config"
     },
-  
+    "Contacts" : {
+      "MaxConn" : 10,
+      "DBHost" : "10.100.13.6:20000",
+      "DBUser" : "",
+      "DBUserPwd" : "",
+      "DBDatabase" : "db_livesone_profile"
+    },
     "SmsSvrAddr":"http://10.0.5.248:9099",
     "MailSvrAddr":"http://10.0.5.248:9080/vcode",
     "ImgSvrAddr":"http://10.0.5.248:9080/vcode",
@@ -150,5 +156,10 @@
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
     "Lvt2LvtcDelaySystemAccountUid":181875000,
-    "TransFeeAccountUid":181875000
+    "TransFeeAccountUid":181875000,
+    "ReChargeAddress": [
+        {"Currency": "ETH", "Address": "0x63dC9762F6f259E2CB106dE70A5bFeD8293c08E3"},
+        {"Currency": "LVTC", "Address": "0x0233C1dd7fbE6DaB8C233Bf017F4B1F3BAfEc0B3"},
+        {"Currency": "EOS", "Address": ""}
+    ]
 }

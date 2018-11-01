@@ -29,6 +29,7 @@ const (
 	DayDuration         = 24 * time.Hour
 	TwoDayDuration      = 2 * DayDuration
 	CONV_LVT            = 1e8
+	CONV_EOS            = 1e4
 	DB_CONV_CHAIN_VALUE = 1e10
 
 )
@@ -129,9 +130,22 @@ func Timestamp13ToDate(timestamp int64) time.Time {
 	return timeUtc
 }
 
+func CoinsInt2FloatStr(coins, coinsDecimal int64) string {
+	return strconv.FormatFloat(float64(coins) / float64(coinsDecimal), 'f', 8, 64)
+}
+
+func FloatStr2CoinsInt (coins string, coinsDecimal int64) int64 {
+	return int64(Str2Float64(coins) * float64(coinsDecimal))
+}
+
 func LVTintToFloatStr(lvt int64) string {
 	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_LVT))
 	return d2.StringFixed(8)
+}
+
+func EOSintToFloatStr(lvt int64) string {
+	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_EOS))
+	return d2.StringFixed(4)
 }
 
 func FloatStrToLVTint(lvt string) int64 {
@@ -142,6 +156,18 @@ func FloatStrToLVTint(lvt string) int64 {
 		return 0
 	}
 	d3 := d2.Mul(decimal.NewFromFloat(CONV_LVT))
+
+	return d3.IntPart()
+}
+
+func FloatStrToEOSint(eos string) int64 {
+
+	d2, err := decimal.NewFromString(eos)
+	if err != nil {
+		logger.Error("decimal conv folat error", err.Error())
+		return 0
+	}
+	d3 := d2.Mul(decimal.NewFromFloat(CONV_EOS))
 
 	return d3.IntPart()
 }
@@ -275,10 +301,10 @@ func GetLockHashrate(lvtcScale,monnth int, value string) int {
 
 
 
-func StructConvMap(p interface{}) map[string]string {
+func StructConvMap(p interface{}) map[string]interface{} {
 	v,t := GetStructValueAndType(p)
 
-	var data = make(map[string]string)
+	var data = make(map[string]interface{})
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		name := f.Tag.Get("json")
@@ -289,11 +315,12 @@ func StructConvMap(p interface{}) map[string]string {
 			name = f.Name
 		}
 
-		value :=  convStructField(v.Field(i).Interface())
+		value :=  v.Field(i).Interface()
+		valueStr := convStructField(value)
 		if nss := strings.Split(name,",");len(nss)>1{
 			name = nss[0]
 			if nss[1] == "omitempty" {
-				if len(value) == 0 {
+				if len(valueStr) == 0 {
 					continue
 				}
 			}
@@ -315,14 +342,24 @@ func GetStructValueAndType(p interface{})(reflect.Value,reflect.Type){
 func convStructField(p interface{}) string {
 	switch p.(type) {
 	case int:
-		return Int2Str(p.(int))
+		s := p.(int)
+		if s != 0 {
+			return Int2Str(s)
+		}
 	case int64:
-		return Int642Str(p.(int64))
+		s := p.(int64)
+		if s != 0 {
+			return Int642Str(s)
+		}
 	case float64:
-		return strconv.FormatFloat(p.(float64), 'f', 8, 64)
-	default:
+		s := p.(float64)
+		if s != 0 {
+			return  strconv.FormatFloat(s,'f', 8, 64)
+		}
+	case string:
 		return p.(string)
 	}
+	return ""
 }
 
 

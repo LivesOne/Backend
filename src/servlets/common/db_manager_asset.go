@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	sqlBase "database/sql"
 	"errors"
+	"fmt"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
 	"math/big"
 	"servlets/constants"
+	"strings"
 	"time"
 	"utils"
 	"utils/config"
@@ -130,6 +132,30 @@ func QueryBalanceLvtc(uid int64) (int64, int64, int64, int64, int, error) {
 
 func QueryBalanceEth(uid int64) (int64, int64, int64, int64, int, error) {
 	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset_eth where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), utils.Str2Int64(row["lastmodify"]), utils.Str2Int(row["status"]), nil
+	}
+	return 0, 0, 0, 0, 0, err
+}
+
+func QueryBalanceEos(uid int64) (int64, int64, int64, int64, int, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset_eos where uid = ?", uid)
+	if err != nil {
+		logger.Error("query db error ", err.Error())
+	}
+
+	if row != nil {
+		return utils.Str2Int64(row["balance"]), utils.Str2Int64(row["locked"]), utils.Str2Int64(row["income"]), utils.Str2Int64(row["lastmodify"]), utils.Str2Int(row["status"]), nil
+	}
+	return 0, 0, 0, 0, 0, err
+}
+
+func QueryBalanceBtc(uid int64) (int64, int64, int64, int64, int, error) {
+	row, err := gDBAsset.QueryRow("select balance,locked,income,lastmodify,status from user_asset_btc where uid = ?", uid)
 	if err != nil {
 		logger.Error("query db error ", err.Error())
 	}
@@ -331,16 +357,17 @@ func CheckAndInitAsset(uid int64) (bool, int) {
 		return false, constants.TRANS_ERR_SYS
 	}
 
-	//_, err = InsertReward(uid)
-	//if err != nil {
-	//	logger.Error("init reward error ", err.Error())
-	//	return false, constants.TRANS_ERR_SYS
-	//}
-	//_, err = InsertRewardLvtc(uid)
-	//if err != nil {
-	//	logger.Error("init reward error ", err.Error())
-	//	return false, constants.TRANS_ERR_SYS
-	//}
+	_, err = InsertAssetEos(uid)
+	if err != nil {
+		logger.Error("init asset eth error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	_, err = InsertAssetBtc(uid)
+	if err != nil {
+		logger.Error("init asset eth error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
 
 	if rowsCount == 0 {
 		return true, constants.TRANS_ERR_SUCC
@@ -386,6 +413,16 @@ func InsertAssetLvtc(uid int64) (sql.Result, error) {
 }
 func InsertAssetEth(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_asset_eth (uid,balance,lastmodify) values (?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0)
+}
+
+func InsertAssetEos(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_asset_eos (uid,balance,lastmodify) values (?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0)
+}
+
+func InsertAssetBtc(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_asset_btc (uid,balance,lastmodify) values (?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0)
 }
 
@@ -467,6 +504,24 @@ func ckeckEthBalance(uid int64, value int64, tx *sql.Tx) bool {
 	var balance, income int64
 	var locked int64
 	row := tx.QueryRow("select balance,locked,income from user_asset_eth where uid  = ?", uid)
+	row.Scan(&balance, &locked, &income)
+	logger.Info("balance", balance, "locked", locked, "income", income)
+	return balance > 0 && (balance-locked-income) >= value
+}
+
+func ckeckEosBalance(uid int64, value int64, tx *sql.Tx) bool {
+	var balance, income int64
+	var locked int64
+	row := tx.QueryRow("select balance,locked,income from user_asset_eos where uid  = ?", uid)
+	row.Scan(&balance, &locked, &income)
+	logger.Info("balance", balance, "locked", locked, "income", income)
+	return balance > 0 && (balance-locked-income) >= value
+}
+
+func ckeckBtcBalance(uid int64, value int64, tx *sql.Tx) bool {
+	var balance, income int64
+	var locked int64
+	row := tx.QueryRow("select balance,locked,income from user_asset_btc where uid  = ?", uid)
 	row.Scan(&balance, &locked, &income)
 	logger.Info("balance", balance, "locked", locked, "income", income)
 	return balance > 0 && (balance-locked-income) >= value
@@ -1180,6 +1235,171 @@ func Withdraw(uid int64, amount string, address string, currency string) (string
 
 }
 
+//func Withdraw(uid int64, amount, address, currency, feeCurrency string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
+//	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
+//	if err != nil {
+//		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
+//		return "", constants.RC_SYSTEM_ERR
+//	}
+//	if utils.Str2Int(row["count"]) > 0 {
+//		return "", constants.RC_HAS_UNFINISHED_WITHDRAWAL_TASK
+//	}
+//
+//	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
+//	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+//	timestamp := utils.GetTimestamp13()
+//	fee, error := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
+//	if error.Rc != constants.RC_OK.Rc {
+//		return "", error
+//	}
+//
+//	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
+//
+//	tx, _ := gDBAsset.Begin()
+//
+//	txId := GenerateTxID()
+//	txIdFee := GenerateTxID()
+//	//扣除提币资产
+//	error = transfer(txId, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+//	if error.Rc != constants.RC_OK.Rc {
+//		tx.Rollback()
+//		return "", error
+//	}
+//	//扣除手续费资产
+//	error = transfer(txIdFee, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, timestamp, feeCurrency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+//	if error.Rc != constants.RC_OK.Rc {
+//		tx.Rollback()
+//		return "", error
+//	}
+//
+//	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+//	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency)
+//	if err != nil {
+//		logger.Error("add user_withdrawal_request error ", err.Error())
+//		tx.Rollback()
+//		return "", constants.RC_SYSTEM_ERR
+//	}
+//	tx.Commit()
+//
+//	go func() {
+//		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, timestamp)
+//		if err != nil {
+//			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+//		}
+//		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, timestamp)
+//		if err != nil {
+//			logger.Error("withdraw insert trade database error, error:", err.Error())
+//		}
+//		if strings.EqualFold(currency,"LVTC") {
+//			txh := &DTTXHistory{
+//				Id:       txId,
+//				TradeNo:  tradeNo,
+//				Type:     constants.TX_SUB_TYPE_WITHDRAW,
+//				From:     uid,
+//				To:       config.GetWithdrawalConfig().WithdrawalAcceptAccount,
+//				Value:    feeInt,
+//				Ts:       timestamp,
+//				Currency: "LVTC",
+//			}
+//			err := InsertLVTCCommited(txh)
+//			if err != nil {
+//				logger.Error("tx_history_lv_tmp insert mongo error ", err.Error())
+//				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
+//			} else {
+//				DeleteTxhistoryLvtTmpByTxid(txId)
+//			}
+//		}
+//	}()
+//
+//	return tradeNo, error
+//}
+
+func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string, tradeType int, tx *sql.Tx) constants.Error {
+	assetTableName := ""
+	historyTableName := ""
+	switch currency {
+	case "BTC":
+		fallthrough
+	case "btc":
+		assetTableName = "user_asset_btc"
+		historyTableName = "tx_history_btc"
+	case "ETH":
+		fallthrough
+	case "eth":
+		assetTableName = "user_asset_eth"
+		historyTableName = "tx_history_eth"
+	case "EOS":
+		fallthrough
+	case "eos":
+		assetTableName = "user_asset_eos"
+		historyTableName = "tx_history_eos"
+	case "LVTC":
+		fallthrough
+	case "lvtc":
+		assetTableName = "user_asset_lvtc"
+		historyTableName = "tx_history_lvt_tmp"
+	default:
+		logger.Error("currency not supported, currency:", currency)
+	}
+	sql := fmt.Sprintf("select * from %s where uid in (?, ?) for update", assetTableName)
+	_, err := tx.Exec(sql, from, to)
+	if err != nil {
+		logger.Error("lock ", currency, " asset error, error:", err.Error())
+		tx.Rollback()
+		return constants.RC_SYSTEM_ERR
+	}
+
+	sql = fmt.Sprintf("select balance-? %s where uid = ?", assetTableName)
+	row := tx.QueryRow(sql, amount, from)
+	var balance int64
+	row.Scan(&balance)
+	if balance < 0 {
+		return constants.RC_ACCOUNT_TEMP_LIMITED
+	}
+
+	sql = fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTableName)
+	//扣除转出方balance
+	info, err := tx.Exec(sql, amount, timestamp, from)
+	if err != nil {
+		logger.Error(strings.Contains(err.Error(), "1690"))
+		logger.Error("exec sql(", sql, ") error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user", currency, " balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return constants.RC_PARAM_ERR
+	}
+
+	sql = fmt.Sprintf("update %s set balance = balance + ?,lastmodify = ? where uid = ?", assetTableName)
+	//增加目标的balance
+	info, err = tx.Exec(sql, amount, timestamp, to)
+	if err != nil {
+		logger.Error("exec sql(", sql, ") error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user", currency, " balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return constants.RC_PARAM_ERR
+	}
+
+	sql = fmt.Sprintf("insert into %s (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)", historyTableName)
+	info, err = tx.Exec(sql, txId, tradeType, tradeNo, from, to, amount, timestamp)
+	if err != nil {
+		logger.Error("exec sql(", sql, ") error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	rsa, _ = info.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert eth tx history failed, table:", historyTableName)
+		return constants.RC_PARAM_ERR
+	}
+	return constants.RC_OK
+}
+
 func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Error {
 	timestamp := utils.GetTimestamp13()
 	toETH := config.GetWithdrawalConfig().WithdrawalAcceptAccount
@@ -1411,7 +1631,7 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
-	var feeOfWithdraw float64
+	var feeOfWithdraw = float64(-1)
 	for _, fee := range withdrawQuota.Fee {
 		if fee.FeeCurrency == feeCurrency {
 			switch fee.FeeType {
@@ -1426,10 +1646,15 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, w
 					feeOfWithdraw = fee.FeeMax
 				}
 			default:
-				logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
+				logger.Error("withdraw fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
 				return float64(0), constants.RC_INVALID_CURRENCY
 			}
 		}
+	}
+
+	if feeOfWithdraw < 0 {
+		logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
+		return float64(0), constants.RC_INVALID_CURRENCY
 	}
 
 	return feeOfWithdraw, constants.RC_OK
@@ -1587,6 +1812,132 @@ func convUserWithdrawalRequest(al map[string]string) *UserWithdrawalRequest {
 	return &alres
 }
 
+func BtcTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
+	if tx == nil {
+		tx, _ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
+
+	tx.Exec("select * from user_asset_btc where uid in (?,?) for update", from, to)
+
+	ts := utils.GetTimestamp13()
+
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckBtcBalance(from, value, tx) {
+		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_btc set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_btc set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	if txid < 0 {
+		txid = GenerateTxID()
+		if txid < 0 {
+			logger.Error("can not get txid")
+			return 0, constants.TRANS_ERR_SYS
+		}
+	}
+	info3, err3 := tx.Exec("insert into tx_history_btc (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
+		txid, tradeType, tradeNo, from, to, value, ts,
+	)
+	if err3 != nil {
+		logger.Error("sql error ", err3.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	rsa, _ = info3.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert btc tx history failed")
+		return 0, constants.TRANS_ERR_SYS
+	}
+	return txid, constants.TRANS_ERR_SUCC
+}
+
+func EosTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
+	if tx == nil {
+		tx, _ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
+
+	tx.Exec("select * from user_asset_eos where uid in (?,?) for update", from, to)
+
+	ts := utils.GetTimestamp13()
+
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckEosBalance(from, value, tx) {
+		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_eos set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_eos set balance = balance + ?,lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	if txid < 0 {
+		txid = GenerateTxID()
+		if txid < 0 {
+			logger.Error("can not get txid")
+			return 0, constants.TRANS_ERR_SYS
+		}
+	}
+	info3, err3 := tx.Exec("insert into tx_history_eos (txid,type,trade_no,`from`,`to`,`value`,ts) values (?,?,?,?,?,?,?)",
+		txid, tradeType, tradeNo, from, to, value, ts,
+	)
+	if err3 != nil {
+		logger.Error("sql error ", err3.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	rsa, _ = info3.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert eos tx history failed")
+		return 0, constants.TRANS_ERR_SYS
+	}
+	return txid, constants.TRANS_ERR_SUCC
+}
+
 func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()
@@ -1727,7 +2078,7 @@ func CheckEthPending(tradeNo string) bool {
 	return utils.Str2Int(row["c"]) > 0
 }
 
-func CheckEthPendingByTxid(txid int64) bool {
+func CheckTradePendingByTxid(txid int64) bool {
 	row, err := gDBAsset.QueryRow("select count(1) as c from trade_pending where txid = ?", txid)
 	if err != nil {
 		logger.Error("query db error", err.Error())
@@ -1753,6 +2104,30 @@ func CheckEthHistory(tradeNo string) bool {
 
 func CheckEthHistoryByTxid(txid int64) bool {
 	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eth where txid = ?", txid)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckEosHistoryByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_eos where txid = ?", txid)
+	if err != nil {
+		logger.Error("query db error", err.Error())
+		return false
+	}
+	if row == nil {
+		return false
+	}
+	return utils.Str2Int(row["c"]) > 0
+}
+
+func CheckBtcHistoryByTxid(txid int64) bool {
+	row, err := gDBAsset.QueryRow("select count(1) as c from tx_history_btc where txid = ?", txid)
 	if err != nil {
 		logger.Error("query db error", err.Error())
 		return false
@@ -2264,4 +2639,24 @@ func MoveMinerDays(uid int64) int {
 		}
 	}
 	return 1
+}
+
+func QueryHashRateDetailByUid(uid int64) []map[string]string {
+	sql := `select t.type, if(sum(t.h) is null,0,sum(t.h)) as sh from (
+				select uh1.type, max(uh1.hashrate) as h from user_hashrate as uh1 where uh1.uid = ? and uh1.end = 0 group by uh1.type
+				union all
+				select uh2.type, uh2.hashrate as h from user_hashrate as uh2 where uh2.uid = ? and uh2.end >= ?
+			) as t
+			group by t.type
+			`
+
+	params := []interface{}{
+		uid,
+		uid,
+		utils.GetTimestamp13(),
+	}
+
+	rows := gDBAsset.Query(sql, params...)
+
+	return rows
 }

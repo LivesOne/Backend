@@ -232,6 +232,117 @@ func GenerateTradeNo(type_id, subtype_id int) string {
 	trade_no := fmt.Sprintf("%s%02d%03d%03d%02d%04d", datetime_str, ver, type_id, subtype_id, cluster_id, rid)
 	return trade_no
 }
+
+func GenerateMemoFromUID(uid string) string {
+	l := len(uid)
+	if l != 9 || strings.Index(uid, "1") != 0 {
+		return ""
+	}
+
+	src := uid[1:]
+	seed_pos := l - 4
+	seed, _ := strconv.Atoi(string(src[seed_pos]))
+	offset := seed % 5 + 2
+
+	data := make([]int, 0, 8)
+	for i, v := range src {
+		if i == seed_pos {
+			continue
+		}
+
+		n, _ := strconv.Atoi(string(v))
+		data = append(data, (n + 10 - offset) % 10)
+	}
+
+	idx := 0
+	ret := make([]int, 0)
+	sub_data := make([]int, offset)
+	for i, v := range data {
+		sub_data[idx] = v
+		idx++
+		if idx == offset || i == len(data) - 1 {
+			for j := 0; j < idx/2; j++{
+				t := sub_data[j]
+				sub_data[j] = sub_data[idx - j - 1]
+				sub_data[idx -j - 1] = t
+			}
+
+			for i, v := range sub_data {
+				if i < idx {
+					ret = append(ret, v)
+				}
+			}
+			idx = 0
+		}
+	}
+
+	// insert seed
+	memo := make([]string, 0)
+	for i, v := range ret {
+		if i == 2 {
+			memo = append(memo, strconv.Itoa(seed))
+		}
+		memo = append(memo, strconv.Itoa(v))
+	}
+
+	return strings.Join(memo, "")
+}
+
+func ParseUIDFromMemo(memo string) string {
+	l := len(memo)
+	if l != 8 {
+		return ""
+	}
+
+	src := memo[0:]
+
+	seed_pos := 2
+	seed, _ := strconv.Atoi(string(src[seed_pos]))
+	offset := seed % 5 + 2
+	data := make([]int, 0, 8)
+	for i, v := range src {
+		if i == seed_pos {
+			continue
+		}
+
+		n, _ := strconv.Atoi(string(v))
+		data = append(data, (n + offset) % 10)
+	}
+
+	idx := 0
+	ret := make([]int, 0)
+	sub_data := make([]int, offset)
+	for i, v := range data {
+		sub_data[idx] = v
+		idx++
+		if idx == offset || i == len(data) - 1 {
+			for j := 0; j < idx/2; j++{
+				t := sub_data[j]
+				sub_data[j] = sub_data[idx - j - 1]
+				sub_data[idx -j - 1] = t
+			}
+
+			for i, v := range sub_data {
+				if i < idx {
+					ret = append(ret, v)
+				}
+			}
+			idx = 0
+		}
+	}
+
+	// insert seed
+	uid := []string {"1"}
+	for i, v := range ret {
+		if i == 5 {
+			uid = append(uid, strconv.Itoa(seed))
+		}
+		uid = append(uid, strconv.Itoa(v))
+	}
+
+	return strings.Join(uid, "")
+}
+
 func TokenErr2RcErr(tokenErr int) constants.Error {
 	switch tokenErr {
 	case constants.ERR_INT_OK:

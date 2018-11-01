@@ -31,7 +31,7 @@ type RedisConfig struct {
 	MaxConn   int
 	RedisAddr string //"[ip]:port"
 	RedisAuth string
-	DBIndex int
+	DBIndex   int
 }
 
 type captcha struct {
@@ -60,6 +60,11 @@ type WXAuth struct {
 	Secret string
 }
 
+type ReChargeAddr struct {
+	Currency string
+	Address  string
+}
+
 // Configuration holds all config data
 type Configuration struct {
 	ServerAddr string //"[ip]:port"
@@ -76,6 +81,7 @@ type Configuration struct {
 	Miner        MongoConfig
 	Trade        MongoConfig
 	Config       MongoConfig
+	Contacts     MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制
@@ -106,6 +112,7 @@ type Configuration struct {
 	Lvt2LvtcSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
 	TransFeeAccountUid            int64
+	ReChargeAddress               []ReChargeAddr
 }
 
 // configuration data
@@ -210,7 +217,7 @@ func (cfg *Configuration) isValid() bool {
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
 		cfg.TxHistory.isValid() &&
-	//len(cfg.AppIDs) > 0 &&
+		//len(cfg.AppIDs) > 0 &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
 		len(cfg.ImgSvrAddr) > 0

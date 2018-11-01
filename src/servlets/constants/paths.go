@@ -80,7 +80,22 @@ const (
 	ACCOUNT_BIND_TG = "/user/v1/profile/bind_tg"
 
 	ACCOUNT_PROFILE_USERINFO = "/user/v1/profile/userinfo"
+
+	ACCOUNT_RECHARGE_ADDRESS = "/user/v1/profile/recharge_address"
+
+	ACCOUNT_BIND_WALLET_ADDRESS = "/user/v1/profile/wallet_address/bind"
+
+	ACCOUNT_WALLET_ADDRESS_LIST = "/user/v1/profile/wallet_address/list"
+
+	ACCOUNT_RECHARGE_MEMO = "/user/v1/profile/recharge_memo"
 	// Contacts Sync APIs
+	ACCOUNT_CONTACTS_LIST  = "/user/v1/contact/list"
+
+	ACCOUNT_CONTACTS_CREATE   = "/user/v1/contact/create"
+
+	ACCOUNT_CONTACTS_MODIFY = "/user/v1/contact/modify"
+
+	ACCOUNT_CONTACTS_DELETE = "/user/v1/contact/delete"
 
 	//Assets Management APIs
 

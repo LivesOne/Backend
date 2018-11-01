@@ -2,6 +2,8 @@
 
 package constants
 
+import "errors"
+
 const (
 	// 登录账号类型，  1 uid/2 email/3 phone
 	LOGIN_TYPE_UID   = 1
@@ -35,4 +37,8 @@ const (
 	USER_LIMITED_DEF = 0
 
 	USER_LIMITED_UNLOGIN = 1
+)
+
+var (
+	WALLET_DUP_BIND = errors.New("wallet duplicated bind")
 )

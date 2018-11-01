@@ -12,7 +12,7 @@ const (
 	TRADES = "dt_trade"
 )
 
-var sessionSafe = &mgo.Safe{WMode: "majority"}
+
 var tradeSession *mgo.Session
 var tradeConfig config.MongoConfig
 

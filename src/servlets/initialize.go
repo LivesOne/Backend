@@ -13,5 +13,6 @@ func Init() {
 	common.InitTxHistoryMongoDB()
 	common.InitMinerRMongoDB()
 	common.InitTradeMongoDB()
+	common.InitContactsMongoDB()
 	token.Init()
 }

@@ -85,6 +85,6 @@ func (handler *ethTransCommitHandler) Handle(request *http.Request, writer http.
 	}
 
 	//调用统一确认交易流程
-	response.SetResponseBase(common.CommitETHTrans(uidStr, tradeNo))
+	response.SetResponseBase(common.CommitTransfer(uidStr, tradeNo, constants.TRADE_CURRENCY_ETH))
 
 }
