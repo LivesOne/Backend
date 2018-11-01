@@ -143,6 +143,11 @@ func LVTintToFloatStr(lvt int64) string {
 	return d2.StringFixed(8)
 }
 
+func LVTintToFloatEOSStr(lvt int64) string {
+	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_EOS))
+	return d2.StringFixed(4)
+}
+
 func FloatStrToLVTint(lvt string) int64 {
 
 	d2, err := decimal.NewFromString(lvt)
