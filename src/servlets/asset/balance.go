@@ -151,9 +151,9 @@ func buildSingleBalanceDetail(balance,locked,income,lastmodify int64 ,status int
 func buildSingleBalanceEOSDetail(balance,locked,income,lastmodify int64 ,status int,currency string)balanceDetial{
 	return balanceDetial{
 		Currency:   currency,
-		Balance:    utils.LVTintToFloatEOSStr(balance),
-		Locked:      utils.LVTintToFloatEOSStr(locked),
-		Income:      utils.LVTintToFloatEOSStr(income),
+		Balance:    utils.EOSintToFloatStr(balance),
+		Locked:      utils.EOSintToFloatStr(locked),
+		Income:      utils.EOSintToFloatStr(income),
 		Lastmodify: lastmodify,
 		Status:     status,
 	}
