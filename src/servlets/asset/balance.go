@@ -79,7 +79,7 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
-	currencyList := []string{constants.TRADE_CURRENCY_LVT,constants.TRADE_CURRENCY_LVTC,constants.TRADE_CURRENCY_ETH}
+	currencyList := []string{constants.TRADE_CURRENCY_LVT,constants.TRADE_CURRENCY_LVTC,constants.TRADE_CURRENCY_ETH,constants.TRADE_CURRENCY_EOS,constants.TRADE_CURRENCY_BTC}
 	response.Data = buildAllBalanceDetail(currencyList,uid)
 
 }
@@ -108,6 +108,22 @@ func buildAllBalanceDetail(currencyList []string,uid int64)[]balanceDetial{
 			bds = append(bds,bd)
 		case constants.TRADE_CURRENCY_ETH:
 			balance, locked,income,lastmodify,status,err := common.QueryBalanceEth(uid)
+			if err != nil {
+				logger.Error("query balance error",err.Error())
+				return nil
+			}
+			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
+			bds = append(bds,bd)
+		case constants.TRADE_CURRENCY_EOS:
+			balance, locked,income,lastmodify,status,err := common.QueryBalanceEos(uid)
+			if err != nil {
+				logger.Error("query balance error",err.Error())
+				return nil
+			}
+			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
+			bds = append(bds,bd)
+		case constants.TRADE_CURRENCY_BTC:
+			balance, locked,income,lastmodify,status,err := common.QueryBalanceBtc(uid)
 			if err != nil {
 				logger.Error("query balance error",err.Error())
 				return nil
