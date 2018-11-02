@@ -1236,7 +1236,19 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 //}
 
 func Withdraw(uid int64, amount, address, currency, feeCurrency string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
-	row, err := gDBAsset.QueryRow("select count(1) count from user_withdrawal_request where uid = ? and status in (?, ?, ?)", uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN)
+	sql := "select count(1) count from user_withdrawal_request where uid = ?  and status in (?, ?, ?) and currency in (?"
+	coins := config.GetConfig().GetChainCoinsBycoin(currency)
+	if len(coins) == 0 {
+		return "", constants.RC_PARAM_ERR
+	}
+	params := []interface{}{uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN}
+	params = append(params, coins[0])
+	for i:=1;i<len(coins);i++ {
+		sql += ", ?"
+		params = append(params, coins[i])
+	}
+	sql += ")"
+	row, err := gDBAsset.QueryRow(sql, params...)
 	if err != nil {
 		logger.Error("count processing reqeust from user_withdrawal_request error, error:", err.Error())
 		return "", constants.RC_SYSTEM_ERR
@@ -1272,7 +1284,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency string, currency
 		return "", error
 	}
 
-	sql := "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	sql = "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency)
 	if err != nil {
 		logger.Error("add user_withdrawal_request error ", err.Error())
