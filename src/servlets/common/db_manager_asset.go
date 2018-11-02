@@ -1361,14 +1361,15 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		return constants.RC_SYSTEM_ERR
 	}
 
-	sql = fmt.Sprintf("select balance - ? %s where uid = ?", assetTableName)
+	sql = fmt.Sprintf("select balance %s where uid = ?", assetTableName)
 	row := tx.QueryRow(sql, amount, from)
 	balance := int64(0)
 	if err := row.Scan(&balance); err != nil {
 		logger.Error("check balance err, uid:", from, " coin:", currency)
+		return constants.RC_SYSTEM_ERR
 	}
-	if balance < 0 {
-		return constants.RC_ACCOUNT_TEMP_LIMITED
+	if balance - amount < 0 {
+		return constants.RC_INSUFFICIENT_BALANCE
 	}
 
 	sql = fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTableName)
