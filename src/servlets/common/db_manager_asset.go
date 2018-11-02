@@ -1329,29 +1329,22 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency string, currency
 func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string, tradeType int, tx *sql.Tx) constants.Error {
 	assetTableName := ""
 	historyTableName := ""
-	switch currency {
-	case "BTC":
-		fallthrough
-	case "btc":
+	switch strings.ToUpper(currency) {
+	case CURRENCY_BTC:
 		assetTableName = "user_asset_btc"
 		historyTableName = "tx_history_btc"
-	case "ETH":
-		fallthrough
-	case "eth":
+	case CURRENCY_ETH:
 		assetTableName = "user_asset_eth"
 		historyTableName = "tx_history_eth"
-	case "EOS":
-		fallthrough
-	case "eos":
+	case CURRENCY_EOS:
 		assetTableName = "user_asset_eos"
 		historyTableName = "tx_history_eos"
-	case "LVTC":
-		fallthrough
-	case "lvtc":
+	case CURRENCY_LVTC:
 		assetTableName = "user_asset_lvtc"
 		historyTableName = "tx_history_lvt_tmp"
 	default:
 		logger.Error("currency not supported, currency:", currency)
+		return constants.RC_PARAM_ERR
 	}
 	sql := fmt.Sprintf("select * from %s where uid in (?, ?) for update", assetTableName)
 	_, err := tx.Exec(sql, from, to)
