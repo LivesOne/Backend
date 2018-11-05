@@ -281,7 +281,7 @@ func SetNickname(uid int64, nickname string) error {
 	_, err := gDbUser.Exec("update account set nickname = ? where uid = ?", nickname, uid)
 	//修改缓存数据
 	if err == nil {
-		SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_NICKNAME,nickname)
+		SetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_NICKNAME, nickname)
 	}
 	return err
 }
@@ -309,7 +309,7 @@ func SetUserLevel(uid int64, level int) error {
 	_, err := gDbUser.Exec("update account set level = ? where uid = ?", level, uid)
 	//修改缓存数据
 	if err == nil {
-		SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_LEVEL,utils.Int2Str(level))
+		SetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_LEVEL, utils.Int2Str(level))
 	}
 	return err
 }
@@ -537,13 +537,12 @@ func SetAvatarUrl(uid int64, avatarUrl string) (int64, error) {
 		return 0, err
 	}
 	//修改缓存用户数据
-	SetCacheUserField(uid,USER_CACHE_REDIS_FIELD_NAME_AVATAR_URL,avatarUrl)
+	SetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_AVATAR_URL, avatarUrl)
 	rowsAffected, _ := result.RowsAffected()
 	return rowsAffected, err
 }
 
-
-func QueryCacheUser(uid int64)(map[string]string,error){
+func QueryCacheUser(uid int64) (map[string]string, error) {
 	return gDbUser.QueryRow("select ta.uid,ta.nickname,ta.email,ta.country,ta.phone,ta.level,tae.credit_score,tae.avatar_url,tae.active_days from account as ta left join account_extend as tae on ta.uid = tae.uid where ta.uid = ?", uid)
 }
 
@@ -576,12 +575,12 @@ func GetWalletAddrList(uid int64) ([]map[string]string, error) {
 		union all 
 		select address,create_time from user_wallet_address where uid = ?
 	`
-	return gDbUser.QueryRows(sql,uid,uid)
+	return gDbUser.QueryRows(sql, uid, uid)
 }
 
 func GetRechargeAddrList(uid int64, currency string) (string, error) {
 	sql := `select address from user_recharge_address where uid=? and currency=?`
-	row, err := gDbUser.QueryRow(sql,uid,currency)
+	row, err := gDbUser.QueryRow(sql, uid, currency)
 	if err != nil {
 		return "", err
 	}
@@ -589,4 +588,10 @@ func GetRechargeAddrList(uid int64, currency string) (string, error) {
 		return "", nil
 	}
 	return row["address"], nil
+}
+
+func InsertRechargeAddr(uid int64, currency, addr string) error {
+	sql := `insert ignore into user_recharge_address(uid,currency,address,update_time) values(?,?,?,?)`
+	_, err := gDbUser.Exec(sql, uid, currency, addr, utils.GetTimestamp13())
+	return err
 }

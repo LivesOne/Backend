@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"errors"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
@@ -8,21 +9,33 @@ import (
 	"strings"
 	"utils"
 	"utils/config"
+	"utils/logger"
+	"utils/lvthttp"
 )
 
-type reChargeAddrParam struct {
-	Currency string `json:"currency"`
-}
+type (
+	reChargeAddrParam struct {
+		Currency string `json:"currency"`
+	}
 
-type reChargeAddrRequest struct {
-	// Base  common.BaseInfo `json:"base"`
-	Param reChargeAddrParam `json:"param"`
-}
+	reChargeAddrRequest struct {
+		// Base  common.BaseInfo `json:"base"`
+		Param reChargeAddrParam `json:"param"`
+	}
 
-type reChargeAddrRespData struct {
-	Currency string `json:"currency,omitempty"`
-	Address  string `json:"address,omitempty"`
-}
+	reChargeAddrRespData struct {
+		Currency string `json:"currency,omitempty"`
+		Address  string `json:"address,omitempty"`
+	}
+
+	hotWalletResult struct {
+		Address string `json:"address,omitempty"`
+	}
+	hotWalletRes struct {
+		Code   int             `json:"code"`
+		Result hotWalletResult `json:"result,omitempty"`
+	}
+)
 
 // bindEMailHandler
 type reChargeAddrHandler struct {
@@ -71,6 +84,10 @@ func (handler *reChargeAddrHandler) Handle(
 		}
 	}
 	if addr == "" {
+		if currency != "BTC" {
+			response.SetResponseBase(constants.RC_INVALID_CURRENCY)
+			return
+		}
 		// 从user_recharge_address查询
 		rechAddr, err := common.GetRechargeAddrList(uid, currency)
 		if err != nil {
@@ -78,8 +95,19 @@ func (handler *reChargeAddrHandler) Handle(
 			return
 		}
 		if rechAddr == "" {
-			response.SetResponseBase(constants.RC_INVALID_CURRENCY)
-			return
+			// http Get config.GetConfig().ChainHotWalletAddr
+			rechAddr, err = GenerateBtcWalletAddr(uidStr)
+			if err != nil || rechAddr == "" {
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				return
+			}
+			go func(uid int64, currency, addr string) {
+				// insert btc addr
+				err = common.InsertRechargeAddr(uid, currency, addr)
+				if err != nil {
+					logger.Error("insert recharge addr error,", err)
+				}
+			}(uid, currency, rechAddr)
 		}
 		addr = rechAddr
 	}
@@ -90,4 +118,31 @@ func (handler *reChargeAddrHandler) Handle(
 	// send response
 	response.SetResponseBase(constants.RC_OK)
 	return
+}
+
+// 获取hotwallet address
+func GenerateBtcWalletAddr(uid string) (string, error) {
+	url := config.GetConfig().ChainHotWalletAddr
+	url = strings.Replace(url, ":coin", "btc", 1)
+	url = strings.Replace(url, ":uid", uid, 1)
+	resBody, err := lvthttp.Get(url, nil)
+	if err != nil {
+		logger.Error("hotwallet http req error", err.Error())
+		return "", err
+	}
+	logger.Info("wx http res ", resBody)
+
+	//校验是否是错误返回的格式
+	res := new(hotWalletRes)
+	if err = utils.FromJson(resBody, res); err != nil {
+		logger.Error("hotwallet response: json parse error", err.Error(), "res body", resBody)
+		return "", err
+	}
+
+	if res.Code > 0 {
+		logger.Error("hotwallet response error, code:", res.Code)
+		return "", errors.New("hotwallet response code error")
+	}
+
+	return res.Result.Address, nil
 }

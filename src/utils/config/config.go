@@ -119,6 +119,7 @@ type Configuration struct {
 	Lvt2LvtcDelaySystemAccountUid int64
 	TransFeeAccountUid            int64
 	ReChargeAddress               []ReChargeAddr
+	ChainHotWalletAddr            string
 	Chains                        []ChainConfig
 }
 
@@ -224,7 +225,7 @@ func (cfg *Configuration) isValid() bool {
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
 		cfg.TxHistory.isValid() &&
-	//len(cfg.AppIDs) > 0 &&
+		//len(cfg.AppIDs) > 0 &&
 		len(cfg.SmsSvrAddr) > 0 &&
 		len(cfg.MailSvrAddr) > 0 &&
 		len(cfg.ImgSvrAddr) > 0
@@ -252,8 +253,8 @@ func IsAppIDValid(appid int) bool {
 
 func (cfg *Configuration) GetChainCoinsBycoin(coin string) []string {
 	var coins []string
-	for i:=0;i<len(cfg.Chains);i++{
-		for j:=0;j<len(cfg.Chains[i].Coins);j++ {
+	for i := 0; i < len(cfg.Chains); i++ {
+		for j := 0; j < len(cfg.Chains[i].Coins); j++ {
 			if strings.EqualFold(cfg.Chains[i].Coins[j], coin) {
 				coins = cfg.Chains[i].Coins
 				break
