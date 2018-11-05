@@ -117,21 +117,21 @@ const (
 
 	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
 
-	ASSET_LVTC_TRANS_PREPARE = "/asset/v1/trans/lvtc_prepare"
-
-	ASSET_LVTC_TRANS_COMMIT = "/asset/v1/trans/lvtc_commit"
-
-	ASSET_LVTC_TRANS_RESULT = "/asset/v1/trans/lvtc_result"
-
+	//ASSET_LVTC_TRANS_PREPARE = "/asset/v1/trans/lvtc_prepare"
+	//
+	//ASSET_LVTC_TRANS_COMMIT = "/asset/v1/trans/lvtc_commit"
+	//
+	//ASSET_LVTC_TRANS_RESULT = "/asset/v1/trans/lvtc_result"
+	//
 	ASSET_LVTC_TRANS_HISTORY = "/asset/v1/trans/lvtc_history"
-
-
-	ASSET_ETH_TRANS_PREPARE = "/asset/v1/trans/eth_prepare"
-
-	ASSET_ETH_TRANS_COMMIT = "/asset/v1/trans/eth_commit"
-
-	ASSET_ETH_TRANS_RESULT = "/asset/v1/trans/eth_result"
-
+	//
+	//
+	//ASSET_ETH_TRANS_PREPARE = "/asset/v1/trans/eth_prepare"
+	//
+	//ASSET_ETH_TRANS_COMMIT = "/asset/v1/trans/eth_commit"
+	//
+	//ASSET_ETH_TRANS_RESULT = "/asset/v1/trans/eth_result"
+	//
 	ASSET_ETH_TRANS_HISTORY = "/asset/v1/trans/eth_history"
 
 	ASSET_LOGK_LIST = "/asset/v1/lock/list"
