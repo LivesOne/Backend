@@ -70,7 +70,10 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 
 	requestData := commonTransPrepareRequest{} // request body
 
-	common.ParseHttpBodyParams(request, &requestData)
+	if ! common.ParseHttpBodyParams(request, &requestData) {
+		response.SetResponseBase(constants.RC_PROTOCOL_ERR)
+		return
+	}
 
 	if requestData.Param == nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
