@@ -1354,11 +1354,11 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		return constants.RC_SYSTEM_ERR
 	}
 
-	sql = fmt.Sprintf("select balance %s where uid = ?", assetTableName)
-	row := tx.QueryRow(sql, amount, from)
+	sql = fmt.Sprintf("select balance from %s where uid = ?", assetTableName)
+	row := tx.QueryRow(sql, from)
 	balance := int64(0)
 	if err := row.Scan(&balance); err != nil {
-		logger.Error("check balance err, uid:", from, " coin:", currency)
+		logger.Error("get balance err, uid:", from, " coin:", currency, "error:", err)
 		return constants.RC_SYSTEM_ERR
 	}
 	if balance - amount < 0 {
