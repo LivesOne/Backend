@@ -165,9 +165,12 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	address := strings.ToLower(secret.Address)
-	if !strings.HasPrefix(address, "0x") {
-		address = "0x" + address
+	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVTC) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVT) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_ETH) {
+		if !strings.HasPrefix(address, "0x") {
+			address = "0x" + address
+		}
 	}
+
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(secret.Currency,"eos") {
 		currencyDecimal = utils.CONV_EOS
