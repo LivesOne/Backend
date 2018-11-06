@@ -218,7 +218,7 @@ func validateWithdrawalValue(value string) bool {
  */
 func validateWithdrawalAddress(walletAddress, currency string) bool {
 	ret := false
-	switch currency {
+	switch strings.ToUpper(currency) {
 	case constants.TRADE_CURRENCY_LVT:
 		fallthrough
 	case constants.TRADE_CURRENCY_LVTC:
