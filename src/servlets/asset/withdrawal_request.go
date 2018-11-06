@@ -213,8 +213,20 @@ func validateWithdrawalValue(value string) bool {
 /*
  * 验证提币目标地址
  */
-func validateWithdrawalAddress(walletAddress string) bool {
-	reg := "^(0x)?[0-9a-fA-F]{40}$"
-	ret, _ := regexp.MatchString(reg, strings.ToLower(walletAddress))
+func validateWithdrawalAddress(walletAddress, currency string) bool {
+	ret := false
+	switch currency {
+	case constants.TRADE_CURRENCY_LVT:
+		fallthrough
+	case constants.TRADE_CURRENCY_LVTC:
+		fallthrough
+	case constants.TRADE_CURRENCY_ETH:
+		reg := "^(0x)?[0-9a-fA-F]{40}$"
+		ret, _ = regexp.MatchString(reg, strings.ToLower(walletAddress))
+	case constants.TRADE_CURRENCY_BTC:
+		ret = len(walletAddress) == 20
+	case constants.TRADE_CURRENCY_EOS:
+		ret = len(walletAddress) > 0
+	}
 	return ret
 }
