@@ -6,7 +6,7 @@ import (
 	"servlets/constants"
 	"utils"
 	"utils/logger"
-	"utils/vcode"
+	"servlets/vcode"
 )
 
 const (

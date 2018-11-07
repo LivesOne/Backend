@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"servlets/constants"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -162,40 +161,9 @@ func DeleteLVTCCommited(txid int64)error{
 func DeleteCommited(txid int64)error{
 	return txCommitDelete(tSession,txdbc.DBDatabase,COMMITED,txid)
 }
-func FindAndModifyPending(txid, from, status int64) (*DTTXHistory, bool) {
-	session := tSession.Clone()
-	defer session.Close()
-	coll := session.DB(txdbc.DBDatabase).C(PENDING)
-	res := DTTXHistory{}
-	query := bson.M{
-		"_id":  txid,
-		"from": from,
-	}
-	change := mgo.Change{
-		Update: bson.M{
-			"$bit": bson.M{
-				"status": bson.M{
-					"or": constants.TX_STATUS_COMMIT,
-				},
-			},
-		},
-		ReturnNew: false,
-	}
-	info, err := coll.Find(query).Apply(change, &res)
-	if err != nil {
-		logger.Error("findAndModify error ", err.Error())
-	}
-	f := true
-	if info == nil || info.Matched == 0 {
-		f = false
-	}
-	return &res, f
-}
 
-func FindAndModifyLVTCPending(txid, from, status int64) (*DTTXHistory, bool) {
-	session := ntSession.Clone()
-	defer session.Close()
-	coll := session.DB(ntxdbc.DBDatabase).C(PENDING)
+func findAndModifyPending(txid, from, status int64,s *mgo.Session)(*DTTXHistory, bool){
+	coll := s.DB(ntxdbc.DBDatabase).C(PENDING)
 	res := DTTXHistory{}
 	query := bson.M{
 		"_id":  txid,
@@ -220,6 +188,18 @@ func FindAndModifyLVTCPending(txid, from, status int64) (*DTTXHistory, bool) {
 		f = false
 	}
 	return &res, f
+}
+
+func FindAndModifyPending(txid, from, status int64) (*DTTXHistory, bool) {
+	session := tSession.Clone()
+	defer session.Close()
+	return findAndModifyPending(txid,from,status,session)
+}
+
+func FindAndModifyLVTCPending(txid, from, status int64) (*DTTXHistory, bool) {
+	session := ntSession.Clone()
+	defer session.Close()
+	return findAndModifyPending(txid,from,status,session)
 }
 
 
