@@ -82,6 +82,7 @@
       "DBUserPwd" : "",
       "DBDatabase" : "db_livesone_profile"
     },
+    "ChainApiAddress": "http://office.metellica.cn:55555",
     "SmsSvrName": "SmsService",
     "ImgEmailSvrName": "ImgEmailService",
     "RegistryAddr":"10.0.5.248:8500",

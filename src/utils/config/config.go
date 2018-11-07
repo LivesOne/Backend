@@ -94,7 +94,8 @@ type Configuration struct {
 	LoginPwdErrCntLimit []LoginPwdErrCntLimit
 	TransferLimit       map[int]TransferLimit
 	AppIDs              []int // app IDs read from configuration file
-
+	//eos 账户验证地址
+	ChainApiAddress string
 	// 短信验证服务
 	SmsSvrName string
 	// 图片、邮件验证服务

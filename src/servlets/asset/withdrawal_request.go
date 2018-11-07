@@ -7,12 +7,12 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
+	"servlets/vcode"
 	"strings"
 	"utils"
 	"utils/config"
 	"utils/logger"
 	"utils/lvthttp"
-	"utils/vcode"
 )
 
 const (
@@ -269,7 +269,7 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 }
 
 func validateEosAccount(account string) constants.Error {
-	url := config.GetConfig().MailSvrAddr
+	url := config.GetConfig().ChainApiAddress
 	if strings.HasSuffix(url, "/") {
 		url += account
 	} else {
