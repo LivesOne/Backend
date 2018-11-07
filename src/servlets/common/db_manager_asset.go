@@ -1236,6 +1236,9 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 //}
 
 func Withdraw(uid int64, amount, address, currency, feeCurrency string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
+	CheckAndInitAsset(uid)
+	//CheckAndInitAsset(config.GetWithdrawalConfig().WithdrawalAcceptAccount)
+	//CheckAndInitAsset(config.GetWithdrawalConfig().FeeAcceptAccount)
 	sql := "select count(1) count from user_withdrawal_request where uid = ?  and status in (?, ?, ?) and currency in (?"
 	coins := config.GetConfig().GetChainCoinsBycoin(currency)
 	if len(coins) == 0 {
