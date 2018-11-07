@@ -9,9 +9,39 @@ import (
 	"servlets/token"
 	"strings"
 	"utils"
+	"utils/config"
 	"utils/logger"
+	"utils/lvthttp"
 	"utils/vcode"
 )
+
+const (
+	ERR_SUCCESS         = 0
+	ERR_REQ_PARAM       = 1
+	ERR_SERVER_INTERNAL = 2
+
+	ERR_ACCOUNT_NOT_EXISTS = 1012
+)
+
+type EOSAccountResponse struct {
+	Code   int                          `json:"code"`
+	Result *EOSAccountInformationResult `json:"result"`
+}
+
+type EOSAccountInformationResult struct {
+	RamQuota  int64  `json:"ram_quota"`
+	RamUsage  int64  `json:"ram_usage"`
+	NetLimit  *Limit `json:"net_limit"`
+	CpuLimit  *Limit `json:"cpu_limit"`
+	NetWeight int64  `json:"net_weight"`
+	CpuWeight int64  `json:"cpu_weight"`
+}
+
+type Limit struct {
+	Used      int64 `json:"used"`
+	available int64 `json:"available"`
+	max       int64 `json:"max"`
+}
 
 type withdrawRequestParams struct {
 	AuthType  int    `json:"auth_type"`
@@ -172,7 +202,11 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	var currencyDecimal, feeCurrencyDecimal int
-	if strings.EqualFold(secret.Currency,"eos") {
+	if strings.EqualFold(secret.Currency, "eos") {
+		if err := validateEosAccount(address); err.Rc != constants.RC_OK.Rc {
+			response.SetResponseBase(err)
+			return
+		}
 		currencyDecimal = utils.CONV_EOS
 		feeCurrencyDecimal = utils.CONV_EOS
 	} else {
@@ -180,7 +214,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		feeCurrencyDecimal = utils.CONV_LVT
 	}
 	feeCurrency := strings.ToUpper(secret.Currency)
-	if strings.EqualFold(secret.Currency,"lvtc") {
+	if strings.EqualFold(secret.Currency, "lvtc") {
 		feeCurrency = "ETH"
 		feeCurrencyDecimal = utils.CONV_LVT
 	}
@@ -232,4 +266,40 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 		ret = len(walletAddress) > 0
 	}
 	return ret
+}
+
+func validateEosAccount(account string) constants.Error {
+	url := config.GetConfig().MailSvrAddr
+	if strings.HasSuffix(url, "/") {
+		url += account
+	} else {
+		url += "/" + account
+	}
+	response, err := lvthttp.Get(url, nil)
+	if err != nil {
+		logger.Error("send transcation to chain error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	accountResponse := new(EOSAccountResponse)
+	if err := utils.FromJson(response, accountResponse); err != nil {
+		logger.Error("json parse error", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+
+	switch accountResponse.Code {
+	case ERR_SUCCESS:
+		if accountResponse.Result != nil {
+			return constants.RC_OK
+		} else {
+			return constants.RC_INVALID_ACCOUNT
+		}
+	case ERR_REQ_PARAM:
+		fallthrough
+	case ERR_SERVER_INTERNAL:
+		return constants.RC_SYSTEM_ERR
+	case ERR_ACCOUNT_NOT_EXISTS:
+		return constants.RC_INVALID_ACCOUNT
+	default:
+		return constants.RC_SYSTEM_ERR
+	}
 }
