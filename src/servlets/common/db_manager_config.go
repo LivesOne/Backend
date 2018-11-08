@@ -148,3 +148,38 @@ func QueryCurrencyPrice(currency, currency2 string) (string, string, error) {
 	logger.Info("currency price not found:", currency, ",", currency2)
 	return "", "", nil
 }
+
+func GeTransferQuotaByCurrency(currency string) *TransferQuota {
+	sql := "select * from dt_transfer_amount where currency = ?"
+	row, err := gDBConfig.QueryRow(sql, currency)
+	if err != nil {
+		logger.Error("query quota from dt_transfer_amount by currency error, currency:", currency, ", error:", err.Error())
+	}
+	transferQuota := TransferQuota{
+		Currency:        currency,
+		SingleAmountMin: utils.Str2Float64(row["single_amount_min"]),
+		DailyAmountMax:  utils.Str2Float64(row["daily_amount_max"]),
+		UpdateTime:      utils.Str2Int64(row["update_time"]),
+	}
+
+	feeArray := make([]TransferFee, 0)
+	sql = "select * from dt_transfer_fee where currency = ?"
+	rows := gDBConfig.Query(sql, currency)
+	for _, row = range rows {
+		transferFee := TransferFee{
+			Id:          utils.Str2Int64(row["id"]),
+			Currency:    row["currency"],
+			FeeCurrency: row["fee_currency"],
+			FeeType:     utils.Str2Int(row["fee_type"]),
+			FeeFixed:    utils.Str2Float64(row["fee_fixed"]),
+			FeeRate:     utils.Str2Float64(row["fee_rate"]),
+			FeeMin:      utils.Str2Float64(row["fee_min"]),
+			FeeMax:      utils.Str2Float64(row["fee_max"]),
+			Discount:    utils.Str2Float64(row["discount"]),
+			UpdateTime:  utils.Str2Int64(row["update_time"]),
+		}
+		feeArray = append(feeArray, transferFee)
+	}
+	transferQuota.Fee = feeArray
+	return &transferQuota
+}

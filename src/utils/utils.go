@@ -138,6 +138,10 @@ func FloatStr2CoinsInt (coins string, coinsDecimal int64) int64 {
 	return int64(Str2Float64(coins) * float64(coinsDecimal))
 }
 
+func Float2CoinsInt (coins float64, coinsDecimal int64) int64 {
+	return int64(coins * float64(coinsDecimal))
+}
+
 func LVTintToFloatStr(lvt int64) string {
 	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_LVT))
 	return d2.StringFixed(8)
