@@ -152,7 +152,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 
 	// TODO:  get uid from the database
 	// uid := strconv.FormatInt(account.UID, 10)
-	const expire int64 = 24 * 3600
+	const expire int64 = constants.Login_Expired
 	newtoken, errNewT := token.New(account.UIDString, aesKey, expire)
 	// newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
 	if errNewT != constants.ERR_INT_OK {

@@ -39,6 +39,8 @@ const (
 	USER_LIMITED_UNLOGIN = 1
 )
 
+const Login_Expired  = 72 * 3600
+
 var (
 	WALLET_DUP_BIND = errors.New("wallet duplicated bind")
 )

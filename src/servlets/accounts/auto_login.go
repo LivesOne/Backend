@@ -83,7 +83,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	const expire int64 = 24 * 3600
+	const expire int64 = constants.Login_Expired
 	errT := token.Update(header.TokenHash, aesKey, expire)
 	if errT != constants.ERR_INT_OK {
 		logger.Info("autologin: update token hash failed")
