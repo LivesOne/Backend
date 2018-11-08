@@ -1308,11 +1308,11 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	tx.Commit()
 
 	go func() {
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, feeCurrencyDecimal, timestamp)
+		err = addFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, feeCurrencyDecimal, timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, currencyDecimal, timestamp)
+		err = addTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, currencyDecimal, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1482,11 +1482,11 @@ func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Er
 	tx.Commit()
 
 	go func() {
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFeeInt, constants.TRADE_CURRENCY_ETH, 8, timestamp)
+		err = addFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFeeInt, constants.TRADE_CURRENCY_ETH, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toETH, address, amountInt, constants.TRADE_CURRENCY_ETH, feeTradeNo, 8, timestamp)
+		err = addTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toETH, address, amountInt, constants.TRADE_CURRENCY_ETH, feeTradeNo, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1620,11 +1620,11 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
 
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFeeInt, constants.TRADE_CURRENCY_ETH, 8, timestamp)
+		err = addFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFeeInt, constants.TRADE_CURRENCY_ETH, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toLvt, address, amountInt, constants.TRADE_CURRENCY_LVTC, feeTradeNo, 8, timestamp)
+		err = addTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toLvt, address, amountInt, constants.TRADE_CURRENCY_LVTC, feeTradeNo, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1715,7 +1715,7 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 }
 
 //status为成功
-func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, currencyDecimal int, ts int64) error {
+func addFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, currencyDecimal int, ts int64) error {
 	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	tradeInfo := TradeInfo{
@@ -1739,7 +1739,7 @@ func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string,
 }
 
 //status为处理中
-func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, from int64, to int64, address string, amount int64, currency, FeeTradeNo string, currencyDecimal int, ts int64) error {
+func addTradeInfo(txid int64, tradeNo string, tradeType, subType int, from int64, to int64, address string, amount int64, currency, FeeTradeNo string, currencyDecimal int, ts int64) error {
 	withdraw := TradeWithdrawal{
 		Address: address,
 	}

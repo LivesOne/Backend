@@ -695,39 +695,40 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 }
 
 func TransferCommit(uid, txid int64, currency string) constants.Error {
-	tp, err := GetTradePendingByTxid(utils.Int642Str(txid), uid)
-	if err != nil {
-		return constants.RC_SYSTEM_ERR
-	}
-	if tp == nil {
-		return constants.RC_PARAM_ERR
-	}
+	txid_ts := utils.TXIDToTimeStamp13(txid)
 	ts := utils.GetTimestamp13()
 	//暂时写死10秒
-	if ts-tp.Ts > TRANS_TIMEOUT {
+	if ts-txid_ts > TRANS_TIMEOUT {
 		//删除pending
-		DeleteTradePending(tp.TradeNo, uid, nil)
+		DeletePendingByInfo(&DTTXHistory{Id:txid,})
 		return constants.RC_TRANS_TIMEOUT
 	}
+
+	perPending, err := getPending(txid, uid, currency)
+	//未查到数据，返回处理中
+	if err.Rc != constants.RC_OK.Rc || perPending == nil {
+		return constants.RC_TRANS_TIMEOUT
+	}
+	perPending.Status = constants.TX_STATUS_COMMIT
 
 	var (
 		to         int64
 		bizContent TransBizContent
 	)
 	//识别类型进行操作
-	switch tp.Type {
+	switch perPending.Type {
 	case constants.TX_TYPE_TRANS:
-		to = tp.To
+		to = perPending.To
 	default:
 		return constants.RC_PARAM_ERR
 	}
 
 	//存在就检测资产初始化状况，未初始化的用户给初始化
 	CheckAndInitAsset(to)
-	CheckAndInitAsset(tp.From)
-	if tp.BizContent != "" {
+	CheckAndInitAsset(perPending.From)
+	if perPending.BizContent != "" {
 		//解析业务数据，拿到具体数值
-		if je := utils.FromJson(tp.BizContent, &bizContent); je != nil {
+		if je := utils.FromJson(perPending.BizContent, &bizContent); je != nil {
 			return constants.RC_PARAM_ERR
 		}
 	}
@@ -741,18 +742,32 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 	txId := GenerateTxID()
 	txIdFee := GenerateTxID()
 	//扣除转账资产
-	error := transfer(txId, uid, to, tp.Value, timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
-	if error.Rc != constants.RC_OK.Rc {
+	err = transfer(txId, uid, to, perPending.Value, timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+	if err.Rc != constants.RC_OK.Rc {
 		tx.Rollback()
-		return error
+		return err
 	}
 	//扣除手续费资产
-	error = transfer(txIdFee, uid, config.GetWithdrawalConfig().FeeAcceptAccount, bizContent.Fee, timestamp, bizContent.FeeCurrency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
-	if error.Rc != constants.RC_OK.Rc {
+	err = transfer(txIdFee, uid, config.GetConfig().TransFeeAccountUid, bizContent.Fee, timestamp, bizContent.FeeCurrency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	if err.Rc != constants.RC_OK.Rc {
 		tx.Rollback()
-		return error
+		return err
+	}
+	if strings.EqualFold(currency, CURRENCY_LVTC) || strings.EqualFold(currency, CURRENCY_LVT) {
+		var eror error
+		if strings.EqualFold(currency, CURRENCY_LVTC) {
+			eror = InsertLVTCCommited(perPending)
+		} else {
+			eror = InsertCommited(perPending)
+		}
+		if !CheckDup(eror) {
+			tx.Rollback()
+			return constants.RC_SYSTEM_ERR
+		}
 	}
 	tx.Commit()
+
+	DeletePendingByInfo(&DTTXHistory{Id:txid,})
 
 	go func() {
 		var currencyDecimal, feeCurrencyDecimal int
@@ -763,38 +778,47 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 			currencyDecimal = utils.CONV_LVT
 			feeCurrencyDecimal = utils.CONV_LVT
 		}
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_TRANSFER_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, bizContent.Fee, bizContent.FeeCurrency, feeCurrencyDecimal, timestamp)
+		err := addFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_TRANSFER_FEE, uid, config.GetConfig().TransFeeAccountUid, bizContent.Fee, bizContent.FeeCurrency, feeCurrencyDecimal, timestamp)
 		if err != nil {
-			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+			logger.Error("transfer fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TX_SUB_TYPE_TRANS, tp.Type, uid, to, "", tp.Value, currency, feeTradeNo, currencyDecimal, timestamp)
+		err = addTradeInfo(txId, tradeNo, constants.TX_SUB_TYPE_TRANS, perPending.Type, uid, to, "", perPending.Value, currency, feeTradeNo, currencyDecimal, timestamp)
 		if err != nil {
-			logger.Error("withdraw insert trade database error, error:", err.Error())
-		}
-		if strings.EqualFold(currency, CURRENCY_LVTC) || strings.EqualFold(currency, CURRENCY_LVT) {
-			txh := &DTTXHistory{
-				Id:       txId,
-				TradeNo:  tradeNo,
-				Type:     constants.TX_SUB_TYPE_TRANS,
-				From:     uid,
-				To:       config.GetWithdrawalConfig().WithdrawalAcceptAccount,
-				Value:    bizContent.Fee,
-				Ts:       timestamp,
-				Currency: currency,
-			}
-			if strings.EqualFold(currency, CURRENCY_LVTC)  {
-				err = InsertLVTCCommited(txh)
-			} else {
-				err = InsertCommited(txh)
-			}
-
-			if err != nil {
-				logger.Error("tx_history_lvt_tmp insert mongo error ", err.Error())
-				rdsDo("rpush", constants.PUSH_TX_HISTORY_LVT_QUEUE_NAME, utils.ToJSON(txh))
-			} else {
-				DeleteTxhistoryLvtTmpByTxid(txId)
-			}
+			logger.Error("transfer insert trade database error, error:", err.Error())
 		}
 	}()
 	return constants.RC_OK
+}
+
+func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error) {
+	var dth *DTTXHistory
+	dth, flag := FindAndModifyLVTCPending(txId, uid, constants.TX_STATUS_COMMIT)
+	//未查到数据，返回处理中
+	if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
+		return nil, constants.RC_TRANS_TIMEOUT
+	}
+	tp, err := GetTradePendingByTxid(utils.Int642Str(txId), uid)
+	if err != nil {
+		return nil, constants.RC_SYSTEM_ERR
+	}
+	if tp == nil {
+		return nil, constants.RC_PARAM_ERR
+	}
+
+	dth = &DTTXHistory{
+		Id:         utils.Str2Int64(tp.Txid),
+		Status:     constants.TX_STATUS_DEFAULT,
+		Type:       tp.Type,
+		TradeNo:    tp.TradeNo,
+		From:       tp.From,
+		To:         tp.To,
+		Value:      tp.Value,
+		Ts:         tp.Ts,
+		Code:       0,
+		Remark:     nil,
+		Miner:      nil,
+		BizContent: tp.BizContent,
+		Currency:   currency,
+	}
+	return dth, constants.RC_OK
 }
