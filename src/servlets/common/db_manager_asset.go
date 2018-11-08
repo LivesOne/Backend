@@ -1246,7 +1246,7 @@ func InitUserWithdrawalByTx(uid int64, tx *sql.Tx) *UserWithdrawalQuota {
 //
 //}
 
-func Withdraw(uid int64, amount, address, currency, feeCurrency string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
+func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, currencyDecimal, feeCurrencyDecimal int) (string, constants.Error) {
 	CheckAndInitAsset(uid)
 	//CheckAndInitAsset(config.GetWithdrawalConfig().WithdrawalAcceptAccount)
 	//CheckAndInitAsset(config.GetWithdrawalConfig().FeeAcceptAccount)
@@ -1298,8 +1298,8 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency string, currency
 		return "", error
 	}
 
-	sql = "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency, fee_currency) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency, feeCurrency)
+	sql = "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency, fee_currency, remark) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency, feeCurrency, remark)
 	if err != nil {
 		logger.Error("add user_withdrawal_request error ", err.Error())
 		tx.Rollback()
@@ -1308,11 +1308,11 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency string, currency
 	tx.Commit()
 
 	go func() {
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, timestamp)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, feeCurrencyDecimal, timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, currencyDecimal, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1368,8 +1368,19 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		return constants.RC_SYSTEM_ERR
 	}
 
+	row := tx.QueryRow("select status from user_asset_lvtc where uid = ?", from)
+	status := -1
+	err = row.Scan(&status)
+	if err != nil {
+		logger.Error("query row error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	if status != constants.ASSET_STATUS_DEF {
+		return constants.RC_ACCOUNT_LIMITED
+	}
+
 	sql = fmt.Sprintf("select balance from %s where uid = ?", assetTableName)
-	row := tx.QueryRow(sql, from)
+	row = tx.QueryRow(sql, from)
 	balance := int64(0)
 	if err := row.Scan(&balance); err != nil {
 		logger.Error("get balance err, uid:", from, " coin:", currency, "error:", err)
@@ -1471,11 +1482,11 @@ func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Er
 	tx.Commit()
 
 	go func() {
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFeeInt, constants.TRADE_CURRENCY_ETH, timestamp)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, feeToETH, ethFeeInt, constants.TRADE_CURRENCY_ETH, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toETH, address, amountInt, constants.TRADE_CURRENCY_ETH, feeTradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toETH, address, amountInt, constants.TRADE_CURRENCY_ETH, feeTradeNo, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1609,11 +1620,11 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 			DeleteTxhistoryLvtTmpByTxid(txId)
 		}
 
-		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFeeInt, constants.TRADE_CURRENCY_ETH, timestamp)
+		err = addWithdrawFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, toEth, ethFeeInt, constants.TRADE_CURRENCY_ETH, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw fee insert trade database error, error:", err.Error())
 		}
-		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toLvt, address, amountInt, constants.TRADE_CURRENCY_LVTC, feeTradeNo, timestamp)
+		err = addWithdrawTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, toLvt, address, amountInt, constants.TRADE_CURRENCY_LVTC, feeTradeNo, 8, timestamp)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
@@ -1704,7 +1715,7 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 }
 
 //status为成功
-func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, ts int64) error {
+func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, currencyDecimal int, ts int64) error {
 	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 	tradeInfo := TradeInfo{
@@ -1717,7 +1728,7 @@ func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string,
 		To:              to,
 		ToName:          toName,
 		Amount:          amount,
-		Decimal:         8,
+		Decimal:         currencyDecimal,
 		Currency:        currency,
 		CreateTime:      ts,
 		FinishTime:      ts,
@@ -1728,7 +1739,7 @@ func addWithdrawFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string,
 }
 
 //status为处理中
-func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, from int64, to int64, address string, amount int64, currency string, FeeTradeNo string, ts int64) error {
+func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, from int64, to int64, address string, amount int64, currency, FeeTradeNo string, currencyDecimal int, ts int64) error {
 	withdraw := TradeWithdrawal{
 		Address: address,
 	}
@@ -1743,7 +1754,7 @@ func addWithdrawTradeInfo(txid int64, tradeNo string, tradeType, subType int, fr
 		To:         to,
 		ToName:     toName,
 		Amount:     amount,
-		Decimal:    8,
+		Decimal:    currencyDecimal,
 		Currency:   currency,
 		CreateTime: ts,
 		Status:     1,
@@ -2690,4 +2701,87 @@ func QueryHashRateDetailByUid(uid int64) []map[string]string {
 	rows := gDBAsset.Query(sql, params...)
 
 	return rows
+}
+
+func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency, feeCurrency string, currencyDecimal int) (float64, constants.Error) {
+	if amount <= 0 {
+		return float64(0), constants.RC_PARAM_ERR
+	}
+	transferQuota := getTransferQuota(currency)
+	if transferQuota == nil {
+		return float64(0), constants.RC_PARAM_ERR
+	}
+	if transferQuota.SingleAmountMin > 0 && transferQuota.SingleAmountMin > amount {
+		return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
+	}
+
+	if transferQuota.DailyAmountMax > 0 {
+		//TODO 修改当日转账汇总sql
+		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?, ?) and create_time >= ?"
+		row, err := gDBAsset.QueryRow(sql, uid, currency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
+		if err != nil {
+			logger.Error("query that day total transfer amount error, uid:", uid, ",error:", err.Error())
+		}
+		totalAmount := utils.Str2Int64(row["total_value"])
+
+		dailyAmount := big.NewFloat(transferQuota.DailyAmountMax)
+		dailyAmount = dailyAmount.Mul(dailyAmount, big.NewFloat(float64(currencyDecimal)))
+		amountBig := big.NewFloat(float64(amount))
+		amountBig = amountBig.Mul(amountBig, big.NewFloat(float64(currencyDecimal)))
+
+		withdrawAmountInt64, _ := amountBig.Int64()
+		dailyAmountInt64, _ := dailyAmount.Int64()
+		logger.Info("daily quota out limit, transfer amount:", withdrawAmountInt64, ",that day transfer total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
+		if dailyAmount.Cmp(amountBig.Add(amountBig, big.NewFloat(float64(totalAmount)))) < 0 {
+			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
+		}
+	}
+	var feeOfTransfer = float64(-1)
+	for _, fee := range transferQuota.Fee {
+		if fee.FeeCurrency == feeCurrency {
+			switch fee.FeeType {
+			case 0:
+				feeOfTransfer = fee.FeeFixed
+			case 1:
+				feeOfTransfer = amount * fee.FeeRate
+				if feeOfTransfer < fee.FeeMin {
+					feeOfTransfer = fee.FeeMin
+				}
+				if feeOfTransfer > fee.FeeMax {
+					feeOfTransfer = fee.FeeMax
+				}
+			default:
+				logger.Error("transfer fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
+				return float64(0), constants.RC_INVALID_CURRENCY
+			}
+		}
+	}
+
+	if feeOfTransfer < 0 {
+		logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
+		return float64(0), constants.RC_INVALID_CURRENCY
+	}
+
+	return feeOfTransfer, constants.RC_OK
+}
+
+func getTransferQuota(currency string) *TransferQuota {
+	key := constants.TRANSFER_QUOTA_FEE_KEY + "_" + currency
+	quota := new(TransferQuota)
+	results, _ := redis.String(rdsDo("GET", key))
+	reload := false
+	if len(results) > 0 {
+		if err := utils.FromJson(results, quota); err != nil {
+			logger.Error("get withdraw quota from redis error, error:", err.Error())
+			reload = true
+		}
+	} else {
+		reload = true
+	}
+	if reload {
+		quota = GeTransferQuotaByCurrency(currency)
+		tomorrow, _ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02")+" 23:59:59", time.Local)
+		rdsDo("SET", key, utils.ToJSON(quota), "EX", tomorrow.Unix()+1-utils.GetTimestamp10())
+	}
+	return quota
 }
