@@ -447,6 +447,17 @@ func CheckTansTypeFromUid(uid int64, transType int) bool {
 	return utils.Str2Int64(row["uid"]) == uid
 }
 
+func checkAssetLimeted(tb string, uid int64, tx *sql.Tx) bool {
+	row := tx.QueryRow(fmt.Sprintf("select status from %s where uid = ?", tb), uid)
+	status := -1
+	err := row.Scan(&status)
+	if err != nil {
+		logger.Error("query row error ", err.Error())
+		return false
+	}
+	return status == constants.ASSET_STATUS_DEF
+}
+
 func CheckAssetLimeted(uid int64, tx *sql.Tx) bool {
 	row := tx.QueryRow("select status from user_asset where uid = ?", uid)
 	status := -1
@@ -1837,6 +1848,9 @@ func BtcTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 	if !ckeckBtcBalance(from, value, tx) {
 		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
+	if !checkAssetLimeted("user_asset_btc", from, tx) {
+		return 0, constants.TRANS_ERR_ASSET_LIMITED
+	}
 
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset_btc set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
@@ -1900,6 +1914,9 @@ func EosTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 	if !ckeckEosBalance(from, value, tx) {
 		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
 	}
+	if !checkAssetLimeted("user_asset_eos", from, tx) {
+		return 0, constants.TRANS_ERR_ASSET_LIMITED
+	}
 
 	//扣除转出方balance
 	info1, err1 := tx.Exec("update user_asset_eos set balance = balance - ?,lastmodify = ? where uid = ?", value, ts, from)
@@ -1962,6 +1979,9 @@ func EthTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
 	if !ckeckEthBalance(from, value, tx) {
 		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+	if !checkAssetLimeted("user_asset_eth", from, tx) {
+		return 0, constants.TRANS_ERR_ASSET_LIMITED
 	}
 
 	//扣除转出方balance
