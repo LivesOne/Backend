@@ -272,9 +272,9 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 func validateEosAccount(account string) constants.Error {
 	url := config.GetConfig().ChainApiAddress
 	if strings.HasSuffix(url, "/") {
-		url += account
+		url += "v2/eos/account/" + account
 	} else {
-		url += "/" + account
+		url += "/v2/eos/account/" + account
 	}
 	response, err := lvthttp.Get(url, nil)
 	if err != nil {
