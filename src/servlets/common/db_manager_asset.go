@@ -1645,21 +1645,12 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, c
 	}
 
 	if withdrawQuota.DailyAmountMax > 0 {
-		var totalAmount int64
-		if strings.EqualFold(currency, CURRENCY_LVT) {
-			totalAmount = GetCurrentDayLVTTransferAmount(uid)
+		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?, ?) and create_time >= ?"
+		row, err := gDBAsset.QueryRow(sql, uid, currency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
+		if err != nil {
+			logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
 		}
-		if strings.EqualFold(currency, CURRENCY_LVTC) {
-			totalAmount = GetCurrentDayLVTCTransferAmount(uid)
-		}
-		if strings.EqualFold(currency, CURRENCY_ETH) || strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) {
-			sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?, ?) and create_time >= ?"
-			row, err := gDBAsset.QueryRow(sql, uid, currency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
-			if err != nil {
-				logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
-			}
-			totalAmount = utils.Str2Int64(row["total_value"])
-		}
+		totalAmount := utils.Str2Int64(row["total_value"])
 
 		dailyAmount := big.NewFloat(withdrawQuota.DailyAmountMax)
 		dailyAmount = dailyAmount.Mul(dailyAmount, big.NewFloat(float64(currencyDecimal)))
@@ -2725,13 +2716,21 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 	}
 
 	if transferQuota.DailyAmountMax > 0 {
-		//TODO 修改当日转账汇总sql
-		sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?, ?) and create_time >= ?"
-		row, err := gDBAsset.QueryRow(sql, uid, currency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
-		if err != nil {
-			logger.Error("query that day total transfer amount error, uid:", uid, ",error:", err.Error())
+		var totalAmount int64
+		if strings.EqualFold(currency, CURRENCY_LVT) {
+			totalAmount = GetCurrentDayLVTTransferAmount(uid)
 		}
-		totalAmount := utils.Str2Int64(row["total_value"])
+		if strings.EqualFold(currency, CURRENCY_LVTC) {
+			totalAmount = GetCurrentDayLVTCTransferAmount(uid)
+		}
+		if strings.EqualFold(currency, CURRENCY_ETH) || strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) {
+			sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?, ?) and create_time >= ?"
+			row, err := gDBAsset.QueryRow(sql, uid, currency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
+			if err != nil {
+				logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
+			}
+			totalAmount = utils.Str2Int64(row["total_value"])
+		}
 
 		dailyAmount := big.NewFloat(transferQuota.DailyAmountMax)
 		dailyAmount = dailyAmount.Mul(dailyAmount, big.NewFloat(float64(currencyDecimal)))
