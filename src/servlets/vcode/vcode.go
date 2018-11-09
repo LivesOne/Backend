@@ -13,6 +13,7 @@ import (
 	"servlets/constants"
 	"servlets/rpc"
 	"sort"
+	"time"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -168,7 +169,9 @@ func messageServerReq(phone string, country int, ln string, expire int, voiceCod
 				Expired:   int32(expire),
 				VoiceCode: int32(voiceCode),
 			}
-			resp, err := cli.SmsSendVoiceMsg(context.Background(), req)
+			ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+			defer cancel()
+			resp, err := cli.SmsSendVoiceMsg(ctx, req)
 			if err != nil {
 				logger.Error("grpc SmsSendVoiceMsg request error: ", err)
 				return false, err
@@ -197,7 +200,9 @@ func GetImgVCode(w, h, len, expire int) (*ImgMailRes, error) {
 			Len:    int32(len),
 			Expire: int32(expire),
 		}
-		resp, err := cli.SendImgVcode(context.Background(), reqData)
+		ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+		defer cancel()
+		resp, err := cli.SendImgVcode(ctx, reqData)
 		if err != nil || resp == nil {
 			logger.Error("grpc SendImgVcode request error: ", err)
 			return nil, err
@@ -223,7 +228,9 @@ func SendMailVCode(email string, ln string, expire int) (*ImgMailRes, error) {
 			Tpl:    MAIL_TOL_LVT,
 			Expire: int32(expire),
 		}
-		resp, err := cli.SendEmailVcode(context.Background(), reqData)
+		ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+		defer cancel()
+		resp, err := cli.SendEmailVcode(ctx, reqData)
 		if err != nil || resp == nil {
 			logger.Error("grpc SendEmailVcode request error: ", err)
 			return nil, err
@@ -247,7 +254,9 @@ func validateImgVCode(id string, vcode string) (bool, int) {
 			Code: vcode,
 			Vm:   0,
 		}
-		resp, err := cli.ValidateVcode(context.Background(), reqData)
+		ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+		defer cancel()
+		resp, err := cli.ValidateVcode(ctx, reqData)
 		if err != nil {
 			logger.Error("grpc ValidateVcode request error: ", err)
 			return false, HTTP_ERR
@@ -276,7 +285,9 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 				Phone:          phone,
 				Flag:           utils.Int2Str(flag),
 				ValidationCode: code}
-			resp, err := cli.SmsValidate(context.Background(), req)
+			ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+			defer cancel()
+			resp, err := cli.SmsValidate(ctx, req)
 			if err != nil {
 				logger.Error("grpc SmsSendMsg request error: ", err)
 				return false, SMS_PROTOCOL_ERR
@@ -298,7 +309,9 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 				Email: email,
 				Vm:    0,
 			}
-			resp, err := cli.ValidateVcode(context.Background(), reqData)
+			ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+			defer cancel()
+			resp, err := cli.ValidateVcode(ctx, reqData)
 			if err != nil {
 				logger.Error("grpc ValidateVcode request error: ", err)
 				return false, HTTP_ERR
