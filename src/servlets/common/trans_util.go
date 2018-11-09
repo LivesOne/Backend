@@ -805,6 +805,7 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 			TradeNo:    tradeNo,
 			Type:       constants.TX_SUB_TYPE_TRANS,
 			SubType:    perPending.Type,
+			Subject:    bizContent.Remark,
 			From:       uid,
 			FromName:   fromName,
 			To:         to,
