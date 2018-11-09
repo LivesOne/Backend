@@ -830,33 +830,46 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 
 func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error) {
 	var dth *DTTXHistory
-	dth, flag := FindAndModifyLVTCPending(txId, uid, constants.TX_STATUS_COMMIT)
-	//未查到数据，返回处理中
-	if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
-		return nil, constants.RC_TRANS_TIMEOUT
-	}
-	tp, err := GetTradePendingByTxid(utils.Int642Str(txId), uid)
-	if err != nil {
-		return nil, constants.RC_SYSTEM_ERR
-	}
-	if tp == nil {
-		return nil, constants.RC_PARAM_ERR
-	}
-
-	dth = &DTTXHistory{
-		Id:         utils.Str2Int64(tp.Txid),
-		Status:     constants.TX_STATUS_DEFAULT,
-		Type:       tp.Type,
-		TradeNo:    tp.TradeNo,
-		From:       tp.From,
-		To:         tp.To,
-		Value:      tp.Value,
-		Ts:         tp.Ts,
-		Code:       0,
-		Remark:     nil,
-		Miner:      nil,
-		BizContent: tp.BizContent,
-		Currency:   currency,
+	switch strings.ToUpper(currency) {
+	case CURRENCY_LVTC:
+		dth, flag := FindAndModifyLVTCPending(txId, uid, constants.TX_STATUS_COMMIT)
+		//未查到数据，返回处理中
+		if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
+			return nil, constants.RC_TRANS_TIMEOUT
+		}
+	case CURRENCY_LVT:
+		dth, flag := FindAndModifyPending(txId, uid, constants.TX_STATUS_COMMIT)
+		//未查到数据，返回处理中
+		if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
+			return nil, constants.RC_TRANS_TIMEOUT
+		}
+	case CURRENCY_EOS:
+		fallthrough
+	case CURRENCY_BTC:
+		fallthrough
+	case CURRENCY_ETH:
+		tp, err := GetTradePendingByTxid(utils.Int642Str(txId), uid)
+		if err != nil {
+			return nil, constants.RC_SYSTEM_ERR
+		}
+		if tp == nil {
+			return nil, constants.RC_PARAM_ERR
+		}
+		dth = &DTTXHistory{
+			Id:         utils.Str2Int64(tp.Txid),
+			Status:     constants.TX_STATUS_DEFAULT,
+			Type:       tp.Type,
+			TradeNo:    tp.TradeNo,
+			From:       tp.From,
+			To:         tp.To,
+			Value:      tp.Value,
+			Ts:         tp.Ts,
+			Code:       0,
+			Remark:     nil,
+			Miner:      nil,
+			BizContent: tp.BizContent,
+			Currency:   currency,
+		}
 	}
 	return dth, constants.RC_OK
 }
