@@ -55,6 +55,8 @@ const (
 	MAIL_URL_PATH         = "/mail/v1/getCode"
 	VALIDATE_URL_PATH     = "/v/v1/validate"
 	SMS_VALIDATE_URL_PATH = "/validate"
+
+	RPC_CONN_TIMEOUT = 10 * time.Second
 )
 
 type (
@@ -169,7 +171,7 @@ func messageServerReq(phone string, country int, ln string, expire int, voiceCod
 				Expired:   int32(expire),
 				VoiceCode: int32(voiceCode),
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), RPC_CONN_TIMEOUT)
 			defer cancel()
 			resp, err := cli.SmsSendVoiceMsg(ctx, req)
 			if err != nil {
@@ -200,7 +202,7 @@ func GetImgVCode(w, h, len, expire int) (*ImgMailRes, error) {
 			Len:    int32(len),
 			Expire: int32(expire),
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), RPC_CONN_TIMEOUT)
 		defer cancel()
 		resp, err := cli.SendImgVcode(ctx, reqData)
 		if err != nil || resp == nil {
@@ -228,7 +230,7 @@ func SendMailVCode(email string, ln string, expire int) (*ImgMailRes, error) {
 			Tpl:    MAIL_TOL_LVT,
 			Expire: int32(expire),
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), RPC_CONN_TIMEOUT)
 		defer cancel()
 		resp, err := cli.SendEmailVcode(ctx, reqData)
 		if err != nil || resp == nil {
@@ -254,7 +256,7 @@ func validateImgVCode(id string, vcode string) (bool, int) {
 			Code: vcode,
 			Vm:   0,
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), RPC_CONN_TIMEOUT)
 		defer cancel()
 		resp, err := cli.ValidateVcode(ctx, reqData)
 		if err != nil {
@@ -285,7 +287,7 @@ func ValidateSmsAndCallVCode(phone string, country int, code string, expire int,
 				Phone:          phone,
 				Flag:           utils.Int2Str(flag),
 				ValidationCode: code}
-			ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), RPC_CONN_TIMEOUT)
 			defer cancel()
 			resp, err := cli.SmsValidate(ctx, req)
 			if err != nil {
@@ -309,7 +311,7 @@ func ValidateMailVCode(id string, vcode string, email string) (bool, int) {
 				Email: email,
 				Vm:    0,
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 3 * time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), RPC_CONN_TIMEOUT)
 			defer cancel()
 			resp, err := cli.ValidateVcode(ctx, reqData)
 			if err != nil {

@@ -12,23 +12,23 @@ var (
 )
 
 func GetSmsClient() smspb.SmsServiceClient {
-	//if grpcSmsClient == nil {
+	if grpcSmsClient == nil {
 		conn := getRpcConn(config.GetConfig().RegistryAddr,config.GetConfig().SmsSvrName)
 		if conn == nil {
 			return nil
 		}
-		//grpcSmsClient = smspb.NewSmsServiceClient(conn)
-	//}
-	return smspb.NewSmsServiceClient(conn)
+		grpcSmsClient = smspb.NewSmsServiceClient(conn)
+	}
+	return grpcSmsClient
 }
 
 func GetVcodeClient() vcodeproto.ImgEmailServiceClient {
-	//if vcodeClient == nil {
+	if vcodeClient == nil {
 		conn := getRpcConn(config.GetConfig().RegistryAddr,config.GetConfig().ImgEmailSvrName)
 		if conn == nil {
 			return nil
 		}
-		//vcodeClient = vcodeproto.NewImgEmailServiceClient(conn)
-	//}
-	return vcodeproto.NewImgEmailServiceClient(conn)
+		vcodeClient = vcodeproto.NewImgEmailServiceClient(conn)
+	}
+	return vcodeClient
 }
