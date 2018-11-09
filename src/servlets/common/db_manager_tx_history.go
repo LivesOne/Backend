@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"servlets/constants"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -15,7 +16,6 @@ var ntSession *mgo.Session
 var ntxdbc config.MongoConfig
 
 const (
-
 	// MGDBPoolMax = 10
 	PENDING  = "dt_pending"
 	COMMITED = "dt_committed"
@@ -27,7 +27,7 @@ func InitTxHistoryMongoDB() {
 	initNewTxHistoryMongoDB()
 }
 
-func initOldTxHistoryMongoDB(){
+func initOldTxHistoryMongoDB() {
 	config := config.GetConfig()
 	txdbc = config.TxHistory
 	connStr := fmt.Sprintf("%s?maxPoolSize=%d", txdbc.DBHost, txdbc.MaxConn)
@@ -36,7 +36,7 @@ func initOldTxHistoryMongoDB(){
 	tSession.SetPoolLimit(txdbc.MaxConn)
 }
 
-func initNewTxHistoryMongoDB(){
+func initNewTxHistoryMongoDB() {
 	config := config.GetConfig()
 	ntxdbc = config.NewTxHistory
 	connStr := fmt.Sprintf("%s?maxPoolSize=%d", ntxdbc.DBHost, ntxdbc.MaxConn)
@@ -45,8 +45,7 @@ func initNewTxHistoryMongoDB(){
 	ntSession.SetPoolLimit(ntxdbc.MaxConn)
 }
 
-
-func txCommonInsert(cs *mgo.Session,db, c string, p interface{}) error {
+func txCommonInsert(cs *mgo.Session, db, c string, p interface{}) error {
 	session := cs.Clone()
 	defer session.Close()
 	session.SetSafe(&mgo.Safe{WMode: "majority"})
@@ -58,15 +57,14 @@ func txCommonInsert(cs *mgo.Session,db, c string, p interface{}) error {
 	return err
 }
 
-
-func txCommitDelete(cs *mgo.Session,db, c string, txid int64) error {
+func txCommitDelete(cs *mgo.Session, db, c string, txid int64) error {
 	session := tSession.Clone()
 	defer session.Close()
 	collection := session.DB(db).C(c)
 	return collection.RemoveId(txid)
 }
 
-func txCommonCheckExists(cs *mgo.Session,db, tb string, id interface{}) bool {
+func txCommonCheckExists(cs *mgo.Session, db, tb string, id interface{}) bool {
 	session := cs.Clone()
 	defer session.Close()
 	collection := session.DB(db).C(tb)
@@ -79,39 +77,39 @@ func txCommonCheckExists(cs *mgo.Session,db, tb string, id interface{}) bool {
 }
 
 func InsertPending(pending *DTTXHistory) error {
-	return txCommonInsert(tSession,txdbc.DBDatabase, PENDING, pending)
+	return txCommonInsert(tSession, txdbc.DBDatabase, PENDING, pending)
 }
 func InsertCommited(commited *DTTXHistory) error {
-	return txCommonInsert(tSession,txdbc.DBDatabase, COMMITED, commited)
+	return txCommonInsert(tSession, txdbc.DBDatabase, COMMITED, commited)
 }
 func InsertFailed(failed *DTTXHistory) error {
-	return txCommonInsert(tSession,txdbc.DBDatabase, FAILED, failed)
+	return txCommonInsert(tSession, txdbc.DBDatabase, FAILED, failed)
 }
 func InsertLVTCFailed(failed *DTTXHistory) error {
-	return txCommonInsert(ntSession,ntxdbc.DBDatabase, FAILED, failed)
+	return txCommonInsert(ntSession, ntxdbc.DBDatabase, FAILED, failed)
 }
 
 func InsertLVTCPending(pending *DTTXHistory) error {
-	return txCommonInsert(ntSession,ntxdbc.DBDatabase, PENDING, pending)
+	return txCommonInsert(ntSession, ntxdbc.DBDatabase, PENDING, pending)
 }
 
 func InsertLVTCCommited(commited *DTTXHistory) error {
-	return txCommonInsert(ntSession,ntxdbc.DBDatabase, COMMITED, commited)
+	return txCommonInsert(ntSession, ntxdbc.DBDatabase, COMMITED, commited)
 }
 
 func DeletePending(txid int64) error {
 	logger.Info("DELETE PENDING :", FindPending(txid))
-	return txCommitDelete(tSession,txdbc.DBDatabase, PENDING, txid)
+	return txCommitDelete(tSession, txdbc.DBDatabase, PENDING, txid)
 }
 
 func DeletePendingByInfo(tx *DTTXHistory) error {
 	logger.Info("DELETE PENDING :", *tx)
-	return txCommitDelete(tSession,txdbc.DBDatabase, PENDING, tx.Id)
+	return txCommitDelete(tSession, txdbc.DBDatabase, PENDING, tx.Id)
 }
 
 func DeleteLVTCPendingByInfo(tx *DTTXHistory) error {
 	logger.Info("DELETE PENDING :", *tx)
-	return txCommitDelete(ntSession,ntxdbc.DBDatabase, PENDING, tx.Id)
+	return txCommitDelete(ntSession, ntxdbc.DBDatabase, PENDING, tx.Id)
 }
 
 func FindPending(txid int64) *DTTXHistory {
@@ -141,28 +139,28 @@ func FindLVTCPending(txid int64) *DTTXHistory {
 }
 
 func CheckCommited(txid int64) bool {
-	return txCommonCheckExists(tSession,txdbc.DBDatabase, COMMITED, txid)
+	return txCommonCheckExists(tSession, txdbc.DBDatabase, COMMITED, txid)
 }
 
 func CheckPending(txid int64) bool {
-	return txCommonCheckExists(tSession,txdbc.DBDatabase, PENDING, txid)
+	return txCommonCheckExists(tSession, txdbc.DBDatabase, PENDING, txid)
 }
 
 func CheckLVTCPending(txid int64) bool {
-	return txCommonCheckExists(ntSession,ntxdbc.DBDatabase, PENDING, txid)
+	return txCommonCheckExists(ntSession, ntxdbc.DBDatabase, PENDING, txid)
 }
 
 func CheckLVTCCommited(txid int64) bool {
-	return txCommonCheckExists(ntSession,ntxdbc.DBDatabase, COMMITED, txid)
+	return txCommonCheckExists(ntSession, ntxdbc.DBDatabase, COMMITED, txid)
 }
-func DeleteLVTCCommited(txid int64)error{
-	return txCommitDelete(ntSession,ntxdbc.DBDatabase,COMMITED,txid)
+func DeleteLVTCCommited(txid int64) error {
+	return txCommitDelete(ntSession, ntxdbc.DBDatabase, COMMITED, txid)
 }
-func DeleteCommited(txid int64)error{
-	return txCommitDelete(tSession,txdbc.DBDatabase,COMMITED,txid)
+func DeleteCommited(txid int64) error {
+	return txCommitDelete(tSession, txdbc.DBDatabase, COMMITED, txid)
 }
 
-func findAndModifyPending(txid, from, status int64,s *mgo.Session)(*DTTXHistory, bool){
+func findAndModifyPending(txid, from, status int64, s *mgo.Session) (*DTTXHistory, bool) {
 	coll := s.DB(ntxdbc.DBDatabase).C(PENDING)
 	res := DTTXHistory{}
 	query := bson.M{
@@ -193,15 +191,14 @@ func findAndModifyPending(txid, from, status int64,s *mgo.Session)(*DTTXHistory,
 func FindAndModifyPending(txid, from, status int64) (*DTTXHistory, bool) {
 	session := tSession.Clone()
 	defer session.Close()
-	return findAndModifyPending(txid,from,status,session)
+	return findAndModifyPending(txid, from, status, session)
 }
 
 func FindAndModifyLVTCPending(txid, from, status int64) (*DTTXHistory, bool) {
 	session := ntSession.Clone()
 	defer session.Close()
-	return findAndModifyPending(txid,from,status,session)
+	return findAndModifyPending(txid, from, status, session)
 }
-
 
 func ExistsPending(txid int64) bool {
 	session := tSession.Clone()
@@ -276,6 +273,7 @@ func QueryCommitted(query interface{}, limit int) []DTTXHistory {
 }
 
 func QueryLVTCCommitted(query interface{}, limit int) []DTTXHistory {
+	utils.GetDayStart(utils.GetTimestamp13())
 	session := ntSession.Clone()
 	defer session.Close()
 	logger.Debug("mongo query :", utils.ToJSONIndent(query))
@@ -290,3 +288,49 @@ func QueryLVTCCommitted(query interface{}, limit int) []DTTXHistory {
 	return res
 }
 
+func GetCurrentDayLVTTransferAmount(uid int64) int64 {
+	session := tSession.Clone()
+	defer session.Close()
+	return getCurrentDayTransferAmount(uid, session)
+}
+
+func GetCurrentDayLVTCTransferAmount(uid int64) int64 {
+	session := ntSession.Clone()
+	defer session.Close()
+	return getCurrentDayTransferAmount(uid, session)
+}
+
+func getCurrentDayTransferAmount(uid int64, session *mgo.Session) int64 {
+	session.SetSafe(&mgo.Safe{WMode: "majority"})
+	match := bson.M{
+		"$match": bson.M{
+			"from": uid,
+			"type": constants.TX_TYPE_TRANS,
+			"ts": bson.M{
+				"$gt": utils.GetDayStart(utils.GetTimestamp13()).Nanosecond() / 1000000,
+			},
+		},
+	}
+	group := bson.M{
+		"$group": bson.M{
+			"_id": "$from",
+			"totalAmount": bson.M{
+				"$sum": "$value",
+			},
+		},
+	}
+	collection := session.DB(ntxdbc.DBDatabase).C(COMMITED)
+	pipe := collection.Pipe([]bson.M{match, group})
+	results := []bson.M{}
+	err := pipe.All(&results)
+
+	if err != nil {
+		logger.Error("query user that day total amount error,", err.Error())
+		return -1
+	}
+
+	if results != nil && len(results) > 0 {
+		return results[0]["totalAmount"].(int64)
+	}
+	return -1
+}

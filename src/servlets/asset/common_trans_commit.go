@@ -84,19 +84,21 @@ func (handler *commonTransCommitHandler) Handle(request *http.Request, writer ht
 		return
 	}
 	currency := strings.ToUpper(requestData.Param.Currency)
-	switch currency {
-	case constants.TRADE_CURRENCY_EOS:
-		fallthrough
-	case constants.TRADE_CURRENCY_BTC:
-		fallthrough
-	case common.CURRENCY_ETH:
-		response.SetResponseBase(common.CommitTransfer(uidStr, txid, currency))
-	case common.CURRENCY_LVT:
-		response.SetResponseBase(common.CommitLVTTrans(uidStr, txid))
-	case common.CURRENCY_LVTC:
-		response.SetResponseBase(common.CommitLVTCTrans(uidStr, txid))
-	default:
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
+	//switch currency {
+	//case constants.TRADE_CURRENCY_EOS:
+	//	fallthrough
+	//case constants.TRADE_CURRENCY_BTC:
+	//	fallthrough
+	//case common.CURRENCY_ETH:
+	//	response.SetResponseBase(common.CommitTransfer(uidStr, txid, currency))
+	//case common.CURRENCY_LVT:
+	//	response.SetResponseBase(common.CommitLVTTrans(uidStr, txid))
+	//case common.CURRENCY_LVTC:
+	//	response.SetResponseBase(common.CommitLVTCTrans(uidStr, txid))
+	//default:
+	//	response.SetResponseBase(constants.RC_PARAM_ERR)
+	//	return
+	//}
+	response.SetResponseBase(common.TransferCommit(utils.Str2Int64(uidStr), utils.Str2Int64(txid), currency))
+	return
 }
