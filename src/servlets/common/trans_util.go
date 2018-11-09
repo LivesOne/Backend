@@ -733,8 +733,8 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 		}
 	}
 
-	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
-	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
+	tradeNo := GenerateTradeNo(constants.TX_SUB_TYPE_TRANS, perPending.Type)
+	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_TRANSFER_FEE)
 	timestamp := utils.GetTimestamp13()
 
 	tx, _ := gDBAsset.Begin()
@@ -765,9 +765,12 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 			return constants.RC_SYSTEM_ERR
 		}
 	}
-	tx.Commit()
-
+	error := DeleteTradePending(perPending.TradeNo, uid, tx)
+	if error != nil {
+		return constants.RC_SYSTEM_ERR
+	}
 	DeletePendingByInfo(&DTTXHistory{Id: txid,})
+	tx.Commit()
 
 	go func() {
 		var currencyDecimal, feeCurrencyDecimal int

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"strings"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
@@ -182,4 +183,14 @@ func GeTransferQuotaByCurrency(currency string) *TransferQuota {
 	}
 	transferQuota.Fee = feeArray
 	return &transferQuota
+}
+
+func GetFeeCurrencyByCurrency(currency string) (string, error) {
+	sql := "select fee_currency from dt_withdrawal_fee where currency = ?"
+	row, err := gDBConfig.QueryRow(sql, strings.ToUpper(currency))
+	if err != nil {
+		logger.Error("get withdraw fee currency by currency err, currency:", strings.ToUpper(currency))
+		return "", err
+	}
+	return row["fee_currency"], nil
 }

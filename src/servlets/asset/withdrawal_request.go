@@ -218,7 +218,11 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		currencyDecimal = utils.CONV_LVT
 		feeCurrencyDecimal = utils.CONV_LVT
 	}
-	feeCurrency := strings.ToUpper(secret.Currency)
+	feeCurrency, error := common.GetFeeCurrencyByCurrency(strings.ToUpper(secret.Currency))
+	if error != nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 	if strings.EqualFold(secret.Currency, "lvtc") {
 		feeCurrency = "ETH"
 		feeCurrencyDecimal = utils.CONV_LVT

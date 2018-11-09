@@ -1280,13 +1280,14 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	}
 
 	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
+	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 
 	tx, _ := gDBAsset.Begin()
 
 	txId := GenerateTxID()
 	txIdFee := GenerateTxID()
 	//扣除提币资产
-	error = transfer(txId, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+	error = transfer(txId, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, amountInt, timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
 	if error.Rc != constants.RC_OK.Rc {
 		tx.Rollback()
 		return "", error
@@ -1299,7 +1300,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	}
 
 	sql = "insert into user_withdrawal_request (trade_no, uid, value, address, txid, txid_fee, create_time, update_time, status, fee, currency, fee_currency, remark) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	_, err = tx.Exec(sql, tradeNo, uid, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency, feeCurrency, remark)
+	_, err = tx.Exec(sql, tradeNo, uid, amountInt, address, txId, txIdFee, timestamp, timestamp, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, feeInt, currency, feeCurrency, remark)
 	if err != nil {
 		logger.Error("add user_withdrawal_request error ", err.Error())
 		tx.Rollback()
@@ -1351,7 +1352,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 			FromName:   fromName,
 			To:         config.GetWithdrawalConfig().WithdrawalAcceptAccount,
 			ToName:     toName,
-			Amount:     utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)),
+			Amount:     amountInt,
 			Decimal:    currencyDecimal,
 			Currency:   currency,
 			CreateTime: timestamp,
