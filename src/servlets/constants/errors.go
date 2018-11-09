@@ -64,22 +64,19 @@ var (
 	RC_USE_CARD_FAILED                = Error{21014, "invalid withdrawal card password"}
 	RC_USE_CARD_ALREADY_USED          = Error{21015, "withdrawal card already used"}
 	RC_USE_CARD_EXPIRE                = Error{21016, "withdrawal card expired"}
-	RC_INVALID_CURRENCY		          = Error{21017, "currency not supported"}
+	RC_INVALID_CURRENCY               = Error{21017, "currency not supported"}
 	RC_TRANSFER_FEE_ERROR             = Error{21018, "transfer fee error"}
+	RC_REMARK_TOO_LONG                = Error{21019, "remark too long"}
 
-	RC_DEVICE_DUP_BIND       = Error{23001, "duplicate bind"}
-	RC_DEVICE_BIND_TOO_SHORT = Error{23002, "bind interval too short"}
-	RC_DEVICE_PLAT_NOT_MATCH = Error{23003, "plat not match"}
-	RC_DEVICE_DUP_APPID      = Error{23004, "duplicate appid"}
-	RC_NOT_FOUND_DEVICE      = Error{23005, "not found device"}
-	RC_DEVICE_UNBIND_TOO_SHORT      = Error{23006, "unbind interval too short"}
+	RC_DEVICE_DUP_BIND         = Error{23001, "duplicate bind"}
+	RC_DEVICE_BIND_TOO_SHORT   = Error{23002, "bind interval too short"}
+	RC_DEVICE_PLAT_NOT_MATCH   = Error{23003, "plat not match"}
+	RC_DEVICE_DUP_APPID        = Error{23004, "duplicate appid"}
+	RC_NOT_FOUND_DEVICE        = Error{23005, "not found device"}
+	RC_DEVICE_UNBIND_TOO_SHORT = Error{23006, "unbind interval too short"}
 
-
-
-
-
-	RC_DUP_CONTACT_ID      = Error{24001, "duplicate contact id"}
-	RC_CONTACT_ID_NOT_EXISTS     = Error{24002, "contact id not exists"}
+	RC_DUP_CONTACT_ID        = Error{24001, "duplicate contact id"}
+	RC_CONTACT_ID_NOT_EXISTS = Error{24002, "contact id not exists"}
 
 	// RC_AES_DECRYPT                     = Error{20101, "invalid params for AES decrypt"}
 	// RC_JSON_UNMARSHAL                  = Error{20102, "invalid params for json unmarshal"}

@@ -204,6 +204,10 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(secret.Currency, "eos") {
+		if len(requestData.Param.Remark) > config.GetConfig().EOSRemarkLengthLimit {
+			response.SetResponseBase(constants.RC_REMARK_TOO_LONG)
+			return
+		}
 		if err := validateEosAccount(address); err.Rc != constants.RC_OK.Rc {
 			response.SetResponseBase(err)
 			return
