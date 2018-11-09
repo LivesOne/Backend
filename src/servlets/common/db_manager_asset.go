@@ -1338,6 +1338,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 			TradeNo:    tradeNo,
 			Type:       constants.TRADE_TYPE_WITHDRAWAL,
 			SubType:    constants.TX_SUB_TYPE_WITHDRAW,
+			Subject:    remark,
 			From:       uid,
 			FromName:   fromName,
 			To:         config.GetWithdrawalConfig().WithdrawalAcceptAccount,
@@ -2792,21 +2793,13 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 	}
 	var feeOfTransfer = float64(-1)
 	for _, fee := range transferQuota.Fee {
-		if fee.FeeCurrency == feeCurrency {
-			switch fee.FeeType {
-			case 0:
-				feeOfTransfer = fee.FeeFixed
-			case 1:
-				feeOfTransfer = amount * fee.FeeRate
-				if feeOfTransfer < fee.FeeMin {
-					feeOfTransfer = fee.FeeMin
-				}
-				if feeOfTransfer > fee.FeeMax {
-					feeOfTransfer = fee.FeeMax
-				}
-			default:
-				logger.Error("transfer fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
-				return float64(0), constants.RC_INVALID_CURRENCY
+		if strings.EqualFold(fee.FeeCurrency, feeCurrency) {
+			feeOfTransfer = amount * fee.FeeRate
+			if feeOfTransfer < fee.FeeMin {
+				feeOfTransfer = fee.FeeMin
+			}
+			if feeOfTransfer > fee.FeeMax {
+				feeOfTransfer = fee.FeeMax
 			}
 		}
 	}
