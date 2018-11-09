@@ -223,10 +223,6 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	if strings.EqualFold(secret.Currency, "lvtc") {
-		feeCurrency = "ETH"
-		feeCurrencyDecimal = utils.CONV_LVT
-	}
 
 	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
 	//tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))

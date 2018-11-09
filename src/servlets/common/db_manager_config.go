@@ -186,7 +186,7 @@ func GeTransferQuotaByCurrency(currency string) *TransferQuota {
 }
 
 func GetFeeCurrencyByCurrency(currency string) (string, error) {
-	sql := "select fee_currency from dt_withdrawal_fee where currency = ?"
+	sql := "select fee_currency from dt_withdrawal_fee where currency = ? limit 1"
 	row, err := gDBConfig.QueryRow(sql, strings.ToUpper(currency))
 	if err != nil {
 		logger.Error("get withdraw fee currency by currency err, currency:", strings.ToUpper(currency))
