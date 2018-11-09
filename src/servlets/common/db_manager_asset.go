@@ -1431,6 +1431,11 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		return constants.RC_INSUFFICIENT_BALANCE
 	}
 
+	if !checkAssetLimeted(assetTableName, from, tx) {
+		tx.Rollback()
+		return constants.RC_ACCOUNT_ACCESS_LIMITED
+	}
+
 	sql = fmt.Sprintf("update %s set balance = balance - ?,lastmodify = ? where uid = ?", assetTableName)
 	//扣除转出方balance
 	info, err := tx.Exec(sql, amount, timestamp, from)

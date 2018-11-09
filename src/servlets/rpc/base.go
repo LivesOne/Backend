@@ -3,7 +3,6 @@ package rpc
 import (
 	"context"
 	"google.golang.org/grpc"
-	"log"
 	"time"
 	"utils/consul"
 	"utils/logger"
@@ -11,7 +10,7 @@ import (
 
 func getRpcConn(addr,servName string) *grpc.ClientConn {
 	if len(addr) == 0 || len(servName) == 0 {
-		logger.Info("consul addr or servName is empty")
+		logger.Error("consul addr or servName is empty")
 		return nil
 	}
 	r := consul.NewResolver(servName)
@@ -24,7 +23,7 @@ func getRpcConn(addr,servName string) *grpc.ClientConn {
 		grpc.WithBlock(),
 		grpc.WithInsecure())
 	if err != nil {
-		log.Println("conn grpc server failed, addr: ", addr, "error info: ", err)
+		logger.Error("conn grpc server failed, addr: ", addr, "error info: ", err)
 		return nil
 	}
 	return conn
