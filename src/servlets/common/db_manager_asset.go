@@ -1311,6 +1311,10 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 		var tradesArray []TradeInfo
 		fromName, _ := GetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
 		toName, _ := GetCacheUserField(config.GetWithdrawalConfig().FeeAcceptAccount, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		feeCurrencyDecimal = 8
+		if strings.EqualFold(feeCurrency, CURRENCY_EOS) {
+			feeCurrencyDecimal = 4
+		}
 		feeTradeInfo := TradeInfo{
 			TradeNo:         feeTradeNo,
 			OriginalTradeNo: tradeNo,
@@ -1334,6 +1338,10 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 			Address: address,
 		}
 		toName, _ = GetCacheUserField(config.GetWithdrawalConfig().WithdrawalAcceptAccount, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		currencyDecimal = 8
+		if strings.EqualFold(currency, CURRENCY_EOS) {
+			currencyDecimal = 4
+		}
 		tradeInfo := TradeInfo{
 			TradeNo:    tradeNo,
 			Type:       constants.TRADE_TYPE_WITHDRAWAL,
