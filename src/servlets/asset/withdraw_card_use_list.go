@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -54,8 +54,8 @@ func (handler *withdrawCardUseListHandler) Handle(request *http.Request, writer 
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset withdrawCardUseList: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return

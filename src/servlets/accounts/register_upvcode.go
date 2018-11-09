@@ -2,15 +2,16 @@ package accounts
 
 import (
 	"errors"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"time"
+	"servlets/rpc"
+	"servlets/vcode"
 	"utils"
 	"utils/config"
-	"utils/db_factory"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 type registerUpVcodeParam struct {
@@ -67,33 +68,34 @@ func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(resErr)
 		return
 	}
-	account := new(common.Account)
-	account.Country = data.Param.Country
-	account.Phone = data.Param.Phone
-	account.RegisterTime = time.Now().Unix()
-	account.UpdateTime = account.RegisterTime
-	account.RegisterType = constants.LOGIN_TYPE_PHONE
 
-	for i := 1; i <= 5; i++ {
-		account.UIDString, account.UID = getUid()
-		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-		_, err = common.InsertAccountWithPhone(account)
-		if err == nil {
-			break
-		}
-		if db_factory.CheckDuplicateByColumn(err, "mobile") {
-			response.SetResponseBase(constants.RC_DUP_PHONE)
-			return
-		} else if db_factory.CheckDuplicateByColumn(err, "PRIMARY") {
-			continue
-		} else {
-			break
-		}
+
+	cli := rpc.GetUserCacheClient()
+	if cli == nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
+	req := &microuser.RegUserInfo{
+		Pwd:                  hashedPWD,
+		Country:              int32(data.Param.Country),
+		Phone:                data.Param.Phone,
+		Type:                 int32(constants.LOGIN_TYPE_PHONE),
+	}
+
+	resp,err := cli.RegisterUser(context.Background(),req)
+	if err != nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+	if resp.Result != microuser.ResCode_OK {
+		response.SetResponseBase(constants.RC_DUP_PHONE)
+		return
 	}
 
 	response.Data = registerUpVcodeResData{
-		account.UIDString,
-		account.RegisterTime,
+		utils.Int642Str(resp.Uid),
+		resp.RegTime,
 	}
 
 }

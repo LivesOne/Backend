@@ -1,13 +1,16 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
+	"servlets/vcode"
 	"utils"
 	"utils/config"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 type resetPwdParam struct {
@@ -56,8 +59,13 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
-	var account *common.Account
-	var err error
+	uid := int64(0)
+	cli := rpc.GetUserCacheClient()
+	if cli == nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
 	// 检查验证码
 	checkType := param.Type
 	switch checkType {
@@ -72,19 +80,22 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
-
-		account, err = common.GetAccountByEmail(param.EMail)
-		if (err != nil) || (account == nil) {
+		req := &microuser.CheckAccountByEmailReq{
+			Email:param.EMail,
+		}
+		resp,err := cli.CheckAccountByEmail(context.Background(),req)
+		//account, err = common.GetAccountByEmail(param.EMail)
+		if err != nil || resp.Result != microuser.ResCode_OK {
 			log.Info("reset password: get account info by email failed:", param.EMail)
 			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
-		if ok, errT := vcode.ValidateMailVCode(param.VCodeID, param.VCode, account.Email); !ok {
+		if ok, errT := vcode.ValidateMailVCode(param.VCodeID, param.VCode, param.EMail); !ok {
 			log.Info("reset password: verify email vcode failed", errT)
 			response.SetResponseBase(vcode.ConvImgErr(errT))
 			return
 		}
-
+		uid = resp.Uid
 	case 2: //短信下行验证
 		if (len(param.Phone) < 1) || (param.Country < 1) {
 			log.Info("reset password: invalid phone or country", param.Country, param.Phone)
@@ -96,19 +107,26 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
-		account, err = common.GetAccountByPhone(param.Country, param.Phone)
-		if (err != nil) || (account == nil) {
+
+
+		req := &microuser.CheckAccountByPhoneReq{
+			Country:              int64(param.Country),
+			Phone:                param.Phone,
+		}
+		resp,err := cli.CheckAccountByPhone(context.Background(),req)
+		//account, err = common.GetAccountByEmail(param.EMail)
+		if err != nil || resp.Result != microuser.ResCode_OK {
 			log.Info("reset password: get account info by phone failed:", param.Country, param.Phone)
 			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
-		if ok, err := vcode.ValidateSmsAndCallVCode(account.Phone, account.Country, param.VCode, 0, 0); !ok {
+		if ok, err := vcode.ValidateSmsAndCallVCode(param.Phone, param.Country, param.VCode, 0, 0); !ok {
 			e := vcode.ConvSmsErr(err)
 			log.Info("reset password: verify sms vcode failed", e)
 			response.SetResponseBase(e)
 			return
 		}
-
+		uid = resp.Uid
 	case 3: //短信上行验证
 		if (len(param.Phone) < 1) || (param.Country < 1) {
 			log.Info("reset password: invalid phone or country", param.Country, param.Phone)
@@ -120,18 +138,23 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		}
-		account, err = common.GetAccountByPhone(param.Country, param.Phone)
-		if (err != nil) || (account == nil) {
+		req := &microuser.CheckAccountByPhoneReq{
+			Country:              int64(param.Country),
+			Phone:                param.Phone,
+		}
+		resp,err := cli.CheckAccountByPhone(context.Background(),req)
+		//account, err = common.GetAccountByEmail(param.EMail)
+		if err != nil || resp.Result != microuser.ResCode_OK {
 			log.Info("reset password: get account info by phone failed:", param.Country, param.Phone)
 			response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 			return
 		}
-		if ok, resErr := vcode.ValidateSmsUpVCode(account.Country, account.Phone, param.VCode); !ok {
+		if ok, resErr := vcode.ValidateSmsUpVCode(param.Country, param.Phone, param.VCode); !ok {
 			log.Info("validate up sms code failed")
 			response.SetResponseBase(resErr)
 			return
 		}
-
+		uid = resp.Uid
 	default:
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
@@ -153,10 +176,12 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	// 数据库实际保存的密码格式为“sha256(sha256(密码) + uid)”
-	pwdDb := utils.Sha256(pwdSha256 + account.UIDString)
+	pwdDb := utils.Sha256(pwdSha256 + utils.Int642Str(uid))
+
+
 
 	// save to db
-	if err := common.SetLoginPassword(account.UID, pwdDb); err != nil {
+	if _,err := rpc.SetUserField(uid,microuser.UserField_LOGIN_PASSWORD,pwdDb); err != nil {
 		log.Info("reset password: save login pwd in DB error:", err)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return

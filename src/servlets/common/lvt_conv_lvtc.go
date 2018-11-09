@@ -1,11 +1,13 @@
 package common
 
 import (
-	"utils/logger"
-	"servlets/constants"
-	"utils/config"
-	"utils"
 	"database/sql"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"servlets/constants"
+	"servlets/rpc"
+	"utils"
+	"utils/config"
+	"utils/logger"
 )
 
 func Lvt2Lvtc(uid int64) (int64, int64, constants.Error) {
@@ -168,8 +170,8 @@ func addTradeInfoOfLVT(lvtTradeNo, lvtcTradeNo string, from, to, amount, txid in
 		OriginalCurrency: "LVT",
 		TargetCurrency:   "LVTC",
 	}
-	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
-	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	fromName, _ := rpc.GetUserField(from, microuser.UserField_NICKNAME)
+	toName, _ := rpc.GetUserField(to, microuser.UserField_NICKNAME)
 	lvtTradeInfo := TradeInfo{
 		TradeNo:         lvtTradeNo,
 		Type:            constants.TRADE_TYPE_CONVERSION,
@@ -196,8 +198,8 @@ func addTradeInfoOfLVTC(lvtcTradeNo, lvtTradeNo string, from, to, amount, txid i
 		OriginalCurrency: "LVT",
 		TargetCurrency:   "LVTC",
 	}
-	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
-	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	fromName, _ := rpc.GetUserField(from, microuser.UserField_NICKNAME)
+	toName, _ := rpc.GetUserField(to, microuser.UserField_NICKNAME)
 	lvtcTradeInfo := TradeInfo{
 		TradeNo:         lvtcTradeNo,
 		Type:            constants.TRADE_TYPE_CONVERSION,

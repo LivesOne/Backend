@@ -1,10 +1,11 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/db_factory"
 	"utils/logger"
@@ -50,10 +51,10 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 	// fmt.Println("modify user profile: 22222222 \n", utils.ToJSONIndent(header), utils.ToJSONIndent(requestData))
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		response.SetResponseBase(err)
-		log.Info("modify user profile: read user info error:", err)
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if tokenErr != microuser.ResCode_OK {
+		response.SetResponseBase(rpc.TokenErr2RcErr(tokenErr))
+		log.Info("modify user profile: read user info error:")
 		return
 	}
 
@@ -92,14 +93,8 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 
 	if ok, res := common.AuthTG(uidString, secret.Code); ok {
 
-		err := common.InitAccountExtend(uid)
-		if err != nil {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		}
-
-		r, err := common.SetTGId(uid, res.Data.Telegram)
-		if err != nil {
+		r, err := rpc.SetUserField(uid, microuser.UserField_TG, res.Data.Telegram)
+		if err != nil || !r {
 			if db_factory.CheckDuplicateByColumn(err, "tg_id") {
 				response.SetResponseBase(constants.RC_DUP_TG_ID)
 				return
@@ -108,15 +103,9 @@ func (handler *bindTGHandler) Handle(request *http.Request, writer http.Response
 				return
 			}
 		} else {
-			//r ==0 没有有效记录被修改
-			if r == 0 {
-				response.SetResponseBase(constants.RC_DUP_BIND_TG)
-				return
-			} else {
-				//绑定Telegram成功，加算力,内部识别，加不加，加多少
-				response.Data = bindTGResData{
-					Awarded: common.AddBindActiveHashRateByTG(uid),
-				}
+			//绑定Telegram成功，加算力,内部识别，加不加，加多少
+			response.Data = bindTGResData{
+				Awarded: common.AddBindActiveHashRateByTG(uid),
 			}
 		}
 	} else {

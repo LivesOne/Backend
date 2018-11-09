@@ -2,13 +2,14 @@ package asset
 
 import (
 	"database/sql"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
+	"servlets/vcode"
 	"utils"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 type ethTransPrepareParam struct {
@@ -80,8 +81,8 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -99,20 +100,20 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 
 	// vcodeType 大于0的时候开启短信验证 1下行，2上行
 	if requestData.Param.VcodeType > 0 {
-		acc, err := common.GetAccountByUID(uidString)
+		acc, err := rpc.GetUserInfo(utils.Str2Int64(uidString))
 		if err != nil && err != sql.ErrNoRows {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
 		switch requestData.Param.VcodeType {
 		case 1:
-			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
+			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, int(acc.Country), requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
 				log.Info("validate sms code failed")
 				response.SetResponseBase(vcode.ConvSmsErr(errCode))
 				return
 			}
 		case 2:
-			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode); !ok {
+			if ok, resErr := vcode.ValidateSmsUpVCode(int(acc.Country), acc.Phone, requestData.Param.Vcode); !ok {
 				log.Info("validate up sms code failed")
 				response.SetResponseBase(resErr)
 				return
@@ -146,7 +147,7 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 	to := utils.Str2Int64(secret.To)
 
 	//不能给自己转账，不能转无效用户
-	if from == to || !common.ExistsUID(to) {
+	if from == to || !rpc.UserExists(to) {
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
 	}
@@ -171,12 +172,12 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
-		if !common.CheckLoginPwd(from, pwd) {
+		if f,_ := rpc.CheckPwd(from, pwd,microuser.PwdCheckType_LOGIN_PWD);!f {
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
-		if !common.CheckPaymentPwd(from, pwd) {
+		if f,_ := rpc.CheckPwd(from, pwd,microuser.PwdCheckType_PAYMENT_PWD);!f {
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}

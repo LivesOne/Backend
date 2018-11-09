@@ -1,16 +1,18 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 )
 
 type walletAddrParam struct {
-	Address string `json:"address"`
-	CreateTime int64 `json:"create_time"`
+	Address    string `json:"address"`
+	CreateTime int64  `json:"create_time"`
 }
 
 type walletAddrHandler struct {
@@ -35,12 +37,11 @@ func (handler *walletAddrHandler) Handle(
 	}
 
 	// 判断用户身份
-	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		response.SetResponseBase(err)
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if tokenErr != microuser.ResCode_OK {
+		response.SetResponseBase(rpc.TokenErr2RcErr(tokenErr))
 		return
 	}
-
 	if !utils.SignValid(aesKey, httpHeader.Signature, httpHeader.Timestamp) {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
@@ -48,24 +49,37 @@ func (handler *walletAddrHandler) Handle(
 
 	uid := utils.Str2Int64(uidStr)
 
-	// 查询用户绑定钱包地址
-	if addrList, err := common.GetWalletAddrList(uid); err != nil {
+
+	cli := rpc.GetWalletClient()
+	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
-	} else if addrList != nil {
-		var walletList []walletAddrParam
-		for _, wallet := range addrList {
-			addr := wallet["address"]
-			if len(addr) > 0 {
-				walletList = append(walletList,
-					walletAddrParam{
-						Address: wallet["address"],
-						CreateTime: utils.Str2Int64(wallet["create_time"]),
-					})
-			}
-		}
-		response.Data = walletList
 	}
+
+	req := &microuser.UserIdReq{
+		Uid :uid,
+	}
+	resp,err := cli.QueryWallet(context.Background(),req)
+	if err != nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+	if resp.Result == microuser.ResCode_OK {
+		if len(resp.Wallets) > 0 {
+			var walletList []walletAddrParam
+			for _, wallet := range resp.Wallets {
+				if len(wallet.Address) > 0 {
+					walletList = append(walletList,
+						walletAddrParam{
+							Address:    wallet.Address,
+							CreateTime: wallet.CreateTime,
+						})
+				}
+			}
+			response.Data = walletList
+		}
+	}
+
 
 	// send response
 	response.SetResponseBase(constants.RC_OK)

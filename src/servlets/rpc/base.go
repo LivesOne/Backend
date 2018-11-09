@@ -7,7 +7,7 @@ import (
 	"utils/logger"
 )
 
-func getRpcConn(addr,servName string) *grpc.ClientConn {
+func getRpcConn(addr, servName string) *grpc.ClientConn {
 	if len(addr) == 0 || len(servName) == 0 {
 		logger.Info("consul addr or servName is empty")
 		return nil

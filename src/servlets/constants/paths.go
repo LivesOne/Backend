@@ -89,9 +89,9 @@ const (
 
 	ACCOUNT_RECHARGE_MEMO = "/user/v1/profile/recharge_memo"
 	// Contacts Sync APIs
-	ACCOUNT_CONTACTS_LIST  = "/user/v1/contact/list"
+	ACCOUNT_CONTACTS_LIST = "/user/v1/contact/list"
 
-	ACCOUNT_CONTACTS_CREATE   = "/user/v1/contact/create"
+	ACCOUNT_CONTACTS_CREATE = "/user/v1/contact/create"
 
 	ACCOUNT_CONTACTS_MODIFY = "/user/v1/contact/modify"
 
@@ -111,8 +111,6 @@ const (
 
 	ASSET_TRANS_COMMIT = "/asset/v1/trans/commit"
 
-
-
 	ASSET_TRANS_RESULT = "/asset/v1/trans/result"
 
 	ASSET_TRANS_HISTORY = "/asset/v1/trans/history"
@@ -124,7 +122,6 @@ const (
 	ASSET_LVTC_TRANS_RESULT = "/asset/v1/trans/lvtc_result"
 
 	ASSET_LVTC_TRANS_HISTORY = "/asset/v1/trans/lvtc_history"
-
 
 	ASSET_ETH_TRANS_PREPARE = "/asset/v1/trans/eth_prepare"
 
@@ -172,9 +169,9 @@ const (
 
 	ASSET_COMMON_TRANS_PREPARE = "/asset/v1/transfer/prepare"
 
-	ASSET_COMMON_TRANS_COMMIT= "/asset/v1/transfer/commit"
+	ASSET_COMMON_TRANS_COMMIT = "/asset/v1/transfer/commit"
 
-	ASSET_COMMON_TRANS_RESULT= "/asset/v1/transfer/result"
+	ASSET_COMMON_TRANS_RESULT = "/asset/v1/transfer/result"
 
 	CURRENCY_PRICE_QUERY = "/config/v1/currency/price"
 )

@@ -4,14 +4,13 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
 
-
 type lvt2lvtcResData struct {
-	Lvt string `json:"lvt"`
+	Lvt  string `json:"lvt"`
 	Lvtc string `json:"lvtc"`
 }
 
@@ -36,7 +35,6 @@ func (handler *lvt2lvtcHandler) Handle(request *http.Request, writer http.Respon
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-
 	httpHeader := common.ParseHttpHeaderParams(request)
 
 	// if httpHeader.IsValid() == false {
@@ -47,8 +45,8 @@ func (handler *lvt2lvtcHandler) Handle(request *http.Request, writer http.Respon
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -66,9 +64,9 @@ func (handler *lvt2lvtcHandler) Handle(request *http.Request, writer http.Respon
 
 	uid := utils.Str2Int64(uidString)
 	//初始化
-	common.	CheckAndInitAsset(uid)
+	common.CheckAndInitAsset(uid)
 
-	if lvt,lvtc,e := common.Lvt2Lvtc(uid);e == constants.RC_OK {
+	if lvt, lvtc, e := common.Lvt2Lvtc(uid); e == constants.RC_OK {
 		response.Data = &lvt2lvtcResData{
 			Lvt:  utils.LVTintToFloatStr(lvt),
 			Lvtc: utils.LVTintToFloatStr(lvtc),

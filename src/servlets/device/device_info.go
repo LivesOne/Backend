@@ -1,20 +1,16 @@
 package device
 
 import (
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"utils/logger"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
-
-
-
-
 type deviceInfoRequest struct {
-	Base  *common.BaseInfo `json:"base"`
+	Base *common.BaseInfo `json:"base"`
 }
 
 // sendVCodeHandler
@@ -50,17 +46,17 @@ func (handler *deviceInfoHandler) Handle(request *http.Request, writer http.Resp
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	app,device := requestData.Base.App,requestData.Base.Device
-	if app == nil || device == nil || !app.IsValid(){
+	app, device := requestData.Base.App, requestData.Base.Device
+	if app == nil || device == nil || !app.IsValid() {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 	//组装查询
 	query := bson.M{
-		"appid":app.AppID,
-		"did":device.DID,
+		"appid": app.AppID,
+		"did":   device.DID,
 	}
-	deviceInfo,err := common.QueryDevice(query)
+	deviceInfo, err := common.QueryDevice(query)
 	if err != nil && err != mgo.ErrNotFound {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -57,8 +57,8 @@ func (handler *contactCreateHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
-	uidStr, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("get info from cache error:", err)
 		res.SetResponseBase(err)
 		return

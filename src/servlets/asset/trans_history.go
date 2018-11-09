@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -77,8 +77,8 @@ func (handler *transHistoryHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset transHistory: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -215,9 +215,9 @@ func buildQuery(uid int64, param *transHistoryParam) bson.M {
 		//判断查询类型
 		//生成不同的查询条件
 		switch {
-		case param.Type == constants.TX_TYPE_REWARD||
+		case param.Type == constants.TX_TYPE_REWARD ||
 			param.Type == constants.TX_TYPE_ACTIVITY_REWARD ||
-			param.Type == constants.TX_TYPE_PRIVATE_PLACEMENT :
+			param.Type == constants.TX_TYPE_PRIVATE_PLACEMENT:
 			query["to"] = uid
 			query["type"] = param.Type
 		case param.Type == constants.TX_TYPE_RECEIVABLES:

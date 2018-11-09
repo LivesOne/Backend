@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
 	"utils"
 )
 
@@ -47,7 +48,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	//header := common.ParseHttpHeaderParams(request)
 	if !common.ParseHttpBodyParams(request, &requestData) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return 
+		return
 	}
 
 	base := requestData.Base
@@ -59,7 +60,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 
 	intUid := utils.Str2Int64(requestData.Param.Uid)
 
-	if !common.ExistsUID(intUid) {
+	if !rpc.UserExists(intUid) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -80,7 +81,7 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 	if utils.IsToday(t, nt) {
 		yesterday = utils.LVTintToFloatStr(re.Yesterday)
 	}
-	common.ActiveUser(intUid)
+	rpc.ActiveUser(intUid)
 	response.Data = rewardResData{
 		Total:     utils.LVTintToFloatStr(re.Total),
 		Yesterday: yesterday,

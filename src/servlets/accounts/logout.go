@@ -1,10 +1,12 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -42,10 +44,9 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 	}
 
 	// retrive the original token from cache
-	_, aesKey, tokenCache, errT := token.GetAll(header.TokenHash)
-	if (errT != constants.ERR_INT_OK) || (len(aesKey) != constants.AES_totalLen) {
+	_, aesKey, tokenCache, errT := rpc.GetTokenInfo(header.TokenHash)
+	if errT != microuser.ResCode_OK {
 		logger.Info("logout: get token from cache failed: ", errT, len(aesKey))
-
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 		return
 	}
@@ -67,8 +68,24 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	errT = token.Del(header.TokenHash)
-	if errT != constants.ERR_INT_OK {
+
+	cli := rpc.GetLoginClient()
+	if cli == nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
+	req := &microuser.TokenReq{
+		TokenHash:            header.TokenHash,
+	}
+
+	resp,err := cli.Logout(context.Background(), req)
+	if err != nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
+	if resp.Result != microuser.ResCode_OK {
 		logger.Info("logout: remove token failed:", errT)
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
 	}

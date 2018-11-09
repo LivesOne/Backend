@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
+	"time"
 	"utils"
 	"utils/config"
 	"utils/logger"
-	"time"
-	"servlets/token"
 )
 
 type withdrawQuotaResponse struct {
@@ -46,8 +46,8 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset lockList: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -85,7 +85,7 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 					currentLevelMonthlyQuota := utils.FloatStrToLVTint(utils.Int642Str(limitConfig.MonthlyWithdrawalQuota()))
 					balanceMonthlyQuota := currentLevelMonthlyQuota - oldLevelMonthlyQuota
 
-					userWithdrawalQuota.Month = balanceMonthlyQuota+userWithdrawalQuota.Month
+					userWithdrawalQuota.Month = balanceMonthlyQuota + userWithdrawalQuota.Month
 					userWithdrawalQuota.Day = utils.FloatStrToLVTint(utils.Int642Str(limitConfig.DailyWithdrawalQuota()))
 					userWithdrawalQuota.LastLevel = level
 					resetMonthAndDay = true
@@ -110,8 +110,8 @@ func (handler *withdrawQuotaHandler) Handle(request *http.Request, writer http.R
 				balanceDailyQuota := currentLevelDailyQuota - oldLevelDailyQuota
 				balanceMonthlyQuota := currentLevelMonthlyQuota - oldLevelMonthlyQuota
 
-				userWithdrawalQuota.Month = balanceMonthlyQuota+userWithdrawalQuota.Month
-				userWithdrawalQuota.Day = balanceDailyQuota+userWithdrawalQuota.Day
+				userWithdrawalQuota.Month = balanceMonthlyQuota + userWithdrawalQuota.Month
+				userWithdrawalQuota.Day = balanceDailyQuota + userWithdrawalQuota.Day
 				userWithdrawalQuota.LastLevel = level
 				resetMonthAndDay = true
 			}

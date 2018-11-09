@@ -5,17 +5,15 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
 
 type (
 	contactModifyHandler struct {
-
 	}
 )
-
 
 func (handler *contactModifyHandler) Method() string {
 	return http.MethodPost
@@ -27,7 +25,7 @@ func (handler *contactModifyHandler) Handle(request *http.Request, writer http.R
 	defer log.InfoAll()
 
 	res := common.NewResponseData()
-	defer common.FlushJSONData2Client(res,writer)
+	defer common.FlushJSONData2Client(res, writer)
 	header := common.ParseHttpHeaderParams(request)
 
 	if !header.IsValid() {
@@ -36,15 +34,15 @@ func (handler *contactModifyHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
-	uidStr, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("get info from cache error:", err)
 		res.SetResponseBase(err)
 		return
 	}
 
 	reqData := new(contactCreateReqData)
-	if !common.ParseHttpBodyParams(request,reqData) {
+	if !common.ParseHttpBodyParams(request, reqData) {
 		log.Info("decode json str error")
 		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return
@@ -81,8 +79,8 @@ func (handler *contactModifyHandler) Handle(request *http.Request, writer http.R
 	mdfMap := convmap(secret)
 	mdfMap["update_time"] = utils.GetTimestamp13()
 	uid := utils.Str2Int64(uidStr)
-	if err := common.ModifyContact(mdfMap,uid,secret.ContactId);err != nil  {
-		log.Error("update mongo  failed",err.Error())
+	if err := common.ModifyContact(mdfMap, uid, secret.ContactId); err != nil {
+		log.Error("update mongo  failed", err.Error())
 		if mgo.IsDup(err) {
 			res.SetResponseBase(constants.RC_DUP_CONTACT_ID)
 			return
@@ -95,9 +93,5 @@ func (handler *contactModifyHandler) Handle(request *http.Request, writer http.R
 		res.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
-
-
-
 
 }

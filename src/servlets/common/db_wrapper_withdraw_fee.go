@@ -19,11 +19,11 @@ type (
 	}
 
 	WithdrawQuota struct {
-		Id              int64          `json:"id,omitempty"`
-		Currency        string         `json:"currency,omitempty"`
-		SingleAmountMin float64        `json:"single_amount_min,omitempty"`
-		DailyAmountMax  float64        `json:"daily_amount_max,omitempty"`
-		UpdateTime      int64          `json:"update_time,omitempty"`
+		Id              int64         `json:"id,omitempty"`
+		Currency        string        `json:"currency,omitempty"`
+		SingleAmountMin float64       `json:"single_amount_min,omitempty"`
+		DailyAmountMax  float64       `json:"daily_amount_max,omitempty"`
+		UpdateTime      int64         `json:"update_time,omitempty"`
 		Fee             []WithdrawFee `json:"fee,omitempty"`
 	}
 )

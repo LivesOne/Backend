@@ -7,13 +7,13 @@ import (
 )
 
 var (
-	vcodeClient      vcodeproto.ImgEmailServiceClient
-	grpcSmsClient    smspb.SmsServiceClient
+	vcodeClient   vcodeproto.ImgEmailServiceClient
+	grpcSmsClient smspb.SmsServiceClient
 )
 
 func GetSmsClient() smspb.SmsServiceClient {
 	if grpcSmsClient == nil {
-		conn := getRpcConn(config.GetConfig().RegistryAddr,config.GetConfig().SmsSvrName)
+		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().SmsSvrName)
 		if conn == nil {
 			return nil
 		}
@@ -24,7 +24,7 @@ func GetSmsClient() smspb.SmsServiceClient {
 
 func GetVcodeClient() vcodeproto.ImgEmailServiceClient {
 	if vcodeClient == nil {
-		conn := getRpcConn(config.GetConfig().RegistryAddr,config.GetConfig().ImgEmailSvrName)
+		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().ImgEmailSvrName)
 		if conn == nil {
 			return nil
 		}

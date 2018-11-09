@@ -1,15 +1,16 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
+	"servlets/vcode"
 	"utils"
 	"utils/config"
 	"utils/db_factory"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 type bindPhoneParam struct {
@@ -60,12 +61,15 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if tokenErr != microuser.ResCode_OK {
+		err := rpc.TokenErr2RcErr(tokenErr)
 		response.SetResponseBase(err)
 		log.Error("bind phone: read user info error:", err)
 		return
 	}
+
+
 	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
@@ -114,27 +118,22 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	account, err := common.GetAccountByUID(uidString)
-	if err != nil {
+	if f, _ := rpc.CheckPwd(uid, secret.Pwd, microuser.PwdCheckType_LOGIN_PWD); !f {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
-	// check login password
-	pwd := utils.Sha256(secret.Pwd + uidString)
-	if account.LoginPassword != pwd {
-		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
-		return
-	}
+
+	account, _ := rpc.GetUserInfo(uid)
 	// check privilege
-	limit := config.GetLimitByLevel(account.Level)
+	limit := config.GetLimitByLevel(int(account.Level))
 	if len(account.Phone) > 0 && !limit.ChangePhone() {
 		response.SetResponseBase(constants.RC_USER_LEVEL_LIMIT)
 		return
 	}
-
+	phoneStr := utils.Int2Str(secret.Country) + "," + secret.Phone
 	// save data to db
-	dbErr := common.SetPhone(uid, secret.Country, secret.Phone)
-	if dbErr != nil {
+	f, dbErr := rpc.SetUserField(uid, microuser.UserField_PHONE, phoneStr)
+	if dbErr != nil || !f {
 		// if db_factory.CheckDuplicateByColumn(dbErr, "country") &&
 		// 	db_factory.CheckDuplicateByColumn(dbErr, "phone") {
 		if db_factory.CheckDuplicateByColumn(dbErr, "mobile") {

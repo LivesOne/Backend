@@ -4,17 +4,15 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
 
 type (
 	contactListHandler struct {
-
 	}
 )
-
 
 func (handler *contactListHandler) Method() string {
 	return http.MethodPost
@@ -26,7 +24,7 @@ func (handler *contactListHandler) Handle(request *http.Request, writer http.Res
 	defer log.InfoAll()
 
 	res := common.NewResponseData()
-	defer common.FlushJSONData2Client(res,writer)
+	defer common.FlushJSONData2Client(res, writer)
 	header := common.ParseHttpHeaderParams(request)
 
 	if !header.IsValid() {
@@ -35,8 +33,8 @@ func (handler *contactListHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
-	uidStr, _, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, _, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("get info from cache error:", err)
 		res.SetResponseBase(err)
 		return

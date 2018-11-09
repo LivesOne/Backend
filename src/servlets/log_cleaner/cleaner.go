@@ -54,7 +54,6 @@ func cleanerPending() bool {
 	return false
 }
 
-
 func cleanerLVTCPending() bool {
 	mts := utils.GetTimestamp13()
 	query := bson.M{

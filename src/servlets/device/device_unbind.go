@@ -1,15 +1,16 @@
 package device
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
-	"utils/logger"
-	"gopkg.in/mgo.v2"
 	"utils/config"
+	"utils/logger"
 )
 
 type deviceUnBindParam struct {
@@ -71,8 +72,8 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	// 判断用户身份
-	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -90,11 +91,10 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 
 	uid := utils.Str2Int64(uidStr)
 
-
 	ul := common.GetTransUserLevel(uid)
 	ulc := config.GetLimitByLevel(ul)
 	if param.Mid > 0 && param.Mid > ulc.MinerIndexSize() {
-		log.Error("bind device mid index error mid:",param.Mid,"mast <",ulc.MinerIndexSize())
+		log.Error("bind device mid index error mid:", param.Mid, "mast <", ulc.MinerIndexSize())
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -108,11 +108,10 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	if !common.CheckLoginPwd(uid, password) {
+	if f, _ := rpc.CheckPwd(uid, password, microuser.PwdCheckType_LOGIN_PWD); !f {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
-
 
 	userLockTs := common.DeviceUserLock(uid)
 	if userLockTs == 0 {
@@ -120,8 +119,6 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
-
 
 	switch {
 	case len(param.Did) == 0 && param.Appid == 0:
@@ -131,10 +128,10 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		resBase := execUnbind(uid, param.Mid, param.Appid, param.Did, log)
 		response.SetResponseBase(resBase)
 	default:
-		log.Error("unkonw unbind type uid",uid,"did",param.Did,"appid",param.Appid)
+		log.Error("unkonw unbind type uid", uid, "did", param.Did, "appid", param.Appid)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
-	common.DeviceUnLockUid(uid,userLockTs)
+	common.DeviceUnLockUid(uid, userLockTs)
 
 }
 
@@ -151,14 +148,13 @@ func execUnbind(uid int64, mid, appid int, did string, log *logger.LvtLogger) co
 	device, err := common.QueryDevice(query)
 	switch err {
 	case nil:
-		if execMongoAndReidsUnbind(device,log){
-				// set unbind time
-				res = constants.RC_OK
-
+		if execMongoAndReidsUnbind(device, log) {
+			// set unbind time
+			res = constants.RC_OK
 
 		}
 	case mgo.ErrNotFound:
-		log.Error("unbind device uid",uid,"mid",mid,"appid",appid,"did",did,"device not found")
+		log.Error("unbind device uid", uid, "mid", mid, "appid", appid, "did", did, "device not found")
 		res = constants.RC_NOT_FOUND_DEVICE
 	}
 
@@ -172,42 +168,42 @@ func execUnbindAll(uid int64, mid int, log *logger.LvtLogger) constants.Error {
 	switch err {
 	case nil:
 		for _, v := range device {
-			execMongoAndReidsUnbind(&v,log)
+			execMongoAndReidsUnbind(&v, log)
 		}
 		res = constants.RC_OK
 	case mgo.ErrNotFound:
-		log.Error("unbind all device uid",uid,"mid",mid,"device not found")
+		log.Error("unbind all device uid", uid, "mid", mid, "device not found")
 		res = constants.RC_NOT_FOUND_DEVICE
 	}
 	return res
 }
 
-func execMongoAndReidsUnbind(device *common.DtDevice,log *logger.LvtLogger)bool{
-	deviceLockTs := common.DeviceLock(device.Appid,device.Did)
+func execMongoAndReidsUnbind(device *common.DtDevice, log *logger.LvtLogger) bool {
+	deviceLockTs := common.DeviceLock(device.Appid, device.Did)
 	if deviceLockTs == 0 {
-		log.Error("unbind device device in lock uid",device.Uid,"mid",device.Mid,"appid",device.Appid,"did",device.Did)
+		log.Error("unbind device device in lock uid", device.Uid, "mid", device.Mid, "appid", device.Appid, "did", device.Did)
 		return false
 	}
 	f := true
 	// delete device info
-	if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil && err != mgo.ErrNotFound  {
+	if err := common.DeleteDevice(device.Uid, device.Mid, device.Appid, device.Did); err != nil && err != mgo.ErrNotFound {
 		log.Error("delete device error", err.Error())
 		f = false
-	}else{
+	} else {
 		if err := common.InsertDeviceBindHistory(device); err != nil {
 			log.Error("insert device history error", err.Error())
 		}
-		if err := common.DelDtActive(device.Uid,device.Mid,device.Sid);err != nil && err != mgo.ErrNotFound {
+		if err := common.DelDtActive(device.Uid, device.Mid, device.Sid); err != nil && err != mgo.ErrNotFound {
 			log.Error("delete dt active error", err.Error())
 		}
 	}
 	//清理sid对应下所有心跳
-	err := common.ClearOnline(device.Uid,device.Mid,device.Sid)
+	err := common.ClearOnline(device.Uid, device.Mid, device.Sid)
 	if err != nil {
-		logger.Error("remove online error",err.Error())
+		logger.Error("remove online error", err.Error())
 	}
 	//锁定矿机绑定时间
-	common.SetUnbindLimt(device.Uid,device.Mid)
-	common.DeviceUnLockDid(device.Appid,device.Did,deviceLockTs)
+	common.SetUnbindLimt(device.Uid, device.Mid)
+	common.DeviceUnLockDid(device.Appid, device.Did, deviceLockTs)
 	return f
 }

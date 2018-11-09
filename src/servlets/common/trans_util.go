@@ -2,7 +2,9 @@ package common
 
 import (
 	"database/sql"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"servlets/constants"
+	"servlets/rpc"
 	"strconv"
 	"strings"
 	"utils"
@@ -32,7 +34,7 @@ func PrepareLVTTrans(from, to int64, txTpye int, value, bizContent, remark strin
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
-		Remark:		remark,
+		Remark:     remark,
 		Currency:   CURRENCY_LVT,
 	}
 	err := InsertPending(&txh)
@@ -60,7 +62,7 @@ func PrepareLVTCTrans(from, to int64, txTpye int, value, bizContent, remark stri
 		Ts:         utils.TXIDToTimeStamp13(txid),
 		Code:       constants.TX_CODE_SUCC,
 		BizContent: bizContent,
-		Remark:		remark,
+		Remark:     remark,
 		Currency:   CURRENCY_LVTC,
 	}
 	err := InsertLVTCPending(txh)
@@ -144,32 +146,33 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
-		fromName, err := GetCacheUserField(perPending.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+
+		fromName, err := rpc.GetUserField(perPending.From, microuser.UserField_NICKNAME)
 		if err != nil {
 			logger.Info("get uid:", perPending.From, " nick name err,", err)
 		}
-		toName, err := GetCacheUserField(perPending.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		toName, err := rpc.GetUserField(perPending.To, microuser.UserField_NICKNAME)
 		if err != nil {
 			logger.Info("get uid:", perPending.To, " nick name err,", err)
 		}
 		trade := TradeInfo{
-			TradeNo:  perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
-			Type:     constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
-			To:       perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
+			TradeNo: perPending.TradeNo, Txid: perPending.Id, Status: constants.TRADE_STATUS_SUCC,
+			Type: constants.TRADE_TYPE_TRANSFER, SubType: perPending.Type, From: perPending.From,
+			To: perPending.To, Amount: perPending.Value, Decimal: constants.TRADE_DECIMAIL,
 			FromName: fromName, ToName: toName, Subject: bizContent.Remark,
 			Currency: constants.TRADE_CURRENCY_LVT, CreateTime: perPending.Ts, FinishTime: finishTime,
 		}
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
-			feeToName, err := GetCacheUserField(transFeeAcc, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+			feeToName, err := rpc.GetUserField(transFeeAcc, microuser.UserField_NICKNAME)
 			if err != nil {
 				logger.Info("get uid:", transFeeAcc, " nick name err,", err)
 			}
 			trade.FeeTradeNo = feeTradeNo
 			feeTrade := TradeInfo{
-				TradeNo:  feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
-				Status:   constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
-				From:     perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
+				TradeNo: feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
+				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				FromName: fromName, ToName: feeToName,
 				Currency: bizContent.FeeCurrency, CreateTime: finishTime, FinishTime: finishTime,
 			}
@@ -284,11 +287,11 @@ func CommitLVTCTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
-		fromName, err := GetCacheUserField(perPending.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		fromName, err := rpc.GetUserField(perPending.From, microuser.UserField_NICKNAME)
 		if err != nil {
 			logger.Info("get uid:", perPending.From, " nick name err,", err)
 		}
-		toName, err := GetCacheUserField(perPending.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		toName, err := rpc.GetUserField(perPending.To, microuser.UserField_NICKNAME)
 		if err != nil {
 			logger.Info("get uid:", perPending.To, " nick name err,", err)
 		}
@@ -302,12 +305,12 @@ func CommitLVTCTrans(uidStr, txIdStr string) (retErr constants.Error) {
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
-			feeToName, err := GetCacheUserField(transFeeAcc, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+			feeToName, err := rpc.GetUserField(transFeeAcc, microuser.UserField_NICKNAME)
 			if err != nil {
 				logger.Info("get uid:", transFeeAcc, " nick name err,", err)
 			}
 			feeTrade := TradeInfo{
-				TradeNo: feeTradeNo,OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
+				TradeNo: feeTradeNo, OriginalTradeNo: perPending.TradeNo, Txid: feeTxid,
 				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
 				From: perPending.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: constants.TRADE_DECIMAIL,
 				FromName: fromName, ToName: feeToName,
@@ -436,11 +439,11 @@ func CommitTransfer(uidStr, txidStr, currency string) (retErr constants.Error) {
 		var tradesArray []TradeInfo
 		finishTime := utils.GetTimestamp13()
 		// 插入交易记录单：转账
-		fromName, err := GetCacheUserField(tp.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		fromName, err := rpc.GetUserField(tp.From, microuser.UserField_NICKNAME)
 		if err != nil {
 			logger.Info("get uid:", tp.From, " nick name err,", err)
 		}
-		toName, err := GetCacheUserField(tp.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		toName, err := rpc.GetUserField(tp.To, microuser.UserField_NICKNAME)
 		if err != nil {
 			logger.Info("get uid:", tp.To, " nick name err,", err)
 		}
@@ -454,12 +457,12 @@ func CommitTransfer(uidStr, txidStr, currency string) (retErr constants.Error) {
 		if feeTxid > 0 && len(feeTradeNo) > 0 {
 			// 插入交易记录单：手续费
 			trade.FeeTradeNo = feeTradeNo
-			feeToName, err := GetCacheUserField(transFeeAcc, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+			feeToName, err := rpc.GetUserField(transFeeAcc, microuser.UserField_NICKNAME)
 			if err != nil {
 				logger.Info("get uid:", transFeeAcc, " nick name err,", err)
 			}
 			feeTrade := TradeInfo{
-				TradeNo: feeTradeNo,OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
+				TradeNo: feeTradeNo, OriginalTradeNo: tp.TradeNo, Txid: feeTxid,
 				Status: constants.TRADE_STATUS_SUCC, Type: constants.TRADE_TYPE_FEE, SubType: feeSubType,
 				From: tp.From, To: transFeeAcc, Amount: bizContent.Fee, Decimal: feeDecimal,
 				FromName: fromName, ToName: feeToName,
@@ -490,10 +493,10 @@ func TransFeeCommit(tx *sql.Tx, from, fee int64, currency string) (int64, string
 	var err = constants.RC_OK
 	var intErr = constants.TRANS_ERR_SYS
 	feeDth := &DTTXHistory{
-		Id:    feeTxid, TradeNo: feeTradeNo, Status: constants.TX_STATUS_COMMIT,
-		Type:  feeSubType, From: from, To: transFeeAcc, Currency: currency,
+		Id: feeTxid, TradeNo: feeTradeNo, Status: constants.TX_STATUS_COMMIT,
+		Type: feeSubType, From: from, To: transFeeAcc, Currency: currency,
 		Value: fee, Ts: utils.TXIDToTimeStamp13(feeTxid),
-		Code:  constants.TX_CODE_SUCC, BizContent: "",
+		Code: constants.TX_CODE_SUCC, BizContent: "",
 	}
 	switch currency {
 	case constants.TRADE_CURRENCY_EOS:

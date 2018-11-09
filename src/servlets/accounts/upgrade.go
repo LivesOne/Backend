@@ -1,10 +1,12 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
+	"strings"
 	"utils"
 	"utils/logger"
 )
@@ -53,8 +55,8 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Error("get cache failed")
 		response.SetResponseBase(err)
 		return
@@ -86,7 +88,19 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 			// 微信二次验证
 			uid := utils.Str2Int64(uidString)
 			//未绑定返回验升级失败
-			openId, unionId, _, _, _ := common.GetUserExtendByUid(uid)
+			wx,_ := rpc.GetUserField(uid,microuser.UserField_WX)
+			if len(wx) == 0 {
+				log.Error("user is not bind wx")
+				response.SetResponseBase(constants.RC_UPGRAD_FAILED)
+				return
+			}
+			wxIds := strings.Split(wx,",")
+			if len(wxIds) != 2 {
+				log.Error("user is not bind wx")
+				response.SetResponseBase(constants.RC_UPGRAD_FAILED)
+				return
+			}
+			openId, unionId:= wxIds[0],wxIds[1]
 			if len(openId) == 0 || len(unionId) == 0 {
 				log.Error("user is not bind wx")
 				response.SetResponseBase(constants.RC_UPGRAD_FAILED)

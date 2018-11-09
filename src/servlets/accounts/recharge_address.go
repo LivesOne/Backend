@@ -1,13 +1,14 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"strings"
 	"utils"
-	"utils/config"
 )
 
 type reChargeAddrParam struct {
@@ -49,8 +50,8 @@ func (handler *reChargeAddrHandler) Handle(
 	currency := strings.ToUpper(requestData.Param.Currency)
 
 	// 判断用户身份
-	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		response.SetResponseBase(err)
 		return
 	}
@@ -61,31 +62,36 @@ func (handler *reChargeAddrHandler) Handle(
 	}
 
 	uid := utils.Str2Int64(uidStr)
-	// 返回充值地址
-	var addr string
-	for _, rechargeAddr := range config.GetConfig().ReChargeAddress {
-		if rechargeAddr.Currency == currency {
-			addr = rechargeAddr.Address
-			addr = strings.Trim(addr, " ")
-			break
-		}
+
+
+
+	cli := rpc.GetWalletClient()
+	if cli == nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
 	}
-	if addr == "" {
-		// 从user_recharge_address查询
-		rechAddr, err := common.GetRechargeAddrList(uid, currency)
-		if err != nil {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		}
-		if rechAddr == "" {
-			response.SetResponseBase(constants.RC_INVALID_CURRENCY)
-			return
-		}
-		addr = rechAddr
+
+	req := &microuser.GetRechargeAddressReq{
+		Uid:                  uid,
+		Currency:             currency,
 	}
+
+	resp,err := cli.GetRechargeAddress(context.Background(),req)
+
+	if err != nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
+	if resp.Result != microuser.ResCode_OK {
+		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
+		return
+	}
+
+
 	respData := new(reChargeAddrRespData)
 	respData.Currency = currency
-	respData.Address = addr
+	respData.Address = resp.WalletAddress
 	response.Data = respData
 	// send response
 	response.SetResponseBase(constants.RC_OK)

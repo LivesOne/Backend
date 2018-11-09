@@ -1,6 +1,9 @@
 package common
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"servlets/rpc"
+	"strings"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -14,9 +17,13 @@ const (
 
 func UserUpgrade(uid string) (bool, int) {
 
-	account, err := GetAccountByUID(uid)
+	account, err := rpc.GetUserInfo(utils.Str2Int64(uid))
 	if err != nil {
 		logger.Error("query account error", err.Error())
+		return false, 0
+	}
+	if account.Result != microuser.ResCode_OK {
+		logger.Error("query account error", account.Result.String())
 		return false, 0
 	}
 	switch account.Level {
@@ -40,22 +47,21 @@ set tx_pwd
 miner_days>3
 bind phone
 */
-func upZero(acc *Account) (bool, int) {
+func upZero(acc *microuser.GetUserAllInfoRes) (bool, int) {
 	// check base info
 	if len(acc.Nickname) > 0 && len(acc.PaymentPassword) > 0 && len(acc.Phone) > 0 {
 		// check miner days
-		if QueryUserActiveDaysByCache(acc.UID) >= 3 && CheckCreditScore(acc.UID, DEF_SCORE) {
+		if acc.ActiveDays >= 3 && acc.CreditScore >= DEF_SCORE {
 			// set level up
-			level := 1
-			err := SetUserLevel(acc.UID, level)
-			if err == nil {
-				SetTransUserLevel(acc.UID, level)
-				return true, level
+			level := "1"
+			f, err := rpc.SetUserField(acc.Uid, microuser.UserField_LEVEL, level)
+			if err == nil && f {
+				return true, utils.Str2Int(level)
 			}
 		}
 
 	}
-	return false, acc.Level
+	return false, int(acc.Level)
 }
 
 /**
@@ -64,25 +70,23 @@ miner_days>7
 lock_asset:month>=3,value>=1k
 bind wx(86)
 */
-func upOne(acc *Account) (bool, int) {
+func upOne(acc *microuser.GetUserAllInfoRes) (bool, int) {
 	// check miner days and bind wxid
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if CheckCreditScore(acc.UID, DEF_SCORE) && CheckBindWx(acc.UID) &&
-		QueryUserActiveDaysByCache(acc.UID) >= 7 && lvtcScale > 0 {
+	if acc.ActiveDays >= 7 && acc.CreditScore >= DEF_SCORE && CheckBindWx(acc.Wx) && lvtcScale > 0 {
 		//check asset lock month and value
 		lvtc := utils.CONV_LVT * int64(1000) / lvtcScale
-		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvtc {
+		if v := QuerySumLockAssetLvtc(acc.Uid, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvtc {
 			// set level up
-			level := 2
-			err := SetUserLevel(acc.UID, level)
-			if err == nil {
-				SetTransUserLevel(acc.UID, level)
-				return true, level
+			level := "2"
+			f, err := rpc.SetUserField(acc.Uid, microuser.UserField_LEVEL, level)
+			if err == nil && f {
+				return true, utils.Str2Int(level)
 			}
 		}
 
 	}
-	return false, acc.Level
+	return false, int(acc.Level)
 }
 
 /**
@@ -90,24 +94,23 @@ func upOne(acc *Account) (bool, int) {
 miner_days>30
 lock_asset:month>=3,value>=5w
 */
-func upTwo(acc *Account) (bool, int) {
+func upTwo(acc *microuser.GetUserAllInfoRes) (bool, int) {
 	// check miner days
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if QueryUserActiveDaysByCache(acc.UID) >= 30 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
+	if acc.ActiveDays >= 30 && acc.CreditScore >= DEF_SCORE && lvtcScale > 0 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(50000) / lvtcScale
-		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
+		if v := QuerySumLockAssetLvtc(acc.Uid, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
 			// set level up
-			level := 3
-			err := SetUserLevel(acc.UID, level)
-			if err == nil {
-				SetTransUserLevel(acc.UID, level)
-				return true, level
+			level := "3"
+			f, err := rpc.SetUserField(acc.Uid, microuser.UserField_LEVEL, level)
+			if err == nil && f {
+				return true, utils.Str2Int(level)
 			}
 		}
 
 	}
-	return false, acc.Level
+	return false, int(acc.Level)
 }
 
 /**
@@ -115,24 +118,23 @@ func upTwo(acc *Account) (bool, int) {
 miner_days>100
 lock_asset:month>=3,value>=20w
 */
-func upThree(acc *Account) (bool, int) {
+func upThree(acc *microuser.GetUserAllInfoRes) (bool, int) {
 	// check miner days
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if QueryUserActiveDaysByCache(acc.UID) >= 100 && CheckCreditScore(acc.UID, DEF_SCORE) && lvtcScale > 0 {
+	if acc.ActiveDays >= 100 && acc.CreditScore >= DEF_SCORE && lvtcScale > 0 {
 		//check asset lock month and value
 		lvt := utils.CONV_LVT * int64(200000) / lvtcScale
-		if v := QuerySumLockAssetLvtc(acc.UID, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
+		if v := QuerySumLockAssetLvtc(acc.Uid, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvt {
 			// set level up
-			level := 4
-			err := SetUserLevel(acc.UID, level)
-			if err == nil {
-				SetTransUserLevel(acc.UID, level)
-				return true, level
+			level := "4"
+			f, err := rpc.SetUserField(acc.Uid, microuser.UserField_LEVEL, level)
+			if err == nil && f {
+				return true, utils.Str2Int(level)
 			}
 		}
 
 	}
-	return false, acc.Level
+	return false, int(acc.Level)
 }
 
 func CanBeTo(uid int64) bool {
@@ -143,11 +145,6 @@ func CanLockAsset(uid int64) bool {
 	return getUserLimit(uid).LockAsset()
 }
 
-func CheckCreditScore(uid int64, score int) bool {
-	creditScore := GetUserCreditScore(uid)
-	return creditScore >= score
-}
-
 func getUserLimit(uid int64) *config.UserLevelLimit {
 	level := GetTransUserLevel(uid)
 	limit := config.GetLimitByLevel(level)
@@ -155,7 +152,13 @@ func getUserLimit(uid int64) *config.UserLevelLimit {
 	return limit
 }
 
-func CheckUserLevel(uid int64, level int) bool {
-	userLevel := GetUserLevel(uid)
-	return userLevel >= level
+func CheckBindWx(wx string) bool {
+	ids := strings.Split(wx, ",")
+	if len(ids) != 2 {
+		return false
+	}
+	if len(ids[0]) == 0 || len(ids[1]) == 0 {
+		return false
+	}
+	return true
 }

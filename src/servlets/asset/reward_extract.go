@@ -1,13 +1,15 @@
 package asset
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
+	"servlets/accounts"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
+	"strings"
 	"utils"
 	"utils/logger"
-	"servlets/accounts"
 )
 
 type rewardExtractSecret struct {
@@ -56,10 +58,10 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
 
-	log.Info("user login cache token-hash",httpHeader.TokenHash,"uid",uidString,"key",aesKey)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	log.Info("user login cache token-hash", httpHeader.TokenHash, "uid", uidString, "key", aesKey)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset reward extract: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -78,7 +80,9 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	}
 
 	uid := utils.Str2Int64(uidString)
-	if !common.CheckCreditScore(uid, common.DEF_SCORE) {
+
+	score,_ := rpc.GetUserField(uid,microuser.UserField_CREDIT_SCORE)
+	if utils.Str2Int(score) < common.DEF_SCORE {
 		log.Info("asset reward extract: permission denied")
 		response.SetResponseBase(constants.RC_PERMISSION_DENIED)
 		return
@@ -97,6 +101,9 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
+
+
+
 	//判断有合法参数才进行微信二次校验
 	if len(requestData.Param.Secret) > 0 {
 		// 解码 secret 参数
@@ -108,14 +115,32 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 			return
 		}
 
+		// 微信绑定验证，未绑定返回验提取失败
+		wx,_ := rpc.GetUserField(uid,microuser.UserField_WX)
+		if len(wx) == 0 {
+			log.Error("asset reward extract: user is not bind wx")
+			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
+			return
+		}
+		wxIds := strings.Split(wx,",")
+		if len(wxIds) != 2 {
+			log.Error("asset reward extract: user is not bind wx")
+			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
+			return
+		}
+		openId, unionId:= wxIds[0],wxIds[1]
+		if len(openId) == 0 || len(unionId) == 0 {
+			log.Error("asset reward extract: user is not bind wx")
+			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
+			return
+		}
+		if len(openId) == 0 || len(unionId) == 0 {
+			log.Error("asset reward extract: user is not bind wx")
+			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
+			return
+		}
+
 		if len(secret.WxCode) > 0 {
-			// 微信二次验证，未绑定返回验提取失败
-			openId, unionId, _, _, _ := common.GetUserExtendByUid(uid)
-			if len(openId) == 0 || len(unionId) == 0 {
-				log.Error("asset reward extract: user is not bind wx")
-				response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
-				return
-			}
 			//微信认证并比对id
 			if ok, res := common.AuthWX(secret.WxCode); ok {
 				if res.Unionid != unionId || res.Openid != openId {
@@ -145,10 +170,10 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	}
 
 	var income int64
-	var ok  = true
+	var ok = true
 	var err error
 	if currency == common.CURRENCY_ETH {
-		_, _, income,_,_, err = common.QueryBalanceEth(uid)
+		_, _, income, _, _, err = common.QueryBalanceEth(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -157,7 +182,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 			ok = common.ExtractIncomeEth(uid, income)
 		}
 	} else {
-		_, _, income,_,_, err = common.QueryBalanceLvtc(uid)
+		_, _, income, _, _, err = common.QueryBalanceLvtc(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return

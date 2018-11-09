@@ -2,16 +2,17 @@ package accounts
 
 import (
 	"errors"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
+	"servlets/vcode"
 	"strconv"
-	"time"
 	"utils"
 	"utils/config"
-	"utils/db_factory"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 // registerParam holds the request "param" field
@@ -69,14 +70,22 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	// fmt.Println("registerUserHandler) Handle", msg)
 	// hashPwd := utils.RsaDecrypt(handler.registerData.Param.PWD, config.GetConfig().PrivKey)
 
-	account, err := getAccount(&data)
-	if err != nil {
-		// logger.Info("------------- get account error\n")
-		response.SetResponseBase(constants.RC_INVALID_PUB_KEY)
+
+
+	cli := rpc.GetUserCacheClient()
+	if cli == nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	logger.Info("register user:  get account success\n", utils.ToJSONIndent(account))
 
+	req := &microuser.RegUserInfo{
+		Pwd:                  hashedPWD,
+		Country:              int32(data.Param.Country),
+		Phone:                data.Param.Phone,
+		Email:                data.Param.EMail,
+		Type:                 int32(data.Param.Type),
+	}
+	resData := new(responseRegister)
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
 
@@ -87,65 +96,55 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				return
 			}
 		}
-
-		insertAndCheckUid(account, hashedPWD)
+		resp,err := cli.RegisterUser(context.Background(),req)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		if resp.Result != microuser.ResCode_OK {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		resData.UID = utils.Int642Str(resp.Uid)
+		resData.Regtime = resp.RegTime
 	case constants.LOGIN_TYPE_EMAIL:
 		ok, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
 		if ok == false {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
-
-		for i := 1; i <= 5; i++ {
-			account.UIDString, account.UID = getUid()
-			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-			_, err = common.InsertAccountWithEmail(account)
-			if err == nil {
-				break
-			}
-			if db_factory.CheckDuplicateByColumn(err, "email") {
-				response.SetResponseBase(constants.RC_DUP_EMAIL)
-				return
-			} else if db_factory.CheckDuplicateByColumn(err, "PRIMARY") {
-				continue
-			} else {
-				break
-			}
+		resp,err := cli.RegisterUser(context.Background(),req)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
 		}
+		if resp.Result != microuser.ResCode_OK {
+			response.SetResponseBase(constants.RC_DUP_EMAIL)
+			return
+		}
+		resData.UID = utils.Int642Str(resp.Uid)
+		resData.Regtime = resp.RegTime
 	case constants.LOGIN_TYPE_PHONE:
 		ok, _ := vcode.ValidateSmsAndCallVCode(data.Param.Phone, data.Param.Country, data.Param.VCode, 3600, vcode.FLAG_DEF)
 		if ok == false {
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
-
-		for i := 1; i <= 5; i++ {
-			account.UIDString, account.UID = getUid()
-			account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-			_, err = common.InsertAccountWithPhone(account)
-			if err == nil {
-				break
-			}
-			if db_factory.CheckDuplicateByColumn(err, "mobile") {
-				response.SetResponseBase(constants.RC_DUP_PHONE)
-				return
-			} else if db_factory.CheckDuplicateByColumn(err, "PRIMARY") {
-				continue
-			} else {
-				break
-			}
+		resp,err := cli.RegisterUser(context.Background(),req)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
 		}
+		if resp.Result != microuser.ResCode_OK {
+			response.SetResponseBase(constants.RC_DUP_PHONE)
+			return
+		}
+		resData.UID = utils.Int642Str(resp.Uid)
+		resData.Regtime = resp.RegTime
 	}
 
-	if err != nil {
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
-	}
 
-	response.Data = &responseRegister{
-		UID:     account.UIDString,
-		Regtime: account.RegisterTime,
-	}
+	response.Data = resData
 }
 
 func checkRequestParams(header *common.HeaderParams, data *registerRequest) bool {
@@ -191,35 +190,6 @@ func getUid() (string, int64) {
 	return uid, uid_num
 }
 
-func insertAndCheckUid(account *common.Account, hashedPWD string) error {
-	var err error
-	for i := 1; i <= 5; i++ {
-		account.UIDString, account.UID = getUid()
-		account.LoginPassword = utils.Sha256(hashedPWD + account.UIDString)
-		_, err = common.InsertAccount(account)
-		if err == nil {
-			break
-		}
-		if db_factory.CheckDuplicateByColumn(err, "PRIMARY") {
-			continue
-		}
-	}
-	return err
-}
-
-func getAccount(data *registerRequest) (*common.Account, error) {
-	var account common.Account
-
-	account.Email = data.Param.EMail
-	account.Country = data.Param.Country
-	account.Phone = data.Param.Phone
-
-	account.RegisterTime = time.Now().Unix()
-	account.UpdateTime = account.RegisterTime
-	account.RegisterType = data.Param.Type
-
-	return &account, nil
-}
 
 // recoverPwd recovery the upload PWD to hash form
 // @param: pwdUpload  original upload pwd in http request

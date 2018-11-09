@@ -60,10 +60,6 @@ type WXAuth struct {
 	Secret string
 }
 
-type ReChargeAddr struct {
-	Currency string
-	Address  string
-}
 
 // Configuration holds all config data
 type Configuration struct {
@@ -73,7 +69,7 @@ type Configuration struct {
 	PrivKey string
 
 	// account db config
-	User DBConfig
+	//User DBConfig
 	// asset db config
 	Asset        DBConfig
 	TxHistory    MongoConfig
@@ -95,6 +91,8 @@ type Configuration struct {
 	ImgEmailSvrName string
 	// 服务注册发现地址
 	RegistryAddr string
+	//micro-user-service 名称
+	UserServiceName string
 	// 短信验证网关相关
 	//SmsSvrAddr string
 	// 邮件验证网关相关
@@ -118,7 +116,6 @@ type Configuration struct {
 	Lvt2LvtcSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
 	TransFeeAccountUid            int64
-	ReChargeAddress               []ReChargeAddr
 }
 
 // configuration data
@@ -219,7 +216,7 @@ func (cfg *Configuration) isValid() bool {
 
 	return len(cfg.ServerAddr) > 0 &&
 		len(cfg.PrivKey) > 0 &&
-		cfg.User.isValid() &&
+		//cfg.User.isValid() &&
 		cfg.Asset.isValid() &&
 		cfg.Redis.isValid() &&
 		cfg.TxHistory.isValid()

@@ -19,15 +19,6 @@
         "DBIndex":1
     },
 
-    "User" : 
-    {
-        "MaxConn" : 10,
-        "DBHost" : "10.100.14.243:3306",
-        "DBUser" : "root",
-        "DBUserPwd" : "maxthon",
-        "DBDatabase" : "livesone_user"
-    },
-
     "Asset" : 
     {
         "MaxConn" : 10,
@@ -84,6 +75,7 @@
     },
     "SmsSvrName": "SmsService",
     "ImgEmailSvrName": "ImgEmailService",
+    "UserServiceName": "UserService",
     "RegistryAddr":"10.0.5.248:8500",
     "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
     "TransferLimit" : {
@@ -156,10 +148,5 @@
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
     "Lvt2LvtcDelaySystemAccountUid":181875000,
-    "TransFeeAccountUid":181875000,
-    "ReChargeAddress": [
-        {"Currency": "ETH", "Address": "0x63dC9762F6f259E2CB106dE70A5bFeD8293c08E3"},
-        {"Currency": "LVTC", "Address": "0x0233C1dd7fbE6DaB8C233Bf017F4B1F3BAfEc0B3"},
-        {"Currency": "EOS", "Address": ""}
-    ]
+    "TransFeeAccountUid":181875000
 }

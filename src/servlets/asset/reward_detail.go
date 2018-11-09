@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
 	"utils"
 )
-
 
 type rewardDetailParam struct {
 	Uid string `json:"uid"`
@@ -66,7 +66,7 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 
 	intUid := utils.Str2Int64(requestData.Param.Uid)
 
-	if !common.ExistsUID(intUid) {
+	if !rpc.UserExists(intUid) {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
@@ -77,7 +77,6 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-
 
 	t := re.Lastmodify
 	nt := utils.GetTimestamp13()
@@ -94,9 +93,9 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 		rData.Yesterday = utils.LVTintToFloatStr(re.Yesterday)
 
 		q := bson.M{
-			"to":intUid,
-			"type":constants.TRADE_TYPE_MINER,
-			"sub_type":constants.TX_SUB_TYPE_WAGE,
+			"to":       intUid,
+			"type":     constants.TRADE_TYPE_MINER,
+			"sub_type": constants.TX_SUB_TYPE_WAGE,
 		}
 		records := common.QueryTrades(q, 1)
 
@@ -106,7 +105,6 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 	response.Data = rData
 
 }
-
 
 func buildMinerData(records []common.TradeInfo) []rewardMiner {
 	m := make([]rewardMiner, 0)

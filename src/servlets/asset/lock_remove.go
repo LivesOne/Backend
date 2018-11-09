@@ -1,11 +1,12 @@
 package asset
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"math"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -65,8 +66,8 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset lockRemove: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -100,12 +101,12 @@ func (handler *lockRemoveHandler) Handle(request *http.Request, writer http.Resp
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
-		if !common.CheckLoginPwd(uid, pwd) {
+		if f,_ := rpc.CheckPwd(uid, pwd,microuser.PwdCheckType_LOGIN_PWD);!f {
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
-		if !common.CheckPaymentPwd(uid, pwd) {
+		if f,_ := rpc.CheckPwd(uid, pwd,microuser.PwdCheckType_PAYMENT_PWD);!f {
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}

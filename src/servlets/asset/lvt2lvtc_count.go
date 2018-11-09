@@ -4,12 +4,11 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/config"
 	"utils/logger"
 )
-
 
 // sendVCodeHandler
 type lvt2lvtcCountHandler struct {
@@ -32,7 +31,6 @@ func (handler *lvt2lvtcCountHandler) Handle(request *http.Request, writer http.R
 	}
 	defer common.FlushJSONData2Client(response, writer)
 
-
 	httpHeader := common.ParseHttpHeaderParams(request)
 
 	// if httpHeader.IsValid() == false {
@@ -43,8 +41,8 @@ func (handler *lvt2lvtcCountHandler) Handle(request *http.Request, writer http.R
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -62,26 +60,23 @@ func (handler *lvt2lvtcCountHandler) Handle(request *http.Request, writer http.R
 
 	uid := utils.Str2Int64(uidString)
 
-
 	resData := &lvt2lvtcResData{
 		Lvt:  "0",
 		Lvtc: "0",
 	}
 
-
-	balance,_,_,_,_,err := common.QueryBalance(uid)
+	balance, _, _, _, _, err := common.QueryBalance(uid)
 	if err != nil {
-		log.Error("query mysql error",err.Error())
+		log.Error("query mysql error", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 	if balance > 0 {
 		resData.Lvt = utils.LVTintToFloatStr(balance)
-		lvtcBalance := balance/int64(config.GetConfig().LvtcHashrateScale)
+		lvtcBalance := balance / int64(config.GetConfig().LvtcHashrateScale)
 		resData.Lvtc = utils.LVTintToFloatStr(lvtcBalance)
 	}
 
 	response.Data = resData
-
 
 }
