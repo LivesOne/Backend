@@ -2787,7 +2787,7 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 	}
 	var feeOfTransfer = float64(-1)
 	for _, fee := range transferQuota.Fee {
-		if fee.FeeCurrency == feeCurrency {
+		if strings.EqualFold(fee.FeeCurrency, feeCurrency){
 			switch fee.FeeType {
 			case 0:
 				feeOfTransfer = fee.FeeFixed

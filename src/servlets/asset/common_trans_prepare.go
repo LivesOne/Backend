@@ -274,7 +274,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 	//case constants.TRADE_CURRENCY_LVTC:
 	//	txid, resErr = common.PrepareLVTCTrans(from, to, constants.TX_TYPE_TRANS, secret.Value, bizContentStr, bizContent.Remark)
 	//}
-	txid, _, resErr = common.TransferPrepare(from, to, secret.Value, secret.Fee, currency, secret.FeeCurrency, requestData.Param.Remark)
+	txid, _, resErr = common.TransferPrepare(from, to, secret.Value, secret.Fee, strings.ToUpper(currency), strings.ToUpper(secret.FeeCurrency), requestData.Param.Remark)
 	if resErr == constants.RC_OK {
 		response.Data = commonTransPrepareResData{
 			Txid:     txid,

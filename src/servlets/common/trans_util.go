@@ -624,7 +624,7 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 
 func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark string) (string, string, constants.Error) {
 	var currencyDecimal, feeCurrencyDecimal int
-	if strings.EqualFold(currency, "eos") {
+	if strings.EqualFold(currency, CURRENCY_EOS) {
 		currencyDecimal = utils.CONV_EOS
 		feeCurrencyDecimal = utils.CONV_EOS
 	} else {
