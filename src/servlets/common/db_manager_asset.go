@@ -1742,8 +1742,8 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, c
 	}
 
 	if feeOfWithdraw < 0 {
-		logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
-		return float64(0), constants.RC_INVALID_CURRENCY
+		logger.Error("withdraw fee err, fee currency:", feeCurrency, "fee:", feeOfWithdraw)
+		return float64(0), constants.RC_TRANSFER_FEE_ERROR
 	}
 
 	return feeOfWithdraw, constants.RC_OK
@@ -2814,8 +2814,8 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 	}
 
 	if feeOfTransfer < 0 {
-		logger.Error("withdraw fee currency not supported, fee currency:", feeCurrency)
-		return float64(0), constants.RC_INVALID_CURRENCY
+		logger.Error("transfer fee err, fee currency:", feeCurrency, "fee:", feeOfTransfer)
+		return float64(0), constants.RC_TRANSFER_FEE_ERROR
 	}
 
 	return feeOfTransfer, constants.RC_OK
