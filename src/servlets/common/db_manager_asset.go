@@ -2794,20 +2794,12 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 	var feeOfTransfer = float64(-1)
 	for _, fee := range transferQuota.Fee {
 		if strings.EqualFold(fee.FeeCurrency, feeCurrency) {
-			switch fee.FeeType {
-			case 0:
-				feeOfTransfer = fee.FeeFixed
-			case 1:
-				feeOfTransfer = amount * fee.FeeRate
-				if feeOfTransfer < fee.FeeMin {
-					feeOfTransfer = fee.FeeMin
-				}
-				if feeOfTransfer > fee.FeeMax {
-					feeOfTransfer = fee.FeeMax
-				}
-			default:
-				logger.Error("transfer fee type not supported, fee currency:", feeCurrency, "fee type:", fee.FeeType)
-				return float64(0), constants.RC_INVALID_CURRENCY
+			feeOfTransfer = amount * fee.FeeRate
+			if feeOfTransfer < fee.FeeMin {
+				feeOfTransfer = fee.FeeMin
+			}
+			if feeOfTransfer > fee.FeeMax {
+				feeOfTransfer = fee.FeeMax
 			}
 		}
 	}
