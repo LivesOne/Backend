@@ -1257,7 +1257,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	}
 	params := []interface{}{uid, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN}
 	params = append(params, coins[0])
-	for i:=1;i<len(coins);i++ {
+	for i := 1; i < len(coins); i++ {
 		sql += ", ?"
 		params = append(params, coins[i])
 	}
@@ -1308,15 +1308,56 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	tx.Commit()
 
 	go func() {
-		err = addFeeTradeInfo(txIdFee, feeTradeNo, tradeNo, constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE, uid, config.GetWithdrawalConfig().FeeAcceptAccount, feeInt, feeCurrency, feeCurrencyDecimal, timestamp)
-		if err != nil {
-			logger.Error("withdraw fee insert trade database error, error:", err.Error())
+		var tradesArray []TradeInfo
+		fromName, _ := GetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		toName, _ := GetCacheUserField(config.GetWithdrawalConfig().FeeAcceptAccount, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		feeTradeInfo := TradeInfo{
+			TradeNo:         feeTradeNo,
+			OriginalTradeNo: tradeNo,
+			Type:            constants.TRADE_TYPE_FEE,
+			SubType:         constants.TX_SUB_TYPE_WITHDRAW_FEE,
+			From:            uid,
+			FromName:        fromName,
+			To:              config.GetWithdrawalConfig().FeeAcceptAccount,
+			ToName:          toName,
+			Amount:          feeInt,
+			Decimal:         feeCurrencyDecimal,
+			Currency:        currency,
+			CreateTime:      timestamp,
+			FinishTime:      timestamp,
+			Status:          constants.TRADE_STATUS_SUCC,
+			Txid:            txId,
 		}
-		err = addTradeInfo(txId, tradeNo, constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW, uid, config.GetWithdrawalConfig().WithdrawalAcceptAccount, address, utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)), currency, feeTradeNo, currencyDecimal, timestamp)
+		tradesArray = append(tradesArray, feeTradeInfo)
+
+		withdraw := TradeWithdrawal{
+			Address: address,
+		}
+		toName, _ = GetCacheUserField(config.GetWithdrawalConfig().WithdrawalAcceptAccount, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		tradeInfo := TradeInfo{
+			TradeNo:    tradeNo,
+			Type:       constants.TRADE_TYPE_WITHDRAWAL,
+			SubType:    constants.TX_SUB_TYPE_WITHDRAW,
+			From:       uid,
+			FromName:   fromName,
+			To:         config.GetWithdrawalConfig().WithdrawalAcceptAccount,
+			ToName:     toName,
+			Amount:     utils.FloatStr2CoinsInt(amount, int64(currencyDecimal)),
+			Decimal:    currencyDecimal,
+			Currency:   currency,
+			CreateTime: timestamp,
+			Status:     constants.TRADE_STATUS_PROCESSING,
+			Txid:       txId,
+			FeeTradeNo: feeTradeNo,
+			Withdrawal: &withdraw,
+		}
+		tradesArray = append(tradesArray, tradeInfo)
+		err = InsertTradeInfo(tradesArray...)
 		if err != nil {
 			logger.Error("withdraw insert trade database error, error:", err.Error())
 		}
-		if strings.EqualFold(currency,"LVTC") {
+
+		if strings.EqualFold(currency, CURRENCY_LVTC) {
 			txh := &DTTXHistory{
 				Id:       txId,
 				TradeNo:  tradeNo,
@@ -1325,7 +1366,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 				To:       config.GetWithdrawalConfig().WithdrawalAcceptAccount,
 				Value:    feeInt,
 				Ts:       timestamp,
-				Currency: "LVTC",
+				Currency: CURRENCY_LVTC,
 			}
 			err := InsertLVTCCommited(txh)
 			if err != nil {
@@ -1386,7 +1427,7 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		logger.Error("get balance err, uid:", from, " coin:", currency, "error:", err)
 		return constants.RC_SYSTEM_ERR
 	}
-	if balance - amount < 0 {
+	if balance-amount < 0 {
 		return constants.RC_INSUFFICIENT_BALANCE
 	}
 
