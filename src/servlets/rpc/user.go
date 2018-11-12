@@ -20,6 +20,11 @@ var (
 func getUserClientConn()*grpc.ClientConn{
 	if conn == nil {
 		conn = getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
+		if conn != nil {
+			logger.Info("get user service rpc conn success")
+		} else {
+			logger.Error("cannot conn to user service")
+		}
 	}
 	return conn
 }
