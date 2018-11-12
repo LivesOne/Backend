@@ -122,9 +122,10 @@ func CheckPwd(uid int64, pwdHash string, cType microuser.PwdCheckType) (bool, er
 			logger.Error("grpc SmsSendVoiceMsg request error: ", err)
 			return false, err
 		}
-		if resp.Result != microuser.ResCode_OK {
-			return false, errors.New(resp.Msg)
+		if resp.Result == microuser.ResCode_OK {
+			return true,nil
 		}
+		return false, errors.New(resp.Msg)
 	}
 	return false, errors.New("can not get rpc client")
 
