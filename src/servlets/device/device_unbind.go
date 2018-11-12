@@ -108,7 +108,10 @@ func (handler *deviceUnBindHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	if f, _ := rpc.CheckPwd(uid, password, microuser.PwdCheckType_LOGIN_PWD); !f {
+	if f, e := rpc.CheckPwd(uid, password, microuser.PwdCheckType_LOGIN_PWD); !f {
+		if e != nil {
+			logger.Error("rpc check pwd errpr",e.Error())
+		}
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
