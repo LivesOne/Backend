@@ -2780,8 +2780,17 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 			totalAmount = GetCurrentDayLVTCTransferAmount(uid)
 		}
 		if strings.EqualFold(currency, CURRENCY_ETH) || strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) {
-			sql := "select sum(value) total_value from user_withdrawal_request where uid = ? and currency = ? and status in (?, ?, ?, ?) and create_time >= ?"
-			row, err := gDBAsset.QueryRow(sql, uid, currency, constants.USER_WITHDRAWAL_REQUEST_WAIT_SEND, constants.USER_WITHDRAWAL_REQUEST_SEND, constants.USER_WITHDRAWAL_REQUEST_SUCCESS, constants.USER_WITHDRAWAL_REQUEST_UNKNOWN, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
+			historyTableName := ""
+			switch strings.ToUpper(currency) {
+			case CURRENCY_BTC:
+				historyTableName = "tx_history_btc"
+			case CURRENCY_ETH:
+				historyTableName = "tx_history_eth"
+			case CURRENCY_EOS:
+				historyTableName = "tx_history_eos"
+			}
+			sql := fmt.Sprintf("select sum(value) total_value from %s where uid = ? and currency = ? and create_time >= ?", historyTableName)
+			row, err := gDBAsset.QueryRow(sql, uid, currency, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
 			if err != nil {
 				logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
 			}

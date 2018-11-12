@@ -640,8 +640,16 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 		return "", "", err
 	}
 
-	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
-		return "", "", constants.RC_TRANSFER_FEE_ERROR
+	if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
+		if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
+			logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", utils.Str2Float64(fmt.Sprintf("%.4f", realFee)))
+			return "", "", constants.RC_TRANSFER_FEE_ERROR
+		}
+	} else {
+		if utils.Str2Float64(fee) != realFee {
+			logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
+			return "", "", constants.RC_TRANSFER_FEE_ERROR
+		}
 	}
 
 	feeInt := utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
@@ -695,14 +703,14 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 }
 
 func TransferCommit(uid, txId int64, currency string) constants.Error {
-	//txid_ts := utils.TXIDToTimeStamp13(txid)
+	txid_ts := utils.TXIDToTimeStamp13(txId)
 	ts := utils.GetTimestamp13()
 	//暂时写死10秒
-	//if ts-txid_ts > TRANS_TIMEOUT {
-	//	//删除pending
-	//	DeletePendingByInfo(&DTTXHistory{Id: txid,})
-	//	return constants.RC_TRANS_TIMEOUT
-	//}
+	if ts-txid_ts > TRANS_TIMEOUT {
+		//删除pending
+		DeletePendingByInfo(&DTTXHistory{Id: txId,})
+		return constants.RC_TRANS_TIMEOUT
+	}
 
 	perPending, err := getPending(txId, uid, currency)
 	//未查到数据，返回处理中
