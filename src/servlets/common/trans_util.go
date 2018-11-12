@@ -2,7 +2,6 @@ package common
 
 import (
 	"database/sql"
-	"fmt"
 	"servlets/constants"
 	"strconv"
 	"strings"
@@ -640,17 +639,17 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 		return "", "", err
 	}
 
-	if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
-		if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
-			logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", utils.Str2Float64(fmt.Sprintf("%.4f", realFee)))
-			return "", "", constants.RC_TRANSFER_FEE_ERROR
-		}
-	} else {
-		if utils.Str2Float64(fee) != realFee {
-			logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
-			return "", "", constants.RC_TRANSFER_FEE_ERROR
-		}
+	//if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
+	//	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
+	//		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", utils.Str2Float64(fmt.Sprintf("%.4f", realFee)))
+	//		return "", "", constants.RC_TRANSFER_FEE_ERROR
+	//	}
+	//} else {
+	if utils.Str2Float64(fee) != realFee {
+		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
+		return "", "", constants.RC_TRANSFER_FEE_ERROR
 	}
+	//}
 
 	feeInt := utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
@@ -774,7 +773,7 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 		}
 		DeletePendingByInfo(&DTTXHistory{Id: txId,})
 	}
-	if strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) || strings.EqualFold(currency, CURRENCY_ETH)  {
+	if strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) || strings.EqualFold(currency, CURRENCY_ETH) {
 		error := DeleteTradePending(perPending.TradeNo, uid, tx)
 		if error != nil {
 			tx.Rollback()
