@@ -258,7 +258,7 @@ func (handler *commonTransPrepareHandler) Handle(request *http.Request, writer h
 		Remark:      requestData.Param.Remark,
 	}
 	bizContentStr := utils.ToJSON(bizContent)
-	转账分币种进行
+	//转账分币种进行
 	switch currency {
 	case constants.TRADE_CURRENCY_EOS:
 		intValue := utils.FloatStrToEOSint(secret.Value)
