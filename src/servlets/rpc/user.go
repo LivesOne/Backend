@@ -158,7 +158,7 @@ func GetTokenInfo(tkHash string)(string,string,string,microuser.ResCode){
 		if err == nil {
 			return resp.Uid,resp.Key,resp.Token,resp.Result
 		}
-		logger.Error("grpc UserActive request error: ", err)
+		logger.Error("grpc GetTokenInfo request error: ", err)
 
 	}
 	return "","","",microuser.ResCode_ERR_SYSTEM
@@ -184,7 +184,7 @@ func UserExists(uid int64) (bool) {
 		}
 		resp, err := cli.UserExists(context.Background(), req)
 		if err != nil {
-			logger.Error("grpc SmsSendVoiceMsg request error: ", err)
+			logger.Error("grpc UserExists request error: ", err)
 			return false
 		}
 		if resp.Result == microuser.ResCode_OK {
