@@ -2763,7 +2763,7 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 	if amount <= 0 {
 		return float64(0), constants.RC_PARAM_ERR
 	}
-	transferQuota := getTransferQuota(currency)
+	transferQuota := getTransferQuota(currency, feeCurrency)
 	if transferQuota == nil {
 		return float64(0), constants.RC_PARAM_ERR
 	}
@@ -2793,25 +2793,26 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 		amountBig := big.NewFloat(float64(amount))
 		amountBig = amountBig.Mul(amountBig, big.NewFloat(float64(currencyDecimal)))
 
-		withdrawAmountInt64, _ := amountBig.Int64()
+		amountInt64, _ := amountBig.Int64()
 		dailyAmountInt64, _ := dailyAmount.Int64()
-		logger.Info("daily quota out limit, transfer amount:", withdrawAmountInt64, ",that day transfer total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
+		logger.Info("daily quota out limit, transfer amount:", amountInt64, ",that day transfer total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
 		if dailyAmount.Cmp(amountBig.Add(amountBig, big.NewFloat(float64(totalAmount)))) < 0 {
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
-	var feeOfTransfer = float64(-1)
-	for _, fee := range transferQuota.Fee {
-		if strings.EqualFold(fee.FeeCurrency, feeCurrency) {
-			feeOfTransfer = amount * fee.FeeRate
-			if feeOfTransfer < fee.FeeMin {
-				feeOfTransfer = fee.FeeMin
-			}
-			if feeOfTransfer > fee.FeeMax {
-				feeOfTransfer = fee.FeeMax
-			}
-		}
+	feeOfTransfer := amount * transferQuota.Fee.FeeRate
+	if feeOfTransfer < transferQuota.Fee.FeeMin {
+		feeOfTransfer = transferQuota.Fee.FeeMin
 	}
+	if feeOfTransfer > transferQuota.Fee.FeeMax {
+		feeOfTransfer = transferQuota.Fee.FeeMax
+	}
+
+	if strings.ToUpper(currency) != strings.ToUpper(feeCurrency) {
+		feeOfTransfer = ConversionCoinPrice(feeOfTransfer, strings.ToUpper(currency), strings.ToUpper(feeCurrency))
+	}
+
+	feeOfTransfer *= transferQuota.Fee.Discount
 
 	if feeOfTransfer < 0 {
 		logger.Error("transfer fee err, fee currency:", feeCurrency, "fee:", feeOfTransfer)
@@ -2821,8 +2822,8 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 	return feeOfTransfer, constants.RC_OK
 }
 
-func getTransferQuota(currency string) *TransferQuota {
-	key := constants.TRANSFER_QUOTA_FEE_KEY + "_" + currency
+func getTransferQuota(currency, feeCurrency string) *TransferQuota {
+	key := constants.TRANSFER_QUOTA_FEE_KEY + "_" + currency + "_" + feeCurrency
 	quota := new(TransferQuota)
 	results, _ := redis.String(rdsDo("GET", key))
 	reload := false
@@ -2835,7 +2836,7 @@ func getTransferQuota(currency string) *TransferQuota {
 		reload = true
 	}
 	if reload {
-		quota = GeTransferQuotaByCurrency(currency)
+		quota = GeTransferQuotaByCurrency(currency, feeCurrency)
 		tomorrow, _ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02")+" 23:59:59", time.Local)
 		rdsDo("SET", key, utils.ToJSON(quota), "EX", tomorrow.Unix()+1-utils.GetTimestamp10())
 	}

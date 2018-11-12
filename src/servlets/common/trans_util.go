@@ -2,6 +2,7 @@ package common
 
 import (
 	"database/sql"
+	"fmt"
 	"servlets/constants"
 	"strconv"
 	"strings"
@@ -626,9 +627,12 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(currency, CURRENCY_EOS) {
 		currencyDecimal = utils.CONV_EOS
-		feeCurrencyDecimal = utils.CONV_EOS
 	} else {
 		currencyDecimal = utils.CONV_LVT
+	}
+	if strings.EqualFold(feeCurrency, CURRENCY_EOS) {
+		feeCurrencyDecimal = utils.CONV_EOS
+	} else {
 		feeCurrencyDecimal = utils.CONV_LVT
 	}
 	realFee, err := calculationFeeAndCheckQuotaForTransfer(from, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
@@ -636,15 +640,11 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 		return "", "", err
 	}
 
-	if (strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC)) && strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
-		realFee *= config.GetConfig().TransFeeRateDiscount
-	}
-
-	if utils.Str2Float64(fee) != realFee {
+	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
 		return "", "", constants.RC_TRANSFER_FEE_ERROR
 	}
 
-	feeInt := utils.Float2CoinsInt(realFee, int64(feeCurrencyDecimal))
+	feeInt := utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 	bizContent := TransBizContent{
 		FeeCurrency: feeCurrency,
@@ -694,17 +694,17 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	return utils.Int642Str(txid), tradeNo, constants.RC_OK
 }
 
-func TransferCommit(uid, txid int64, currency string) constants.Error {
-	txid_ts := utils.TXIDToTimeStamp13(txid)
+func TransferCommit(uid, txId int64, currency string) constants.Error {
+	//txid_ts := utils.TXIDToTimeStamp13(txid)
 	ts := utils.GetTimestamp13()
 	//暂时写死10秒
-	if ts-txid_ts > TRANS_TIMEOUT {
-		//删除pending
-		DeletePendingByInfo(&DTTXHistory{Id: txid,})
-		return constants.RC_TRANS_TIMEOUT
-	}
+	//if ts-txid_ts > TRANS_TIMEOUT {
+	//	//删除pending
+	//	DeletePendingByInfo(&DTTXHistory{Id: txid,})
+	//	return constants.RC_TRANS_TIMEOUT
+	//}
 
-	perPending, err := getPending(txid, uid, currency)
+	perPending, err := getPending(txId, uid, currency)
 	//未查到数据，返回处理中
 	if err.Rc != constants.RC_OK.Rc || perPending == nil {
 		return constants.RC_TRANS_TIMEOUT
@@ -739,16 +739,16 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 
 	tx, _ := gDBAsset.Begin()
 
-	txId := GenerateTxID()
-	txIdFee := GenerateTxID()
 	//扣除转账资产
-	err = transfer(txId, uid, to, perPending.Value, timestamp, currency, tradeNo, constants.TX_SUB_TYPE_WITHDRAW, tx)
+	err = transfer(txId, uid, to, perPending.Value, timestamp, currency, tradeNo, constants.TX_SUB_TYPE_TRANS, tx)
 	if err.Rc != constants.RC_OK.Rc {
 		tx.Rollback()
 		return err
 	}
+
+	txIdFee := GenerateTxID()
 	//扣除手续费资产
-	err = transfer(txIdFee, uid, config.GetConfig().TransFeeAccountUid, bizContent.Fee, timestamp, bizContent.FeeCurrency, feeTradeNo, constants.TX_SUB_TYPE_WITHDRAW_FEE, tx)
+	err = transfer(txIdFee, uid, config.GetConfig().TransFeeAccountUid, bizContent.Fee, timestamp, bizContent.FeeCurrency, feeTradeNo, constants.TX_SUB_TYPE_TRANSFER_FEE, tx)
 	if err.Rc != constants.RC_OK.Rc {
 		tx.Rollback()
 		return err
@@ -764,22 +764,28 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 			tx.Rollback()
 			return constants.RC_SYSTEM_ERR
 		}
+		DeletePendingByInfo(&DTTXHistory{Id: txId,})
 	}
-	error := DeleteTradePending(perPending.TradeNo, uid, tx)
-	if error != nil {
-		return constants.RC_SYSTEM_ERR
+	if strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) || strings.EqualFold(currency, CURRENCY_ETH)  {
+		error := DeleteTradePending(perPending.TradeNo, uid, tx)
+		if error != nil {
+			tx.Rollback()
+			return constants.RC_SYSTEM_ERR
+		}
 	}
-	DeletePendingByInfo(&DTTXHistory{Id: txid,})
 	tx.Commit()
 
 	go func() {
 		var currencyDecimal, feeCurrencyDecimal int
 		if strings.EqualFold(currency, "eos") {
-			currencyDecimal = utils.CONV_EOS
-			feeCurrencyDecimal = utils.CONV_EOS
+			currencyDecimal = 4
 		} else {
-			currencyDecimal = utils.CONV_LVT
-			feeCurrencyDecimal = utils.CONV_LVT
+			currencyDecimal = 8
+		}
+		if strings.EqualFold(bizContent.FeeCurrency, "eos") {
+			feeCurrencyDecimal = 4
+		} else {
+			feeCurrencyDecimal = 8
 		}
 		var tradesArray []TradeInfo
 		fromName, _ := GetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
@@ -795,11 +801,11 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 			ToName:          toName,
 			Amount:          bizContent.Fee,
 			Decimal:         feeCurrencyDecimal,
-			Currency:        currency,
+			Currency:        bizContent.FeeCurrency,
 			CreateTime:      ts,
 			FinishTime:      ts,
 			Status:          constants.TRADE_STATUS_SUCC,
-			Txid:            txid,
+			Txid:            txIdFee,
 		}
 		tradesArray = append(tradesArray, feeTradeInfo)
 
@@ -819,7 +825,7 @@ func TransferCommit(uid, txid int64, currency string) constants.Error {
 			CreateTime: ts,
 			FinishTime: ts,
 			Status:     constants.TRADE_STATUS_SUCC,
-			Txid:       txid,
+			Txid:       txId,
 			FeeTradeNo: feeTradeNo,
 		}
 		tradesArray = append(tradesArray, tradeInfo)

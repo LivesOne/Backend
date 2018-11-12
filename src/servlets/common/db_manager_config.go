@@ -150,7 +150,7 @@ func QueryCurrencyPrice(currency, currency2 string) (string, string, error) {
 	return "", "", nil
 }
 
-func GeTransferQuotaByCurrency(currency string) *TransferQuota {
+func GeTransferQuotaByCurrency(currency, feeCurrency string) *TransferQuota {
 	sql := "select * from dt_transfer_amount where currency = ?"
 	row, err := gDBConfig.QueryRow(sql, currency)
 	if err != nil {
@@ -163,25 +163,21 @@ func GeTransferQuotaByCurrency(currency string) *TransferQuota {
 		UpdateTime:      utils.Str2Int64(row["update_time"]),
 	}
 
-	feeArray := make([]TransferFee, 0)
-	sql = "select * from dt_transfer_fee where currency = ?"
-	rows := gDBConfig.Query(sql, currency)
-	for _, row = range rows {
-		transferFee := TransferFee{
-			Id:          utils.Str2Int64(row["id"]),
-			Currency:    row["currency"],
-			FeeCurrency: row["fee_currency"],
-			FeeType:     utils.Str2Int(row["fee_type"]),
-			FeeFixed:    utils.Str2Float64(row["fee_fixed"]),
-			FeeRate:     utils.Str2Float64(row["fee_rate"]),
-			FeeMin:      utils.Str2Float64(row["fee_min"]),
-			FeeMax:      utils.Str2Float64(row["fee_max"]),
-			Discount:    utils.Str2Float64(row["discount"]),
-			UpdateTime:  utils.Str2Int64(row["update_time"]),
-		}
-		feeArray = append(feeArray, transferFee)
+	sql = "select * from dt_transfer_fee where currency = ? and fee_currency = ?"
+	row, err = gDBConfig.QueryRow(sql, currency, feeCurrency)
+	transferFee := TransferFee{
+		Id:          utils.Str2Int64(row["id"]),
+		Currency:    row["currency"],
+		FeeCurrency: row["fee_currency"],
+		FeeType:     utils.Str2Int(row["fee_type"]),
+		FeeFixed:    utils.Str2Float64(row["fee_fixed"]),
+		FeeRate:     utils.Str2Float64(row["fee_rate"]),
+		FeeMin:      utils.Str2Float64(row["fee_min"]),
+		FeeMax:      utils.Str2Float64(row["fee_max"]),
+		Discount:    utils.Str2Float64(row["discount"]),
+		UpdateTime:  utils.Str2Int64(row["update_time"]),
 	}
-	transferQuota.Fee = feeArray
+	transferQuota.Fee = transferFee
 	return &transferQuota
 }
 
@@ -193,4 +189,51 @@ func GetFeeCurrencyByCurrency(currency string) (string, error) {
 		return "", err
 	}
 	return row["fee_currency"], nil
+}
+
+func ConversionCoinPrice(amount float64, source, target string) float64 {
+	sql := "select average from dt_currency_price where currency = ? and currency2 = ?"
+	row, err := gDBConfig.QueryRow(sql, strings.ToUpper(source), strings.ToUpper(target))
+	if err != nil {
+		logger.Error("get price by currency err, currency:", strings.ToUpper(source), "currency2:", strings.ToUpper(target), "err:", err)
+	}
+	if row != nil && len(row) > 0 {
+		average := utils.Str2Float64(row["average"])
+		return amount * average
+	}
+
+	sql = "select average from dt_currency_price where currency = ? and currency2 = ?"
+	row, err = gDBConfig.QueryRow(sql, strings.ToUpper(target), strings.ToUpper(source))
+	if err != nil {
+		logger.Error("get price by currency err, currency:", strings.ToUpper(target), "currency2:", strings.ToUpper(source), "err:", err)
+	}
+	if row != nil && len(row) > 0 {
+		average := utils.Str2Float64(row["average"])
+		return amount / average
+	}
+
+	average1, average2 := float64(0), float64(0)
+	sql = "select average from dt_currency_price where currency = ? and currency2 = ?"
+	row, err = gDBConfig.QueryRow(sql, strings.ToUpper(source), "USDT")
+	if err != nil {
+		logger.Error("get price by currency err, currency:", strings.ToUpper(source), "currency2: USDT", "err:", err)
+		return float64(-1)
+	}
+	if row != nil && len(row) > 0 {
+		average1 = utils.Str2Float64(row["average"])
+	} else {
+		return float64(-1)
+	}
+	sql = "select average from dt_currency_price where currency = ? and currency2 = ?"
+	row, err = gDBConfig.QueryRow(sql, strings.ToUpper(target), "USDT")
+	if err != nil {
+		logger.Error("get price by currency err, currency:", strings.ToUpper(target), "currency2: USDT", "err:", err)
+		return float64(-1)
+	}
+	if row != nil && len(row) > 0 {
+		average2 = utils.Str2Float64(row["average"])
+	} else {
+		return float64(-1)
+	}
+	return amount * average1 / average2
 }

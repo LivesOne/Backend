@@ -158,7 +158,6 @@
     "Lvt2LvtcSystemAccountUid":181875000,
     "Lvt2LvtcDelaySystemAccountUid":181875000,
     "TransFeeAccountUid":181875000,
-    "TransFeeRateDiscount":0.9,
     "EOSRemarkLengthLimit":64,
     "ReChargeAddress": [
         {"Currency": "ETH", "Address": "0x63dC9762F6f259E2CB106dE70A5bFeD8293c08E3"},

@@ -125,7 +125,6 @@ type Configuration struct {
 	Lvt2LvtcSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
 	TransFeeAccountUid            int64
-	TransFeeRateDiscount          float64
 	EOSRemarkLengthLimit          int
 	ReChargeAddress               []ReChargeAddr
 	ChainHotWalletAddr            string
