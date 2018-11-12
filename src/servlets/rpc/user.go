@@ -4,49 +4,43 @@ import (
 	"errors"
 	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"servlets/constants"
 	"utils/config"
 	"utils/logger"
 )
 
 var (
+	conn *grpc.ClientConn
 	loginClient     microuser.UserLoginServiceClient
 	userCacheClient microuser.UserServiceClient
 	walletClient    microuser.UserWalletServiceClient
 )
 
+func getUserClientConn()*grpc.ClientConn{
+	if conn == nil {
+		conn = getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
+	}
+	return conn
+}
+
 func GetLoginClient() microuser.UserLoginServiceClient {
 	if loginClient == nil {
-		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
-		if conn == nil {
-			logger.Error("get rpc conn UserLoginServiceClient error")
-			return nil
-		}
-		loginClient = microuser.NewUserLoginServiceClient(conn)
+		loginClient = microuser.NewUserLoginServiceClient(getUserClientConn())
 	}
 	return loginClient
 }
 
 func GetUserCacheClient() microuser.UserServiceClient {
 	if userCacheClient == nil {
-		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
-		if conn == nil {
-			logger.Error("get rpc conn UserServiceClient error")
-			return nil
-		}
-		userCacheClient = microuser.NewUserServiceClient(conn)
+		userCacheClient = microuser.NewUserServiceClient(getUserClientConn())
 	}
 	return userCacheClient
 }
 
 func GetWalletClient() microuser.UserWalletServiceClient {
 	if walletClient == nil {
-		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
-		if conn == nil {
-			logger.Error("get rpc conn UserWalletServiceClient error")
-			return nil
-		}
-		walletClient = microuser.NewUserWalletServiceClient(conn)
+		walletClient = microuser.NewUserWalletServiceClient(getUserClientConn())
 	}
 	return walletClient
 }
