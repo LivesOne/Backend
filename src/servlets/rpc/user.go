@@ -19,6 +19,7 @@ func GetLoginClient() microuser.UserLoginServiceClient {
 	if loginClient == nil {
 		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
 		if conn == nil {
+			logger.Error("get rpc conn UserLoginServiceClient error")
 			return nil
 		}
 		loginClient = microuser.NewUserLoginServiceClient(conn)
@@ -30,6 +31,7 @@ func GetUserCacheClient() microuser.UserServiceClient {
 	if userCacheClient == nil {
 		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
 		if conn == nil {
+			logger.Error("get rpc conn UserServiceClient error")
 			return nil
 		}
 		userCacheClient = microuser.NewUserServiceClient(conn)
@@ -41,6 +43,7 @@ func GetWalletClient() microuser.UserWalletServiceClient {
 	if walletClient == nil {
 		conn := getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
 		if conn == nil {
+			logger.Error("get rpc conn UserWalletServiceClient error")
 			return nil
 		}
 		walletClient = microuser.NewUserWalletServiceClient(conn)

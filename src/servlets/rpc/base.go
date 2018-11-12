@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"google.golang.org/grpc"
-	"log"
 	"utils/consul"
 	"utils/logger"
 )
@@ -19,7 +18,7 @@ func getRpcConn(addr, servName string) *grpc.ClientConn {
 		grpc.WithBlock(),
 		grpc.WithInsecure())
 	if err != nil {
-		log.Println("conn grpc server failed, addr: ", addr, "error info: ", err)
+		logger.Error("conn grpc server failed, addr: ", addr, "error info: ", err.Error())
 		return nil
 	}
 	return conn
