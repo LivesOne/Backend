@@ -379,3 +379,7 @@ func Scientific2Str(srcStr string) string {
 	fmt.Sscanf(srcStr, "%e", &new)
 	return strconv.FormatFloat(new,'f',-1,64)
 }
+
+func Float642Str(value float64) string {
+	return strconv.FormatFloat(value,'f',-1,64)
+}

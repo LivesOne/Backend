@@ -590,9 +590,11 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 
 	var feeInt64, realFeeInt64, feeMaxInt64, feeMinInt64 int64
 	valueFloat := utils.Str2Float64(value)
-	feeMaxStr := strconv.FormatFloat(transfee.FeeMax, 'f', -1, 64)
-	feeMinStr := strconv.FormatFloat(transfee.FeeMin, 'f', -1, 64)
-	realFee := valueFloat * transfee.FeeRate * transfee.Discount
+	feeMaxStr := transfee.FeeMax
+	feeMinStr := transfee.FeeMin
+	feeRate := utils.Str2Float64(transfee.FeeRate)
+	discount := utils.Str2Float64(transfee.Discount)
+	realFee := valueFloat * feeRate * discount
 	realFeeStr := strconv.FormatFloat(realFee, 'f', -1, 64)
 	if feeCurrency == constants.TRADE_CURRENCY_EOS {
 		feeInt64 = utils.FloatStrToEOSint(fee)

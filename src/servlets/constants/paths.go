@@ -181,4 +181,10 @@ const (
 	ASSET_COMMON_TRANS_RESULT= "/asset/v1/transfer/result"
 
 	CURRENCY_PRICE_QUERY = "/config/v1/currency/price"
+
+	BATCH_CURRENCY_PRICE_QUERY = "/config/v1/currency/batch_price"
+
+	CONFIG_TRANSFER_FEE = "/config/v1/transfer"
+
+	CONFIG_WITHDRAWAL_FEE = "/config/v1/withdrawal"
 )
