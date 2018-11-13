@@ -1486,6 +1486,15 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		logger.Error("insert eth tx history failed, table:", historyTableName)
 		return constants.RC_PARAM_ERR
 	}
+
+	if (strings.EqualFold(currency, constants.TRADE_CURRENCY_LVT) || strings.EqualFold(currency, CURRENCY_LVTC)) && tradeType == constants.TX_SUB_TYPE_TRANS {
+		//txid 写入数据库
+		_, e := InsertTXID(txId, tx)
+		if e != nil {
+			logger.Error("sql error ", e.Error())
+			return constants.RC_SYSTEM_ERR
+		}
+	}
 	return constants.RC_OK
 }
 

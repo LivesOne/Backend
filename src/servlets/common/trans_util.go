@@ -636,9 +636,9 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	if strings.EqualFold(feeCurrency, CURRENCY_EOS) {
 		feeCurrencyDecimal = utils.CONV_EOS
 		feeDecimail = constants.TRADE_EOS_DECIMAIL
-	//} else if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
-	//	feeDecimail = constants.TRADE_EOS_DECIMAIL
-	//}
+		//} else if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
+		//	feeDecimail = constants.TRADE_EOS_DECIMAIL
+		//}
 	} else {
 		feeCurrencyDecimal = utils.CONV_LVT
 		feeDecimail = constants.TRADE_DECIMAIL
@@ -846,9 +846,11 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 
 func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error) {
 	var dth *DTTXHistory
+
 	switch strings.ToUpper(currency) {
 	case CURRENCY_LVTC:
-		dth, flag := FindAndModifyLVTCPending(txId, uid, constants.TX_STATUS_COMMIT)
+		var flag = false
+		dth, flag = FindAndModifyLVTCPending(txId, uid, constants.TX_STATUS_COMMIT)
 		//未查到数据，返回处理中
 		if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
 			return nil, constants.RC_TRANS_TIMEOUT
@@ -881,7 +883,7 @@ func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error
 			Currency:   currency,
 		}
 	default:
-		logger.Warn("unsupported currency:",currency)
+		logger.Warn("unsupported currency:", currency)
 		return nil, constants.RC_INVALID_CURRENCY
 	}
 	return dth, constants.RC_OK
