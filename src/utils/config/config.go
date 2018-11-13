@@ -271,3 +271,16 @@ func (cfg *Configuration) GetChainCoinsBycoin(coin string) []string {
 	}
 	return coins
 }
+
+func (cfg *Configuration) CheckSupportedCoin(coin string) bool {
+	flag := false
+	for i := 0; i < len(cfg.Chains); i++ {
+		for j := 0; j < len(cfg.Chains[i].Coins); j++ {
+			if strings.EqualFold(cfg.Chains[i].Coins[j], coin) {
+				flag = true
+				break
+			}
+		}
+	}
+	return flag
+}

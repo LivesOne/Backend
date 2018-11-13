@@ -623,6 +623,9 @@ func CheckTransFee(value, fee, currency, feeCurrency string) constants.Error {
 }
 
 func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark string) (string, string, constants.Error) {
+	if !config.GetConfig().CheckSupportedCoin(currency) || !config.GetConfig().CheckSupportedCoin(feeCurrency) {
+		return "", "", constants.RC_INVALID_CURRENCY
+	}
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(currency, CURRENCY_EOS) {
 		currencyDecimal = utils.CONV_EOS
