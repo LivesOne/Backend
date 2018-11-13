@@ -2789,10 +2789,10 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 			case CURRENCY_EOS:
 				historyTableName = "tx_history_eos"
 			}
-			sql := fmt.Sprintf("select sum(value) total_value from %s where uid = ? and currency = ? and create_time >= ?", historyTableName)
+			sql := fmt.Sprintf("select sum(value) total_value from %s where `from` = ? and currency = ? and create_time >= ?", historyTableName)
 			row, err := gDBAsset.QueryRow(sql, uid, currency, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
 			if err != nil {
-				logger.Error("query that day total withdraw amount error, uid:", uid, ",error:", err.Error())
+				logger.Error("query that day total transfer amount error, uid:", uid, ",error:", err.Error())
 			}
 			totalAmount = utils.Str2Int64(row["total_value"])
 		}
