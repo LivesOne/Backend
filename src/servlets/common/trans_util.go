@@ -698,6 +698,9 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 }
 
 func TransferCommit(uid, txId int64, currency string) constants.Error {
+	if !config.GetConfig().CheckSupportedCoin(currency) {
+		return constants.RC_INVALID_CURRENCY
+	}
 	txid_ts := utils.TXIDToTimeStamp13(txId)
 	ts := utils.GetTimestamp13()
 	//暂时写死10秒
@@ -849,12 +852,6 @@ func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error
 		if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
 			return nil, constants.RC_TRANS_TIMEOUT
 		}
-	case CURRENCY_LVT:
-		dth, flag := FindAndModifyPending(txId, uid, constants.TX_STATUS_COMMIT)
-		//未查到数据，返回处理中
-		if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
-			return nil, constants.RC_TRANS_TIMEOUT
-		}
 	case CURRENCY_EOS:
 		fallthrough
 	case CURRENCY_BTC:
@@ -882,6 +879,9 @@ func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error
 			BizContent: tp.BizContent,
 			Currency:   currency,
 		}
+	default:
+		logger.Warn("unsupported currency:",currency)
+		return nil, constants.RC_INVALID_CURRENCY
 	}
 	return dth, constants.RC_OK
 }
