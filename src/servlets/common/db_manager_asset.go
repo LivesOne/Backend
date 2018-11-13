@@ -1419,19 +1419,8 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		return constants.RC_SYSTEM_ERR
 	}
 
-	row := tx.QueryRow("select status from user_asset_lvtc where uid = ?", from)
-	status := -1
-	err = row.Scan(&status)
-	if err != nil {
-		logger.Error("query row error ", err.Error())
-		return constants.RC_SYSTEM_ERR
-	}
-	if status != constants.ASSET_STATUS_DEF {
-		return constants.RC_ACCOUNT_LIMITED
-	}
-
 	sql = fmt.Sprintf("select balance from %s where uid = ?", assetTableName)
-	row = tx.QueryRow(sql, from)
+	row := tx.QueryRow(sql, from)
 	balance := int64(0)
 	if err := row.Scan(&balance); err != nil {
 		logger.Error("get balance err, uid:", from, " coin:", currency, "error:", err)

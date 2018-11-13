@@ -742,7 +742,7 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 		}
 	}
 
-	tradeNo := GenerateTradeNo(constants.TX_SUB_TYPE_TRANS, perPending.Type)
+	tradeNo := perPending.TradeNo
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_TRANSFER_FEE)
 	timestamp := utils.GetTimestamp13()
 
