@@ -637,24 +637,34 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	} else {
 		feeCurrencyDecimal = utils.CONV_LVT
 	}
-	realFee, err := calculationFeeAndCheckQuotaForTransfer(from, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
-	if err.Rc != constants.RC_OK.Rc {
-		return "", "", err
+
+	feeInt := int64(0)
+	if !strings.EqualFold(currency, CURRENCY_LVT) {
+		// lvt 交易员不限制转账额度，不收转账手续费
+		if err := VerifyLVTTrans(from); err != constants.RC_OK {
+			return "", "", err
+		}
+	} else {
+		realFee, err := calculationFeeAndCheckQuotaForTransfer(from, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
+		if err.Rc != constants.RC_OK.Rc {
+			return "", "", err
+		}
+		// LVTC 保留4位精度
+		//if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
+		//	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
+		//		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", utils.Str2Float64(fmt.Sprintf("%.4f", realFee)))
+		//		return "", "", constants.RC_TRANSFER_FEE_ERROR
+		//	}
+		//} else {
+		if utils.Str2Float64(fee) != realFee {
+			logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
+			return "", "", constants.RC_TRANSFER_FEE_ERROR
+		}
+		//}
+
+		feeInt = utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
 	}
 
-	//if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
-	//	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
-	//		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", utils.Str2Float64(fmt.Sprintf("%.4f", realFee)))
-	//		return "", "", constants.RC_TRANSFER_FEE_ERROR
-	//	}
-	//} else {
-	if utils.Str2Float64(fee) != realFee {
-		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
-		return "", "", constants.RC_TRANSFER_FEE_ERROR
-	}
-	//}
-
-	feeInt := utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 	bizContent := TransBizContent{
 		FeeCurrency: feeCurrency,
