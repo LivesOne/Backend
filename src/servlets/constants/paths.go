@@ -97,6 +97,10 @@ const (
 
 	ACCOUNT_CONTACTS_DELETE = "/user/v1/contact/delete"
 
+	ACCOUNT_CONTACTS_FIND = "/user/v1/contact/find"
+
+	ACCOUNT_CONTACTS_ADD = "/user/v1/contact/add"
+
 	//Assets Management APIs
 
 	ASSET_REWARD = "/asset/v1/reward"
