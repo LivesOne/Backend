@@ -88,24 +88,31 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	// 解析出“sha256(密码)”
+
 	privKey, err := config.GetPrivateKey(loginData.Param.Spkv)
 	if (err != nil) || (privKey == nil) {
-		logger.Error("can not get private key")
+		logger.Info("login: get private key by spkv err:", err)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	pwdSha256, err := utils.RsaDecrypt(loginData.Param.PWD, privKey)
-	if err != nil {
-		logger.Info("reset password: decrypt pwd error:", err)
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+	aeskey, err := utils.RsaDecrypt(loginData.Param.Key, privKey)
+	if (err != nil) || (len(aeskey) != constants.AES_totalLen) {
+		logger.Info("login: decrypt aes key error:", err)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
+	}
+	iv := aeskey[:constants.AES_ivLen]
+	key := aesKey[constants.AES_ivLen:]
+	hashPwd, err := utils.AesDecrypt(loginData.Param.PWD, string(key), string(iv))
+	if err != nil {
+		logger.Info("login: invalid password")
+		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
 
 	req := &microuser.LoginUserReq{
 		Account:              loginData.Param.Account,
-		PwdHash:              pwdSha256,
-		Key:                  loginData.Param.Key,
+		PwdHash:              hashPwd,
+		Key:                  aesKey,
 	}
 
 	resp,err := cli.Login(context.Background(), req)
