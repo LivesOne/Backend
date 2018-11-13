@@ -96,8 +96,8 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		WalletAddress:  walletAddr,
 		AvatarUrl:      account.AvatarUrl,
 		ActiveDays:     account.ActiveDays,
-		UpdateTime:     utils.Str2Int64(updTime),
-		RegisterTime:   utils.Str2Int64(regTime),
+		UpdateTime:     utils.GetTs13(utils.Str2Int64(updTime)),
+		RegisterTime:   utils.GetTs13(utils.Str2Int64(regTime)),
 		Level:          account.Level,
 		HashrateDetial: buildHashrateDetial(account.Uid),
 	}
