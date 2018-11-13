@@ -57,7 +57,7 @@ func (handler *currencyPriceHandler) Handle(request *http.Request, writer http.R
 
 	currencyPair := strings.Split(param.Currency, ",")
 	if len(currencyPair) != 2 {
-		logger.Warn("currency must be a pair")
+		logger.Warn("currency must be in pair")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
