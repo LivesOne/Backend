@@ -27,6 +27,8 @@ type profileResponse struct {
 	Level          int64            `json:"level"`
 	UpdateTime     int64            `json:"update_time"`
 	RegisterTime   int64            `json:"register_time"`
+	Language       string           `json:"language"`
+	Region         string           `json:"region"`
 	HashrateDetial []hashrateDetial `json:"hashrate"`
 }
 
@@ -74,12 +76,14 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-
 	wx, _ := rpc.GetUserField(intUid, microuser.UserField_WX)
 	tg, _ := rpc.GetUserField(intUid, microuser.UserField_TG)
 	updTime, _ := rpc.GetUserField(intUid, microuser.UserField_UPDATE_TIME)
 	regTime, _ := rpc.GetUserField(intUid, microuser.UserField_REGISTER_TIME)
 	walletAddr, _ := rpc.GetUserField(intUid, microuser.UserField_WALLET_ADDRESS)
+	ln, _ := rpc.GetUserField(intUid, microuser.UserField_LANGUAGE)
+	region, _ := rpc.GetUserField(intUid, microuser.UserField_REGION)
+
 	//从缓存中获取用户活跃天数信息
 	//提前获取交易等级
 	profile := profileResponse{
@@ -96,9 +100,11 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		WalletAddress:  walletAddr,
 		AvatarUrl:      account.AvatarUrl,
 		ActiveDays:     account.ActiveDays,
+		Level:          account.Level,
 		UpdateTime:     utils.GetTs13(utils.Str2Int64(updTime)),
 		RegisterTime:   utils.GetTs13(utils.Str2Int64(regTime)),
-		Level:          account.Level,
+		Language:       ln,
+		Region:         region,
 		HashrateDetial: buildHashrateDetial(account.Uid),
 	}
 
