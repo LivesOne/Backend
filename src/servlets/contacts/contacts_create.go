@@ -21,6 +21,7 @@ type (
 		ContactId     int64        `json:"contact_id,omitempty"`
 		Email         string       `json:"email,omitempty"`
 		Name          string       `json:"name,omitempty"`
+		Remark        string       `json:"remark,omitempty"`
 		Country       int          `json:"country,omitempty"`
 		Phone         string       `json:"phone,omitempty"`
 		LivesoneUid   string       `json:"livesone_uid,omitempty"`
