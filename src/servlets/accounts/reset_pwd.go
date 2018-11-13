@@ -81,9 +81,9 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			return
 		}
 		req := &microuser.CheckAccountByEmailReq{
-			Email:param.EMail,
+			Email: param.EMail,
 		}
-		resp,err := cli.CheckAccountByEmail(context.Background(),req)
+		resp, err := cli.CheckAccountByEmail(context.Background(), req)
 		//account, err = common.GetAccountByEmail(param.EMail)
 		if err != nil || resp.Result != microuser.ResCode_OK {
 			log.Info("reset password: get account info by email failed:", param.EMail)
@@ -108,12 +108,11 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			return
 		}
 
-
 		req := &microuser.CheckAccountByPhoneReq{
-			Country:              int64(param.Country),
-			Phone:                param.Phone,
+			Country: int64(param.Country),
+			Phone:   param.Phone,
 		}
-		resp,err := cli.CheckAccountByPhone(context.Background(),req)
+		resp, err := cli.CheckAccountByPhone(context.Background(), req)
 		//account, err = common.GetAccountByEmail(param.EMail)
 		if err != nil || resp.Result != microuser.ResCode_OK {
 			log.Info("reset password: get account info by phone failed:", param.Country, param.Phone)
@@ -139,10 +138,10 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 			return
 		}
 		req := &microuser.CheckAccountByPhoneReq{
-			Country:              int64(param.Country),
-			Phone:                param.Phone,
+			Country: int64(param.Country),
+			Phone:   param.Phone,
 		}
-		resp,err := cli.CheckAccountByPhone(context.Background(),req)
+		resp, err := cli.CheckAccountByPhone(context.Background(), req)
 		//account, err = common.GetAccountByEmail(param.EMail)
 		if err != nil || resp.Result != microuser.ResCode_OK {
 			log.Info("reset password: get account info by phone failed:", param.Country, param.Phone)
@@ -178,10 +177,8 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 	// 数据库实际保存的密码格式为“sha256(sha256(密码) + uid)”
 	pwdDb := utils.Sha256(pwdSha256 + utils.Int642Str(uid))
 
-
-
 	// save to db
-	if _,err := rpc.SetUserField(uid,microuser.UserField_LOGIN_PASSWORD,pwdDb); err != nil {
+	if _, err := rpc.SetUserField(uid, microuser.UserField_LOGIN_PASSWORD, pwdDb); err != nil {
 		log.Info("reset password: save login pwd in DB error:", err)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return

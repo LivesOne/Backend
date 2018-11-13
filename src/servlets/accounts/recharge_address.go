@@ -63,8 +63,6 @@ func (handler *reChargeAddrHandler) Handle(
 
 	uid := utils.Str2Int64(uidStr)
 
-
-
 	cli := rpc.GetWalletClient()
 	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -72,11 +70,11 @@ func (handler *reChargeAddrHandler) Handle(
 	}
 
 	req := &microuser.GetRechargeAddressReq{
-		Uid:                  uid,
-		Currency:             currency,
+		Uid:      uid,
+		Currency: currency,
 	}
 
-	resp,err := cli.GetRechargeAddress(context.Background(),req)
+	resp, err := cli.GetRechargeAddress(context.Background(), req)
 
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -87,7 +85,6 @@ func (handler *reChargeAddrHandler) Handle(
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 		return
 	}
-
 
 	respData := new(reChargeAddrRespData)
 	respData.Currency = currency

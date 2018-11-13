@@ -11,13 +11,13 @@ import (
 )
 
 var (
-	conn *grpc.ClientConn
+	conn            *grpc.ClientConn
 	loginClient     microuser.UserLoginServiceClient
 	userCacheClient microuser.UserServiceClient
 	walletClient    microuser.UserWalletServiceClient
 )
 
-func getUserClientConn()*grpc.ClientConn{
+func getUserClientConn() *grpc.ClientConn {
 	if conn == nil {
 		conn = getRpcConn(config.GetConfig().RegistryAddr, config.GetConfig().UserServiceName)
 		if conn != nil {
@@ -125,7 +125,7 @@ func CheckPwd(uid int64, pwdHash string, cType microuser.PwdCheckType) (bool, er
 		if resp.Result != microuser.ResCode_OK {
 			return false, errors.New(resp.Msg)
 		}
-		return true,nil
+		return true, nil
 
 	}
 	return false, errors.New("can not get rpc client")
@@ -148,23 +148,21 @@ func ActiveUser(uid int64) {
 	}
 }
 
-
-func GetTokenInfo(tkHash string)(string,string,string,microuser.ResCode){
+func GetTokenInfo(tkHash string) (string, string, string, microuser.ResCode) {
 	cli := GetLoginClient()
 	if cli != nil {
 		req := &microuser.GetLoginInfoReq{
-			TokenHash:            tkHash,
+			TokenHash: tkHash,
 		}
 		resp, err := cli.GetLoginInfo(context.Background(), req)
 		if err == nil {
-			return resp.Uid,resp.Key,resp.Token,resp.Result
+			return resp.Uid, resp.Key, resp.Token, resp.Result
 		}
 		logger.Error("grpc GetTokenInfo request error: ", err)
 
 	}
-	return "","","",microuser.ResCode_ERR_SYSTEM
+	return "", "", "", microuser.ResCode_ERR_SYSTEM
 }
-
 
 func TokenErr2RcErr(tokenErr microuser.ResCode) constants.Error {
 	switch tokenErr {
@@ -177,11 +175,11 @@ func TokenErr2RcErr(tokenErr microuser.ResCode) constants.Error {
 	}
 }
 
-func UserExists(uid int64) (bool) {
+func UserExists(uid int64) bool {
 	cli := GetUserCacheClient()
 	if cli != nil {
 		req := &microuser.UserIdReq{
-			Uid:   uid,
+			Uid: uid,
 		}
 		resp, err := cli.UserExists(context.Background(), req)
 		if err != nil {

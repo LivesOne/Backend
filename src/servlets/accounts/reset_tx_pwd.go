@@ -101,7 +101,7 @@ func (handler *setTxPwdHandler) Handle(request *http.Request, writer http.Respon
 	//f,e := rpc.SetUserField(uid,microuser.UserField_PAYMENT_PASSWORD,pwdDb)
 
 	// save to db
-	if _,err := rpc.SetUserField(uid,microuser.UserField_PAYMENT_PASSWORD,pwdDb); err != nil {
+	if _, err := rpc.SetUserField(uid, microuser.UserField_PAYMENT_PASSWORD, pwdDb); err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 	}
 

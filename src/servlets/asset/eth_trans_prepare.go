@@ -172,12 +172,12 @@ func (handler *ethTransPrepareHandler) Handle(request *http.Request, writer http
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
-		if f,_ := rpc.CheckPwd(from, pwd,microuser.PwdCheckType_LOGIN_PWD);!f {
+		if f, _ := rpc.CheckPwd(from, pwd, microuser.PwdCheckType_LOGIN_PWD); !f {
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
-		if f,_ := rpc.CheckPwd(from, pwd,microuser.PwdCheckType_PAYMENT_PWD);!f {
+		if f, _ := rpc.CheckPwd(from, pwd, microuser.PwdCheckType_PAYMENT_PWD); !f {
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}

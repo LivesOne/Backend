@@ -35,7 +35,7 @@ type checkAccountParam struct {
 type checkAccountResponse struct {
 	Exists int    `json:"exists"`
 	Uid    string `json:"uid"`
-	Status int64    `json:"status"`
+	Status int64  `json:"status"`
 }
 
 // checkVCodeHandler
@@ -72,13 +72,12 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-
 	switch data.Param.Type {
 	case CHECK_TYPE_UID:
 		req := &microuser.UserIdReq{
 			Uid: utils.Str2Int64(data.Param.Uid),
 		}
-		resp,err := cli.CheckAccountByUid(context.Background(),req)
+		resp, err := cli.CheckAccountByUid(context.Background(), req)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -92,7 +91,7 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 		req := &microuser.CheckAccountByEmailReq{
 			Email: data.Param.EMail,
 		}
-		resp,err := cli.CheckAccountByEmail(context.Background(),req)
+		resp, err := cli.CheckAccountByEmail(context.Background(), req)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -104,10 +103,10 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 		}
 	case CHECK_TYPE_PHONE:
 		req := &microuser.CheckAccountByPhoneReq{
-			Country:int64(data.Param.Country),
-			Phone:data.Param.Phone,
+			Country: int64(data.Param.Country),
+			Phone:   data.Param.Phone,
 		}
-		resp,err := cli.CheckAccountByPhone(context.Background(),req)
+		resp, err := cli.CheckAccountByPhone(context.Background(), req)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return

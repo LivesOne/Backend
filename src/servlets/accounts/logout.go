@@ -68,7 +68,6 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-
 	cli := rpc.GetLoginClient()
 	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -76,10 +75,10 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 	}
 
 	req := &microuser.TokenReq{
-		TokenHash:            header.TokenHash,
+		TokenHash: header.TokenHash,
 	}
 
-	resp,err := cli.Logout(context.Background(), req)
+	resp, err := cli.Logout(context.Background(), req)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return

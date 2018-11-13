@@ -99,7 +99,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 			response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
 			return
 		}
-		_,dbErr := rpc.SetUserField(uid,microuser.UserField_NICKNAME,secret.Nickname)
+		_, dbErr := rpc.SetUserField(uid, microuser.UserField_NICKNAME, secret.Nickname)
 		//dbErr := common.SetNickname(uid, secret.Nickname)
 		if dbErr != nil {
 			if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
@@ -119,7 +119,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 			if !strings.HasPrefix(walletAddress, "0x") {
 				walletAddress = "0x" + walletAddress
 			}
-			_,dbErr := rpc.SetUserField(uid,microuser.UserField_WALLET_ADDRESS,walletAddress)
+			_, dbErr := rpc.SetUserField(uid, microuser.UserField_WALLET_ADDRESS, walletAddress)
 			if dbErr != nil {
 				if db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
 					log.Info("modify user profile: duplicate wallet_address", dbErr)
@@ -134,7 +134,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		}
 	}
 	if len(secret.AvatarUrl) > 0 {
-		_,dbErr := rpc.SetUserField(uid,microuser.UserField_AVATAR_URL,secret.AvatarUrl)
+		_, dbErr := rpc.SetUserField(uid, microuser.UserField_AVATAR_URL, secret.AvatarUrl)
 		if dbErr != nil {
 			log.Info("modify user profile : save avatar_url to db error:", dbErr)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)

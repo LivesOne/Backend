@@ -138,10 +138,10 @@ func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 		switch param.Type {
 		case MESSAGE, CALL:
 			req := &microuser.CheckAccountByPhoneReq{
-				Country:int64(param.Country),
-				Phone : param.Phone,
+				Country: int64(param.Country),
+				Phone:   param.Phone,
 			}
-			resp ,err := cli.CheckAccountByPhone(context.Background(),req)
+			resp, err := cli.CheckAccountByPhone(context.Background(), req)
 			if err != nil {
 				return false, constants.RC_SYSTEM_ERR
 			}
@@ -150,9 +150,9 @@ func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 			}
 		case EMAIL:
 			req := &microuser.CheckAccountByEmailReq{
-				Email:param.EMail,
+				Email: param.EMail,
 			}
-			resp ,err := cli.CheckAccountByEmail(context.Background(),req)
+			resp, err := cli.CheckAccountByEmail(context.Background(), req)
 			if err != nil {
 				return false, constants.RC_SYSTEM_ERR
 			}
@@ -170,10 +170,10 @@ func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 		switch param.Type {
 		case MESSAGE, CALL:
 			req := &microuser.CheckAccountByPhoneReq{
-				Country:int64(param.Country),
-				Phone : param.Phone,
+				Country: int64(param.Country),
+				Phone:   param.Phone,
 			}
-			resp ,err := cli.CheckAccountByPhone(context.Background(),req)
+			resp, err := cli.CheckAccountByPhone(context.Background(), req)
 			if err != nil {
 				return false, constants.RC_SYSTEM_ERR
 			}
@@ -182,9 +182,9 @@ func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 			}
 		case EMAIL:
 			req := &microuser.CheckAccountByEmailReq{
-				Email:param.EMail,
+				Email: param.EMail,
 			}
-			resp ,err := cli.CheckAccountByEmail(context.Background(),req)
+			resp, err := cli.CheckAccountByEmail(context.Background(), req)
 			if err != nil {
 				return false, constants.RC_SYSTEM_ERR
 			}

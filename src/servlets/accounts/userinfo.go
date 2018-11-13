@@ -21,9 +21,9 @@ type userinfoRequest struct {
 }
 
 type userinfoResData struct {
-	Level        int64    `json:"level"`
+	Level        int64  `json:"level"`
 	NickName     string `json:"nick_name"`
-	Country      int64    `json:"country"`
+	Country      int64  `json:"country"`
 	AvatarUrl    string `json:"avatar_url"`
 	Phone        string `json:"phone"`
 	Email        string `json:"email"`
@@ -85,9 +85,8 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
-
-	regTime ,_ := rpc.GetUserField(uid,microuser.UserField_REGISTER_TIME)
-	updTime ,_ := rpc.GetUserField(uid,microuser.UserField_UPDATE_TIME)
+	regTime, _ := rpc.GetUserField(uid, microuser.UserField_REGISTER_TIME)
+	updTime, _ := rpc.GetUserField(uid, microuser.UserField_UPDATE_TIME)
 	response.Data = userinfoResData{
 		RegisterTime: utils.GetTs13(utils.Str2Int64(regTime)),
 		Level:        acc.Level,

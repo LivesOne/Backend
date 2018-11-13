@@ -38,7 +38,7 @@ type checkWithVcodeParam struct {
 type checkWithVcodeResponse struct {
 	Exists int    `json:"exists"`
 	Uid    string `json:"uid"`
-	Status int64    `json:"status"`
+	Status int64  `json:"status"`
 }
 
 type checkWithVcodeHandler struct {
@@ -86,7 +86,7 @@ func (handler *checkWithVcodeHandler) Handle(request *http.Request, writer http.
 			req := &microuser.CheckAccountByEmailReq{
 				Email: data.Param.EMail,
 			}
-			resp,err := cli.CheckAccountByEmail(context.Background(),req)
+			resp, err := cli.CheckAccountByEmail(context.Background(), req)
 			if err != nil {
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 				return
@@ -98,10 +98,10 @@ func (handler *checkWithVcodeHandler) Handle(request *http.Request, writer http.
 			}
 		case CHECK_TYPE_PHONE:
 			req := &microuser.CheckAccountByPhoneReq{
-				Country:int64(data.Param.Country),
-				Phone:data.Param.Phone,
+				Country: int64(data.Param.Country),
+				Phone:   data.Param.Phone,
 			}
-			resp,err := cli.CheckAccountByPhone(context.Background(),req)
+			resp, err := cli.CheckAccountByPhone(context.Background(), req)
 			if err != nil {
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 				return

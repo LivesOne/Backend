@@ -57,17 +57,16 @@ func (handler *bindWalletAddrHandler) Handle(
 	uid := utils.Str2Int64(uidStr)
 	addr := strings.ToLower(requestData.Param.Address)
 
-
 	cli := rpc.GetWalletClient()
 	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 	req := &microuser.WalletBindReq{
-		Uid:                  uid,
-		Address:              addr,
+		Uid:     uid,
+		Address: addr,
 	}
-	resp,err := cli.BindWallet(context.Background(),req)
+	resp, err := cli.BindWallet(context.Background(), req)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return

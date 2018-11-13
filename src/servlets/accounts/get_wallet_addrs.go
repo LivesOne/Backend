@@ -49,7 +49,6 @@ func (handler *walletAddrHandler) Handle(
 
 	uid := utils.Str2Int64(uidStr)
 
-
 	cli := rpc.GetWalletClient()
 	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -57,9 +56,9 @@ func (handler *walletAddrHandler) Handle(
 	}
 
 	req := &microuser.UserIdReq{
-		Uid :uid,
+		Uid: uid,
 	}
-	resp,err := cli.QueryWallet(context.Background(),req)
+	resp, err := cli.QueryWallet(context.Background(), req)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
@@ -79,7 +78,6 @@ func (handler *walletAddrHandler) Handle(
 			response.Data = walletList
 		}
 	}
-
 
 	// send response
 	response.SetResponseBase(constants.RC_OK)

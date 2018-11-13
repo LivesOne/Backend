@@ -36,10 +36,10 @@ type responseLoginSPK struct {
 }
 
 type responseLogin struct {
-	UID    string            `json:"uid"`
-	Token  string            `json:"token,omitempty"`
-	Expire int64             `json:"expire"`
-	SPK    *responseLoginSPK `json:"spk"`
+	UID    string `json:"uid"`
+	Token  string `json:"token,omitempty"`
+	Expire int64  `json:"expire"`
+	//SPK    *responseLoginSPK `json:"spk"`
 }
 
 type limitedRes struct {
@@ -110,12 +110,12 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 
 	req := &microuser.LoginUserReq{
-		Account:              loginData.Param.Account,
-		PwdHash:              hashPwd,
-		Key:                  aesKey,
+		Account: loginData.Param.Account,
+		PwdHash: hashPwd,
+		Key:     aesKey,
 	}
 
-	resp,err := cli.Login(context.Background(), req)
+	resp, err := cli.Login(context.Background(), req)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
@@ -137,11 +137,16 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 			return
 		}
 	}
-
+	newtoken, err := utils.AesEncrypt(resp.Token, string(key), string(iv))
+	if err != nil {
+		logger.Info("login: aes encrypt token error", err)
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
 	rpc.ActiveUser(utils.Str2Int64(resp.Uid))
 	response.Data = &responseLogin{
-		UID:   resp.Uid,
-		Token:  resp.Token,
+		UID:    resp.Uid,
+		Token:  newtoken,
 		Expire: resp.Expire,
 	}
 }
@@ -167,7 +172,6 @@ func (handler *loginHandler) checkRequestParams(header *common.HeaderParams, log
 		logger.Info("login: account param missed")
 		return false
 	}
-
 
 	if (len(loginData.Param.PWD) < 1) || (len(loginData.Param.Key) < 1) {
 		logger.Info("login: no pwd or key info")
@@ -198,4 +202,3 @@ func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, 
 
 	return string(aeskey), nil
 }
-

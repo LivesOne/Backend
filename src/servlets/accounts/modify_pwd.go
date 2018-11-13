@@ -112,10 +112,10 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 			return
 		}
 
-		f,e := rpc.CheckPwd(uid,secret.Pwd,microuser.PwdCheckType_LOGIN_PWD)
+		f, e := rpc.CheckPwd(uid, secret.Pwd, microuser.PwdCheckType_LOGIN_PWD)
 
 		if e != nil {
-			logger.Info("rpc invoke error",e.Error())
+			logger.Info("rpc invoke error", e.Error())
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
@@ -126,24 +126,23 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 			return
 		}
 
-		if f,_ := rpc.SetUserField(uid,microuser.UserField_LOGIN_PASSWORD,newPwdDb); !f {
+		if f, _ := rpc.SetUserField(uid, microuser.UserField_LOGIN_PASSWORD, newPwdDb); !f {
 			logger.Info("modify pwd: save new login pwd to DB error")
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}
 
-
 	} else if modifyType == PAYMENT_PASSWORD {
-		aymentPassword,_ := rpc.GetUserField(uid,microuser.UserField_PAYMENT_PASSWORD)
-		if secret.Pwd == "" &&  aymentPassword != "" {
+		aymentPassword, _ := rpc.GetUserField(uid, microuser.UserField_PAYMENT_PASSWORD)
+		if secret.Pwd == "" && aymentPassword != "" {
 			// first time of set payment password
 			// 检查交易密码是否被设置过
 			logger.Info("modify pwd: you have set payment pwd before")
 			response.SetResponseBase(constants.RC_PARAM_ERR)
 			return
 		} else {
-			f,e := rpc.CheckPwd(uid,secret.Pwd,microuser.PwdCheckType_PAYMENT_PWD)
+			f, e := rpc.CheckPwd(uid, secret.Pwd, microuser.PwdCheckType_PAYMENT_PWD)
 			if e != nil {
-				logger.Info("rpc invoke error",e.Error())
+				logger.Info("rpc invoke error", e.Error())
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 				return
 			}
@@ -154,7 +153,7 @@ func (handler *modifyPwdHandler) Handle(request *http.Request, writer http.Respo
 			}
 		}
 		// save to db
-		if f,_ := rpc.SetUserField(uid,microuser.UserField_PAYMENT_PASSWORD,newPwdDb); !f {
+		if f, _ := rpc.SetUserField(uid, microuser.UserField_PAYMENT_PASSWORD, newPwdDb); !f {
 			logger.Info("modify pwd: save new login pwd to DB error")
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		}

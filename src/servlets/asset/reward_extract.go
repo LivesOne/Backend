@@ -81,7 +81,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 
 	uid := utils.Str2Int64(uidString)
 
-	score,_ := rpc.GetUserField(uid,microuser.UserField_CREDIT_SCORE)
+	score, _ := rpc.GetUserField(uid, microuser.UserField_CREDIT_SCORE)
 	if utils.Str2Int(score) < common.DEF_SCORE {
 		log.Info("asset reward extract: permission denied")
 		response.SetResponseBase(constants.RC_PERMISSION_DENIED)
@@ -101,9 +101,6 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
-
-
-
 	//判断有合法参数才进行微信二次校验
 	if len(requestData.Param.Secret) > 0 {
 		// 解码 secret 参数
@@ -116,19 +113,19 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 		}
 
 		// 微信绑定验证，未绑定返回验提取失败
-		wx,_ := rpc.GetUserField(uid,microuser.UserField_WX)
+		wx, _ := rpc.GetUserField(uid, microuser.UserField_WX)
 		if len(wx) == 0 {
 			log.Error("asset reward extract: user is not bind wx")
 			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
 			return
 		}
-		wxIds := strings.Split(wx,",")
+		wxIds := strings.Split(wx, ",")
 		if len(wxIds) != 2 {
 			log.Error("asset reward extract: user is not bind wx")
 			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
 			return
 		}
-		openId, unionId:= wxIds[0],wxIds[1]
+		openId, unionId := wxIds[0], wxIds[1]
 		if len(openId) == 0 || len(unionId) == 0 {
 			log.Error("asset reward extract: user is not bind wx")
 			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)

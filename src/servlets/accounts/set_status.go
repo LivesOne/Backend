@@ -48,8 +48,7 @@ func (handler *setStatusHandler) Handle(request *http.Request, writer http.Respo
 
 	uidInt64 := utils.Str2Int64(data.Param.Uid)
 
-
-	_,err := rpc.SetUserField(uidInt64,microuser.UserField_STATUS,utils.Int2Str(data.Param.Status))
+	_, err := rpc.SetUserField(uidInt64, microuser.UserField_STATUS, utils.Int2Str(data.Param.Status))
 	if err != nil {
 		logger.Error("set status error ", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)

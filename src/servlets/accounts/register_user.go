@@ -70,8 +70,6 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	// fmt.Println("registerUserHandler) Handle", msg)
 	// hashPwd := utils.RsaDecrypt(handler.registerData.Param.PWD, config.GetConfig().PrivKey)
 
-
-
 	cli := rpc.GetUserCacheClient()
 	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -79,11 +77,11 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	req := &microuser.RegUserInfo{
-		Pwd:                  hashedPWD,
-		Country:              int32(data.Param.Country),
-		Phone:                data.Param.Phone,
-		Email:                data.Param.EMail,
-		Type:                 int32(data.Param.Type),
+		Pwd:     hashedPWD,
+		Country: int32(data.Param.Country),
+		Phone:   data.Param.Phone,
+		Email:   data.Param.EMail,
+		Type:    int32(data.Param.Type),
 	}
 	resData := new(responseRegister)
 	switch data.Param.Type {
@@ -96,7 +94,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 				return
 			}
 		}
-		resp,err := cli.RegisterUser(context.Background(),req)
+		resp, err := cli.RegisterUser(context.Background(), req)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -113,7 +111,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
-		resp,err := cli.RegisterUser(context.Background(),req)
+		resp, err := cli.RegisterUser(context.Background(), req)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -130,7 +128,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			response.SetResponseBase(constants.RC_INVALID_VCODE)
 			return
 		}
-		resp,err := cli.RegisterUser(context.Background(),req)
+		resp, err := cli.RegisterUser(context.Background(), req)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -142,7 +140,6 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		resData.UID = utils.Int642Str(resp.Uid)
 		resData.Regtime = resp.RegTime
 	}
-
 
 	response.Data = resData
 }
@@ -189,7 +186,6 @@ func getUid() (string, int64) {
 	uid_num, _ = strconv.ParseInt(uid, 10, 64)
 	return uid, uid_num
 }
-
 
 // recoverPwd recovery the upload PWD to hash form
 // @param: pwdUpload  original upload pwd in http request

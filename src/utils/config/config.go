@@ -60,7 +60,6 @@ type WXAuth struct {
 	Secret string
 }
 
-
 // Configuration holds all config data
 type Configuration struct {
 	ServerAddr string //"[ip]:port"

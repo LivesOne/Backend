@@ -69,7 +69,6 @@ func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-
 	cli := rpc.GetUserCacheClient()
 	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -77,13 +76,13 @@ func (handler *registerUpVcodeHandler) Handle(request *http.Request, writer http
 	}
 
 	req := &microuser.RegUserInfo{
-		Pwd:                  hashedPWD,
-		Country:              int32(data.Param.Country),
-		Phone:                data.Param.Phone,
-		Type:                 int32(constants.LOGIN_TYPE_PHONE),
+		Pwd:     hashedPWD,
+		Country: int32(data.Param.Country),
+		Phone:   data.Param.Phone,
+		Type:    int32(constants.LOGIN_TYPE_PHONE),
 	}
 
-	resp,err := cli.RegisterUser(context.Background(),req)
+	resp, err := cli.RegisterUser(context.Background(), req)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return

@@ -23,8 +23,6 @@ func DecryptSecret(secret string, key string, iv string, instance interface{}) c
 	return constants.RC_OK
 }
 
-
-
 // 生成 request 所需的 signature
 func GenerateSig(hash string) (string, constants.Error) {
 	_, key, _, err := rpc.GetTokenInfo(hash)

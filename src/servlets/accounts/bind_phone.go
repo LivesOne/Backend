@@ -69,7 +69,6 @@ func (handler *bindPhoneHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-
 	if !utils.SignValid(aesKey, header.Signature, header.Timestamp) {
 		response.SetResponseBase(constants.RC_INVALID_SIGN)
 		return
