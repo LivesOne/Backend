@@ -88,10 +88,23 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
+	// 解析出“sha256(密码)”
+	privKey, err := config.GetPrivateKey(loginData.Param.Spkv)
+	if (err != nil) || (privKey == nil) {
+		logger.Error("can not get private key")
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	pwdSha256, err := utils.RsaDecrypt(loginData.Param.PWD, privKey)
+	if err != nil {
+		logger.Info("reset password: decrypt pwd error:", err)
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
 
 	req := &microuser.LoginUserReq{
 		Account:              loginData.Param.Account,
-		PwdHash:              loginData.Param.PWD,
+		PwdHash:              pwdSha256,
 		Key:                  loginData.Param.Key,
 	}
 
