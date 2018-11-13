@@ -637,34 +637,23 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	} else {
 		feeCurrencyDecimal = utils.CONV_LVT
 	}
-
-	feeInt := int64(0)
-	if !strings.EqualFold(currency, CURRENCY_LVT) {
-		// lvt 交易员不限制转账额度，不收转账手续费
-		if err := VerifyLVTTrans(from); err != constants.RC_OK {
-			return "", "", err
-		}
-	} else {
-		realFee, err := calculationFeeAndCheckQuotaForTransfer(from, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
-		if err.Rc != constants.RC_OK.Rc {
-			return "", "", err
-		}
-		// LVTC 保留4位精度
-		//if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
-		//	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
-		//		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", utils.Str2Float64(fmt.Sprintf("%.4f", realFee)))
-		//		return "", "", constants.RC_TRANSFER_FEE_ERROR
-		//	}
-		//} else {
-		if utils.Str2Float64(fee) != realFee {
-			logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
-			return "", "", constants.RC_TRANSFER_FEE_ERROR
-		}
-		//}
-
-		feeInt = utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
+	realFee, err := calculationFeeAndCheckQuotaForTransfer(from, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
+	if err.Rc != constants.RC_OK.Rc {
+		return "", "", err
 	}
 
+	//if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
+	//	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
+	//		return "", "", constants.RC_TRANSFER_FEE_ERROR
+	//	}
+	//} else {
+	if utils.Str2Float64(fee) != realFee {
+		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
+		return "", "", constants.RC_TRANSFER_FEE_ERROR
+	}
+	//}
+
+	feeInt := utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 	bizContent := TransBizContent{
 		FeeCurrency: feeCurrency,
@@ -679,7 +668,7 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 		return "", "", constants.RC_SYSTEM_ERR
 	}
 
-	if strings.EqualFold(currency, constants.TRADE_CURRENCY_LVT) || strings.EqualFold(currency, constants.TRADE_CURRENCY_LVTC) {
+	if strings.EqualFold(currency, constants.TRADE_CURRENCY_LVTC) {
 		txh := DTTXHistory{
 			Id:         txid,
 			TradeNo:    tradeNo,
@@ -692,15 +681,9 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 			Code:       constants.TX_CODE_SUCC,
 			BizContent: utils.ToJSON(bizContent),
 			Remark:     remark,
-			Currency:   CURRENCY_LVT,
+			Currency:   currency,
 		}
-		var err error
-		if strings.EqualFold(currency, constants.TRADE_CURRENCY_LVT) {
-			err = InsertPending(&txh)
-		} else {
-			err = InsertLVTCPending(&txh)
-		}
-
+		err := InsertLVTCPending(&txh)
 		if err != nil {
 			logger.Error("insert mongo db:dt_pending error ", err.Error())
 			return "", "", constants.RC_SYSTEM_ERR
