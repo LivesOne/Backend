@@ -783,15 +783,15 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 
 	go func() {
 		var currencyDecimal, feeCurrencyDecimal int
-		if strings.EqualFold(currency, "eos") {
-			currencyDecimal = 4
+		if strings.EqualFold(currency, CURRENCY_EOS) {
+			currencyDecimal = constants.TRADE_EOS_DECIMAIL
 		} else {
-			currencyDecimal = 8
+			currencyDecimal = constants.TRADE_DECIMAIL
 		}
-		if strings.EqualFold(bizContent.FeeCurrency, "eos") {
-			feeCurrencyDecimal = 4
+		if strings.EqualFold(bizContent.FeeCurrency, CURRENCY_EOS) {
+			feeCurrencyDecimal = constants.TRADE_EOS_DECIMAIL
 		} else {
-			feeCurrencyDecimal = 8
+			feeCurrencyDecimal = constants.TRADE_DECIMAIL
 		}
 		var tradesArray []TradeInfo
 		fromName, _ := GetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)

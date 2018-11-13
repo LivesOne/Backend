@@ -199,7 +199,9 @@ func ConversionCoinPrice(amount float64, source, target string) float64 {
 	}
 	if row != nil && len(row) > 0 {
 		average := utils.Str2Float64(row["average"])
-		return amount * average
+		conversionAmount := amount * average
+		logger.Info("conversion coin price, source coin:", source, "target coin:", target, "amount:", amount, "conversion amount:", conversionAmount)
+		return conversionAmount
 	}
 
 	sql = "select average from dt_currency_price where currency = ? and currency2 = ?"
@@ -209,7 +211,9 @@ func ConversionCoinPrice(amount float64, source, target string) float64 {
 	}
 	if row != nil && len(row) > 0 {
 		average := utils.Str2Float64(row["average"])
-		return amount / average
+		conversionAmount := amount / average
+		logger.Info("conversion coin price, source coin:", source, "target coin:", target, "amount:", amount, "conversion amount:", conversionAmount)
+		return conversionAmount
 	}
 
 	average1, average2 := float64(0), float64(0)
@@ -235,5 +239,7 @@ func ConversionCoinPrice(amount float64, source, target string) float64 {
 	} else {
 		return float64(-1)
 	}
-	return amount * average1 / average2
+	conversionAmount := amount * average1 / average2
+	logger.Info("conversion coin price, source coin:", source, "Intermediate currency: USDT", "target coin:", target, "amount:", amount, "conversion amount:", conversionAmount)
+	return conversionAmount
 }
