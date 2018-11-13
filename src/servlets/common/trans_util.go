@@ -644,7 +644,6 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 
 	//if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
 	//	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
-	//		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", utils.Str2Float64(fmt.Sprintf("%.4f", realFee)))
 	//		return "", "", constants.RC_TRANSFER_FEE_ERROR
 	//	}
 	//} else {
@@ -669,7 +668,7 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 		return "", "", constants.RC_SYSTEM_ERR
 	}
 
-	if strings.EqualFold(currency, constants.TRADE_CURRENCY_LVT) || strings.EqualFold(currency, constants.TRADE_CURRENCY_LVTC) {
+	if strings.EqualFold(currency, constants.TRADE_CURRENCY_LVTC) {
 		txh := DTTXHistory{
 			Id:         txid,
 			TradeNo:    tradeNo,
@@ -682,15 +681,9 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 			Code:       constants.TX_CODE_SUCC,
 			BizContent: utils.ToJSON(bizContent),
 			Remark:     remark,
-			Currency:   CURRENCY_LVT,
+			Currency:   currency,
 		}
-		var err error
-		if strings.EqualFold(currency, constants.TRADE_CURRENCY_LVT) {
-			err = InsertPending(&txh)
-		} else {
-			err = InsertLVTCPending(&txh)
-		}
-
+		err := InsertLVTCPending(&txh)
 		if err != nil {
 			logger.Error("insert mongo db:dt_pending error ", err.Error())
 			return "", "", constants.RC_SYSTEM_ERR
@@ -705,6 +698,9 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 }
 
 func TransferCommit(uid, txId int64, currency string) constants.Error {
+	if !config.GetConfig().CheckSupportedCoin(currency) {
+		return constants.RC_INVALID_CURRENCY
+	}
 	txid_ts := utils.TXIDToTimeStamp13(txId)
 	ts := utils.GetTimestamp13()
 	//暂时写死10秒
@@ -787,15 +783,15 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 
 	go func() {
 		var currencyDecimal, feeCurrencyDecimal int
-		if strings.EqualFold(currency, "eos") {
-			currencyDecimal = 4
+		if strings.EqualFold(currency, CURRENCY_EOS) {
+			currencyDecimal = constants.TRADE_EOS_DECIMAIL
 		} else {
-			currencyDecimal = 8
+			currencyDecimal = constants.TRADE_DECIMAIL
 		}
-		if strings.EqualFold(bizContent.FeeCurrency, "eos") {
-			feeCurrencyDecimal = 4
+		if strings.EqualFold(bizContent.FeeCurrency, CURRENCY_EOS) {
+			feeCurrencyDecimal = constants.TRADE_EOS_DECIMAIL
 		} else {
-			feeCurrencyDecimal = 8
+			feeCurrencyDecimal = constants.TRADE_DECIMAIL
 		}
 		var tradesArray []TradeInfo
 		fromName, _ := GetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
@@ -856,12 +852,6 @@ func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error
 		if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
 			return nil, constants.RC_TRANS_TIMEOUT
 		}
-	case CURRENCY_LVT:
-		dth, flag := FindAndModifyPending(txId, uid, constants.TX_STATUS_COMMIT)
-		//未查到数据，返回处理中
-		if !flag || dth.Status != constants.TX_STATUS_DEFAULT {
-			return nil, constants.RC_TRANS_TIMEOUT
-		}
 	case CURRENCY_EOS:
 		fallthrough
 	case CURRENCY_BTC:
@@ -889,6 +879,9 @@ func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error
 			BizContent: tp.BizContent,
 			Currency:   currency,
 		}
+	default:
+		logger.Warn("unsupported currency:",currency)
+		return nil, constants.RC_INVALID_CURRENCY
 	}
 	return dth, constants.RC_OK
 }
