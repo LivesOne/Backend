@@ -706,6 +706,7 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 	//暂时写死10秒
 	if ts-txid_ts > TRANS_TIMEOUT {
 		//删除pending
+		logger.Warn("transfer timeout, transfer time:", txid_ts, "current time", ts)
 		DeletePendingByInfo(&DTTXHistory{Id: txId,})
 		return constants.RC_TRANS_TIMEOUT
 	}
