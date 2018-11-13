@@ -2,6 +2,7 @@ package common
 
 import (
 	"database/sql"
+	"fmt"
 	"servlets/constants"
 	"strconv"
 	"strings"
@@ -626,7 +627,7 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	if !config.GetConfig().CheckSupportedCoin(currency) || !config.GetConfig().CheckSupportedCoin(feeCurrency) {
 		return "", "", constants.RC_INVALID_CURRENCY
 	}
-	var currencyDecimal, feeCurrencyDecimal int
+	var currencyDecimal, feeCurrencyDecimal, feeDecimail int
 	if strings.EqualFold(currency, CURRENCY_EOS) {
 		currencyDecimal = utils.CONV_EOS
 	} else {
@@ -634,24 +635,23 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	}
 	if strings.EqualFold(feeCurrency, CURRENCY_EOS) {
 		feeCurrencyDecimal = utils.CONV_EOS
+		feeDecimail = constants.TRADE_EOS_DECIMAIL
+	//} else if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
+	//	feeDecimail = constants.TRADE_EOS_DECIMAIL
+	//}
 	} else {
 		feeCurrencyDecimal = utils.CONV_LVT
+		feeDecimail = constants.TRADE_EOS_DECIMAIL
 	}
 	realFee, err := calculationFeeAndCheckQuotaForTransfer(from, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
 	if err.Rc != constants.RC_OK.Rc {
 		return "", "", err
 	}
-
-	//if strings.EqualFold(feeCurrency, CURRENCY_LVTC) {
-	//	if utils.Str2Float64(fee) != utils.Str2Float64(fmt.Sprintf("%.4f", realFee)) {
-	//		return "", "", constants.RC_TRANSFER_FEE_ERROR
-	//	}
-	//} else {
+	realFee = utils.Str2Float64(fmt.Sprintf("%."+utils.Int2Str(feeDecimail)+"f", realFee))
 	if utils.Str2Float64(fee) != realFee {
 		logger.Info("currency", currency, "feeCurrency", feeCurrency, "fee", utils.Str2Float64(fee), "realFee", realFee)
 		return "", "", constants.RC_TRANSFER_FEE_ERROR
 	}
-	//}
 
 	feeInt := utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
