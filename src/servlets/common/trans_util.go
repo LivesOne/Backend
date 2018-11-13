@@ -641,7 +641,7 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	//}
 	} else {
 		feeCurrencyDecimal = utils.CONV_LVT
-		feeDecimail = constants.TRADE_EOS_DECIMAIL
+		feeDecimail = constants.TRADE_DECIMAIL
 	}
 	realFee, err := calculationFeeAndCheckQuotaForTransfer(from, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
 	if err.Rc != constants.RC_OK.Rc {
