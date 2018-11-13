@@ -11,24 +11,28 @@ import (
 )
 
 type profileResponse struct {
+	Uid            string           `json:"uid,omitempty"`
 	Nickname       string           `json:"nickname,omitempty"`
-	Email          string           `json:"email"`
-	Country        int64            `json:"country"`
-	Phone          string           `json:"phone"`
-	HavePayPwd     bool             `json:"have_pay_pwd"`
-	TransLevel     int              `json:"trans_level"`
-	BindWx         bool             `json:"bind_wx"`
-	CreditScore    int64            `json:"credit_score"`
-	BindTg         bool             `json:"bind_tg"`
-	WalletAddress  string           `json:"wallet_address"`
-	AvatarUrl      string           `json:"avatar_url"`
-	ActiveDays     int64            `json:"active_days"`
-	HashrateDetial []hashrateDetial `json:"hashrate"`
+	Email          string           `json:"email,omitempty"`
+	Country        int64            `json:"country,omitempty"`
+	Phone          string           `json:"phone,omitempty"`
+	HavePayPwd     bool             `json:"have_pay_pwd,omitempty"`
+	TransLevel     int              `json:"trans_level,omitempty"`
+	BindWx         bool             `json:"bind_wx,omitempty"`
+	CreditScore    int64            `json:"credit_score,omitempty"`
+	BindTg         bool             `json:"bind_tg,omitempty"`
+	WalletAddress  string           `json:"wallet_address,omitempty"`
+	AvatarUrl      string           `json:"avatar_url,omitempty"`
+	ActiveDays     int64            `json:"active_days,omitempty"`
+	Level          int64            `json:"level,omitempty"`
+	UpdateTime     int64            `json:"update_time,omitempty"`
+	RegisterTime   int64            `json:"register_time,omitempty"`
+	HashrateDetial []hashrateDetial `json:"hashrate,omitempty"`
 }
 
 type hashrateDetial struct {
-	Type  int `json:"type"`
-	Value int `json:"value"`
+	Type  int `json:"type,omitempty"`
+	Value int `json:"value,omitempty"`
 }
 
 // getProfileHandler
@@ -70,14 +74,18 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
+
 	wx, _ := rpc.GetUserField(intUid, microuser.UserField_WX)
 	tg, _ := rpc.GetUserField(intUid, microuser.UserField_TG)
-
+	updTime, _ := rpc.GetUserField(intUid, microuser.UserField_UPDATE_TIME)
+	regTime, _ := rpc.GetUserField(intUid, microuser.UserField_REGISTER_TIME)
+	walletAddr, _ := rpc.GetUserField(intUid, microuser.UserField_WALLET_ADDRESS)
 	//从缓存中获取用户活跃天数信息
 	//提前获取交易等级
 	profile := profileResponse{
+		Uid:            uid,
 		Nickname:       account.Nickname,
-		Email:          account.Nickname,
+		Email:          account.Email,
 		Country:        account.Country,
 		Phone:          account.Phone,
 		HavePayPwd:     len(account.PaymentPassword) > 0,
@@ -85,9 +93,12 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		BindWx:         len(wx) > 1,
 		CreditScore:    account.CreditScore,
 		BindTg:         len(tg) > 0,
-		WalletAddress:  "",
+		WalletAddress:  walletAddr,
 		AvatarUrl:      account.AvatarUrl,
 		ActiveDays:     account.ActiveDays,
+		UpdateTime:     utils.Str2Int64(updTime),
+		RegisterTime:   utils.Str2Int64(regTime),
+		Level:          account.Level,
 		HashrateDetial: buildHashrateDetial(account.Uid),
 	}
 
