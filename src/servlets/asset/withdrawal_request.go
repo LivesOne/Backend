@@ -3,6 +3,7 @@ package asset
 import (
 	"database/sql"
 	"net/http"
+	"net/url"
 	"regexp"
 	"servlets/common"
 	"servlets/constants"
@@ -274,13 +275,14 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 }
 
 func validateEosAccount(account string) constants.Error {
-	url := config.GetConfig().ChainApiAddress
-	if strings.HasSuffix(url, "/") {
-		url += "v2/eos/account/" + account
+	urlStr := config.GetConfig().ChainApiAddress
+	if strings.HasSuffix(urlStr, "/") {
+		urlStr += "v2/eos/account/" + url.PathEscape(account)
 	} else {
-		url += "/v2/eos/account/" + account
+		urlStr += "/v2/eos/account/" + url.PathEscape(account)
 	}
-	response, err := lvthttp.Get(url, nil)
+	logger.Info("check account url:", urlStr)
+	response, err := lvthttp.Get(urlStr, nil)
 	if err != nil {
 		logger.Error("send transcation to chain error ", err.Error())
 		return constants.RC_SYSTEM_ERR

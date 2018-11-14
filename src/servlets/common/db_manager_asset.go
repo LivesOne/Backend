@@ -2757,6 +2757,46 @@ func QueryHashRateDetailByUid(uid int64) []map[string]string {
 	return rows
 }
 
+func checkAssetBalanceIsSufficient(uid, amount, fee int64, currency, feeCurrency string) bool {
+	assetTableName := ""
+	switch strings.ToUpper(currency) {
+	case CURRENCY_BTC:
+		assetTableName = "user_asset_btc"
+	case CURRENCY_ETH:
+		assetTableName = "user_asset_eth"
+	case CURRENCY_EOS:
+		assetTableName = "user_asset_eos"
+	case CURRENCY_LVTC:
+		assetTableName = "user_asset_lvtc"
+	}
+	sql := fmt.Sprintf("select balance, locked, income from %s where uid = ?", assetTableName)
+	row, err := gDBAsset.QueryRow(sql, uid)
+	if err != nil {
+		logger.Error("query asset error, uid:", uid, "error:", err)
+	}
+	if strings.EqualFold(currency, feeCurrency) {
+		return utils.Str2Int64(row["balance"]) - utils.Str2Int64(row["locked"]) - utils.Str2Int64(row["income"]) > (amount + fee)
+	} else {
+		switch strings.ToUpper(feeCurrency) {
+		case CURRENCY_BTC:
+			assetTableName = "user_asset_btc"
+		case CURRENCY_ETH:
+			assetTableName = "user_asset_eth"
+		case CURRENCY_EOS:
+			assetTableName = "user_asset_eos"
+		case CURRENCY_LVTC:
+			assetTableName = "user_asset_lvtc"
+		}
+		sql = fmt.Sprintf("select balance, locked, income from %s where uid = ?", assetTableName)
+		rowFee, err := gDBAsset.QueryRow(sql, uid)
+		if err != nil {
+			logger.Error("query asset error, uid:", uid, "error:", err)
+		}
+		return (utils.Str2Int64(row["balance"]) - utils.Str2Int64(row["locked"]) - utils.Str2Int64(row["income"]) > amount) &&
+			(utils.Str2Int64(rowFee["balance"]) - utils.Str2Int64(rowFee["locked"]) - utils.Str2Int64(rowFee["income"]) > fee)
+	}
+}
+
 func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency, feeCurrency string, currencyDecimal int) (float64, constants.Error) {
 	if amount <= 0 {
 		return float64(0), constants.RC_PARAM_ERR
