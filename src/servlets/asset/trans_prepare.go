@@ -234,7 +234,7 @@ func validateValue(value string) bool {
 	if utils.Str2Float64(value) > 0 {
 		index := strings.Index(value, ".")
 		last := value[index+1:]
-		if len(last) <= 8 {
+		if index < 0 || len(last) <= 8 {
 			return true
 		}
 	}
