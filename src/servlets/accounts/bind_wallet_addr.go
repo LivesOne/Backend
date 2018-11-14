@@ -53,15 +53,23 @@ func (handler *bindWalletAddrHandler) Handle(
 	}
 
 	uid := utils.Str2Int64(uidStr)
-	addr := strings.ToLower(requestData.Param.Address)
-	// 查询是否绑定当前地址
-	if err := common.InsertUserWalletAddr(uid, addr); err != nil {
-		if err == constants.WALLET_DUP_BIND {
-			response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
+	walletAddress := strings.ToLower(requestData.Param.Address)
+
+	if validateWalletAddress(walletAddress) {
+		if !strings.HasPrefix(walletAddress, "0x") {
+			walletAddress = "0x" + walletAddress
+		}
+		// 查询是否绑定当前地址
+		if err := common.InsertUserWalletAddr(uid, walletAddress); err != nil {
+			if err == constants.WALLET_DUP_BIND {
+				response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
+				return
+			}
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
+	} else {
+		response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
 	}
 
 	// send response
