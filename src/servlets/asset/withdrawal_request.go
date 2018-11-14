@@ -172,7 +172,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	if !validateWithdrawalAddress(secret.Address, secret.Currency) {
 		logger.Info("withdrawal address format error")
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+		response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
 		return
 	}
 
