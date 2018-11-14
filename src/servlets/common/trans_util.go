@@ -3,6 +3,7 @@ package common
 import (
 	"database/sql"
 	"fmt"
+	"github.com/shopspring/decimal"
 	"servlets/constants"
 	"strconv"
 	"strings"
@@ -655,8 +656,14 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 		return "", "", constants.RC_TRANSFER_FEE_ERROR
 	}
 
-	feeInt := utils.FloatStr2CoinsInt(fee, int64(feeCurrencyDecimal))
+	feeBig, _ := decimal.NewFromString(fee)
+	fmt.Println(feeBig.Mul(decimal.NewFromFloat(float64(1e4))).IntPart())
+	feeInt := feeBig.Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
+	if !checkAssetBalanceIsSufficient(from, amountInt, feeInt, currency, feeCurrency) {
+		return "", "", constants.RC_INSUFFICIENT_BALANCE
+	}
+
 	bizContent := TransBizContent{
 		FeeCurrency: feeCurrency,
 		Fee:         feeInt,
