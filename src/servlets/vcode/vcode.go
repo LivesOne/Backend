@@ -378,6 +378,8 @@ func ValidateWYYD(validate string) (bool, int) {
 				ret = VALIDATE_CODE_FAILD
 			case 415:
 				ret = SERVER_ERR
+			default:
+				ret = VALIDATE_CODE_FAILD
 			}
 		}
 
