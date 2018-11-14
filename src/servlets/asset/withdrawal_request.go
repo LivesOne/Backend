@@ -265,10 +265,10 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 		fallthrough
 	case constants.TRADE_CURRENCY_ETH:
 		reg := "^(0x)?[0-9a-fA-F]{40}$"
-		ret, _ = regexp.MatchString(reg, strings.ToLower(walletAddress))
+		ret, _ = regexp.MatchString(reg, walletAddress)
 	case constants.TRADE_CURRENCY_BTC:
-		reg := "^[0-9a-zA-Z]$"
-		ret, _ = regexp.MatchString(reg, strings.ToLower(walletAddress))
+		reg := "^[0-9a-zA-Z]+$"
+		ret, _ = regexp.MatchString(reg, walletAddress)
 	case constants.TRADE_CURRENCY_EOS:
 		ret = len(walletAddress) > 0
 	}
