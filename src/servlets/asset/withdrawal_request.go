@@ -275,6 +275,10 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 }
 
 func validateEosAccount(account string) constants.Error {
+	reg := "^[0-9a-z]{1,12}$"
+	if ret, _ := regexp.MatchString(reg, strings.ToLower(account)); !ret {
+		return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
+	}
 	urlStr := config.GetConfig().ChainApiAddress
 	if strings.HasSuffix(urlStr, "/") {
 		urlStr += "v2/eos/account/" + url.PathEscape(account)
