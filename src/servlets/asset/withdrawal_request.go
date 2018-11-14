@@ -281,6 +281,7 @@ func validateEosAccount(account string) constants.Error {
 	} else {
 		urlStr += "/v2/eos/account/" + url.PathEscape(account)
 	}
+	logger.Info("check account url:", urlStr)
 	response, err := lvthttp.Get(urlStr, nil)
 	if err != nil {
 		logger.Error("send transcation to chain error ", err.Error())
