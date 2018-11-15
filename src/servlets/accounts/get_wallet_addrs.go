@@ -8,6 +8,7 @@ import (
 	"servlets/constants"
 	"servlets/rpc"
 	"utils"
+	"utils/logger"
 )
 
 type walletAddrParam struct {
@@ -51,6 +52,7 @@ func (handler *walletAddrHandler) Handle(
 
 	cli := rpc.GetWalletClient()
 	if cli == nil {
+		logger.Error("can not get Wallet rpc client ")
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
@@ -60,6 +62,7 @@ func (handler *walletAddrHandler) Handle(
 	}
 	resp, err := cli.QueryWallet(context.Background(), req)
 	if err != nil {
+		logger.Error("rpc query wallet error",err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
