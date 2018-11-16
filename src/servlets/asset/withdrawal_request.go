@@ -196,8 +196,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	address := strings.ToLower(secret.Address)
 	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVTC) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVT) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_ETH) {
+		address := strings.ToLower(secret.Address)
 		if !strings.HasPrefix(address, "0x") {
 			address = "0x" + address
 		}
@@ -209,7 +209,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			response.SetResponseBase(constants.RC_REMARK_TOO_LONG)
 			return
 		}
-		if err := validateEosAccount(address); err.Rc != constants.RC_OK.Rc {
+		if err := validateEosAccount(secret.Address); err.Rc != constants.RC_OK.Rc {
 			response.SetResponseBase(err)
 			return
 		}
@@ -225,7 +225,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
+	tradeNo, err := common.Withdraw(uid, secret.Value, secret.Address, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
 	//tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
