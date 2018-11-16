@@ -8,7 +8,6 @@ import (
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
-	"math/big"
 	"servlets/constants"
 	"strings"
 	"time"
@@ -1274,7 +1273,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	tradeNo := GenerateTradeNo(constants.TRADE_TYPE_WITHDRAWAL, constants.TX_SUB_TYPE_WITHDRAW)
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 	timestamp := utils.GetTimestamp13()
-	fee, error := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), currency, feeCurrency, currencyDecimal)
+	fee, error := calculationFeeAndCheckQuotaForWithdraw(uid, amount, currency, feeCurrency, currencyDecimal)
 	if error.Rc != constants.RC_OK.Rc {
 		return "", error
 	}
@@ -1495,7 +1494,7 @@ func withdrawETH(uid int64, amount string, address, tradeNo string) constants.Er
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 	txId := GenerateTxID()
 	txIdFee := GenerateTxID()
-	ethFee, error := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), constants.TRADE_CURRENCY_ETH, constants.TRADE_CURRENCY_ETH, CONV_LVT)
+	ethFee, error := calculationFeeAndCheckQuotaForWithdraw(uid, amount, constants.TRADE_CURRENCY_ETH, constants.TRADE_CURRENCY_ETH, CONV_LVT)
 	if error.Rc != constants.RC_OK.Rc {
 		return error
 	}
@@ -1597,7 +1596,7 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 	txId := GenerateTxID()
 	toLvt := config.GetWithdrawalConfig().WithdrawalAcceptAccount
 	amountInt := utils.FloatStrToLVTint(amount)
-	ethFee, err := calculationFeeAndCheckQuotaForWithdraw(uid, utils.Str2Float64(amount), constants.TRADE_CURRENCY_LVTC, constants.TRADE_CURRENCY_ETH, CONV_LVT)
+	ethFee, err := calculationFeeAndCheckQuotaForWithdraw(uid, amount, constants.TRADE_CURRENCY_LVTC, constants.TRADE_CURRENCY_ETH, CONV_LVT)
 	if err.Rc != constants.RC_OK.Rc {
 		return err
 	}
@@ -1686,15 +1685,15 @@ func withdrawLVTC(uid int64, amount string, address, tradeNo string) constants.E
 	return constants.RC_OK
 }
 
-func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, currency, feeCurrency string, currencyDecimal int) (float64, constants.Error) {
-	if withdrawAmount <= 0 {
+func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount, currency, feeCurrency string, currencyDecimal int) (float64, constants.Error) {
+	if utils.Str2Float64(withdrawAmount) <= 0 {
 		return float64(0), constants.RC_PARAM_ERR
 	}
 	withdrawQuota := getWithdrawQuota(currency)
 	if withdrawQuota == nil {
 		return float64(0), constants.RC_PARAM_ERR
 	}
-	if withdrawQuota.SingleAmountMin > 0 && withdrawQuota.SingleAmountMin > withdrawAmount {
+	if withdrawQuota.SingleAmountMin > 0 && withdrawQuota.SingleAmountMin > utils.Str2Float64(withdrawAmount) {
 		return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 
@@ -1706,15 +1705,13 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, c
 		}
 		totalAmount := utils.Str2Int64(row["total_value"])
 
-		dailyAmount := big.NewFloat(withdrawQuota.DailyAmountMax)
-		dailyAmount = dailyAmount.Mul(dailyAmount, big.NewFloat(float64(currencyDecimal)))
-		withdrawAmountBig := big.NewFloat(withdrawAmount)
-		withdrawAmountBig = withdrawAmountBig.Mul(withdrawAmountBig, big.NewFloat(float64(currencyDecimal)))
+		dailyAmount, _ := decimal.NewFromString(utils.Float642Str(withdrawQuota.DailyAmountMax))
+		dailyAmountInt64 := dailyAmount.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
+		withdrawAmountBig, _ :=  decimal.NewFromString(withdrawAmount)
+		withdrawAmountInt64 := withdrawAmountBig.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
 
-		withdrawAmountInt64, _ := withdrawAmountBig.Int64()
-		dailyAmountInt64, _ := dailyAmount.Int64()
 		logger.Info("daily quota out limit, withdraw amount:", withdrawAmountInt64, ",that day withdraw total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
-		if dailyAmount.Cmp(withdrawAmountBig.Add(withdrawAmountBig, big.NewFloat(float64(totalAmount)))) < 0 {
+		if dailyAmountInt64 < totalAmount + withdrawAmountInt64 {
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
@@ -1725,7 +1722,7 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount float64, c
 			case 0:
 				feeOfWithdraw = fee.FeeFixed
 			case 1:
-				feeOfWithdraw = withdrawAmount * fee.FeeRate
+				feeOfWithdraw = utils.Str2Float64(withdrawAmount) * fee.FeeRate
 				if feeOfWithdraw < fee.FeeMin {
 					feeOfWithdraw = fee.FeeMin
 				}
@@ -2797,15 +2794,15 @@ func checkAssetBalanceIsSufficient(uid, amount, fee int64, currency, feeCurrency
 	}
 }
 
-func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency, feeCurrency string, currencyDecimal int) (float64, constants.Error) {
-	if amount <= 0 {
+func calculationFeeAndCheckQuotaForTransfer(uid int64, amount, currency, feeCurrency string, currencyDecimal int) (float64, constants.Error) {
+	if utils.Str2Float64(amount) <= 0 {
 		return float64(0), constants.RC_PARAM_ERR
 	}
 	transferQuota := getTransferQuota(currency, feeCurrency)
 	if transferQuota == nil {
 		return float64(0), constants.RC_PARAM_ERR
 	}
-	if transferQuota.SingleAmountMin > 0 && transferQuota.SingleAmountMin > amount {
+	if transferQuota.SingleAmountMin > 0 && transferQuota.SingleAmountMin > utils.Str2Float64(amount) {
 		return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 	}
 
@@ -2835,19 +2832,17 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount float64, currency,
 			totalAmount = utils.Str2Int64(row["total_value"])
 		}
 
-		dailyAmount := big.NewFloat(transferQuota.DailyAmountMax)
-		dailyAmount = dailyAmount.Mul(dailyAmount, big.NewFloat(float64(currencyDecimal)))
-		amountBig := big.NewFloat(float64(amount))
-		amountBig = amountBig.Mul(amountBig, big.NewFloat(float64(currencyDecimal)))
+		dailyAmount, _ := decimal.NewFromString(utils.Float642Str(transferQuota.DailyAmountMax))
+		dailyAmountInt64 := dailyAmount.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
+		amountBig, _ :=  decimal.NewFromString(amount)
+		amountInt64 := amountBig.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
 
-		amountInt64, _ := amountBig.Int64()
-		dailyAmountInt64, _ := dailyAmount.Int64()
 		logger.Info("daily quota out limit, transfer amount:", amountInt64, ",that day transfer total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
-		if dailyAmount.Cmp(amountBig.Add(amountBig, big.NewFloat(float64(totalAmount)))) < 0 {
+		if dailyAmountInt64 < amountInt64 + totalAmount {
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
-	feeOfTransfer := amount * transferQuota.Fee.FeeRate
+	feeOfTransfer := utils.Str2Float64(amount) * transferQuota.Fee.FeeRate
 	if feeOfTransfer < transferQuota.Fee.FeeMin {
 		feeOfTransfer = transferQuota.Fee.FeeMin
 	}
