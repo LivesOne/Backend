@@ -657,7 +657,6 @@ func TransferPrepare(from, to int64, amount, fee, currency, feeCurrency, remark 
 	}
 
 	feeBig, _ := decimal.NewFromString(fee)
-	fmt.Println(feeBig.Mul(decimal.NewFromFloat(float64(1e4))).IntPart())
 	feeInt := feeBig.Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 	if !checkAssetBalanceIsSufficient(from, amountInt, feeInt, currency, feeCurrency) {

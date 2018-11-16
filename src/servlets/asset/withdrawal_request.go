@@ -172,7 +172,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	if !validateWithdrawalAddress(secret.Address, secret.Currency) {
 		logger.Info("withdrawal address format error")
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+		response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
 		return
 	}
 
@@ -196,8 +196,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	address := strings.ToLower(secret.Address)
 	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVTC) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVT) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_ETH) {
+		address := strings.ToLower(secret.Address)
 		if !strings.HasPrefix(address, "0x") {
 			address = "0x" + address
 		}
@@ -209,7 +209,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			response.SetResponseBase(constants.RC_REMARK_TOO_LONG)
 			return
 		}
-		if err := validateEosAccount(address); err.Rc != constants.RC_OK.Rc {
+		if err := validateEosAccount(secret.Address); err.Rc != constants.RC_OK.Rc {
 			response.SetResponseBase(err)
 			return
 		}
@@ -225,7 +225,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
+	tradeNo, err := common.Withdraw(uid, secret.Value, secret.Address, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
 	//tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
@@ -265,9 +265,10 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 		fallthrough
 	case constants.TRADE_CURRENCY_ETH:
 		reg := "^(0x)?[0-9a-fA-F]{40}$"
-		ret, _ = regexp.MatchString(reg, strings.ToLower(walletAddress))
+		ret, _ = regexp.MatchString(reg, walletAddress)
 	case constants.TRADE_CURRENCY_BTC:
-		ret = len(walletAddress) > 0
+		reg := "^[0-9a-zA-Z]+$"
+		ret, _ = regexp.MatchString(reg, walletAddress)
 	case constants.TRADE_CURRENCY_EOS:
 		ret = len(walletAddress) > 0
 	}
@@ -275,6 +276,10 @@ func validateWithdrawalAddress(walletAddress, currency string) bool {
 }
 
 func validateEosAccount(account string) constants.Error {
+	reg := "^[0-9a-z]{1,12}$"
+	if ret, _ := regexp.MatchString(reg, strings.ToLower(account)); !ret {
+		return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
+	}
 	urlStr := config.GetConfig().ChainApiAddress
 	if strings.HasSuffix(urlStr, "/") {
 		urlStr += "v2/eos/account/" + url.PathEscape(account)
