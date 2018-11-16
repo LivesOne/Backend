@@ -11,7 +11,8 @@ import (
 )
 
 type bindWXSecret struct {
-	Code string `json:"code"`
+	Code    string `json:"code"`
+	AppType string `json:"app_type"`
 }
 
 type bindWXParam struct {
@@ -91,7 +92,7 @@ func (handler *bindWXHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	if ok, res := common.AuthWX(secret.Code); ok {
+	if ok, res := common.AuthWX(secret.AppType, secret.Code); ok {
 
 		err := common.InitAccountExtend(uid)
 		if err != nil {

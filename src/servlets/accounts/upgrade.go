@@ -10,7 +10,8 @@ import (
 )
 
 type upgradeSecret struct {
-	WxCode string `json:"wx_code"`
+	WxCode  string `json:"wx_code"`
+	AppType string `json:"app_type"`
 }
 
 type upgradeParam struct {
@@ -86,29 +87,9 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 			// 微信二次验证
 			uid := utils.Str2Int64(uidString)
 			//未绑定返回验升级失败
-			openId, unionId, _, _, _ := common.GetUserExtendByUid(uid)
-			if len(openId) == 0 || len(unionId) == 0 {
-				log.Error("user is not bind wx")
-				response.SetResponseBase(constants.RC_UPGRAD_FAILED)
-				return
-			}
-			//微信认证并比对id
-			if ok, res := common.AuthWX(secret.WxCode); ok {
-				if res.Unionid != unionId || res.Openid != openId {
-					log.Error("user check sec wx failed")
-					log.Error("db openId,unionId [", openId, unionId, "]")
-					log.Error("wx result openId,unionId [", res.Openid, res.Unionid, "]")
-					//二次验证不通过扣10分
-					//deductionCreditScore := 10
-					//log.Error("deduction credit score :",deductionCreditScore)
-					//common.DeductionCreditScore(uid,deductionCreditScore)
 
-					response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
-					return
-				}
-			} else {
-				log.Error("wx auth failed")
-				response.SetResponseBase(constants.RC_INVALID_WX_CODE)
+			if f, e := common.SecondAuthWX(uid, secret.AppType, secret.WxCode); !f {
+				response.SetResponseBase(e)
 				return
 			}
 

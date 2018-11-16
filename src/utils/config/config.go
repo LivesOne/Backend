@@ -56,11 +56,16 @@ type LoginPwdErrCntLimit struct {
 }
 
 type WXAuth struct {
-	Url    string
+	Url  string
+	Data struct {
+		Mobile WXAuthData
+		Web    WXAuthData
+	}
+}
+type WXAuthData struct {
 	Appid  string
 	Secret string
 }
-
 type ReChargeAddr struct {
 	Currency string
 	Address  string

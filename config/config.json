@@ -149,8 +149,16 @@
     "PenaltyMoneyAccountUid":181270929,
     "WXAuth":{
         "Url":"https://api.weixin.qq.com/sns/oauth2/access_token",
-        "Appid":"",
-        "Secret":""
+        "Data" : {
+            "Mobile": {
+                "Appid":"",
+                "Secret":""
+            },
+            "Web": {
+                "Appid":"",
+                "Secret":""
+            }
+        }
     },
     "BindActive":"bind_active.json",
     "AuthTelegramUrl":"http://tg-callback.lives.one/code/v1/verify",

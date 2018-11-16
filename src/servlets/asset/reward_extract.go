@@ -2,16 +2,17 @@ package asset
 
 import (
 	"net/http"
+	"servlets/accounts"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/token"
 	"utils"
 	"utils/logger"
-	"servlets/accounts"
 )
 
 type rewardExtractSecret struct {
-	WxCode string `json:"wx_code"`
+	WxCode  string `json:"wx_code"`
+	AppType string `json:"app_type"`
 }
 
 type rewardExtractParam struct {
@@ -58,7 +59,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	// 判断用户身份
 	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
 
-	log.Info("user login cache token-hash",httpHeader.TokenHash,"uid",uidString,"key",aesKey)
+	log.Info("user login cache token-hash", httpHeader.TokenHash, "uid", uidString, "key", aesKey)
 	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset reward extract: get info from cache error:", err)
 		response.SetResponseBase(err)
@@ -108,29 +109,9 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 			return
 		}
 
-		openId, unionId, _, _, _ := common.GetUserExtendByUid(uid)
-		if len(openId) == 0 || len(unionId) == 0 {
-			log.Error("asset reward extract: user is not bind wx")
-			response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
+		if f, e := common.SecondAuthWX(uid, secret.AppType, secret.WxCode); !f {
+			response.SetResponseBase(e)
 			return
-		}
-		if len(secret.WxCode) > 0 {
-			// 微信二次验证，未绑定返回验提取失败
-			//微信认证并比对id
-			if ok, res := common.AuthWX(secret.WxCode); ok {
-				if res.Unionid != unionId || res.Openid != openId {
-					log.Error("asset reward extract: user check sec wx failed")
-					log.Error("asset reward extract: db openId,unionId [", openId, unionId, "]")
-					log.Error("asset reward extract: wx result openId,unionId [", res.Openid, res.Unionid, "]")
-
-					response.SetResponseBase(constants.RC_WX_SEC_AUTH_FAILED)
-					return
-				}
-			} else {
-				log.Error("asset reward extract: wx auth failed")
-				response.SetResponseBase(constants.RC_INVALID_WX_CODE)
-				return
-			}
 		}
 	}
 
@@ -145,10 +126,10 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	}
 
 	var income int64
-	var ok  = true
+	var ok = true
 	var err error
 	if currency == common.CURRENCY_ETH {
-		_, _, income,_,_, err = common.QueryBalanceEth(uid)
+		_, _, income, _, _, err = common.QueryBalanceEth(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
@@ -157,7 +138,7 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 			ok = common.ExtractIncomeEth(uid, income)
 		}
 	} else {
-		_, _, income,_,_, err = common.QueryBalanceLvtc(uid)
+		_, _, income, _, _, err = common.QueryBalanceLvtc(uid)
 		if err != nil {
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return

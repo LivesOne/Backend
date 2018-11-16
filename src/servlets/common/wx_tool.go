@@ -1,6 +1,8 @@
 package common
 
 import (
+	"servlets/constants"
+	"strings"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -22,26 +24,12 @@ type (
 	}
 )
 
-func AuthWX(code string) (bool, *wxRes) {
 
-	wx := config.GetConfig().WXAuth
 
-	param := make(map[string]string, 0)
-	param["appid"] = wx.Appid
-	param["secret"] = wx.Secret
-	param["code"] = code
-	param["grant_type"] = "authorization_code"
-
-	resBody, err := lvthttp.Get(wx.Url, param)
-	if err != nil {
-		logger.Error("http req error", err.Error())
-		return false, nil
-	}
-	logger.Info("wx http res ", resBody)
-
+func decodeWXres(resBody string)(bool,*wxRes){
 	//校验是否是错误返回的格式
 	errRes := new(wxErrorRes)
-	if err = utils.FromJson(resBody, errRes); err != nil {
+	if err := utils.FromJson(resBody, errRes); err != nil {
 		logger.Error("json parse error", err.Error(), "res body", resBody)
 		return false, nil
 	}
@@ -52,9 +40,67 @@ func AuthWX(code string) (bool, *wxRes) {
 	}
 
 	res := new(wxRes)
-	if err = utils.FromJson(resBody, res); err != nil {
+	if err := utils.FromJson(resBody, res); err != nil {
 		logger.Error("json parse error", err.Error(), "res body", resBody)
 		return false, nil
 	}
 	return true, res
+}
+
+
+func buildUrlAndParamsByAuthApp(app,code string)(string,map[string]string){
+	wx := config.GetConfig().WXAuth
+	app = strings.ToLower(app)
+	var auth config.WXAuthData
+	switch app {
+	case "mobile":
+		auth = wx.Data.Mobile
+	default:
+		auth = wx.Data.Web
+	}
+	param := make(map[string]string, 0)
+	param["appid"] = auth.Appid
+	param["secret"] = auth.Secret
+	param["code"] = code
+	param["grant_type"] = "authorization_code"
+	return wx.Url,param
+}
+
+
+func AuthWX(app,code string) (bool, *wxRes) {
+
+	url,param := buildUrlAndParamsByAuthApp(app,code)
+
+	resBody, err := lvthttp.Get(url, param)
+	if err != nil {
+		logger.Error("http req error", err.Error())
+		return false, nil
+	}
+	logger.Info("wx http res ", resBody)
+
+	return decodeWXres(resBody)
+}
+
+
+func SecondAuthWX(uid int64,app,authCode string)(bool,constants.Error){
+	openId, unionId, _, _, _ := GetUserExtendByUid(uid)
+	if len(openId) == 0 {
+		logger.Error("user is not bind wx")
+		return false,constants.RC_UPGRAD_FAILED
+	}
+	//微信认证并比对id
+	if ok, res := AuthWX(app,authCode); ok {
+		if res.Unionid != unionId {
+			logger.Error("user check sec wx failed")
+			logger.Error("db openId,unionId [", openId, unionId, "] wx result openId,unionId [", res.Openid, res.Unionid, "]")
+			//二次验证不通过扣10分
+			//deductionCreditScore := 10
+			//log.Error("deduction credit score :",deductionCreditScore)
+			//common.DeductionCreditScore(uid,deductionCreditScore)
+			return false,constants.RC_WX_SEC_AUTH_FAILED
+		}
+		return true ,constants.RC_OK
+	}
+	logger.Error("wx auth failed")
+	return false,constants.RC_INVALID_WX_CODE
 }
