@@ -135,7 +135,8 @@ func CoinsInt2FloatStr(coins, coinsDecimal int64) string {
 }
 
 func FloatStr2CoinsInt (coins string, coinsDecimal int64) int64 {
-	return int64(Str2Float64(coins) * float64(coinsDecimal))
+	amount, _ := decimal.NewFromString(coins)
+	return amount.Mul(decimal.NewFromFloat(float64(coinsDecimal))).IntPart()
 }
 
 func Float2CoinsInt (coins float64, coinsDecimal int64) int64 {
