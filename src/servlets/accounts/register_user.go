@@ -79,16 +79,17 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
-
-		if len(data.Param.VCode) > 0 {
-			ok, c := vcode.ValidateImgVCode(data.Param.VCodeID, data.Param.VCode)
-			if ok == false {
-				response.SetResponseBase(vcode.ConvImgErr(c))
-				return
-			}
-		}
-
-		insertAndCheckUid(account, hashedPWD)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+		//if len(data.Param.VCode) > 0 {
+		//	ok, c := vcode.ValidateImgVCode(data.Param.VCodeID, data.Param.VCode)
+		//	if ok == false {
+		//		response.SetResponseBase(vcode.ConvImgErr(c))
+		//		return
+		//	}
+		//}
+		//
+		//insertAndCheckUid(account, hashedPWD)
 	case constants.LOGIN_TYPE_EMAIL:
 		ok, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
 		if ok == false {
