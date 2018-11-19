@@ -70,6 +70,7 @@ func (handler *bindWalletAddrHandler) Handle(
 		}
 	} else {
 		response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
+		return
 	}
 
 	// send response
