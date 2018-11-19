@@ -203,7 +203,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		}
 	}
 
-	address := secret.Address
+	walletAddress := secret.Address
 
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(secret.Currency, "eos") {
@@ -222,7 +222,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		feeCurrencyDecimal = utils.CONV_LVT
 
 		if strings.EqualFold(secret.Currency, "lvtc") || strings.EqualFold(secret.Currency, "eth") {
-			walletAddress := strings.ToLower(address)
+			walletAddress = strings.ToLower(walletAddress)
 			if validateWalletAddress(walletAddress) {
 				if !strings.HasPrefix(walletAddress, "0x") {
 					walletAddress = "0x" + walletAddress
@@ -243,7 +243,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 
 
-	tradeNo, err := common.Withdraw(uid, secret.Value, secret.Address, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
+	tradeNo, err := common.Withdraw(uid, secret.Value, walletAddress, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
 	//tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
