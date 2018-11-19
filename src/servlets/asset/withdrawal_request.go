@@ -203,6 +203,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		}
 	}
 
+	address := secret.Address
+
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(secret.Currency, "eos") {
 		if len(requestData.Param.Remark) > config.GetConfig().EOSRemarkLengthLimit {
@@ -218,12 +220,28 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	} else {
 		currencyDecimal = utils.CONV_LVT
 		feeCurrencyDecimal = utils.CONV_LVT
+
+		if strings.EqualFold(secret.Currency, "lvtc") || strings.EqualFold(secret.Currency, "eth") {
+			walletAddress := strings.ToLower(address)
+			if validateWalletAddress(walletAddress) {
+				if !strings.HasPrefix(walletAddress, "0x") {
+					walletAddress = "0x" + walletAddress
+				}
+			} else {
+				response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
+			}
+		}
+
 	}
 	feeCurrency, error := common.GetFeeCurrencyByCurrency(strings.ToUpper(secret.Currency))
 	if error != nil {
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
+
+
+
 
 	tradeNo, err := common.Withdraw(uid, secret.Value, secret.Address, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
 	//tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
@@ -314,4 +332,11 @@ func validateEosAccount(account string) constants.Error {
 	default:
 		return constants.RC_SYSTEM_ERR
 	}
+}
+
+
+func validateWalletAddress(walletAddress string) bool {
+	reg := "^(0x)?[0-9a-f]{40}$"
+	ret, _ := regexp.MatchString(reg, strings.ToLower(walletAddress))
+	return ret
 }
