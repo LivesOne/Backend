@@ -1862,7 +1862,7 @@ func GetWithdrawalCurrency(tradeNo string) string {
 }
 
 func QueryWithdrawalList(uid int64) []*UserWithdrawalRequest {
-	sql := "select id, trade_no, currency, value, address, fee, create_time, update_time, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ?"
+	sql := "select id, trade_no, currency, value, address, fee, create_time, update_time, case status when 0 then 1 else status end status from user_withdrawal_request where uid = ? order by create_time desc"
 	results := gDBAsset.Query(sql, uid)
 	if results == nil {
 		return nil
