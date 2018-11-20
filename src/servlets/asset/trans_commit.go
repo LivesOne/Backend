@@ -84,7 +84,7 @@ func (handler *transCommitHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
-	log.Info("txid", txIdStr)
+	log.Info("txid", txIdStr,"current user",uidStr)
 
 	//调用统一确认交易流程
 	response.SetResponseBase(common.CommitLVTTrans(uidStr, txIdStr))
