@@ -66,7 +66,7 @@ var (
 	RC_USE_CARD_EXPIRE                = Error{21016, "withdrawal card expired"}
 	RC_INVALID_CURRENCY               = Error{21017, "currency not supported"}
 	RC_TRANSFER_FEE_ERROR             = Error{21018, "transfer fee error"}
-	RC_REMARK_TOO_LONG                = Error{21019, "remark too long"}
+	RC_REMARK_TOO_LONG                = Error{21025, "remark too long"}
 
 	RC_DEVICE_DUP_BIND         = Error{23001, "duplicate bind"}
 	RC_DEVICE_BIND_TOO_SHORT   = Error{23002, "bind interval too short"}
