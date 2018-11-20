@@ -177,6 +177,7 @@ func findAndModifyPending(txid, from, status int64, s *mgo.Session) (*DTTXHistor
 		},
 		ReturnNew: false,
 	}
+	logger.Info("findAndModify query",utils.ToJSON(query),"change",utils.ToJSON(change))
 	info, err := coll.Find(query).Apply(change, &res)
 	if err != nil {
 		logger.Error("findAndModify error ", err.Error())
