@@ -160,8 +160,8 @@ func DeleteCommited(txid int64) error {
 	return txCommitDelete(tSession, txdbc.DBDatabase, COMMITED, txid)
 }
 
-func findAndModifyPending(txid, from, status int64, s *mgo.Session) (*DTTXHistory, bool) {
-	coll := s.DB(ntxdbc.DBDatabase).C(PENDING)
+func findAndModifyPending(txid, from, status int64, db string,s *mgo.Session) (*DTTXHistory, bool) {
+	coll := s.DB(db).C(PENDING)
 	res := DTTXHistory{}
 	query := bson.M{
 		"_id":  txid,
@@ -192,13 +192,13 @@ func findAndModifyPending(txid, from, status int64, s *mgo.Session) (*DTTXHistor
 func FindAndModifyPending(txid, from, status int64) (*DTTXHistory, bool) {
 	session := tSession.Clone()
 	defer session.Close()
-	return findAndModifyPending(txid, from, status, session)
+	return findAndModifyPending(txid, from, status,txdbc.DBDatabase, session)
 }
 
 func FindAndModifyLVTCPending(txid, from, status int64) (*DTTXHistory, bool) {
 	session := ntSession.Clone()
 	defer session.Close()
-	return findAndModifyPending(txid, from, status, session)
+	return findAndModifyPending(txid, from, status,ntxdbc.DBDatabase, session)
 }
 
 func ExistsPending(txid int64) bool {

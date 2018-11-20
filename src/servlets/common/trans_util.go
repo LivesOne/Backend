@@ -77,6 +77,7 @@ func CommitLVTTrans(uidStr, txIdStr string) (retErr constants.Error) {
 	txid := utils.Str2Int64(txIdStr)
 	uid := utils.Str2Int64(uidStr)
 	perPending, flag := FindAndModifyPending(txid, uid, constants.TX_STATUS_COMMIT)
+
 	//未查到数据，返回处理中
 	if !flag || perPending.Status != constants.TX_STATUS_DEFAULT {
 		return constants.RC_TRANS_TIMEOUT
