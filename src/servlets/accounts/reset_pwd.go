@@ -176,7 +176,7 @@ func (handler *resetPwdHandler) Handle(request *http.Request, writer http.Respon
 
 	// 数据库实际保存的密码格式为“sha256(sha256(密码) + uid)”
 	pwdDb := utils.Sha256(pwdSha256 + utils.Int642Str(uid))
-
+	log.Info("reset user",uid,"pwdDb",pwdDb)
 	// save to db
 	if _, err := rpc.SetUserField(uid, microuser.UserField_LOGIN_PASSWORD, pwdDb); err != nil {
 		log.Info("reset password: save login pwd in DB error:", err)
