@@ -63,6 +63,7 @@ func buildUrlAndParamsByAuthApp(app,code string)(string,map[string]string){
 	param["secret"] = auth.Secret
 	param["code"] = code
 	param["grant_type"] = "authorization_code"
+	logger.Info("wx auth url[",wx.Url,"] param[",utils.ToJSON(param),"]")
 	return wx.Url,param
 }
 
