@@ -92,7 +92,12 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	//	response.SetResponseBase(constants.RC_PARAM_ERR)
 	//	return
 	//}
-	uid, expire, code := autoLogin(header.TokenHash, loginData.Param.Token)
+	iv := aesKey[:constants.AES_ivLen]
+	key := aesKey[constants.AES_ivLen:]
+	tokenOriginal, err := utils.AesDecrypt(loginData.Param.Token, string(key), string(iv))
+
+
+	uid, expire, code := autoLogin(header.TokenHash, tokenOriginal)
 	if code == microuser.ResCode_OK {
 		response.Data = &responseLogin{
 			UID:    uid,
