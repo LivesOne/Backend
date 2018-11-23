@@ -48,7 +48,7 @@ func decodeWXres(resBody string)(bool,*wxRes){
 }
 
 
-func buildUrlAndParamsByAuthApp(app,code string)(string,map[string]string){
+func buildUrlAndParamsByAuthApp(app,wxCode string)(string,map[string]string){
 	wx := config.GetConfig().WXAuth
 	app = strings.ToLower(app)
 	var auth config.WXAuthData
@@ -61,16 +61,16 @@ func buildUrlAndParamsByAuthApp(app,code string)(string,map[string]string){
 	param := make(map[string]string, 0)
 	param["appid"] = auth.Appid
 	param["secret"] = auth.Secret
-	param["code"] = code
+	param["code"] = wxCode
 	param["grant_type"] = "authorization_code"
 	logger.Info("wx auth url[",wx.Url,"] param[",utils.ToJSON(param),"]")
 	return wx.Url,param
 }
 
 
-func AuthWX(app,code string) (bool, *wxRes) {
+func AuthWX(app,wxCode string) (bool, *wxRes) {
 
-	url,param := buildUrlAndParamsByAuthApp(app,code)
+	url,param := buildUrlAndParamsByAuthApp(app,wxCode)
 
 	resBody, err := lvthttp.Get(url, param)
 	if err != nil {
