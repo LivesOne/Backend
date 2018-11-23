@@ -1390,6 +1390,12 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	return tradeNo, error
 }
 
+func initBalanceInfoByTbName(tbName string,uid int64,tx *sql.Tx)(error){
+	sql := fmt.Sprintf("insert ignore into %s (uid,lastmodify) values (?,?) ",tbName)
+	_,err := tx.Exec(sql,uid,utils.GetTimestamp13())
+	return err
+}
+
 func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string, tradeType int, tx *sql.Tx) constants.Error {
 	assetTableName := ""
 	historyTableName := ""
@@ -1456,10 +1462,19 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		logger.Error("exec sql(", sql, ") error ", err.Error())
 		return constants.RC_SYSTEM_ERR
 	}
+
+
+	err = initBalanceInfoByTbName(assetTableName,to,tx)
+	if err != nil {
+		logger.Error("init user asset", assetTableName, " balance error RowsAffected ",to)
+		return constants.RC_SYSTEM_ERR
+	}
+
+
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
 	rsa, _ = info.RowsAffected()
 	if rsa == 0 {
-		logger.Error("update user", currency, " balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		logger.Error("update user", currency, " balance error RowsAffected ", rsa, " can not find user  ", to)
 		return constants.RC_PARAM_ERR
 	}
 
