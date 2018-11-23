@@ -196,14 +196,26 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVTC) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVT) || strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_ETH) {
-		address := strings.ToLower(secret.Address)
-		if !strings.HasPrefix(address, "0x") {
-			address = "0x" + address
+
+	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVT) {
+		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
+		return
+	}
+
+	walletAddress := strings.ToLower(secret.Address)
+	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVTC) ||
+		strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_ETH) {
+		if validateWalletAddress(walletAddress) {
+			if !strings.HasPrefix(walletAddress, "0x") {
+				walletAddress = "0x" + walletAddress
+			}
+		} else {
+			response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
+			return
 		}
 	}
 
-	walletAddress := secret.Address
+
 
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(secret.Currency, "eos") {
@@ -220,18 +232,6 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	} else {
 		currencyDecimal = utils.CONV_LVT
 		feeCurrencyDecimal = utils.CONV_LVT
-
-		if strings.EqualFold(secret.Currency, "lvtc") || strings.EqualFold(secret.Currency, "eth") {
-			walletAddress = strings.ToLower(walletAddress)
-			if validateWalletAddress(walletAddress) {
-				if !strings.HasPrefix(walletAddress, "0x") {
-					walletAddress = "0x" + walletAddress
-				}
-			} else {
-				response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
-			}
-		}
-
 	}
 	feeCurrency, error := common.GetFeeCurrencyByCurrency(strings.ToUpper(secret.Currency))
 	if error != nil {
