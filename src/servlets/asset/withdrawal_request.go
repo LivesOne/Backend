@@ -205,15 +205,10 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	walletAddress := strings.ToLower(secret.Address)
 	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVTC) ||
 		strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_ETH) {
-		if validateWalletAddress(walletAddress) {
-			if !strings.HasPrefix(walletAddress, "0x") {
-				walletAddress = "0x" + walletAddress
-			}
-		} else {
-			response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
-			return
+		if !strings.HasPrefix(walletAddress, "0x") {
+			walletAddress = "0x" + walletAddress
 		}
-	}
+}
 
 
 
