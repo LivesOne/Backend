@@ -84,7 +84,7 @@ func AuthWX(app,code string) (bool, *wxRes) {
 
 func SecondAuthWX(uid int64,app,authCode string)(bool,constants.Error){
 	openId, unionId, _, _, _ := GetUserExtendByUid(uid)
-	if len(openId) == 0 {
+	if len(unionId) == 0 {
 		logger.Error("user is not bind wx")
 		return false,constants.RC_UPGRAD_FAILED
 	}
