@@ -78,7 +78,7 @@ func GetUserInfo(uid int64) (*microuser.GetUserAllInfoRes, error) {
 		}
 		resp, err := cli.GetUserAllInfo(context.Background(), req)
 		if err != nil {
-			logger.Error("grpc SmsSendVoiceMsg request error: ", err)
+			logger.Error("grpc GetUserInfo request error: ", err)
 			return nil, err
 		}
 		if resp.Result != microuser.ResCode_OK {
@@ -98,7 +98,7 @@ func SetUserField(uid int64, field microuser.UserField, value string) (bool, err
 		}
 		resp, err := cli.SetUserInfo(context.Background(), req)
 		if err != nil {
-			logger.Error("grpc SmsSendVoiceMsg request error: ", err)
+			logger.Error("grpc SetUserField request error: ", err)
 			return false, err
 		}
 		if resp.Result != microuser.ResCode_OK {
@@ -119,7 +119,7 @@ func CheckPwd(uid int64, pwdHash string, cType microuser.PwdCheckType) (bool, er
 		}
 		resp, err := cli.CheckPwd(context.Background(), req)
 		if err != nil {
-			logger.Error("grpc SmsSendVoiceMsg request error: ", err)
+			logger.Error("grpc CheckPwd request error: ", err)
 			return false, err
 		}
 		if resp.Result != microuser.ResCode_OK {
