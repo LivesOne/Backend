@@ -59,7 +59,7 @@ func GetUserField(uid int64, field microuser.UserField) (string, error) {
 		}
 		resp, err := cli.GetUserInfo(context.Background(), req)
 		if err != nil {
-			logger.Error("grpc SmsSendVoiceMsg request error: ", err)
+			logger.Error("grpc GetUserField request error: ", err)
 			return "", err
 		}
 		if resp.Result != microuser.ResCode_OK {
