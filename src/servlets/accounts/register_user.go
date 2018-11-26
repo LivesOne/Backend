@@ -116,11 +116,12 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		}
 		resp, err := cli.RegisterUser(context.Background(), req)
 
-		dupFlag , _ := db_factory.CheckDuplicate(err)
 
-		if err != nil && !dupFlag{
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
+		if err != nil {
+			if dupFlag , _ := db_factory.CheckDuplicate(err);!dupFlag{
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				return
+			}
 		}
 		if resp.Result != microuser.ResCode_OK {
 			response.SetResponseBase(constants.RC_DUP_EMAIL)
@@ -135,10 +136,11 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 		resp, err := cli.RegisterUser(context.Background(), req)
-		dupFlag , _ := db_factory.CheckDuplicate(err)
-		if err != nil && !dupFlag{
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
+		if err != nil {
+			if dupFlag , _ := db_factory.CheckDuplicate(err);!dupFlag{
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				return
+			}
 		}
 		if resp.Result != microuser.ResCode_OK {
 			response.SetResponseBase(constants.RC_DUP_PHONE)
