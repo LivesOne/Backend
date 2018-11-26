@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"utils"
 	"utils/config"
+	"utils/db_factory"
 	"utils/logger"
 )
 
@@ -87,24 +88,26 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 	switch data.Param.Type {
 	case constants.LOGIN_TYPE_UID:
 
-		if len(data.Param.VCode) > 0 {
-			ok, c := vcode.ValidateImgVCode(data.Param.VCodeID, data.Param.VCode)
-			if ok == false {
-				response.SetResponseBase(vcode.ConvImgErr(c))
-				return
-			}
-		}
-		resp, err := cli.RegisterUser(context.Background(), req)
-		if err != nil {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		}
-		if resp.Result != microuser.ResCode_OK {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		}
-		resData.UID = utils.Int642Str(resp.Uid)
-		resData.Regtime = resp.RegTime
+		//if len(data.Param.VCode) > 0 {
+		//	ok, c := vcode.ValidateImgVCode(data.Param.VCodeID, data.Param.VCode)
+		//	if ok == false {
+		//		response.SetResponseBase(vcode.ConvImgErr(c))
+		//		return
+		//	}
+		//}
+		//resp, err := cli.RegisterUser(context.Background(), req)
+		//if err != nil {
+		//	response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		//	return
+		//}
+		//if resp.Result != microuser.ResCode_OK {
+		//	response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		//	return
+		//}
+		//resData.UID = utils.Int642Str(resp.Uid)
+		//resData.Regtime = resp.RegTime
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
 	case constants.LOGIN_TYPE_EMAIL:
 		ok, _ := vcode.ValidateMailVCode(data.Param.VCodeID, data.Param.VCode, data.Param.EMail)
 		if ok == false {
@@ -112,7 +115,10 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 		resp, err := cli.RegisterUser(context.Background(), req)
-		if err != nil {
+
+		dupFlag , _ := db_factory.CheckDuplicate(err)
+
+		if err != nil && !dupFlag{
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
@@ -129,7 +135,8 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 		resp, err := cli.RegisterUser(context.Background(), req)
-		if err != nil {
+		dupFlag , _ := db_factory.CheckDuplicate(err)
+		if err != nil && !dupFlag{
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
 			return
 		}
