@@ -1,7 +1,9 @@
 package common
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"servlets/constants"
+	"servlets/rpc"
 	"strconv"
 	"utils"
 	"utils/config"
@@ -20,10 +22,10 @@ const (
 	TRANS_SINGLE_MIN_ETH_KEY_PROXY  = "tl:tsm:eth"
 	TRANS_SINGLE_MIN_EOS_KEY_PROXY  = "tl:tsm:eos"
 	TRANS_SINGLE_MIN_BTC_KEY_PROXY  = "tl:tsm:btc"
-	TRANS_DAILY_MAX_LVTC_KEY_PROXY = "tl:tdm:lvtc"
-	TRANS_DAILY_MAX_ETH_KEY_PROXY  = "tl:tdm:eth"
-	TRANS_DAILY_MAX_EOS_KEY_PROXY  = "tl:tdm:eos"
-	TRANS_DAILY_MAX_BTC_KEY_PROXY  = "tl:tdm:btc"
+	TRANS_DAILY_MAX_LVTC_KEY_PROXY  = "tl:tdm:lvtc"
+	TRANS_DAILY_MAX_ETH_KEY_PROXY   = "tl:tdm:eth"
+	TRANS_DAILY_MAX_EOS_KEY_PROXY   = "tl:tdm:eos"
+	TRANS_DAILY_MAX_BTC_KEY_PROXY   = "tl:tdm:btc"
 	USER_TRANS_KEY_PROXY            = "tx:uid:"
 	USER_LEVEL_KEY_PROXY            = "tx:ul:"
 	TS                              = 1000
@@ -392,7 +394,8 @@ func GetTransUserLevel(uid int64) int {
 	//	}
 	//}
 	//return userLevel
-	userLevel := GetUserLevel(uid)
+	userLevelStr, _ := rpc.GetUserField(uid, microuser.UserField_LEVEL)
+	userLevel := utils.Str2Int(userLevelStr)
 	logger.Info("key", key, userLevel)
 	if userLevel > -1 {
 		setAndExpire(key, userLevel, DAY_30)

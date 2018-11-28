@@ -1,13 +1,14 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
+	"servlets/vcode"
 	"utils"
 	"utils/db_factory"
-	"servlets/vcode"
 )
 
 type bindEMailParam struct {
@@ -49,9 +50,9 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		response.SetResponseBase(err)
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if tokenErr != microuser.ResCode_OK {
+		response.SetResponseBase(rpc.TokenErr2RcErr(tokenErr))
 		return
 	}
 
@@ -83,14 +84,18 @@ func (handler *bindEMailHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	if !common.CheckLoginPwd(uid, secret.Pwd) {
+	//if !common.CheckLoginPwd(uid, secret.Pwd) {
+	//	response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+	//	return
+	//}
+	if f, _ := rpc.CheckPwd(uid, secret.Pwd, microuser.PwdCheckType_LOGIN_PWD); !f {
 		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 		return
 	}
 
 	// save data to db
-	dbErr := common.SetEmail(uid, secret.Email)
-	if dbErr != nil {
+	f, dbErr := rpc.SetUserField(uid, microuser.UserField_EMAIL, secret.Email)
+	if dbErr != nil || !f {
 		if db_factory.CheckDuplicateByColumn(dbErr, "email") {
 			response.SetResponseBase(constants.RC_DUP_EMAIL)
 			return

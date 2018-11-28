@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -56,12 +56,14 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	uidStr, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		log.Info("get info from cache error:", err)
+	// 判断用户身份
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+		logger.Info("asset lockList: get info from cache error:", err)
 		res.SetResponseBase(err)
 		return
 	}
+
 
 	reqData := new(contactAddReqData)
 
@@ -91,7 +93,7 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 	uid := utils.Str2Int64(uidStr)
 	tagUid := utils.Str2Int64(reqData.Param.Uid)
 
-	acc, err := common.GetAccountByUID(reqData.Param.Uid)
+	acc, err := rpc.GetUserInfo(tagUid)
 	if err != nil {
 		res.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
@@ -100,16 +102,15 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 		res.SetResponseBase(constants.RC_INVALID_ACCOUNT)
 		return
 	}
-	_, _, _, walletAddress, _ := common.GetUserExtendByUid(uid)
 	data := &contactAddResData{
 		ContactId:     reqData.Param.ContactId,
 		Name:          acc.Nickname,
 		Remark:        "",
 		Email:         acc.Email,
-		Country:       acc.Country,
+		Country:       int(acc.Country),
 		LivesoneUid:   reqData.Param.Uid,
 		Phone:         acc.Phone,
-		WalletAddress: walletAddress,
+		WalletAddress: acc.WalletAddress,
 		CreateTime:    utils.GetTimestamp13(),
 		Uid:           uid,
 	}

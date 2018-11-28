@@ -1,24 +1,34 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
 
 type profileResponse struct {
-	common.Account
+	Uid            string           `json:"uid"`
+	Nickname       string           `json:"nickname"`
+	Email          string           `json:"email"`
+	Country        int64            `json:"country"`
+	Phone          string           `json:"phone"`
 	HavePayPwd     bool             `json:"have_pay_pwd"`
 	TransLevel     int              `json:"trans_level"`
 	BindWx         bool             `json:"bind_wx"`
-	CreditScore    int              `json:"credit_score"`
+	CreditScore    int64            `json:"credit_score"`
 	BindTg         bool             `json:"bind_tg"`
 	WalletAddress  string           `json:"wallet_address"`
 	AvatarUrl      string           `json:"avatar_url"`
-	ActiveDays     int              `json:"active_days"`
+	ActiveDays     int64            `json:"active_days"`
+	Level          int64            `json:"level"`
+	UpdateTime     int64            `json:"update_time"`
+	RegisterTime   int64            `json:"register_time"`
+	Language       string           `json:"language"`
+	Region         string           `json:"region"`
 	HashrateDetial []hashrateDetial `json:"hashrate"`
 }
 
@@ -47,10 +57,9 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	uid, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
-		logger.Info("get user profile: get uid from token cache failed")
-		response.SetResponseBase(constants.RC_PARAM_ERR)
+	uid, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if tokenErr != microuser.ResCode_OK {
+		response.SetResponseBase(rpc.TokenErr2RcErr(tokenErr))
 		return
 	}
 
@@ -59,37 +68,45 @@ func (handler *getProfileHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-	account, err := common.GetAccountByUID(uid)
-	if (err != nil) || (account == nil) {
+	intUid := utils.Str2Int64(uid)
+	account, err := rpc.GetUserInfo(intUid)
+	if err != nil {
 		logger.Info("get user profile: read account info failed, uid=", uid)
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
 
-	bindWx, bindTg, creditScore := common.CheckBindWXByUidAndCreditScore(account.UID, account.Country)
-	_, _, _, walletAddress, avatarUrl := common.GetUserExtendByUid(account.UID)
+	wx, _ := rpc.GetUserField(intUid, microuser.UserField_WX)
+	tg, _ := rpc.GetUserField(intUid, microuser.UserField_TG)
+	updTime, _ := rpc.GetUserField(intUid, microuser.UserField_UPDATE_TIME)
+	regTime, _ := rpc.GetUserField(intUid, microuser.UserField_REGISTER_TIME)
+	walletAddr, _ := rpc.GetUserField(intUid, microuser.UserField_WALLET_ADDRESS)
+	ln, _ := rpc.GetUserField(intUid, microuser.UserField_LANGUAGE)
+	region, _ := rpc.GetUserField(intUid, microuser.UserField_REGION)
+
 	//从缓存中获取用户活跃天数信息
-	activeDays, _ := common.GetCacheUserField(account.UID, common.USER_CACHE_REDIS_FIELD_NAME_ACTIVE_DAYS)
 	//提前获取交易等级
 	profile := profileResponse{
-		HavePayPwd:     (len(account.PaymentPassword) > 0),
-		TransLevel:     common.GetUserAssetTranslevelByUid(account.UID),
-		BindWx:         bindWx,
-		CreditScore:    creditScore,
-		BindTg:         bindTg,
-		WalletAddress:  walletAddress,
-		AvatarUrl:      avatarUrl,
-		ActiveDays:     utils.Str2Int(activeDays),
-		HashrateDetial: buildHashrateDetial(account.UID),
+		Uid:            uid,
+		Nickname:       account.Nickname,
+		Email:          account.Email,
+		Country:        account.Country,
+		Phone:          account.Phone,
+		HavePayPwd:     len(account.PaymentPassword) > 0,
+		TransLevel:     common.GetUserAssetTranslevelByUid(account.Uid),
+		BindWx:         len(wx) > 1,
+		CreditScore:    account.CreditScore,
+		BindTg:         len(tg) > 0,
+		WalletAddress:  walletAddr,
+		AvatarUrl:      account.AvatarUrl,
+		ActiveDays:     account.ActiveDays,
+		Level:          account.Level,
+		UpdateTime:     utils.GetTs13(utils.Str2Int64(updTime)),
+		RegisterTime:   utils.GetTs13(utils.Str2Int64(regTime)),
+		Language:       ln,
+		Region:         region,
+		HashrateDetial: buildHashrateDetial(account.Uid),
 	}
-
-	account.ID = 0
-	account.UID = 0
-	account.LoginPassword = ""
-	account.PaymentPassword = ""
-	account.From = ""
-	account.RegisterType = 0
-	profile.Account = *account
 
 	response.Data = profile
 }

@@ -4,11 +4,10 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
-
 
 // sendVCodeHandler
 type lvtcTransCommitHandler struct {
@@ -50,8 +49,8 @@ func (handler *lvtcTransCommitHandler) Handle(request *http.Request, writer http
 	}
 
 	// 判断用户身份
-	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return

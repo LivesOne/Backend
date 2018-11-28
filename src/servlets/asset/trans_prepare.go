@@ -2,15 +2,16 @@ package asset
 
 import (
 	"database/sql"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
+	"servlets/vcode"
 	"strings"
 	"utils"
 	"utils/config"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 type transPrepareParam struct {
@@ -23,9 +24,9 @@ type transPrepareParam struct {
 }
 
 type transPrepareSecret struct {
-	To    string `json:"to"`
-	Value string `json:"value"`
-	Pwd   string `json:"pwd"`
+	To         string            `json:"to"`
+	Value      string            `json:"value"`
+	Pwd        string            `json:"pwd"`
 	BizContent map[string]string `json:"biz_content"`
 }
 
@@ -82,8 +83,8 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans prepare: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -102,7 +103,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 
 	// vcodeType 大于0的时候开启短信验证 1下行，2上行
 	if requestData.Param.VcodeType > 0 {
-		acc, err := common.GetAccountByUID(uidString)
+		acc, err := rpc.GetUserInfo(utils.Str2Int64(uidString))
 		if err != nil && err != sql.ErrNoRows {
 			log.Info("asset trans prepare: get account by uid err", err.Error(), "uid:", uidString)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -110,13 +111,13 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		}
 		switch requestData.Param.VcodeType {
 		case 1:
-			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
+			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, int(acc.Country), requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
 				log.Info("validate sms code failed")
 				response.SetResponseBase(vcode.ConvSmsErr(errCode))
 				return
 			}
 		case 2:
-			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode); !ok {
+			if ok, resErr := vcode.ValidateSmsUpVCode(int(acc.Country), acc.Phone, requestData.Param.Vcode); !ok {
 				log.Info("validate up sms code failed")
 				response.SetResponseBase(resErr)
 				return
@@ -160,7 +161,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	to := utils.Str2Int64(secret.To)
 	txType := requestData.Param.TxType
 
-	logger.Debug(from,to,txType)
+	logger.Debug(from, to, txType)
 
 	if txType != constants.TX_TYPE_TRANS {
 		logger.Info("asset trans prepare: unsupported transaction type")
@@ -168,7 +169,7 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		return
 	}
 
-	if from == to || !common.ExistsUID(to) {
+	if from == to || !rpc.UserExists(to) {
 		logger.Info("asset trans prepare: transfer to himself or account not exist, from:", from, "to:", to)
 		response.SetResponseBase(constants.RC_INVALID_OBJECT_ACCOUNT)
 		return
@@ -203,14 +204,12 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
-		if !common.CheckLoginPwd(from, pwd) {
-			logger.Info("asset trans prepare: login password error")
+		if f, _ := rpc.CheckPwd(from, pwd, microuser.PwdCheckType_LOGIN_PWD); !f {
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
-		if !common.CheckPaymentPwd(from, pwd) {
-			logger.Info("asset trans prepare: trade password error")
+		if f, _ := rpc.CheckPwd(from, pwd, microuser.PwdCheckType_PAYMENT_PWD); !f {
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
@@ -218,9 +217,10 @@ func (handler *transPrepareHandler) Handle(request *http.Request, writer http.Re
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-	bizContent :=  utils.ToJSON(secret.BizContent)
+	bizContent := utils.ToJSON(secret.BizContent)
 	//调用统一提交流程
-	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value,bizContent, ""); resErr == constants.RC_OK {
+	if txid, resErr := common.PrepareLVTTrans(from, to, requestData.Param.TxType, secret.Value, bizContent, ""); resErr == constants.RC_OK {
+		log.Info("txid", txid,"current user",from)
 		response.Data = transPrepareResData{
 			Txid: txid,
 		}

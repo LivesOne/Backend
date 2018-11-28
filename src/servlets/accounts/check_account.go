@@ -1,9 +1,12 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
 	"utils"
 )
 
@@ -32,7 +35,7 @@ type checkAccountParam struct {
 type checkAccountResponse struct {
 	Exists int    `json:"exists"`
 	Uid    string `json:"uid"`
-	Status int    `json:"status"`
+	Status int64  `json:"status"`
 }
 
 // checkVCodeHandler
@@ -63,27 +66,55 @@ func (handler *checkAccountHandler) Handle(request *http.Request, writer http.Re
 
 	resData := checkAccountResponse{Exists: CHECK_ACCOUNT_NOT_EXISTS}
 
+	cli := rpc.GetUserCacheClient()
+	if cli == nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
 	switch data.Param.Type {
 	case CHECK_TYPE_UID:
-		uid, status := common.GetAssetByUid((utils.Str2Int64(data.Param.Uid)))
-		if uid != 0 {
+		req := &microuser.UserIdReq{
+			Uid: utils.Str2Int64(data.Param.Uid),
+		}
+		resp, err := cli.CheckAccountByUid(context.Background(), req)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		if resp.Result == microuser.ResCode_OK {
 			resData.Exists = CHECK_ACCOUNT_EXISTS
-			resData.Uid = utils.Int642Str(uid)
-			resData.Status = status
+			resData.Uid = utils.Int642Str(resp.Uid)
+			resData.Status = resp.Status
 		}
 	case CHECK_TYPE_EMAIL:
-		uid, status := common.GetAssetByEmail(data.Param.EMail)
-		if uid != 0 {
+		req := &microuser.CheckAccountByEmailReq{
+			Email: data.Param.EMail,
+		}
+		resp, err := cli.CheckAccountByEmail(context.Background(), req)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		if resp.Result == microuser.ResCode_OK {
 			resData.Exists = CHECK_ACCOUNT_EXISTS
-			resData.Uid = utils.Int642Str(uid)
-			resData.Status = status
+			resData.Uid = utils.Int642Str(resp.Uid)
+			resData.Status = resp.Status
 		}
 	case CHECK_TYPE_PHONE:
-		uid, status := common.GetAssetByPhone(data.Param.Country, data.Param.Phone)
-		if uid != 0 {
+		req := &microuser.CheckAccountByPhoneReq{
+			Country: int64(data.Param.Country),
+			Phone:   data.Param.Phone,
+		}
+		resp, err := cli.CheckAccountByPhone(context.Background(), req)
+		if err != nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
+		if resp.Result == microuser.ResCode_OK {
 			resData.Exists = CHECK_ACCOUNT_EXISTS
-			resData.Uid = utils.Int642Str(uid)
-			resData.Status = status
+			resData.Uid = utils.Int642Str(resp.Uid)
+			resData.Status = resp.Status
 		}
 	}
 	response.Data = resData

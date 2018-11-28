@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -18,14 +18,13 @@ type balanceRequest struct {
 	Param *balanceParam    `json:"param"`
 }
 
-
 type balanceDetial struct {
-	Currency string `json:"currency"`
-	Balance     string `json:"balance"`
-	Locked      string `json:"locked"`
-	Income  string `json:"income"`
-	Lastmodify int64 `json:"lastmodify"`
-	Status int `json:"status"`
+	Currency   string `json:"currency"`
+	Balance    string `json:"balance"`
+	Locked     string `json:"locked"`
+	Income     string `json:"income"`
+	Lastmodify int64  `json:"lastmodify"`
+	Status     int    `json:"status"`
 }
 
 // sendVCodeHandler
@@ -60,8 +59,8 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset balance: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -79,81 +78,79 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 
 	uid := utils.Str2Int64(uidString)
 
-	currencyList := []string{constants.TRADE_CURRENCY_LVT,constants.TRADE_CURRENCY_LVTC,constants.TRADE_CURRENCY_ETH,constants.TRADE_CURRENCY_EOS,constants.TRADE_CURRENCY_BTC}
-	response.Data = buildAllBalanceDetail(currencyList,uid)
+	currencyList := []string{constants.TRADE_CURRENCY_LVT, constants.TRADE_CURRENCY_LVTC, constants.TRADE_CURRENCY_ETH, constants.TRADE_CURRENCY_EOS, constants.TRADE_CURRENCY_BTC}
+	response.Data = buildAllBalanceDetail(currencyList, uid)
 
 }
 
+func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 
-func buildAllBalanceDetail(currencyList []string,uid int64)[]balanceDetial{
-
-	bds := make([]balanceDetial,0)
-	for _,v := range currencyList {
+	bds := make([]balanceDetial, 0)
+	for _, v := range currencyList {
 		switch v {
 		case constants.TRADE_CURRENCY_LVT:
-			balance, locked,income,lastmodify,status,err := common.QueryBalance(uid)
+			balance, locked, income, lastmodify, status, err := common.QueryBalance(uid)
 			if err != nil {
-				logger.Error("query balance error",err.Error())
+				logger.Error("query balance error", err.Error())
 				return nil
 			}
-			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
-			bds = append(bds,bd)
+			bd := buildSingleBalanceDetail(balance, locked, income, lastmodify, status, v)
+			bds = append(bds, bd)
 		case constants.TRADE_CURRENCY_LVTC:
-			balance, locked,income,lastmodify,status,err := common.QueryBalanceLvtc(uid)
+			balance, locked, income, lastmodify, status, err := common.QueryBalanceLvtc(uid)
 			if err != nil {
-				logger.Error("query balance error",err.Error())
+				logger.Error("query balance error", err.Error())
 				return nil
 			}
-			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
-			bds = append(bds,bd)
+			bd := buildSingleBalanceDetail(balance, locked, income, lastmodify, status, v)
+			bds = append(bds, bd)
 		case constants.TRADE_CURRENCY_ETH:
-			balance, locked,income,lastmodify,status,err := common.QueryBalanceEth(uid)
+			balance, locked, income, lastmodify, status, err := common.QueryBalanceEth(uid)
 			if err != nil {
-				logger.Error("query balance error",err.Error())
+				logger.Error("query balance error", err.Error())
 				return nil
 			}
-			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
-			bds = append(bds,bd)
+			bd := buildSingleBalanceDetail(balance, locked, income, lastmodify, status, v)
+			bds = append(bds, bd)
 		case constants.TRADE_CURRENCY_EOS:
-			balance, locked,income,lastmodify,status,err := common.QueryBalanceEos(uid)
+			balance, locked, income, lastmodify, status, err := common.QueryBalanceEos(uid)
 			if err != nil {
-				logger.Error("query balance error",err.Error())
+				logger.Error("query balance error", err.Error())
 				return nil
 			}
-			bd := buildSingleBalanceEOSDetail(balance, locked,income,lastmodify,status,v)
-			bds = append(bds,bd)
+			bd := buildSingleBalanceEOSDetail(balance, locked, income, lastmodify, status, v)
+			bds = append(bds, bd)
 		case constants.TRADE_CURRENCY_BTC:
-			balance, locked,income,lastmodify,status,err := common.QueryBalanceBtc(uid)
+			balance, locked, income, lastmodify, status, err := common.QueryBalanceBtc(uid)
 			if err != nil {
-				logger.Error("query balance error",err.Error())
+				logger.Error("query balance error", err.Error())
 				return nil
 			}
-			bd := buildSingleBalanceDetail(balance, locked,income,lastmodify,status,v)
-			bds = append(bds,bd)
+			bd := buildSingleBalanceDetail(balance, locked, income, lastmodify, status, v)
+			bds = append(bds, bd)
 		}
 	}
 
 	return bds
 }
 
-
-func buildSingleBalanceDetail(balance,locked,income,lastmodify int64 ,status int,currency string)balanceDetial{
+func buildSingleBalanceDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
 	return balanceDetial{
 		Currency:   currency,
 		Balance:    utils.LVTintToFloatStr(balance),
-		Locked:      utils.LVTintToFloatStr(locked),
-		Income:      utils.LVTintToFloatStr(income),
+		Locked:     utils.LVTintToFloatStr(locked),
+		Income:     utils.LVTintToFloatStr(income),
 		Lastmodify: lastmodify,
 		Status:     status,
 	}
 }
 
-func buildSingleBalanceEOSDetail(balance,locked,income,lastmodify int64 ,status int,currency string)balanceDetial{
+func buildSingleBalanceEOSDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
 	return balanceDetial{
 		Currency:   currency,
 		Balance:    utils.EOSintToFloatStr(balance),
-		Locked:      utils.EOSintToFloatStr(locked),
-		Income:      utils.EOSintToFloatStr(income),
+		Locked:     utils.EOSintToFloatStr(locked),
+		Income:     utils.EOSintToFloatStr(income),
 		Lastmodify: lastmodify,
 		Status:     status,
 	}

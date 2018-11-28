@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -54,8 +54,8 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Error("get cache failed")
 		response.SetResponseBase(err)
 		return
@@ -90,7 +90,6 @@ func (handler *upgradeHandler) Handle(request *http.Request, writer http.Respons
 
 			if f, e := common.SecondAuthWX(uid, secret.AppType, secret.WxCode); !f {
 				response.SetResponseBase(e)
-				return
 			}
 
 		}

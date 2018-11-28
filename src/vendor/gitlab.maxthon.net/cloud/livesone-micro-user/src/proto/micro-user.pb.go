@@ -35,11 +35,16 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type UserServiceClient interface {
-	RegisterUser(ctx context.Context, in *RegUserInfo, opts ...grpc.CallOption) (*ResMsg, error)
+	RegisterUser(ctx context.Context, in *RegUserInfo, opts ...grpc.CallOption) (*RegUserRes, error)
 	SetUserInfo(ctx context.Context, in *SetUserInfoReq, opts ...grpc.CallOption) (*ResMsg, error)
 	GetUserInfo(ctx context.Context, in *GetUserInfoReq, opts ...grpc.CallOption) (*GetUserInfoRes, error)
 	GetUserAllInfo(ctx context.Context, in *UserIdReq, opts ...grpc.CallOption) (*GetUserAllInfoRes, error)
 	UserActive(ctx context.Context, in *UserIdReq, opts ...grpc.CallOption) (*ResMsg, error)
+	UserExists(ctx context.Context, in *UserIdReq, opts ...grpc.CallOption) (*ResMsg, error)
+	CheckAccountByUid(ctx context.Context, in *UserIdReq, opts ...grpc.CallOption) (*CheckAccountRes, error)
+	CheckAccountByPhone(ctx context.Context, in *CheckAccountByPhoneReq, opts ...grpc.CallOption) (*CheckAccountRes, error)
+	CheckAccountByEmail(ctx context.Context, in *CheckAccountByEmailReq, opts ...grpc.CallOption) (*CheckAccountRes, error)
+	CheckAccountByAccount(ctx context.Context, in *CheckAccountByAccountReq, opts ...grpc.CallOption) (*CheckAccountRes, error)
 }
 
 type userServiceClient struct {
@@ -50,8 +55,8 @@ func NewUserServiceClient(cc *grpc.ClientConn) UserServiceClient {
 	return &userServiceClient{cc}
 }
 
-func (c *userServiceClient) RegisterUser(ctx context.Context, in *RegUserInfo, opts ...grpc.CallOption) (*ResMsg, error) {
-	out := new(ResMsg)
+func (c *userServiceClient) RegisterUser(ctx context.Context, in *RegUserInfo, opts ...grpc.CallOption) (*RegUserRes, error) {
+	out := new(RegUserRes)
 	err := c.cc.Invoke(ctx, "/microuser.UserService/RegisterUser", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -95,13 +100,63 @@ func (c *userServiceClient) UserActive(ctx context.Context, in *UserIdReq, opts 
 	return out, nil
 }
 
+func (c *userServiceClient) UserExists(ctx context.Context, in *UserIdReq, opts ...grpc.CallOption) (*ResMsg, error) {
+	out := new(ResMsg)
+	err := c.cc.Invoke(ctx, "/microuser.UserService/UserExists", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) CheckAccountByUid(ctx context.Context, in *UserIdReq, opts ...grpc.CallOption) (*CheckAccountRes, error) {
+	out := new(CheckAccountRes)
+	err := c.cc.Invoke(ctx, "/microuser.UserService/CheckAccountByUid", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) CheckAccountByPhone(ctx context.Context, in *CheckAccountByPhoneReq, opts ...grpc.CallOption) (*CheckAccountRes, error) {
+	out := new(CheckAccountRes)
+	err := c.cc.Invoke(ctx, "/microuser.UserService/CheckAccountByPhone", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) CheckAccountByEmail(ctx context.Context, in *CheckAccountByEmailReq, opts ...grpc.CallOption) (*CheckAccountRes, error) {
+	out := new(CheckAccountRes)
+	err := c.cc.Invoke(ctx, "/microuser.UserService/CheckAccountByEmail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) CheckAccountByAccount(ctx context.Context, in *CheckAccountByAccountReq, opts ...grpc.CallOption) (*CheckAccountRes, error) {
+	out := new(CheckAccountRes)
+	err := c.cc.Invoke(ctx, "/microuser.UserService/CheckAccountByAccount", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 type UserServiceServer interface {
-	RegisterUser(context.Context, *RegUserInfo) (*ResMsg, error)
+	RegisterUser(context.Context, *RegUserInfo) (*RegUserRes, error)
 	SetUserInfo(context.Context, *SetUserInfoReq) (*ResMsg, error)
 	GetUserInfo(context.Context, *GetUserInfoReq) (*GetUserInfoRes, error)
 	GetUserAllInfo(context.Context, *UserIdReq) (*GetUserAllInfoRes, error)
 	UserActive(context.Context, *UserIdReq) (*ResMsg, error)
+	UserExists(context.Context, *UserIdReq) (*ResMsg, error)
+	CheckAccountByUid(context.Context, *UserIdReq) (*CheckAccountRes, error)
+	CheckAccountByPhone(context.Context, *CheckAccountByPhoneReq) (*CheckAccountRes, error)
+	CheckAccountByEmail(context.Context, *CheckAccountByEmailReq) (*CheckAccountRes, error)
+	CheckAccountByAccount(context.Context, *CheckAccountByAccountReq) (*CheckAccountRes, error)
 }
 
 func RegisterUserServiceServer(s *grpc.Server, srv UserServiceServer) {
@@ -198,6 +253,96 @@ func _UserService_UserActive_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UserExists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserIdReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UserExists(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/microuser.UserService/UserExists",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UserExists(ctx, req.(*UserIdReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_CheckAccountByUid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserIdReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckAccountByUid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/microuser.UserService/CheckAccountByUid",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckAccountByUid(ctx, req.(*UserIdReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_CheckAccountByPhone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckAccountByPhoneReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckAccountByPhone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/microuser.UserService/CheckAccountByPhone",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckAccountByPhone(ctx, req.(*CheckAccountByPhoneReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_CheckAccountByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckAccountByEmailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckAccountByEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/microuser.UserService/CheckAccountByEmail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckAccountByEmail(ctx, req.(*CheckAccountByEmailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_CheckAccountByAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckAccountByAccountReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckAccountByAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/microuser.UserService/CheckAccountByAccount",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckAccountByAccount(ctx, req.(*CheckAccountByAccountReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _UserService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "microuser.UserService",
 	HandlerType: (*UserServiceServer)(nil),
@@ -222,6 +367,26 @@ var _UserService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "UserActive",
 			Handler:    _UserService_UserActive_Handler,
 		},
+		{
+			MethodName: "UserExists",
+			Handler:    _UserService_UserExists_Handler,
+		},
+		{
+			MethodName: "CheckAccountByUid",
+			Handler:    _UserService_CheckAccountByUid_Handler,
+		},
+		{
+			MethodName: "CheckAccountByPhone",
+			Handler:    _UserService_CheckAccountByPhone_Handler,
+		},
+		{
+			MethodName: "CheckAccountByEmail",
+			Handler:    _UserService_CheckAccountByEmail_Handler,
+		},
+		{
+			MethodName: "CheckAccountByAccount",
+			Handler:    _UserService_CheckAccountByAccount_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "micro-user.proto",
@@ -235,6 +400,7 @@ type UserLoginServiceClient interface {
 	AutoLogin(ctx context.Context, in *AutoLoginReq, opts ...grpc.CallOption) (*AutoLoginRes, error)
 	Logout(ctx context.Context, in *TokenReq, opts ...grpc.CallOption) (*ResMsg, error)
 	GetLoginInfo(ctx context.Context, in *GetLoginInfoReq, opts ...grpc.CallOption) (*GetLoginInfoRes, error)
+	CheckPwd(ctx context.Context, in *CheckPwdReq, opts ...grpc.CallOption) (*ResMsg, error)
 }
 
 type userLoginServiceClient struct {
@@ -281,12 +447,22 @@ func (c *userLoginServiceClient) GetLoginInfo(ctx context.Context, in *GetLoginI
 	return out, nil
 }
 
+func (c *userLoginServiceClient) CheckPwd(ctx context.Context, in *CheckPwdReq, opts ...grpc.CallOption) (*ResMsg, error) {
+	out := new(ResMsg)
+	err := c.cc.Invoke(ctx, "/microuser.UserLoginService/CheckPwd", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserLoginServiceServer is the server API for UserLoginService service.
 type UserLoginServiceServer interface {
 	Login(context.Context, *LoginUserReq) (*LoginUserRes, error)
 	AutoLogin(context.Context, *AutoLoginReq) (*AutoLoginRes, error)
 	Logout(context.Context, *TokenReq) (*ResMsg, error)
 	GetLoginInfo(context.Context, *GetLoginInfoReq) (*GetLoginInfoRes, error)
+	CheckPwd(context.Context, *CheckPwdReq) (*ResMsg, error)
 }
 
 func RegisterUserLoginServiceServer(s *grpc.Server, srv UserLoginServiceServer) {
@@ -365,6 +541,24 @@ func _UserLoginService_GetLoginInfo_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserLoginService_CheckPwd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckPwdReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserLoginServiceServer).CheckPwd(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/microuser.UserLoginService/CheckPwd",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserLoginServiceServer).CheckPwd(ctx, req.(*CheckPwdReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _UserLoginService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "microuser.UserLoginService",
 	HandlerType: (*UserLoginServiceServer)(nil),
@@ -385,6 +579,10 @@ var _UserLoginService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "GetLoginInfo",
 			Handler:    _UserLoginService_GetLoginInfo_Handler,
 		},
+		{
+			MethodName: "CheckPwd",
+			Handler:    _UserLoginService_CheckPwd_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "micro-user.proto",
@@ -396,6 +594,7 @@ var _UserLoginService_serviceDesc = grpc.ServiceDesc{
 type UserWalletServiceClient interface {
 	BindWallet(ctx context.Context, in *WalletBindReq, opts ...grpc.CallOption) (*ResMsg, error)
 	QueryWallet(ctx context.Context, in *UserIdReq, opts ...grpc.CallOption) (*WalletQueryRes, error)
+	GetRechargeAddress(ctx context.Context, in *GetRechargeAddressReq, opts ...grpc.CallOption) (*GetRechargeAddressRes, error)
 }
 
 type userWalletServiceClient struct {
@@ -424,10 +623,20 @@ func (c *userWalletServiceClient) QueryWallet(ctx context.Context, in *UserIdReq
 	return out, nil
 }
 
+func (c *userWalletServiceClient) GetRechargeAddress(ctx context.Context, in *GetRechargeAddressReq, opts ...grpc.CallOption) (*GetRechargeAddressRes, error) {
+	out := new(GetRechargeAddressRes)
+	err := c.cc.Invoke(ctx, "/microuser.UserWalletService/GetRechargeAddress", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserWalletServiceServer is the server API for UserWalletService service.
 type UserWalletServiceServer interface {
 	BindWallet(context.Context, *WalletBindReq) (*ResMsg, error)
 	QueryWallet(context.Context, *UserIdReq) (*WalletQueryRes, error)
+	GetRechargeAddress(context.Context, *GetRechargeAddressReq) (*GetRechargeAddressRes, error)
 }
 
 func RegisterUserWalletServiceServer(s *grpc.Server, srv UserWalletServiceServer) {
@@ -470,6 +679,24 @@ func _UserWalletService_QueryWallet_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserWalletService_GetRechargeAddress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRechargeAddressReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserWalletServiceServer).GetRechargeAddress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/microuser.UserWalletService/GetRechargeAddress",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserWalletServiceServer).GetRechargeAddress(ctx, req.(*GetRechargeAddressReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _UserWalletService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "microuser.UserWalletService",
 	HandlerType: (*UserWalletServiceServer)(nil),
@@ -482,34 +709,46 @@ var _UserWalletService_serviceDesc = grpc.ServiceDesc{
 			MethodName: "QueryWallet",
 			Handler:    _UserWalletService_QueryWallet_Handler,
 		},
+		{
+			MethodName: "GetRechargeAddress",
+			Handler:    _UserWalletService_GetRechargeAddress_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "micro-user.proto",
 }
 
-func init() { proto.RegisterFile("micro-user.proto", fileDescriptor_micro_user_aa96ce8723e3ab42) }
+func init() { proto.RegisterFile("micro-user.proto", fileDescriptor_micro_user_74d99c30b1249d73) }
 
-var fileDescriptor_micro_user_aa96ce8723e3ab42 = []byte{
-	// 330 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x93, 0x41, 0x4f, 0xc2, 0x30,
-	0x14, 0xc7, 0x91, 0x44, 0x12, 0xde, 0x88, 0x81, 0x6a, 0x14, 0x88, 0x27, 0xee, 0x70, 0x98, 0x07,
-	0x0f, 0xc6, 0x28, 0x26, 0x8a, 0x26, 0x78, 0x10, 0x34, 0x9e, 0x11, 0x9e, 0x4d, 0xe3, 0x58, 0xb5,
-	0xed, 0x48, 0xfc, 0x12, 0x1e, 0xfc, 0x66, 0x7e, 0x23, 0xf3, 0x3a, 0xdc, 0x3a, 0xb7, 0x1e, 0xf7,
-	0x7b, 0xff, 0xff, 0x2f, 0xed, 0x6b, 0x06, 0xed, 0xb5, 0x58, 0x2a, 0x39, 0x4c, 0x34, 0xaa, 0xd1,
-	0xbb, 0x92, 0x46, 0xb2, 0xa6, 0x25, 0x04, 0xfa, 0xdd, 0x7c, 0x38, 0x5c, 0xa3, 0xd6, 0x0b, 0x8e,
-	0x69, 0x28, 0xfc, 0xa9, 0x43, 0xf0, 0xa4, 0x51, 0xcd, 0x51, 0x6d, 0xc4, 0x12, 0xd9, 0x19, 0xb4,
-	0x66, 0xc8, 0x85, 0x36, 0xa8, 0x08, 0xb3, 0xc3, 0x51, 0x66, 0x19, 0xcd, 0x90, 0x13, 0xbb, 0x8b,
-	0x5f, 0x65, 0xbf, 0x53, 0xe0, 0xfa, 0x5e, 0xf3, 0x41, 0x8d, 0x9d, 0x43, 0x30, 0x47, 0xf3, 0x97,
-	0x61, 0x3d, 0x27, 0xe3, 0xf0, 0x19, 0x7e, 0x54, 0xd7, 0xaf, 0x21, 0x98, 0x78, 0xea, 0x93, 0x62,
-	0xdd, 0x3b, 0xd2, 0x83, 0x1a, 0xbb, 0x81, 0xbd, 0x2d, 0x1b, 0x47, 0x91, 0x35, 0x1d, 0x38, 0x71,
-	0x9b, 0x5d, 0x91, 0xe4, 0xb8, 0x2c, 0xd9, 0x16, 0x52, 0xcf, 0x29, 0x80, 0x65, 0x4b, 0x23, 0x36,
-	0xe8, 0x71, 0x54, 0xdd, 0x23, 0xfc, 0xaa, 0x43, 0x9b, 0x22, 0x53, 0xc9, 0x45, 0x9c, 0x2f, 0x76,
-	0xd7, 0x7e, 0xb3, 0x23, 0xa7, 0x62, 0x09, 0x45, 0xc9, 0xe5, 0x19, 0xd0, 0x51, 0x2e, 0xa0, 0x39,
-	0x4e, 0x8c, 0x2c, 0x0b, 0x32, 0xfa, 0x5f, 0xe0, 0x0c, 0x48, 0x10, 0x42, 0x63, 0x2a, 0xb9, 0x4c,
-	0x0c, 0xdb, 0x77, 0x42, 0x8f, 0xf2, 0x0d, 0x63, 0xef, 0x73, 0xdc, 0x42, 0x6b, 0x82, 0xc6, 0x4a,
-	0xec, 0x16, 0xfb, 0xc5, 0x7d, 0x65, 0x03, 0x12, 0xf8, 0x67, 0x7a, 0x50, 0x0b, 0xbf, 0x77, 0xa0,
-	0x43, 0x97, 0x79, 0x5e, 0x44, 0x11, 0x9a, 0x7c, 0x23, 0x70, 0x25, 0xe2, 0x55, 0x0a, 0x59, 0xd7,
-	0x31, 0xa4, 0x88, 0x86, 0xde, 0xc3, 0x5d, 0x42, 0xf0, 0x90, 0xa0, 0xfa, 0xdc, 0xb6, 0xab, 0x5f,
-	0xa7, 0x57, 0x72, 0xda, 0x8e, 0x3d, 0xd4, 0x4b, 0xc3, 0xfe, 0x00, 0x27, 0xbf, 0x01, 0x00, 0x00,
-	0xff, 0xff, 0x0e, 0xd6, 0x63, 0x05, 0x39, 0x03, 0x00, 0x00,
+var fileDescriptor_micro_user_74d99c30b1249d73 = []byte{
+	// 459 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0x4f, 0x6f, 0xd3, 0x40,
+	0x10, 0xc5, 0x03, 0x52, 0x2b, 0x3a, 0xae, 0x50, 0xb3, 0xa5, 0xd0, 0x5a, 0x1c, 0x20, 0x9c, 0x9b,
+	0x83, 0x39, 0x70, 0x40, 0xa8, 0xb8, 0x28, 0x18, 0xa4, 0x22, 0x15, 0x97, 0x82, 0xc4, 0xcd, 0xd8,
+	0x83, 0xb3, 0xaa, 0xe3, 0x25, 0xbb, 0xeb, 0x40, 0x3e, 0x21, 0x1f, 0x84, 0x3b, 0x9f, 0x01, 0xed,
+	0xfa, 0x4f, 0x76, 0xe3, 0x2c, 0x11, 0xdc, 0x92, 0xf7, 0xe6, 0xfd, 0x34, 0x3b, 0x7a, 0x09, 0x1c,
+	0xcc, 0x68, 0xca, 0xd9, 0x69, 0x25, 0x90, 0x8f, 0xbf, 0x71, 0x26, 0x19, 0xd9, 0xd3, 0x8a, 0x12,
+	0xfc, 0xe3, 0x95, 0x79, 0x3a, 0x43, 0x21, 0x92, 0x1c, 0xeb, 0xa1, 0xe0, 0xd7, 0x0e, 0x78, 0xd7,
+	0x02, 0xf9, 0x15, 0xf2, 0x05, 0x4d, 0x91, 0x9c, 0xc1, 0x7e, 0x8c, 0x39, 0x15, 0x12, 0xb9, 0x92,
+	0xc9, 0xfd, 0x71, 0x47, 0x19, 0xc7, 0x98, 0x2b, 0xed, 0x6d, 0xf9, 0x95, 0xf9, 0x47, 0x7d, 0x3d,
+	0x46, 0x31, 0x1a, 0x90, 0x17, 0xe0, 0x5d, 0xa1, 0x6c, 0xe7, 0xc8, 0x89, 0x31, 0x67, 0xe8, 0x31,
+	0xce, 0xfd, 0xa1, 0x85, 0x10, 0xef, 0x44, 0x3e, 0x1a, 0x90, 0x09, 0x78, 0x91, 0x23, 0x1e, 0xd9,
+	0x71, 0xa7, 0xa5, 0xb6, 0x78, 0x0d, 0x77, 0x1b, 0x2d, 0x2c, 0x0a, 0x4d, 0xba, 0x67, 0x8c, 0xeb,
+	0xd9, 0x4c, 0x41, 0x1e, 0xf6, 0x21, 0x4d, 0xa0, 0xe6, 0x3c, 0x03, 0xd0, 0x5a, 0x2a, 0xe9, 0x02,
+	0x1d, 0x8c, 0x8d, 0xef, 0x68, 0x82, 0x93, 0x1f, 0x54, 0x48, 0xf1, 0x2f, 0xc1, 0x08, 0x86, 0xaf,
+	0xa6, 0x98, 0xde, 0x84, 0x69, 0xca, 0xaa, 0x52, 0x9e, 0x2f, 0xaf, 0x69, 0xe6, 0xc8, 0xfb, 0x86,
+	0x6a, 0x66, 0xea, 0xd5, 0x3f, 0xc2, 0xa1, 0x0d, 0xba, 0x9c, 0xb2, 0x12, 0xc9, 0x63, 0x47, 0xa8,
+	0xf1, 0xff, 0x83, 0x3b, 0x99, 0x25, 0xb4, 0xf8, 0x0b, 0x57, 0xfb, 0xdb, 0xb9, 0x9f, 0xe1, 0xc8,
+	0xce, 0x35, 0x1f, 0xc8, 0x13, 0x27, 0xb9, 0xcb, 0x6f, 0x61, 0x07, 0x3f, 0x6f, 0xc3, 0x81, 0xba,
+	0xdb, 0x05, 0xcb, 0x69, 0xd9, 0x56, 0xfd, 0x39, 0xec, 0xe8, 0xef, 0xe4, 0x81, 0x91, 0xd5, 0x4a,
+	0xdd, 0xe6, 0xb9, 0xef, 0x30, 0xd4, 0xb6, 0x67, 0xb0, 0x17, 0x56, 0x92, 0xf5, 0x01, 0x9d, 0xba,
+	0x0e, 0x30, 0x0c, 0x05, 0x08, 0x60, 0xf7, 0x82, 0xe5, 0xac, 0x92, 0xe4, 0xd0, 0x18, 0xfa, 0xc0,
+	0x6e, 0xb0, 0x74, 0x76, 0xe3, 0x0d, 0xec, 0x47, 0x28, 0x35, 0x44, 0x77, 0xda, 0xb7, 0xdb, 0xdb,
+	0x19, 0xeb, 0x07, 0xb1, 0xbd, 0xba, 0xd7, 0x77, 0xf4, 0x95, 0x2e, 0xbf, 0x67, 0xd6, 0x4f, 0xbc,
+	0x15, 0x5d, 0x2b, 0x04, 0xbf, 0x6f, 0xc1, 0x50, 0x5d, 0xe1, 0x53, 0x52, 0x14, 0x28, 0x57, 0xa7,
+	0x84, 0x73, 0x5a, 0x66, 0xb5, 0x48, 0x8e, 0x8d, 0x60, 0x2d, 0x29, 0xd3, 0xf9, 0xaa, 0x97, 0xe0,
+	0xbd, 0xaf, 0x90, 0x2f, 0x9b, 0xf4, 0xe6, 0xae, 0x9f, 0xf4, 0x98, 0x3a, 0xd3, 0x56, 0x87, 0x44,
+	0x28, 0x63, 0x4c, 0xa7, 0x09, 0xcf, 0x31, 0xcc, 0x32, 0x8e, 0x42, 0x90, 0x47, 0xf6, 0x05, 0xd6,
+	0x6c, 0x05, 0xdd, 0x36, 0x21, 0x46, 0x83, 0x2f, 0xbb, 0xfa, 0x7f, 0xf2, 0xe9, 0x9f, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0xe5, 0x73, 0xdc, 0x41, 0x60, 0x05, 0x00, 0x00,
 }

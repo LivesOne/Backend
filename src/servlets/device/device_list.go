@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -57,8 +57,8 @@ func (handler *deviceListHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	// 判断用户身份
-	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -93,9 +93,9 @@ func convDevicelistToMiners(deviceList []common.DtDevice, uid int64) []miners {
 		m, ok := cache[v.Mid]
 		if !ok {
 			m = miners{
-				Mid:            v.Mid,
-				Plat:           v.Plat,
-				Devices:        make([]minerDevice, 0),
+				Mid:     v.Mid,
+				Plat:    v.Plat,
+				Devices: make([]minerDevice, 0),
 			}
 		}
 
@@ -123,7 +123,7 @@ func convDevicelistToMiners(deviceList []common.DtDevice, uid int64) []miners {
 				Mid: i,
 			}
 		}
-		m.IsValid = !common.CheckUnbindLimit(uid,m.Mid)
+		m.IsValid = !common.CheckUnbindLimit(uid, m.Mid)
 		res = append(res, m)
 	}
 

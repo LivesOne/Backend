@@ -1,11 +1,12 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"regexp"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"strings"
 	"utils"
 	"utils/db_factory"
@@ -53,8 +54,9 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 
 	// 判断用户身份
 	// _, aesKey, _, _ := token.GetAll(header.TokenHash)
-	uidString, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if tokenErr != microuser.ResCode_OK {
+		err := rpc.TokenErr2RcErr(tokenErr)
 		response.SetResponseBase(err)
 		log.Info("modify user profile: read user info error:", err)
 		return
@@ -97,7 +99,8 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 			response.SetResponseBase(constants.RC_INVALID_NICKNAME_FORMAT)
 			return
 		}
-		dbErr := common.SetNickname(uid, secret.Nickname)
+		_, dbErr := rpc.SetUserField(uid, microuser.UserField_NICKNAME, secret.Nickname)
+		//dbErr := common.SetNickname(uid, secret.Nickname)
 		if dbErr != nil {
 			if db_factory.CheckDuplicateByColumn(dbErr, "nickname") {
 				log.Info("modify user profile: duplicate nickname", dbErr)
@@ -116,19 +119,14 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 			if !strings.HasPrefix(walletAddress, "0x") {
 				walletAddress = "0x" + walletAddress
 			}
-			if common.CheckWalletAddressBlacklist(walletAddress) > 0 {
-				logger.Info("blacklist exist this wallet address ", walletAddress)
-				response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
-			} else {
-				rowsAffected, dbErr := common.SetWalletAddress(uid, walletAddress)
-				if dbErr != nil {
-					if rowsAffected == 0 || db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
-						log.Info("modify user profile: duplicate wallet_address", dbErr)
-						response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
-					} else {
-						log.Info("modify user profile : save wallet_address to db error:", dbErr)
-						response.SetResponseBase(constants.RC_SYSTEM_ERR)
-					}
+			_, dbErr := rpc.SetUserField(uid, microuser.UserField_WALLET_ADDRESS, walletAddress)
+			if dbErr != nil {
+				if db_factory.CheckDuplicateByColumn(dbErr, "wallet_address") {
+					log.Info("modify user profile: duplicate wallet_address", dbErr)
+					response.SetResponseBase(constants.RC_DUP_WALLET_ADDRESS)
+				} else {
+					log.Info("modify user profile : save wallet_address to db error:", dbErr)
+					response.SetResponseBase(constants.RC_SYSTEM_ERR)
 				}
 			}
 		} else {
@@ -136,7 +134,7 @@ func (handler *modifyUserProfileHandler) Handle(request *http.Request, writer ht
 		}
 	}
 	if len(secret.AvatarUrl) > 0 {
-		_, dbErr := common.SetAvatarUrl(uid, secret.AvatarUrl)
+		_, dbErr := rpc.SetUserField(uid, microuser.UserField_AVATAR_URL, secret.AvatarUrl)
 		if dbErr != nil {
 			log.Info("modify user profile : save avatar_url to db error:", dbErr)
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)

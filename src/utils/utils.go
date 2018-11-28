@@ -10,13 +10,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"servlets/constants"
 	"strconv"
 	"strings"
 	"time"
 	"utils/logger"
-	"reflect"
 )
 
 const (
@@ -31,7 +31,6 @@ const (
 	CONV_LVT            = 1e8
 	CONV_EOS            = 1e4
 	DB_CONV_CHAIN_VALUE = 1e10
-
 )
 
 // ReadJSONFile reads a JSON format file into v
@@ -263,7 +262,7 @@ func DecodeSecret(secret, key, iv string, secretPtr interface{}) error {
 		logger.Error("json Unmarshal error ", err.Error())
 		return err
 	}
-	logger.Debug("decode secret",ToJSON(secretPtr))
+	logger.Debug("decode secret", ToJSON(secretPtr))
 	return nil
 
 }
@@ -283,9 +282,7 @@ func ConvChainStrToDBValue(chainStr string) int64 {
 	return dbValue.Int64()
 }
 
-
-
-func GetLockHashrate(lvtcScale,monnth int, value string) int {
+func GetLockHashrate(lvtcScale, monnth int, value string) int {
 	//锁仓数额	B	[用户自定义填充]，锁仓额为1000LVT的倍数
 	b := Str2Float64(value)
 	//锁仓期间	T	用户选择：1个月、3个月、6个月、12个月，24个月
@@ -306,10 +303,8 @@ func GetLockHashrate(lvtcScale,monnth int, value string) int {
 	return constants.ASSET_LOCK_MAX_VALUE
 }
 
-
-
 func StructConvMap(p interface{}) map[string]interface{} {
-	v,t := GetStructValueAndType(p)
+	v, t := GetStructValueAndType(p)
 
 	var data = make(map[string]interface{})
 	for i := 0; i < t.NumField(); i++ {
@@ -322,9 +317,9 @@ func StructConvMap(p interface{}) map[string]interface{} {
 			name = f.Name
 		}
 
-		value :=  v.Field(i).Interface()
+		value := v.Field(i).Interface()
 		valueStr := convStructField(value)
-		if nss := strings.Split(name,",");len(nss)>1{
+		if nss := strings.Split(name, ","); len(nss) > 1 {
 			name = nss[0]
 			if nss[1] == "omitempty" {
 				if len(valueStr) == 0 {
@@ -337,14 +332,13 @@ func StructConvMap(p interface{}) map[string]interface{} {
 	return data
 }
 
-func GetStructValueAndType(p interface{})(reflect.Value,reflect.Type){
+func GetStructValueAndType(p interface{}) (reflect.Value, reflect.Type) {
 	v := reflect.ValueOf(p)
 	if v.Kind() == reflect.Ptr {
 		v = reflect.Indirect(v)
 	}
-	return v,v.Type()
+	return v, v.Type()
 }
-
 
 func convStructField(p interface{}) string {
 	switch p.(type) {
@@ -361,7 +355,7 @@ func convStructField(p interface{}) string {
 	case float64:
 		s := p.(float64)
 		if s != 0 {
-			return  strconv.FormatFloat(s,'f', 8, 64)
+			return strconv.FormatFloat(s, 'f', 8, 64)
 		}
 	case string:
 		return p.(string)
@@ -369,8 +363,7 @@ func convStructField(p interface{}) string {
 	return ""
 }
 
-
-func GetTomorrowStartTs10()int64{
+func GetTomorrowStartTs10() int64 {
 	k := time.Now().UTC()
 	d, _ := time.ParseDuration("+24h")
 	k = k.Add(d)

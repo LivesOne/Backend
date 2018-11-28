@@ -5,17 +5,16 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
 
 type (
 	contactDeleteHandler struct {
-
 	}
 	contactDeleteSecret struct {
-		ContactId     int64        `json:"contact_id,omitempty"`
+		ContactId int64 `json:"contact_id,omitempty"`
 	}
 	contactDeleteParam struct {
 		Secret string `json:"secret"`
@@ -39,7 +38,7 @@ func (handler *contactDeleteHandler) Handle(request *http.Request, writer http.R
 	defer log.InfoAll()
 
 	res := common.NewResponseData()
-	defer common.FlushJSONData2Client(res,writer)
+	defer common.FlushJSONData2Client(res, writer)
 	header := common.ParseHttpHeaderParams(request)
 	if !header.IsValid() {
 		log.Warn("header is not valid", utils.ToJSON(header))
@@ -47,8 +46,8 @@ func (handler *contactDeleteHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
-	uidStr, aesKey, _, tokenErr := token.GetAll(header.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(header.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("get info from cache error:", err)
 		res.SetResponseBase(err)
 		return
@@ -56,7 +55,7 @@ func (handler *contactDeleteHandler) Handle(request *http.Request, writer http.R
 
 	reqData := new(contactDeleteReqData)
 
-	if !common.ParseHttpBodyParams(request,reqData) {
+	if !common.ParseHttpBodyParams(request, reqData) {
 		log.Info("decode json str error")
 		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
 		return

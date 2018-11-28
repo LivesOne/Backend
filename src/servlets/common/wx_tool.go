@@ -1,7 +1,9 @@
 package common
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"servlets/constants"
+	"servlets/rpc"
 	"strings"
 	"utils"
 	"utils/config"
@@ -84,10 +86,21 @@ func AuthWX(app,wxCode string) (bool, *wxRes) {
 
 
 func SecondAuthWX(uid int64,app,authCode string)(bool,constants.Error){
-	openId, unionId, _, _, _ := GetUserExtendByUid(uid)
-	if len(unionId) == 0 {
+	// 微信绑定验证，未绑定返回验提取失败
+	wx, _ := rpc.GetUserField(uid, microuser.UserField_WX)
+	if len(wx) == 0 {
 		logger.Error("user is not bind wx")
-		return false,constants.RC_UPGRAD_FAILED
+		return false,constants.RC_WX_SEC_AUTH_FAILED
+	}
+	wxIds := strings.Split(wx, ",")
+	if len(wxIds) != 2 {
+		logger.Error("user is not bind wx")
+		return false,constants.RC_WX_SEC_AUTH_FAILED
+	}
+	openId, unionId := wxIds[0], wxIds[1]
+	if len(openId) == 0 || len(unionId) == 0 {
+		logger.Error("user is not bind wx")
+		return false,constants.RC_WX_SEC_AUTH_FAILED
 	}
 	//微信认证并比对id
 	if ok, res := AuthWX(app,authCode); ok {

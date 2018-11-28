@@ -1,12 +1,15 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
+	"servlets/vcode"
 	"strings"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 const (
@@ -128,26 +131,64 @@ func (handler *sendVCodeHandler) Handle(request *http.Request, writer http.Respo
 
 func validateAction(param *sendVCodeParam) (bool, constants.Error) {
 	if param.Action == "add" {
+		cli := rpc.GetUserCacheClient()
+		if cli == nil {
+			return false, constants.RC_SYSTEM_ERR
+		}
 		switch param.Type {
 		case MESSAGE, CALL:
-			if common.ExistsPhone(param.Country, param.Phone) {
+			req := &microuser.CheckAccountByPhoneReq{
+				Country: int64(param.Country),
+				Phone:   param.Phone,
+			}
+			resp, err := cli.CheckAccountByPhone(context.Background(), req)
+			if err != nil {
+				return false, constants.RC_SYSTEM_ERR
+			}
+			if resp.Result == microuser.ResCode_OK {
 				return false, constants.RC_DUP_PHONE
 			}
 		case EMAIL:
-			if common.ExistsEmail(param.EMail) {
+			req := &microuser.CheckAccountByEmailReq{
+				Email: param.EMail,
+			}
+			resp, err := cli.CheckAccountByEmail(context.Background(), req)
+			if err != nil {
+				return false, constants.RC_SYSTEM_ERR
+			}
+			if resp.Result == microuser.ResCode_OK {
 				return false, constants.RC_DUP_EMAIL
 			}
 		default:
 			return false, constants.RC_PARAM_ERR
 		}
 	} else if param.Action == "reset" {
+		cli := rpc.GetUserCacheClient()
+		if cli == nil {
+			return false, constants.RC_SYSTEM_ERR
+		}
 		switch param.Type {
 		case MESSAGE, CALL:
-			if common.CheckResetPhone(param.Country, param.Phone) {
+			req := &microuser.CheckAccountByPhoneReq{
+				Country: int64(param.Country),
+				Phone:   param.Phone,
+			}
+			resp, err := cli.CheckAccountByPhone(context.Background(), req)
+			if err != nil {
+				return false, constants.RC_SYSTEM_ERR
+			}
+			if resp.Result == microuser.ResCode_ERR_NOTFOUND {
 				return false, constants.RC_INVALID_ACCOUNT
 			}
 		case EMAIL:
-			if common.CheckResetEmail(param.EMail) {
+			req := &microuser.CheckAccountByEmailReq{
+				Email: param.EMail,
+			}
+			resp, err := cli.CheckAccountByEmail(context.Background(), req)
+			if err != nil {
+				return false, constants.RC_SYSTEM_ERR
+			}
+			if resp.Result == microuser.ResCode_ERR_NOTFOUND {
 				return false, constants.RC_INVALID_ACCOUNT
 			}
 		default:

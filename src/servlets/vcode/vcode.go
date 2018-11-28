@@ -146,8 +146,6 @@ type (
 	}
 )
 
-
-
 func isNotNull(s string) bool {
 	return len(s) > 0
 }

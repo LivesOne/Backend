@@ -1,9 +1,12 @@
 package contacts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -56,18 +59,33 @@ func (handler *contactFindHandler) Handle(request *http.Request, writer http.Res
 
 	// 解码 secret 参数
 	// secretString := requestData.Param.Secret
-
-	var accs []*common.Account = make([]*common.Account, 0)
+	cli := rpc.GetUserCacheClient()
+	if cli == nil {
+		res.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+	var accs []int64 = make([]int64, 0)
 	var err error
 	if utils.IsValidEmailAddr(reqData.Param.Account) {
-		acc, errr := common.GetAccountByEmail(reqData.Param.Account)
-		if errr != nil {
-			err = errr
-		} else if acc != nil {
-			accs = append(accs, acc)
+		req := &microuser.CheckAccountByEmailReq{
+			Email:                reqData.Param.Account,
+		}
+		resp, rpcerr := cli.CheckAccountByEmail(context.Background(), req)
+		if rpcerr != nil {
+			err = rpcerr
+		} else if resp.Result == microuser.ResCode_OK {
+			accs = append(accs, resp.Uid)
 		}
 	} else {
-		accs, err = common.GetAccountListByPhoneOrUID(reqData.Param.Account)
+		req := &microuser.CheckAccountByAccountReq{
+			Account:reqData.Param.Account,
+		}
+		resp, rpcerr := cli.CheckAccountByAccount(context.Background(), req)
+		if rpcerr != nil {
+			err = rpcerr
+		} else if resp.Result == microuser.ResCode_OK {
+			accs = append(accs, resp.Uid)
+		}
 	}
 
 	if err != nil {
@@ -80,13 +98,15 @@ func (handler *contactFindHandler) Handle(request *http.Request, writer http.Res
 
 }
 
-func convContacts(accs []*common.Account) []contactFindResData {
+func convContacts(accs []int64) []contactFindResData {
 	if len(accs) > 0 {
 		r := make([]contactFindResData, len(accs))
 		for i, v := range accs {
+			uid := v
+			nickName ,_ := rpc.GetUserField(uid,microuser.UserField_NICKNAME)
 			r[i] = contactFindResData{
-				Uid:      v.UID,
-				Nickname: v.Nickname,
+				Uid:      uid,
+				Nickname: nickName,
 			}
 		}
 		return r

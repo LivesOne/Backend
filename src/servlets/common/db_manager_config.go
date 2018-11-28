@@ -82,10 +82,10 @@ func QueryTransAmount(currency string) (*DtTransferAmount, error) {
 func convRowMap2DtTransAmount(row map[string]string) *DtTransferAmount {
 	if row != nil && len(row) > 0 {
 		transAmount := &DtTransferAmount{
-			Currency: row["currency"],
+			Currency:        row["currency"],
 			SingleAmountMin: utils.Str2Float64(row["single_amount_min"]),
-			DailyAmountMax: utils.Str2Float64(row["daily_amount_max"]),
-			UpdateTime: utils.Str2Int64(row["update_time"]),
+			DailyAmountMax:  utils.Str2Float64(row["daily_amount_max"]),
+			UpdateTime:      utils.Str2Int64(row["update_time"]),
 		}
 		return transAmount
 	}
@@ -107,6 +107,7 @@ func QueryTransDailyAmountMax(currency string) (float64, error) {
 	}
 	return dtAmount.DailyAmountMax, nil
 }
+
 
 func QueryWithdrawalAmount(currency string) (*WithdrawQuota, error) {
 	row, err := gDBConfig.QueryRow("select single_amount_min,daily_amount_max from dt_withdrawal_amount where currency = ?", currency)
@@ -154,6 +155,7 @@ func QueryWithdrawalFeesList(currency string) []*DtWithdrawalFee {
 	}
 	return res
 }
+
 
 func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
 	sql := "select * from dt_withdrawal_amount where currency = ?"
@@ -204,6 +206,7 @@ func QueryCurrencyPrice(currency, currency2 string) (string, string, error) {
 	logger.Info("currency price not found:", currency, ",", currency2)
 	return "", "", nil
 }
+
 
 func GeTransferQuotaByCurrency(currency, feeCurrency string) *TransferQuota {
 	sql := "select * from dt_transfer_amount where currency = ?"

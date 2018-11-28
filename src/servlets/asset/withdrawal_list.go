@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"strings"
 	"utils"
 	"utils/logger"
@@ -64,8 +64,8 @@ func (handler *withdrawListHandler) Handle(request *http.Request, writer http.Re
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset lockList: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return

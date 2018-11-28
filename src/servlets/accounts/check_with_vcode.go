@@ -1,12 +1,15 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
+	"servlets/vcode"
 	"utils"
 	"utils/logger"
-	"servlets/vcode"
 )
 
 const (
@@ -35,7 +38,7 @@ type checkWithVcodeParam struct {
 type checkWithVcodeResponse struct {
 	Exists int    `json:"exists"`
 	Uid    string `json:"uid"`
-	Status int    `json:"status"`
+	Status int64  `json:"status"`
 }
 
 type checkWithVcodeHandler struct {
@@ -73,21 +76,40 @@ func (handler *checkWithVcodeHandler) Handle(request *http.Request, writer http.
 	//logger.Debug("succFlag:" + strconv.FormatBool(succFlag) + ",code:" + utils.Int2Str(code))
 	if succFlag {
 		resData := checkWithVcodeResponse{Exists: ACCOUNT_NOT_EXISTS}
-
+		cli := rpc.GetUserCacheClient()
+		if cli == nil {
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
+		}
 		switch data.Param.Type {
-		case CHECK_TYPE_OF_PHONE:
-			uid, status := common.GetAssetByPhone(data.Param.Country, data.Param.Phone)
-			if uid != 0 {
-				resData.Exists = ACCOUNT_EXISTS
-				resData.Status = status
-				resData.Uid = utils.Int642Str(uid)
+		case CHECK_TYPE_EMAIL:
+			req := &microuser.CheckAccountByEmailReq{
+				Email: data.Param.EMail,
 			}
-		case CHECK_TYPE_OF_EMAIL:
-			uid, status := common.GetAssetByEmail(data.Param.EMail)
-			if uid != 0 {
-				resData.Exists = ACCOUNT_EXISTS
-				resData.Status = status
-				resData.Uid = utils.Int642Str(uid)
+			resp, err := cli.CheckAccountByEmail(context.Background(), req)
+			if err != nil {
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				return
+			}
+			if resp.Result == microuser.ResCode_OK {
+				resData.Exists = CHECK_ACCOUNT_EXISTS
+				resData.Uid = utils.Int642Str(resp.Uid)
+				resData.Status = resp.Status
+			}
+		case CHECK_TYPE_PHONE:
+			req := &microuser.CheckAccountByPhoneReq{
+				Country: int64(data.Param.Country),
+				Phone:   data.Param.Phone,
+			}
+			resp, err := cli.CheckAccountByPhone(context.Background(), req)
+			if err != nil {
+				response.SetResponseBase(constants.RC_SYSTEM_ERR)
+				return
+			}
+			if resp.Result == microuser.ResCode_OK {
+				resData.Exists = CHECK_ACCOUNT_EXISTS
+				resData.Uid = utils.Int642Str(resp.Uid)
+				resData.Status = resp.Status
 			}
 		}
 		response.Data = resData

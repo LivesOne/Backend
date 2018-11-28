@@ -1,10 +1,12 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"golang.org/x/net/context"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -34,10 +36,10 @@ type responseLoginSPK struct {
 }
 
 type responseLogin struct {
-	UID    string            `json:"uid"`
-	Token  string            `json:"token,omitempty"`
-	Expire int64             `json:"expire"`
-	SPK    *responseLoginSPK `json:"spk"`
+	UID    string `json:"uid"`
+	Token  string `json:"token,omitempty"`
+	Expire int64  `json:"expire"`
+	//SPK    *responseLoginSPK `json:"spk"`
 }
 
 type limitedRes struct {
@@ -81,105 +83,72 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		return
 	}
 
-	// var account *common.Account
-	var accountList [](*common.Account) = nil
-	err = nil
-	if utils.IsValidEmailAddr(loginData.Param.Account) {
-		// MUST email login
-		// MUST NOT uid and phone login
-		var account *common.Account
-		account, err = common.GetAccountByEmail(loginData.Param.Account)
-		if (err == nil) && (account != nil) {
-			accountList = [](*common.Account){account}
-		}
-	} else {
-		accountList, err = common.GetAccountListByPhoneOrUID(loginData.Param.Account)
-	}
-
-	if (err != nil) || (accountList == nil) || (len(accountList) < 1) {
-		logger.Info("login: read account from DB error:", err)
-		response.SetResponseBase(constants.RC_INVALID_ACCOUNT)
-		return
-	}
-	logger.Info("login: read account form DB success:\n", utils.ToJSONIndent(accountList))
-
-	var account *common.Account = nil
-	for _, act := range accountList {
-		// if handler.checkUserPassword(account.LoginPassword, aesKey, loginData.Param.PWD, account.UIDString) == false {
-
-		//登陆封锁
-		if limited, expire := common.CheckUserInLoginLimit(act.UID); limited {
-			//返回临时登陆受限
-			response.SetResponseBase(constants.RC_ACCOUNT_TEMP_LIMITED)
-			response.Data = tmpLimitedRes{
-				LimitTime: expire,
-			}
-			return
-		}
-
-		if handler.checkUserPassword(act.LoginPassword, aesKey, loginData.Param.PWD, act.UIDString) {
-			account = act
-			//登陆成功， 清理缓存限制计数
-			common.ClearUserLimitNum(act.UID)
-			break
-		}
-	}
-
-	if account == nil {
-		// no account match the login information
-		response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
-
-		// 限制++acc
-		// 识别数量决定是否限制
-		// 多个+
-		for _, acc := range accountList {
-			if ok, time := common.AddWrongPwd(acc.UID); ok {
-				response.Data = tmpLimitedRes{
-					LimitTime: time,
-				}
-			}
-		}
-		return
-	}
-
-	if account.Status == constants.USER_LIMITED_UNLOGIN {
-		response.SetResponseBase(constants.RC_ACCOUNT_LIMITED)
-		response.Data = limitedRes{
-			Uid: utils.Int642Str(account.UID),
-		}
-		return
-	}
-
-	// TODO:  get uid from the database
-	// uid := strconv.FormatInt(account.UID, 10)
-	const expire int64 = constants.Login_Expired
-	newtoken, errNewT := token.New(account.UIDString, aesKey, expire)
-	// newtoken, errNewT := token.New(handler.loginData.Param.UID, handler.aesKey, expire)
-	if errNewT != constants.ERR_INT_OK {
-		logger.Info("login: create token in cache error:", errNewT)
+	cli := rpc.GetLoginClient()
+	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
 
-	iv := aesKey[:constants.AES_ivLen]
+	privKey, err := config.GetPrivateKey(loginData.Param.Spkv)
+	if (err != nil) || (privKey == nil) {
+		logger.Info("login: get private key by spkv err:", err)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	aeskey, err := utils.RsaDecrypt(loginData.Param.Key, privKey)
+	if (err != nil) || (len(aeskey) != constants.AES_totalLen) {
+		logger.Info("login: decrypt aes key error:", err)
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	iv := aeskey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
-	newtoken, err = utils.AesEncrypt(newtoken, string(key), string(iv))
+	hashPwd, err := utils.AesDecrypt(loginData.Param.PWD, string(key), string(iv))
+	if err != nil {
+		logger.Info("login: invalid password")
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+	}
+
+	req := &microuser.LoginUserReq{
+		Account: loginData.Param.Account,
+		PwdHash: hashPwd,
+		Key:     aesKey,
+	}
+
+
+	resp, err := cli.Login(context.Background(), req)
+	if err != nil {
+		response.SetResponseBase(constants.RC_SYSTEM_ERR)
+		return
+	}
+
+	if resp.Result != microuser.ResCode_OK {
+		switch resp.Result {
+		case microuser.ResCode_ERR_LIMITED:
+			response.SetResponseBase(constants.RC_ACCOUNT_LIMITED)
+			response.Data = limitedRes{
+				Uid: resp.Uid,
+			}
+			return
+		case microuser.ResCode_ERR_NOTFOUND:
+			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
+			return
+		default:
+			response.SetResponseBase(constants.RC_PARAM_ERR)
+			return
+		}
+	}
+	newtoken, err := utils.AesEncrypt(resp.Token, string(key), string(iv))
 	if err != nil {
 		logger.Info("login: aes encrypt token error", err)
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}
-	common.ActiveUser(account.UID)
+	rpc.ActiveUser(utils.Str2Int64(resp.Uid))
 	response.Data = &responseLogin{
-		UID:    account.UIDString,
+		UID:    resp.Uid,
 		Token:  newtoken,
-		Expire: expire,
-		// SPK: improve it later
-		// SPK: &responseLoginSPK{
-		// 	Ver:  1,
-		// 	Key:  "",
-		// 	Sign: "",
-		// },
+		Expire: resp.Expire,
 	}
 }
 
@@ -204,21 +173,6 @@ func (handler *loginHandler) checkRequestParams(header *common.HeaderParams, log
 		logger.Info("login: account param missed")
 		return false
 	}
-
-	// if (loginData.Param.Type < constants.LOGIN_TYPE_UID) || (loginData.Param.Type > constants.LOGIN_TYPE_PHONE) {
-	// 	logger.Info("login: login type invalid")
-	// 	return false
-	// }
-
-	// if loginData.Param.Type == constants.LOGIN_TYPE_EMAIL && (utils.IsValidEmailAddr(loginData.Param.EMail) == false) {
-	// 	logger.Info("login: email info invalid")
-	// 	return false
-	// }
-
-	// if loginData.Param.Type == constants.LOGIN_TYPE_PHONE && (loginData.Param.Country == 0 || len(loginData.Param.Phone) < 1) {
-	// 	logger.Info("login: phone info invalid")
-	// 	return false
-	// }
 
 	if (len(loginData.Param.PWD) < 1) || (len(loginData.Param.Key) < 1) {
 		logger.Info("login: no pwd or key info")
@@ -248,27 +202,4 @@ func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, 
 	logger.Info("login: aes key:", aeskey)
 
 	return string(aeskey), nil
-}
-
-func (handler *loginHandler) checkUserPassword(pwdInDB, aesKey, pwdUpload, uid string) bool {
-
-	// const ivLen = 16
-	// const keyLen = 32
-	// 16 + 32 == 48
-	if len(aesKey) != constants.AES_totalLen {
-		logger.Info("login: invalid aes key", len(aesKey), aesKey)
-		return false
-	}
-
-	iv := aesKey[:constants.AES_ivLen]
-	key := aesKey[constants.AES_ivLen:]
-	hashPwd, err := utils.AesDecrypt(pwdUpload, string(key), string(iv))
-	if err != nil {
-		logger.Info("login: invalid password")
-		return false
-	}
-
-	pwd := utils.Sha256(hashPwd + uid)
-
-	return (pwdInDB == pwd)
 }

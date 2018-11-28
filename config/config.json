@@ -19,15 +19,6 @@
         "DBIndex":1
     },
 
-    "User" : 
-    {
-        "MaxConn" : 10,
-        "DBHost" : "10.100.14.243:3306",
-        "DBUser" : "root",
-        "DBUserPwd" : "maxthon",
-        "DBDatabase" : "livesone_user"
-    },
-
     "Asset" : 
     {
         "MaxConn" : 10,
@@ -85,6 +76,7 @@
     "ChainApiAddress": "http://office.metellica.cn:55555",
     "SmsSvrName": "SmsService",
     "ImgEmailSvrName": "ImgEmailService",
+    "UserServiceName": "UserService",
     "RegistryAddr":"10.0.5.248:8500",
     "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
     "TransferLimit" : {
@@ -165,6 +157,7 @@
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
     "Lvt2LvtcDelaySystemAccountUid":181875000,
+<<<<<<< HEAD
     "TransFeeAccountUid":181875000,
     "EOSRemarkLengthLimit":64,
     "ReChargeAddress": [
@@ -178,4 +171,7 @@
         {"Chain":"BTC", "coins":["BTC"]},
         {"Chain":"EOS", "coins":["EOS"]}
     ]
+=======
+    "TransFeeAccountUid":181875000
+>>>>>>> rpc
 }

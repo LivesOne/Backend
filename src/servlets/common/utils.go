@@ -242,7 +242,7 @@ func GenerateMemoFromUID(uid string) string {
 	src := uid[1:]
 	seed_pos := l - 4
 	seed, _ := strconv.Atoi(string(src[seed_pos]))
-	offset := seed % 5 + 2
+	offset := seed%5 + 2
 
 	data := make([]int, 0, 8)
 	for i, v := range src {
@@ -251,7 +251,7 @@ func GenerateMemoFromUID(uid string) string {
 		}
 
 		n, _ := strconv.Atoi(string(v))
-		data = append(data, (n + 10 - offset) % 10)
+		data = append(data, (n+10-offset)%10)
 	}
 
 	idx := 0
@@ -260,11 +260,11 @@ func GenerateMemoFromUID(uid string) string {
 	for i, v := range data {
 		sub_data[idx] = v
 		idx++
-		if idx == offset || i == len(data) - 1 {
-			for j := 0; j < idx/2; j++{
+		if idx == offset || i == len(data)-1 {
+			for j := 0; j < idx/2; j++ {
 				t := sub_data[j]
-				sub_data[j] = sub_data[idx - j - 1]
-				sub_data[idx -j - 1] = t
+				sub_data[j] = sub_data[idx-j-1]
+				sub_data[idx-j-1] = t
 			}
 
 			for i, v := range sub_data {
@@ -298,7 +298,7 @@ func ParseUIDFromMemo(memo string) string {
 
 	seed_pos := 2
 	seed, _ := strconv.Atoi(string(src[seed_pos]))
-	offset := seed % 5 + 2
+	offset := seed%5 + 2
 	data := make([]int, 0, 8)
 	for i, v := range src {
 		if i == seed_pos {
@@ -306,7 +306,7 @@ func ParseUIDFromMemo(memo string) string {
 		}
 
 		n, _ := strconv.Atoi(string(v))
-		data = append(data, (n + offset) % 10)
+		data = append(data, (n+offset)%10)
 	}
 
 	idx := 0
@@ -315,11 +315,11 @@ func ParseUIDFromMemo(memo string) string {
 	for i, v := range data {
 		sub_data[idx] = v
 		idx++
-		if idx == offset || i == len(data) - 1 {
-			for j := 0; j < idx/2; j++{
+		if idx == offset || i == len(data)-1 {
+			for j := 0; j < idx/2; j++ {
 				t := sub_data[j]
-				sub_data[j] = sub_data[idx - j - 1]
-				sub_data[idx -j - 1] = t
+				sub_data[j] = sub_data[idx-j-1]
+				sub_data[idx-j-1] = t
 			}
 
 			for i, v := range sub_data {
@@ -332,7 +332,7 @@ func ParseUIDFromMemo(memo string) string {
 	}
 
 	// insert seed
-	uid := []string {"1"}
+	uid := []string{"1"}
 	for i, v := range ret {
 		if i == 5 {
 			uid = append(uid, strconv.Itoa(seed))

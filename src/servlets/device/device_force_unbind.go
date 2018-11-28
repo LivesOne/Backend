@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -69,8 +69,8 @@ func (handler *deviceForceUnBindHandler) Handle(request *http.Request, writer ht
 	}
 
 	// 判断用户身份
-	forceUidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	forceUidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("device force unbind: get info from redis error:", err)
 		response.SetResponseBase(err)
 		return

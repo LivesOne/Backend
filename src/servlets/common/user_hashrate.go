@@ -1,7 +1,9 @@
 package common
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"servlets/constants"
+	"servlets/rpc"
 	"utils"
 	"utils/config"
 	"utils/logger"
@@ -43,7 +45,8 @@ func checkActiveTime(uid, ts int64, limit *config.BindActive) bool {
 		return true
 	} else {
 		//数据库中存储到秒
-		userRegisterTs := GetUserRegisterTime(uid) * 1000
+		regTimeStr, _ := rpc.GetUserField(uid, microuser.UserField_REGISTER_TIME)
+		userRegisterTs := utils.GetTs13(utils.Str2Int64(regTimeStr))
 
 		logger.Warn("check bind time ts", ts, "userRegisterTs", userRegisterTs, "RegisterTimeActive", limit.RegisterTimeActive)
 		if ts-userRegisterTs <= limit.RegisterTimeActive {

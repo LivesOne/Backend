@@ -1,22 +1,22 @@
 package asset
 
 import (
+	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"strings"
 	"utils"
-	"net/http"
 	"utils/logger"
 )
 
 type commonTransCommitParam struct {
-	Txid string `json:"txid"`
+	Txid     string `json:"txid"`
 	Currency string `json:"currency"`
 }
 
 type commonTransCommitRequest struct {
-	Base  *common.BaseInfo     `json:"base"`
+	Base  *common.BaseInfo        `json:"base"`
 	Param *commonTransCommitParam `json:"param"`
 }
 
@@ -58,8 +58,8 @@ func (handler *commonTransCommitHandler) Handle(request *http.Request, writer ht
 	}
 
 	// 判断用户身份
-	uidStr, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidStr, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset trans commited: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return

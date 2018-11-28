@@ -8,7 +8,9 @@ import (
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"servlets/constants"
+	"servlets/rpc"
 	"strings"
 	"time"
 	"utils"
@@ -928,11 +930,13 @@ func RemoveAssetLock(txid int64, assetLock *AssetLockLvtc, penaltyMoney int64) (
 		tx.Rollback()
 		return false, constants.TRANS_ERR_SYS
 	}
-	fromName, err := GetCacheUserField(txh.From, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+
+	fromName, err := rpc.GetUserField(txh.From, microuser.UserField_NICKNAME)
 	if err != nil {
 		logger.Info("get uid:", txh.From, " nick name err,", err)
 	}
-	toName, err := GetCacheUserField(txh.To, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	toName, err := rpc.GetUserField(txh.To, microuser.UserField_NICKNAME)
+
 	if err != nil {
 		logger.Info("get uid:", txh.To, " nick name err,", err)
 	}
@@ -1309,8 +1313,8 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 
 	go func() {
 		var tradesArray []TradeInfo
-		fromName, _ := GetCacheUserField(uid, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
-		toName, _ := GetCacheUserField(config.GetWithdrawalConfig().FeeAcceptAccount, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		fromName, _ := rpc.GetUserField(uid, microuser.UserField_NICKNAME)
+		toName, _ := rpc.GetUserField(config.GetWithdrawalConfig().FeeAcceptAccount, microuser.UserField_NICKNAME)
 		feeCurrencyDecimal = 8
 		if strings.EqualFold(feeCurrency, CURRENCY_EOS) {
 			feeCurrencyDecimal = 4
@@ -1337,7 +1341,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 		withdraw := TradeWithdrawal{
 			Address: address,
 		}
-		toName, _ = GetCacheUserField(config.GetWithdrawalConfig().WithdrawalAcceptAccount, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+		toName, _ = rpc.GetUserField(config.GetWithdrawalConfig().WithdrawalAcceptAccount, microuser.UserField_NICKNAME)
 		currencyDecimal = 8
 		if strings.EqualFold(currency, CURRENCY_EOS) {
 			currencyDecimal = 4
@@ -1782,8 +1786,8 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 
 //status为成功
 func addFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, currencyDecimal int, ts int64) error {
-	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
-	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	fromName, _ :=rpc.GetUserField(from,microuser.UserField_NICKNAME)
+	toName, _ := rpc.GetUserField(to,microuser.UserField_NICKNAME)
 	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
 		OriginalTradeNo: originalTradeNo,
@@ -1809,8 +1813,8 @@ func addTradeInfo(txid int64, tradeNo string, tradeType, subType int, from int64
 	withdraw := TradeWithdrawal{
 		Address: address,
 	}
-	fromName, _ := GetCacheUserField(from, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
-	toName, _ := GetCacheUserField(to, USER_CACHE_REDIS_FIELD_NAME_NICKNAME)
+	fromName, _ := rpc.GetUserField(from, microuser.UserField_NICKNAME)
+	toName, _ := rpc.GetUserField(to, microuser.UserField_NICKNAME)
 	tradeInfo := TradeInfo{
 		TradeNo:    tradeNo,
 		Type:       tradeType,
@@ -2415,7 +2419,9 @@ func lvt2LvtcInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 	lvtcHashrateScale := int64(config.GetConfig().LvtcHashrateScale)
 
 	income := 1
-	if CheckCreditScore(uid, DEF_SCORE) && CheckUserLevel(uid, DEF_LEVEL) {
+	userScore, _ := rpc.GetUserField(uid, microuser.UserField_CREDIT_SCORE)
+	userLevel, _ := rpc.GetUserField(uid, microuser.UserField_LEVEL)
+	if utils.Str2Int(userScore) >= DEF_SCORE && utils.Str2Int(userLevel) >= DEF_LEVEL {
 		income = 0
 	}
 	//锁仓转换
@@ -2511,7 +2517,9 @@ func lvt2LvtcDelayInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
 	lvtScale := config.GetConfig().LvtcHashrateScale
 
 	income := 1
-	if CheckCreditScore(uid, DEF_SCORE) && CheckUserLevel(uid, DEF_LEVEL) {
+	userScore, _ := rpc.GetUserField(uid, microuser.UserField_CREDIT_SCORE)
+	userLevel, _ := rpc.GetUserField(uid, microuser.UserField_LEVEL)
+	if utils.Str2Int(userScore) >= DEF_SCORE && utils.Str2Int(userLevel) >= DEF_LEVEL {
 		income = 0
 	}
 	for i := 0; i < 19; i++ {
@@ -2768,6 +2776,7 @@ func QueryHashRateDetailByUid(uid int64) []map[string]string {
 
 	return rows
 }
+
 
 func checkAssetBalanceIsSufficient(uid, amount, fee int64, currency, feeCurrency string) bool {
 	assetTableName := ""

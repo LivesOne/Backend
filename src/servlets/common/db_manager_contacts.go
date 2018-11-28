@@ -41,25 +41,23 @@ func GetContactsListByUid(uid int64) []DtContacts {
 	return res
 }
 
-func CreateContact(p map[string]interface{})error{
-	return mgoCommonInsert(cSession,cConfig.DBDatabase,DT_CONTACTS,p)
+func CreateContact(p map[string]interface{}) error {
+	return mgoCommonInsert(cSession, cConfig.DBDatabase, DT_CONTACTS, p)
 }
 
-
-func ModifyContact(p map[string]interface{},uid,contactId int64)error{
+func ModifyContact(p map[string]interface{}, uid, contactId int64) error {
 	session := cSession.Clone()
 	defer session.Close()
 	collection := session.DB(cConfig.DBDatabase).C(DT_CONTACTS)
-	selector := bson.M{"uid":uid,"contact_id":contactId}
-	md := bson.M{"$set":p}
-	return collection.Update(selector,md)
+	selector := bson.M{"uid": uid, "contact_id": contactId}
+	md := bson.M{"$set": p}
+	return collection.Update(selector, md)
 }
 
-
-func DeleteContact(uid int64, contactId int64)error{
+func DeleteContact(uid int64, contactId int64) error {
 	session := tSession.Clone()
 	defer session.Close()
 	collection := session.DB(cConfig.DBDatabase).C(DT_CONTACTS)
-	selector := bson.M{"uid":uid,"contact_id":contactId}
+	selector := bson.M{"uid": uid, "contact_id": contactId}
 	return collection.Remove(selector)
 }

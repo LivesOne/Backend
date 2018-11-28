@@ -1,11 +1,12 @@
 package asset
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/accounts"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -57,10 +58,10 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
 
 	log.Info("user login cache token-hash", httpHeader.TokenHash, "uid", uidString, "key", aesKey)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		log.Info("asset reward extract: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -79,7 +80,9 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	}
 
 	uid := utils.Str2Int64(uidString)
-	if !common.CheckCreditScore(uid, common.DEF_SCORE) {
+
+	score, _ := rpc.GetUserField(uid, microuser.UserField_CREDIT_SCORE)
+	if utils.Str2Int(score) < common.DEF_SCORE {
 		log.Info("asset reward extract: permission denied")
 		response.SetResponseBase(constants.RC_PERMISSION_DENIED)
 		return
@@ -101,6 +104,9 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	//判断有合法参数才进行微信二次校验
 	if len(requestData.Param.Secret) > 0 {
 		// 解码 secret 参数
+
+
+
 		secretString := requestData.Param.Secret
 		secret := new(rewardExtractSecret)
 		iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]
@@ -108,7 +114,6 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 			response.SetResponseBase(err)
 			return
 		}
-
 		if f, e := common.SecondAuthWX(uid, secret.AppType, secret.WxCode); !f {
 			response.SetResponseBase(e)
 			return

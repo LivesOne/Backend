@@ -3,15 +3,14 @@ package common
 import (
 	"fmt"
 	"gopkg.in/mgo.v2"
+	"utils"
 	"utils/config"
 	"utils/logger"
-	"utils"
 )
 
 const (
 	TRADES = "dt_trade"
 )
-
 
 var tradeSession *mgo.Session
 var tradeConfig config.MongoConfig
@@ -35,7 +34,7 @@ func InsertTradeInfo(info ...TradeInfo) error {
 	defer session.Close()
 	session.SetSafe(sessionSafe)
 	collection := session.DB(tradeConfig.DBDatabase).C(TRADES)
-	for i:=0;i<len(info);i++ {
+	for i := 0; i < len(info); i++ {
 		err := collection.Insert(info[i])
 		if err != nil {
 			logger.Error("add trade info error, tradeNo:", info[i].TradeNo, "error:", err.Error())
@@ -49,12 +48,12 @@ func QueryTrades(query interface{}, limit int) []TradeInfo {
 	defer session.Close()
 	logger.Debug("mongo query :", utils.ToJSON(query))
 	collection := session.DB(tradeConfig.DBDatabase).C(TRADES)
-	res := make([]TradeInfo,0)
+	res := make([]TradeInfo, 0)
 	err := collection.Find(query).Sort("-finish_time").Limit(limit).All(&res)
 	if err != nil && err != mgo.ErrNotFound {
 		logger.Error("query mongo db error ", err.Error())
 		return nil
 	}
-	logger.Debug("query res ", utils.ToJSON (res))
+	logger.Debug("query res ", utils.ToJSON(res))
 	return res
 }

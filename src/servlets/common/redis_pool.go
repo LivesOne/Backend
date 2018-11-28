@@ -49,11 +49,11 @@ func RedisPoolInit() {
 			if redisCfg.DBIndex > 0 {
 				succ, err := redis.String(c.Do("SELECT", redisCfg.DBIndex))
 				if err != nil {
-					logger.Info("select db",redisCfg.DBIndex,"failed",err.Error())
+					logger.Info("select db", redisCfg.DBIndex, "failed", err.Error())
 					c.Close()
 					return nil, err
 				} else if succ != "OK" {
-					logger.Info("select db",redisCfg.DBIndex,"failed")
+					logger.Info("select db", redisCfg.DBIndex, "failed")
 					c.Close()
 					return nil, errors.New("can not select db " + utils.Int2Str(redisCfg.DBIndex))
 				}
@@ -132,8 +132,8 @@ func setAndExpire64(key string, value int64, expire int) error {
 	return err
 }
 
-func setnx(key string,value int64) (int,error) {
-	return redis.Int(rdsDo("SETNX",key,value))
+func setnx(key string, value int64) (int, error) {
+	return redis.Int(rdsDo("SETNX", key, value))
 }
 
 func hmset(key string, p map[string]string) (string, error) {
@@ -144,8 +144,8 @@ func hmset(key string, p map[string]string) (string, error) {
 	return redis.String(rdsDo("HMSET", args...))
 }
 
-func hset(key string, fieldName,fieldValue string) (int, error) {
-	return redis.Int(rdsDo("HSET",key,fieldName,fieldValue))
+func hset(key string, fieldName, fieldValue string) (int, error) {
+	return redis.Int(rdsDo("HSET", key, fieldName, fieldValue))
 }
 
 func hgetall(key string) (map[string]string, error) {
@@ -153,5 +153,5 @@ func hgetall(key string) (map[string]string, error) {
 }
 
 func hget(key string, fieldName string) (string, error) {
-	return redis.String(rdsDo("HGET", key,fieldName))
+	return redis.String(rdsDo("HGET", key, fieldName))
 }

@@ -2,8 +2,9 @@ package accounts
 
 import (
 	"encoding/json"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"strconv"
 	"time"
 	"utils"
@@ -22,33 +23,12 @@ func DecryptSecret(secret string, key string, iv string, instance interface{}) c
 	return constants.RC_OK
 }
 
-func TokenErr2RcErr(tokenErr int) constants.Error {
-	switch tokenErr {
-	case constants.ERR_INT_OK:
-		return constants.RC_OK
-	case constants.ERR_INT_TK_DB:
-		return constants.RC_PARAM_ERR
-	case constants.ERR_INT_TK_DUPLICATE:
-		return constants.RC_PARAM_ERR
-	case constants.ERR_INT_TK_NOTEXISTS:
-		return constants.RC_PARAM_ERR
-	default:
-		return constants.RC_SYSTEM_ERR
-	}
-}
-
 // 生成 request 所需的 signature
 func GenerateSig(hash string) (string, constants.Error) {
-	_, key, _, err := token.GetAll(hash)
+	_, key, _, err := rpc.GetTokenInfo(hash)
 	switch err {
-	case constants.ERR_INT_OK:
+	case microuser.ResCode_OK:
 		break
-	case constants.ERR_INT_TK_DB:
-		return "", constants.RC_PARAM_ERR
-	case constants.ERR_INT_TK_DUPLICATE:
-		return "", constants.RC_PARAM_ERR
-	case constants.ERR_INT_TK_NOTEXISTS:
-		return "", constants.RC_PARAM_ERR
 	default:
 		return "", constants.RC_SYSTEM_ERR
 	}

@@ -1,9 +1,11 @@
 package accounts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -45,8 +47,8 @@ func (handler *setStatusHandler) Handle(request *http.Request, writer http.Respo
 	}
 
 	uidInt64 := utils.Str2Int64(data.Param.Uid)
-	err := common.SetAssetStatus(uidInt64, data.Param.Status)
 
+	_, err := rpc.SetUserField(uidInt64, microuser.UserField_STATUS, utils.Int2Str(data.Param.Status))
 	if err != nil {
 		logger.Error("set status error ", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)

@@ -2,9 +2,11 @@ package accounts
 
 import (
 	"database/sql"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"servlets/rpc"
 	"utils"
 	"utils/logger"
 )
@@ -19,9 +21,9 @@ type userinfoRequest struct {
 }
 
 type userinfoResData struct {
-	Level        int    `json:"level"`
+	Level        int64  `json:"level"`
 	NickName     string `json:"nick_name"`
-	Country      int    `json:"country"`
+	Country      int64  `json:"country"`
 	AvatarUrl    string `json:"avatar_url"`
 	Phone        string `json:"phone"`
 	Email        string `json:"email"`
@@ -69,8 +71,8 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
-
-	acc, err := common.GetAccountByUID(param.Uid)
+	uid := utils.Str2Int64(param.Uid)
+	acc, err := rpc.GetUserInfo(uid)
 	if err != nil && err != sql.ErrNoRows {
 		log.Error("sql error", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -83,18 +85,18 @@ func (handler *userinfoHandler) Handle(request *http.Request, writer http.Respon
 		return
 	}
 
-	_, _, _, _, avatarUrl := common.GetUserExtendByUid(utils.Str2Int64(param.Uid))
-
+	regTime, _ := rpc.GetUserField(uid, microuser.UserField_REGISTER_TIME)
+	updTime, _ := rpc.GetUserField(uid, microuser.UserField_UPDATE_TIME)
 	response.Data = userinfoResData{
-		RegisterTime: utils.GetTs13(acc.RegisterTime),
+		RegisterTime: utils.GetTs13(utils.Str2Int64(regTime)),
 		Level:        acc.Level,
 		NickName:     acc.Nickname,
 		Country:      acc.Country,
-		AvatarUrl:    avatarUrl,
+		AvatarUrl:    acc.AvatarUrl,
 		Phone:        acc.Phone,
 		Email:        acc.Email,
-		Ts:           acc.UpdateTime,
-		Hashrate:     common.QueryHashRateByUid(acc.UID),
+		Ts:           utils.Str2Int64(updTime),
+		Hashrate:     common.QueryHashRateByUid(uid),
 	}
 
 }

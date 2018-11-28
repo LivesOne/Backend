@@ -2,12 +2,13 @@ package asset
 
 import (
 	"database/sql"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/http"
 	"net/url"
 	"regexp"
 	"servlets/common"
 	"servlets/constants"
-	"servlets/token"
+	"servlets/rpc"
 	"servlets/vcode"
 	"strings"
 	"utils"
@@ -101,8 +102,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	// 判断用户身份
-	uidString, aesKey, _, tokenErr := token.GetAll(httpHeader.TokenHash)
-	if err := common.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
+	uidString, aesKey, _, tokenErr := rpc.GetTokenInfo(httpHeader.TokenHash)
+	if err := rpc.TokenErr2RcErr(tokenErr); err != constants.RC_OK {
 		logger.Info("asset lockList: get info from cache error:", err)
 		response.SetResponseBase(err)
 		return
@@ -123,7 +124,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	if requestData.Param.VcodeType > 0 {
-		acc, err := common.GetAccountByUID(uidString)
+		acc, err := rpc.GetUserInfo(utils.Str2Int64(uidString))
 		if err != nil && err != sql.ErrNoRows {
 			logger.Info("query account by uid  error", err.Error())
 			response.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -131,13 +132,13 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		}
 		switch requestData.Param.VcodeType {
 		case 1:
-			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, acc.Country, requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
+			if ok, errCode := vcode.ValidateSmsAndCallVCode(acc.Phone, int(acc.Country), requestData.Param.Vcode, 3600, vcode.FLAG_DEF); !ok {
 				logger.Info("validate sms code failed")
 				response.SetResponseBase(vcode.ConvSmsErr(errCode))
 				return
 			}
 		case 2:
-			if ok, resErr := vcode.ValidateSmsUpVCode(acc.Country, acc.Phone, requestData.Param.Vcode); !ok {
+			if ok, resErr := vcode.ValidateSmsUpVCode(int(acc.Country), acc.Phone, requestData.Param.Vcode); !ok {
 				logger.Info("validate up sms code failed")
 				response.SetResponseBase(resErr)
 				return
@@ -179,19 +180,16 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	pwd := secret.Pwd
 	switch requestData.Param.AuthType {
 	case constants.AUTH_TYPE_LOGIN_PWD:
-		if !common.CheckLoginPwd(uid, pwd) {
-			logger.Info("login password error")
+		if f, _ := rpc.CheckPwd(uid, pwd, microuser.PwdCheckType_LOGIN_PWD); !f {
 			response.SetResponseBase(constants.RC_INVALID_LOGIN_PWD)
 			return
 		}
 	case constants.AUTH_TYPE_PAYMENT_PWD:
-		if !common.CheckPaymentPwd(uid, pwd) {
-			logger.Info("trade password error")
+		if f, _ := rpc.CheckPwd(uid, pwd, microuser.PwdCheckType_PAYMENT_PWD); !f {
 			response.SetResponseBase(constants.RC_INVALID_PAYMENT_PWD)
 			return
 		}
 	default:
-		logger.Info("auth type parameter error")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}

@@ -45,7 +45,6 @@ type (
 		UnbindTs int64         `bson:"unbind_ts,omitempty"`
 		ForceUid int64         `bson:"force_uid,omitempty"`
 	}
-
 )
 
 func (ddh *DtDeviceHistory) Build(dd *DtDevice) {
