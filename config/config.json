@@ -157,7 +157,6 @@
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
     "Lvt2LvtcDelaySystemAccountUid":181875000,
-<<<<<<< HEAD
     "TransFeeAccountUid":181875000,
     "EOSRemarkLengthLimit":64,
     "ReChargeAddress": [
@@ -171,7 +170,4 @@
         {"Chain":"BTC", "coins":["BTC"]},
         {"Chain":"EOS", "coins":["EOS"]}
     ]
-=======
-    "TransFeeAccountUid":181875000
->>>>>>> rpc
 }
