@@ -23,7 +23,6 @@ type (
 		LivesoneUid   string `json:"livesone_uid,omitempty"`
 		WalletAddress string `json:"wallet_address,omitempty"`
 		CreateTime    int64  `json:"create_time,omitempty"`
-		Uid           int64  `json:"-"`
 	}
 	contactAddParam struct {
 		Uid       string `json:"uid"`
@@ -65,18 +64,7 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 
-	reqData := new(contactAddReqData)
 
-	if !common.ParseHttpBodyParams(request, reqData) {
-		log.Info("decode json str error")
-		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
-		return
-	}
-	if !reqData.IsValid() {
-		log.Info("required param is nil")
-		res.SetResponseBase(constants.RC_PARAM_ERR)
-		return
-	}
 
 	if len(aesKey) != constants.AES_totalLen {
 		log.Info(" get aeskey from cache error:", len(aesKey))
@@ -89,7 +77,18 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 		res.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+	reqData := new(contactAddReqData)
 
+	if !common.ParseHttpBodyParams(request, reqData) {
+		log.Info("decode json str error")
+		res.SetResponseBase(constants.RC_PROTOCOL_ERR)
+		return
+	}
+	if !reqData.IsValid() {
+		log.Info("required param is nil")
+		res.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
 	uid := utils.Str2Int64(uidStr)
 	tagUid := utils.Str2Int64(reqData.Param.Uid)
 
@@ -112,10 +111,10 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 		Phone:         acc.Phone,
 		WalletAddress: acc.WalletAddress,
 		CreateTime:    utils.GetTimestamp13(),
-		Uid:           uid,
 	}
 
 	insertMap := utils.StructConvMap(data)
+	insertMap["uid"] = uid
 	insertMap["livesone_uid"] = tagUid
 	if err := common.CreateContact(insertMap); err != nil {
 		log.Error("insert mongo  failed", err.Error())
