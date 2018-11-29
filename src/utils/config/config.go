@@ -109,6 +109,8 @@ type Configuration struct {
 	RegistryAddr string
 	//micro-user-service 名称
 	UserServiceName string
+	//rpc 调用超时设置
+	RpcConnTimeOutSec int
 	// 短信验证网关相关
 	//SmsSvrAddr string
 	// 邮件验证网关相关

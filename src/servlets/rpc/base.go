@@ -4,6 +4,7 @@ import (
 	"context"
 	"google.golang.org/grpc"
 	"time"
+	"utils/config"
 	"utils/consul"
 	"utils/logger"
 )
@@ -15,7 +16,14 @@ func getRpcConn(addr, servName string) *grpc.ClientConn {
 	}
 	r := consul.NewResolver(servName)
 	b := grpc.RoundRobin(r)
-	ctx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+
+	rpcTimeOutSec := config.GetConfig().RpcConnTimeOutSec
+
+	if rpcTimeOutSec == 0 {
+		rpcTimeOutSec = 30
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rpcTimeOutSec) * time.Second)
 	defer cancel()
 	conn, err := grpc.DialContext(
 		ctx, addr,

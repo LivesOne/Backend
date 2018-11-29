@@ -78,6 +78,7 @@
     "ImgEmailSvrName": "ImgEmailService",
     "UserServiceName": "UserService",
     "RegistryAddr":"10.0.5.248:8500",
+    "RpcConnTimeOutSec":20,
     "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
     "TransferLimit" : {
         "0":{
