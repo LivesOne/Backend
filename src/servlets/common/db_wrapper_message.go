@@ -8,7 +8,7 @@ const (
 
 type (
 	DtMessage struct {
-		Id         bson.ObjectId `bosn:"id,omitempty" bosn:"id,omitempty"`
+		Id         bson.ObjectId `bosn:"_id,omitempty" bosn:"_id,omitempty"`
 		To         int64         `bosn:"to,omitempty" bosn:"to,omitempty"`
 		Type       int           `bosn:"type,omitempty" bosn:"type,omitempty"`
 		Status     int           `bosn:"status,omitempty" bosn:"status,omitempty"`
