@@ -59,6 +59,7 @@ func DelReadMsg(ids []bson.ObjectId) error {
 		selector := bson.M{
 			"$or": orlist,
 		}
+		logger.Debug("del msg by ", utils.ToJSON(selector))
 		return collection.Remove(selector)
 	}
 	return nil
