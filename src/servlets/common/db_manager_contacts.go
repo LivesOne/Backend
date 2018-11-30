@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"utils/config"
@@ -17,15 +16,7 @@ var cConfig config.MongoConfig
 
 func InitContactsMongoDB() {
 	cConfig = config.GetConfig().Contacts
-	connStr := fmt.Sprintf("%s?maxPoolSize=%d", cConfig.DBHost, cConfig.MaxConn)
-	logger.Info("conn mongo db ---> ", connStr)
-	var connErr error = nil
-	cSession, connErr = mgo.Dial(connStr)
-	if connErr != nil {
-		logger.Error("connect mongo db error", connErr.Error())
-		panic(connErr)
-	}
-	cSession.SetPoolLimit(cConfig.MaxConn)
+	cSession = mgoConn(cConfig)
 }
 
 func GetContactsListByUid(uid int64) []DtContacts {

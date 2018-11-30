@@ -192,4 +192,6 @@ const (
 	CONFIG_TRANSFER_FEE = "/config/v1/transfer"
 
 	CONFIG_WITHDRAWAL_FEE = "/config/v1/withdrawal"
+
+	MESSAGE_LIST = "/message/v1/list"
 )

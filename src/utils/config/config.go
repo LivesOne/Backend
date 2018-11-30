@@ -93,6 +93,7 @@ type Configuration struct {
 	Trade        MongoConfig
 	Config       MongoConfig
 	Contacts     MongoConfig
+	Msg          MongoConfig
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制

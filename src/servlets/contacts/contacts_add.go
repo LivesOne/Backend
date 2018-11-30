@@ -114,17 +114,10 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	insertMap := utils.StructConvMap(data)
-	insertMap["uid"] = uid
-	insertMap["livesone_uid"] = tagUid
-	if err := common.CreateContact(insertMap); err != nil {
+	if err := CreateContactAndBuildMsg(uid,tagUid,insertMap); err != nil {
 		log.Error("insert mongo  failed", err.Error())
 		if mgo.IsDup(err) {
 			res.SetResponseBase(constants.RC_DUP_CONTACT_ID)
-			return
-		}
-
-		if err == mgo.ErrNotFound {
-			res.SetResponseBase(constants.RC_CONTACT_ID_NOT_EXISTS)
 			return
 		}
 		res.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -133,3 +126,5 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 
 	res.Data = data
 }
+
+

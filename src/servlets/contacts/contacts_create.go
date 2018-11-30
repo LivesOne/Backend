@@ -1,6 +1,7 @@
 package contacts
 
 import (
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"gopkg.in/mgo.v2"
 	"net/http"
 	"servlets/common"
@@ -101,18 +102,15 @@ func (handler *contactCreateHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
+	uid, tagUid := utils.Str2Int64(uidStr), utils.Str2Int64(secret.LivesoneUid)
+
 	insertMap := convmap(secret)
-	insertMap["uid"] = utils.Str2Int64(uidStr)
 	insertMap["create_time"] = utils.GetTimestamp13()
-	if err := common.CreateContact(insertMap); err != nil {
+
+	if err := CreateContactAndBuildMsg(uid, tagUid, insertMap); err != nil {
 		log.Error("insert mongo  failed", err.Error())
 		if mgo.IsDup(err) {
 			res.SetResponseBase(constants.RC_DUP_CONTACT_ID)
-			return
-		}
-
-		if err == mgo.ErrNotFound {
-			res.SetResponseBase(constants.RC_CONTACT_ID_NOT_EXISTS)
 			return
 		}
 		res.SetResponseBase(constants.RC_SYSTEM_ERR)
@@ -126,4 +124,29 @@ func convmap(s *contactCreateSecret) map[string]interface{} {
 		m[v.Key] = v.Value
 	}
 	return m
+}
+
+func CreateContactAndBuildMsg(uid, tagUid int64, insertMap map[string]interface{}) error {
+	insertMap["uid"] = uid
+	insertMap["livesone_uid"] = tagUid
+	if err := common.CreateContact(insertMap); err != nil {
+		return err
+	}
+	if tagUid > 0 {
+		nickname, _ := rpc.GetUserField(uid, microuser.UserField_NICKNAME)
+		msg := &common.DtMessage{
+			To:     tagUid,
+			Type:   common.MSG_TYPE_ADD_CONTACT,
+			Status: 0,
+			Ts:     utils.GetTimestamp13(),
+			NewContact: &common.NewContact{
+				Uid:      uid,
+				Nickname: nickname,
+			},
+		}
+		if err := common.AddMsg(msg); err != nil {
+			logger.Error("add msg error", err.Error())
+		}
+	}
+	return nil
 }

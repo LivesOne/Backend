@@ -73,6 +73,13 @@
       "DBUserPwd" : "",
       "DBDatabase" : "db_livesone_profile"
     },
+    "Msg" : {
+        "MaxConn" : 10,
+        "DBHost" : "10.100.13.6:20000",
+        "DBUser" : "",
+        "DBUserPwd" : "",
+        "DBDatabase" : "db_livesone_message"
+    },
     "ChainApiAddress": "http://office.metellica.cn:55555",
     "SmsSvrName": "SmsService",
     "ImgEmailSvrName": "ImgEmailService",

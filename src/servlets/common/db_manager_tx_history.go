@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"servlets/constants"
@@ -30,19 +29,13 @@ func InitTxHistoryMongoDB() {
 func initOldTxHistoryMongoDB() {
 	config := config.GetConfig()
 	txdbc = config.TxHistory
-	connStr := fmt.Sprintf("%s?maxPoolSize=%d", txdbc.DBHost, txdbc.MaxConn)
-	logger.Info("conn mongo db ---> ", connStr)
-	tSession, _ = mgo.Dial(connStr)
-	tSession.SetPoolLimit(txdbc.MaxConn)
+	tSession = mgoConn(txdbc)
 }
 
 func initNewTxHistoryMongoDB() {
 	config := config.GetConfig()
 	ntxdbc = config.NewTxHistory
-	connStr := fmt.Sprintf("%s?maxPoolSize=%d", ntxdbc.DBHost, ntxdbc.MaxConn)
-	logger.Info("conn mongo db ---> ", connStr)
-	ntSession, _ = mgo.Dial(connStr)
-	ntSession.SetPoolLimit(ntxdbc.MaxConn)
+	ntSession = mgoConn(ntxdbc)
 }
 
 func txCommonInsert(cs *mgo.Session, db, c string, p interface{}) error {

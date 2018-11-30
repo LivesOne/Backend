@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"gopkg.in/mgo.v2"
 	"utils"
 	"utils/config"
@@ -18,15 +17,7 @@ var tradeConfig config.MongoConfig
 func InitTradeMongoDB() {
 	config := config.GetConfig()
 	tradeConfig = config.Trade
-	connStr := fmt.Sprintf("%s?maxPoolSize=%d", tradeConfig.DBHost, tradeConfig.MaxConn)
-	logger.Info("conn mongo db ---> ", connStr)
-	var connErr error = nil
-	tradeSession, connErr = mgo.Dial(connStr)
-	if connErr != nil {
-		logger.Error("connect mongo db error", connErr.Error())
-		panic(connErr)
-	}
-	tradeSession.SetPoolLimit(tradeConfig.MaxConn)
+	tradeSession = mgoConn(tradeConfig)
 }
 
 func InsertTradeInfo(info ...TradeInfo) error {

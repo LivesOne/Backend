@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"utils"
@@ -25,15 +24,7 @@ const (
 func InitMinerRMongoDB() {
 	config := config.GetConfig()
 	minerdbc = config.Miner
-	connStr := fmt.Sprintf("%s?maxPoolSize=%d", minerdbc.DBHost, minerdbc.MaxConn)
-	logger.Info("conn mongo db ---> ", connStr)
-	var err error
-	mSession, err = mgo.Dial(connStr)
-	if err != nil {
-		logger.Error("connect failed ", err.Error())
-		return
-	}
-	mSession.SetPoolLimit(minerdbc.MaxConn)
+	mSession = mgoConn(minerdbc)
 }
 
 func minerCommonInsert(c string, p ...interface{}) error {

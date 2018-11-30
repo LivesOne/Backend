@@ -8,6 +8,7 @@ import (
 	"servlets/constants"
 	"servlets/contacts"
 	"servlets/device"
+	"servlets/message"
 )
 
 func RegisterHandlers() {
@@ -21,4 +22,5 @@ func RegisterHandlers() {
 	asset.RegisterHandlers()
 	device.RegisterHandlers()
 	config.RegisterHandlers()
+	message.RegisterHandlers()
 }
