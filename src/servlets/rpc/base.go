@@ -23,7 +23,7 @@ func getRpcConn(addr, servName string) *grpc.ClientConn {
 		rpcTimeOutSec = 30
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rpcTimeOutSec) * time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(rpcTimeOutSec)*time.Second)
 	defer cancel()
 	conn, err := grpc.DialContext(
 		ctx, addr,

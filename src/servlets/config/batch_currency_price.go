@@ -15,7 +15,7 @@ type (
 	}
 
 	batchCurrencyPriceRequest struct {
-		Base  *common.BaseInfo    `json:"base"`
+		Base  *common.BaseInfo         `json:"base"`
 		Param *batchCurrencyPriceParam `json:"param"`
 	}
 
@@ -26,6 +26,7 @@ type (
 	batchCurrencyPriceHandler struct {
 	}
 )
+
 func (handler *batchCurrencyPriceHandler) Method() string {
 	return http.MethodPost
 }

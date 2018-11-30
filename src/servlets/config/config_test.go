@@ -14,7 +14,7 @@ import (
 	"utils/logger"
 )
 
-func init()  {
+func init() {
 	initialize("D:/code/maxthon/cloud/Backend/config/config.json")
 }
 
@@ -24,11 +24,11 @@ func TestBatchCurrencyPriceHandler_Handle(t *testing.T) {
 		Base: &common.BaseInfo{
 			App: &common.AppInfo{
 				Name: "app",
-				Ver: "1.0",
+				Ver:  "1.0",
 			},
 		},
 		Param: &batchCurrencyPriceParam{
-			Currency: []string{"LVTC,CNYT","EOS,CNY"},
+			Currency: []string{"LVTC,CNYT", "EOS,CNY"},
 		},
 	}
 	reader := strings.NewReader(utils.ToJSON(req))
@@ -44,7 +44,7 @@ func TestTransferFeeHandler_Handle(t *testing.T) {
 		Base: &common.BaseInfo{
 			App: &common.AppInfo{
 				Name: "app",
-				Ver: "1.0",
+				Ver:  "1.0",
 			},
 		},
 		Param: &TransferFeeParam{
@@ -64,7 +64,7 @@ func TestWithdrawalFeeHandler_Handle(t *testing.T) {
 		Base: &common.BaseInfo{
 			App: &common.AppInfo{
 				Name: "app",
-				Ver: "1.0",
+				Ver:  "1.0",
 			},
 		},
 		Param: &WithdrawalFeeParam{

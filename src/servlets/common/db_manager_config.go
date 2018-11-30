@@ -57,10 +57,10 @@ func convRowMap2DtTransFee(row map[string]string) *DtTransferFee {
 	if row != nil && len(row) > 0 {
 		transfee := &DtTransferFee{
 			FeeCurrency: row["fee_currency"],
-			FeeRate: utils.Scientific2Str(row["fee_rate"]),
-			Discount: utils.Scientific2Str(row["discount"]),
-			FeeMin: utils.Scientific2Str(row["fee_min"]),
-			FeeMax: utils.Scientific2Str(row["fee_max"]),
+			FeeRate:     utils.Scientific2Str(row["fee_rate"]),
+			Discount:    utils.Scientific2Str(row["discount"]),
+			FeeMin:      utils.Scientific2Str(row["fee_min"]),
+			FeeMax:      utils.Scientific2Str(row["fee_max"]),
 		}
 		return transfee
 	}
@@ -108,7 +108,6 @@ func QueryTransDailyAmountMax(currency string) (float64, error) {
 	return dtAmount.DailyAmountMax, nil
 }
 
-
 func QueryWithdrawalAmount(currency string) (*WithdrawQuota, error) {
 	row, err := gDBConfig.QueryRow("select single_amount_min,daily_amount_max from dt_withdrawal_amount where currency = ?", currency)
 	if err != nil {
@@ -122,7 +121,7 @@ func convRowMap2WithdrawQuota(row map[string]string) *WithdrawQuota {
 	if row != nil && len(row) > 0 {
 		withdrawAmount := &WithdrawQuota{
 			SingleAmountMin: utils.Str2Float64(row["single_amount_min"]),
-			DailyAmountMax: utils.Str2Float64(row["daily_amount_max"]),
+			DailyAmountMax:  utils.Str2Float64(row["daily_amount_max"]),
 		}
 		return withdrawAmount
 	}
@@ -155,7 +154,6 @@ func QueryWithdrawalFeesList(currency string) []*DtWithdrawalFee {
 	}
 	return res
 }
-
 
 func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
 	sql := "select * from dt_withdrawal_amount where currency = ?"
@@ -206,7 +204,6 @@ func QueryCurrencyPrice(currency, currency2 string) (string, string, error) {
 	logger.Info("currency price not found:", currency, ",", currency2)
 	return "", "", nil
 }
-
 
 func GeTransferQuotaByCurrency(currency, feeCurrency string) *TransferQuota {
 	sql := "select * from dt_transfer_amount where currency = ?"

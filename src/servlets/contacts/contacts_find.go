@@ -68,7 +68,7 @@ func (handler *contactFindHandler) Handle(request *http.Request, writer http.Res
 	var err error
 	if utils.IsValidEmailAddr(reqData.Param.Account) {
 		req := &microuser.CheckAccountByEmailReq{
-			Email:                reqData.Param.Account,
+			Email: reqData.Param.Account,
 		}
 		resp, rpcerr := cli.CheckAccountByEmail(context.Background(), req)
 		if rpcerr != nil {
@@ -78,7 +78,7 @@ func (handler *contactFindHandler) Handle(request *http.Request, writer http.Res
 		}
 	} else {
 		req := &microuser.CheckAccountByAccountReq{
-			Account:reqData.Param.Account,
+			Account: reqData.Param.Account,
 		}
 		resp, rpcerr := cli.CheckAccountByAccount(context.Background(), req)
 		if rpcerr != nil {
@@ -103,7 +103,7 @@ func convContacts(accs []int64) []contactFindResData {
 		r := make([]contactFindResData, len(accs))
 		for i, v := range accs {
 			uid := v
-			nickName ,_ := rpc.GetUserField(uid,microuser.UserField_NICKNAME)
+			nickName, _ := rpc.GetUserField(uid, microuser.UserField_NICKNAME)
 			r[i] = contactFindResData{
 				Uid:      uid,
 				Nickname: nickName,

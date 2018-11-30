@@ -2,7 +2,7 @@ package common
 
 type (
 	DtTransferFee struct {
-		FeeCurrency string  `json:"fee_currency"`
+		FeeCurrency string `json:"fee_currency"`
 		FeeRate     string `json:"fee_rate"`
 		Discount    string `json:"discount"`
 		FeeMin      string `json:"fee_min"`

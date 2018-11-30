@@ -11,20 +11,17 @@ var (
 	sessionSafe = &mgo.Safe{WMode: "majority"}
 )
 
-
-func mgoConn(c config.MongoConfig)*mgo.Session{
+func mgoConn(c config.MongoConfig) *mgo.Session {
 	connStr := fmt.Sprintf("%s?maxPoolSize=%d", c.DBHost, c.MaxConn)
 	logger.Info("conn mongo db ---> ", connStr)
 	session, err := mgo.Dial(connStr)
 	if err != nil {
-		logger.Error("conn mongodb error",err.Error())
+		logger.Error("conn mongodb error", err.Error())
 		panic(err)
 	}
 	session.SetPoolLimit(c.MaxConn)
 	return session
 }
-
-
 
 func mgoCommonInsert(cs *mgo.Session, db, c string, p interface{}) error {
 	session := cs.Clone()

@@ -63,9 +63,6 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 		return
 	}
 
-
-
-
 	if len(aesKey) != constants.AES_totalLen {
 		log.Info(" get aeskey from cache error:", len(aesKey))
 		res.SetResponseBase(constants.RC_PARAM_ERR)
@@ -114,7 +111,7 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 	}
 
 	insertMap := utils.StructConvMap(data)
-	if err := CreateContactAndBuildMsg(uid,tagUid,insertMap); err != nil {
+	if err := CreateContactAndBuildMsg(uid, tagUid, insertMap); err != nil {
 		log.Error("insert mongo  failed", err.Error())
 		if mgo.IsDup(err) {
 			res.SetResponseBase(constants.RC_DUP_CONTACT_ID)
@@ -126,5 +123,3 @@ func (handler *contactAddHandler) Handle(request *http.Request, writer http.Resp
 
 	res.Data = data
 }
-
-

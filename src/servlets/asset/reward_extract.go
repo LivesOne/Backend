@@ -105,8 +105,6 @@ func (handler *rewardExtractHandler) Handle(request *http.Request, writer http.R
 	if len(requestData.Param.Secret) > 0 {
 		// 解码 secret 参数
 
-
-
 		secretString := requestData.Param.Secret
 		secret := new(rewardExtractSecret)
 		iv, key := aesKey[:constants.AES_ivLen], aesKey[constants.AES_ivLen:]

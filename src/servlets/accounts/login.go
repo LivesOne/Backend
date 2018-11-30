@@ -115,7 +115,6 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		Key:     aesKey,
 	}
 
-
 	resp, err := cli.Login(context.Background(), req)
 	if err != nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)

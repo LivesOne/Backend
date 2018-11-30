@@ -10,7 +10,6 @@ import (
 
 const (
 	DT_MESSAGE = "dt_message"
-
 )
 
 var msgSession *mgo.Session
@@ -22,23 +21,20 @@ func InitMsgMongoDB() {
 	msgSession = mgoConn(msgConfig)
 }
 
-
-
-func AddMsg(msg *DtMessage)error{
-	return mgoCommonInsert(msgSession,msgConfig.DBDatabase,DT_MESSAGE,msg)
+func AddMsg(msg *DtMessage) error {
+	return mgoCommonInsert(msgSession, msgConfig.DBDatabase, DT_MESSAGE, msg)
 }
 
-
-func GetMsgByUidAndType(uid int64,mtype int)[]DtMessage{
+func GetMsgByUidAndType(uid int64, mtype int) []DtMessage {
 	session := msgSession.Clone()
 	defer session.Close()
 	collection := session.DB(tradeConfig.DBDatabase).C(DT_MESSAGE)
 	res := []DtMessage{}
-	query := bson.M{"to":uid}
+	query := bson.M{"to": uid}
 	if mtype > 0 {
 		query["type"] = mtype
 	}
-	logger.Debug("get msg by ",utils.ToJSON(query))
+	logger.Debug("get msg by ", utils.ToJSON(query))
 	err := collection.Find(query).Sort("-ts").All(&res)
 	if err != nil && err != mgo.ErrNotFound {
 		logger.Error("query mongo db error ", err.Error())
@@ -48,24 +44,21 @@ func GetMsgByUidAndType(uid int64,mtype int)[]DtMessage{
 	return res
 }
 
-func DelReadMsg(ids []bson.ObjectId)error{
+func DelReadMsg(ids []bson.ObjectId) error {
 	if len(ids) > 0 {
 		session := msgSession.Clone()
 		defer session.Close()
 		collection := session.DB(tradeConfig.DBDatabase).C(DT_MESSAGE)
 
-
-		orlist := make([]bson.M,len(ids))
-		for i,v := range ids {
+		orlist := make([]bson.M, len(ids))
+		for i, v := range ids {
 			orlist[i] = bson.M{
-				"_id":v,
+				"_id": v,
 			}
 		}
 
-
-
 		selector := bson.M{
-			"$or":orlist,
+			"$or": orlist,
 		}
 		return collection.Remove(selector)
 	}

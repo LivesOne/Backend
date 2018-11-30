@@ -719,7 +719,7 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 	if ts-txid_ts > TRANS_TIMEOUT {
 		//删除pending
 		logger.Warn("transfer timeout, transfer time:", txid_ts, "current time", ts)
-		DeletePendingByInfo(&DTTXHistory{Id: txId,})
+		DeletePendingByInfo(&DTTXHistory{Id: txId})
 		return constants.RC_TRANS_TIMEOUT
 	}
 
@@ -783,7 +783,7 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 			tx.Rollback()
 			return constants.RC_SYSTEM_ERR
 		}
-		DeletePendingByInfo(&DTTXHistory{Id: txId,})
+		DeletePendingByInfo(&DTTXHistory{Id: txId})
 	}
 	if strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) || strings.EqualFold(currency, CURRENCY_ETH) {
 		error := DeleteTradePending(perPending.TradeNo, uid, tx)

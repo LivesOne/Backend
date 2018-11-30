@@ -54,9 +54,6 @@ func (handler *messageListHandler) Handle(request *http.Request, writer http.Res
 		return
 	}
 
-
-
-
 	if len(aesKey) != constants.AES_totalLen {
 		log.Info(" get aeskey from cache error:", len(aesKey))
 		res.SetResponseBase(constants.RC_PARAM_ERR)
@@ -82,19 +79,17 @@ func (handler *messageListHandler) Handle(request *http.Request, writer http.Res
 	}
 	uid := utils.Str2Int64(uidStr)
 	resData := new(messageListResData)
-	msgArray := common.GetMsgByUidAndType(uid,reqData.Param.Type)
+	msgArray := common.GetMsgByUidAndType(uid, reqData.Param.Type)
 	if len(msgArray) > 0 {
-		delIds := make([]bson.ObjectId,len(msgArray))
-		for i,v := range msgArray {
+		delIds := make([]bson.ObjectId, len(msgArray))
+		for i, v := range msgArray {
 			delIds[i] = v.Id
 		}
 
 		resData.Message = msgArray
-		if err := common.DelReadMsg(delIds);err != nil {
-			logger.Error("del msg error",err.Error())
+		if err := common.DelReadMsg(delIds); err != nil {
+			logger.Error("del msg error", err.Error())
 		}
 	}
 	res.Data = resData
 }
-
-

@@ -19,7 +19,7 @@ type (
 		Uid           int64         `json:"-" bson:"uid,omitempty"`
 		ContactId     int           `json:"contact_id,omitempty" bson:"contact_id,omitempty"`
 		Name          string        `json:"name,omitempty" bson:"name,omitempty"`
-		Remark          string        `json:"remark,omitempty" bson:"remark,omitempty"`
+		Remark        string        `json:"remark,omitempty" bson:"remark,omitempty"`
 		Email         string        `json:"email,omitempty" bson:"email,omitempty"`
 		Country       int           `json:"country,omitempty" bson:"country,omitempty"`
 		Phone         string        `json:"phone,omitempty" bson:"phone,omitempty"`

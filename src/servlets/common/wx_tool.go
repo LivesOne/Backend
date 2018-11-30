@@ -26,9 +26,7 @@ type (
 	}
 )
 
-
-
-func decodeWXres(resBody string)(bool,*wxRes){
+func decodeWXres(resBody string) (bool, *wxRes) {
 	//校验是否是错误返回的格式
 	errRes := new(wxErrorRes)
 	if err := utils.FromJson(resBody, errRes); err != nil {
@@ -49,8 +47,7 @@ func decodeWXres(resBody string)(bool,*wxRes){
 	return true, res
 }
 
-
-func buildUrlAndParamsByAuthApp(app,wxCode string)(string,map[string]string){
+func buildUrlAndParamsByAuthApp(app, wxCode string) (string, map[string]string) {
 	wx := config.GetConfig().WXAuth
 	app = strings.ToLower(app)
 	var auth config.WXAuthData
@@ -65,14 +62,13 @@ func buildUrlAndParamsByAuthApp(app,wxCode string)(string,map[string]string){
 	param["secret"] = auth.Secret
 	param["code"] = wxCode
 	param["grant_type"] = "authorization_code"
-	logger.Info("wx auth url[",wx.Url,"] param[",utils.ToJSON(param),"]")
-	return wx.Url,param
+	logger.Info("wx auth url[", wx.Url, "] param[", utils.ToJSON(param), "]")
+	return wx.Url, param
 }
 
+func AuthWX(app, wxCode string) (bool, *wxRes) {
 
-func AuthWX(app,wxCode string) (bool, *wxRes) {
-
-	url,param := buildUrlAndParamsByAuthApp(app,wxCode)
+	url, param := buildUrlAndParamsByAuthApp(app, wxCode)
 
 	resBody, err := lvthttp.Get(url, param)
 	if err != nil {
@@ -84,26 +80,25 @@ func AuthWX(app,wxCode string) (bool, *wxRes) {
 	return decodeWXres(resBody)
 }
 
-
-func SecondAuthWX(uid int64,app,authCode string)(bool,constants.Error){
+func SecondAuthWX(uid int64, app, authCode string) (bool, constants.Error) {
 	// 微信绑定验证，未绑定返回验提取失败
 	wx, _ := rpc.GetUserField(uid, microuser.UserField_WX)
 	if len(wx) == 0 {
 		logger.Error("user is not bind wx")
-		return false,constants.RC_WX_SEC_AUTH_FAILED
+		return false, constants.RC_WX_SEC_AUTH_FAILED
 	}
 	wxIds := strings.Split(wx, ",")
 	if len(wxIds) != 2 {
 		logger.Error("user is not bind wx")
-		return false,constants.RC_WX_SEC_AUTH_FAILED
+		return false, constants.RC_WX_SEC_AUTH_FAILED
 	}
 	openId, unionId := wxIds[0], wxIds[1]
 	if len(openId) == 0 || len(unionId) == 0 {
 		logger.Error("user is not bind wx")
-		return false,constants.RC_WX_SEC_AUTH_FAILED
+		return false, constants.RC_WX_SEC_AUTH_FAILED
 	}
 	//微信认证并比对id
-	if ok, res := AuthWX(app,authCode); ok {
+	if ok, res := AuthWX(app, authCode); ok {
 		if res.Unionid != unionId {
 			logger.Error("user check sec wx failed")
 			logger.Error("db openId,unionId [", openId, unionId, "] wx result openId,unionId [", res.Openid, res.Unionid, "]")
@@ -111,10 +106,10 @@ func SecondAuthWX(uid int64,app,authCode string)(bool,constants.Error){
 			//deductionCreditScore := 10
 			//log.Error("deduction credit score :",deductionCreditScore)
 			//common.DeductionCreditScore(uid,deductionCreditScore)
-			return false,constants.RC_WX_SEC_AUTH_FAILED
+			return false, constants.RC_WX_SEC_AUTH_FAILED
 		}
-		return true ,constants.RC_OK
+		return true, constants.RC_OK
 	}
 	logger.Error("wx auth failed")
-	return false,constants.RC_INVALID_WX_CODE
+	return false, constants.RC_INVALID_WX_CODE
 }

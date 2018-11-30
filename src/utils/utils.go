@@ -128,19 +128,20 @@ func Timestamp13ToDate(timestamp int64) time.Time {
 	timeUtc := timeLocal.UTC()
 	return timeUtc
 }
+
 /**
 coinsDecimal 为转换好数值的10的N次方
- */
+*/
 func CoinsInt2FloatStr(coins, coinsDecimal int64) string {
-	c := decimal.New(coins,0)
-	cd := decimal.New(coinsDecimal,0)
+	c := decimal.New(coins, 0)
+	cd := decimal.New(coinsDecimal, 0)
 	//return strconv.FormatFloat(float64(coins) / float64(coinsDecimal), 'f', 8, 64)
 	return c.Div(cd).StringFixed(8)
 }
 
-func FloatStr2CoinsInt (coins string, coinsDecimal int64) int64 {
+func FloatStr2CoinsInt(coins string, coinsDecimal int64) int64 {
 	amount, _ := decimal.NewFromString(coins)
-	dec := decimal.New(coinsDecimal,0)
+	dec := decimal.New(coinsDecimal, 0)
 	return amount.Mul(dec).IntPart()
 }
 
@@ -373,9 +374,9 @@ func GetTomorrowStartTs10() int64 {
 func Scientific2Str(srcStr string) string {
 	var new float64
 	fmt.Sscanf(srcStr, "%e", &new)
-	return strconv.FormatFloat(new,'f',-1,64)
+	return strconv.FormatFloat(new, 'f', -1, 64)
 }
 
 func Float642Str(value float64) string {
-	return strconv.FormatFloat(value,'f',-1,64)
+	return strconv.FormatFloat(value, 'f', -1, 64)
 }

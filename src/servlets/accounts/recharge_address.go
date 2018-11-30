@@ -79,7 +79,6 @@ func (handler *reChargeAddrHandler) Handle(
 		return
 	}
 
-
 	req := &microuser.GetRechargeAddressReq{
 		Uid:      uid,
 		Currency: currency,

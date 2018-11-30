@@ -3,6 +3,7 @@ package contacts
 import (
 	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
@@ -135,6 +136,7 @@ func CreateContactAndBuildMsg(uid, tagUid int64, insertMap map[string]interface{
 	if tagUid > 0 {
 		nickname, _ := rpc.GetUserField(uid, microuser.UserField_NICKNAME)
 		msg := &common.DtMessage{
+			Id:     bson.NewObjectId(),
 			To:     tagUid,
 			Type:   common.MSG_TYPE_ADD_CONTACT,
 			Status: 0,

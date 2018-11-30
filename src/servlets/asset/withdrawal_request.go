@@ -194,7 +194,6 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-
 	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVT) {
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 		return
@@ -206,9 +205,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		if !strings.HasPrefix(walletAddress, "0x") {
 			walletAddress = "0x" + walletAddress
 		}
-}
-
-
+	}
 
 	var currencyDecimal, feeCurrencyDecimal int
 	if strings.EqualFold(secret.Currency, "eos") {
@@ -322,7 +319,6 @@ func validateEosAccount(account string) constants.Error {
 		return constants.RC_SYSTEM_ERR
 	}
 }
-
 
 func validateWalletAddress(walletAddress string) bool {
 	reg := "^(0x)?[0-9a-f]{40}$"

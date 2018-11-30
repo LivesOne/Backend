@@ -62,7 +62,7 @@ func (handler *walletAddrHandler) Handle(
 	}
 	resp, err := cli.QueryWallet(context.Background(), req)
 	if err != nil {
-		logger.Error("rpc query wallet error",err.Error())
+		logger.Error("rpc query wallet error", err.Error())
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
 		return
 	}

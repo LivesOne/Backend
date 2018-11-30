@@ -1394,9 +1394,9 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	return tradeNo, error
 }
 
-func initBalanceInfoByTbName(tbName string,uid int64,tx *sql.Tx)(error){
-	sql := fmt.Sprintf("insert ignore into %s (uid,lastmodify) values (?,?) ",tbName)
-	_,err := tx.Exec(sql,uid,utils.GetTimestamp13())
+func initBalanceInfoByTbName(tbName string, uid int64, tx *sql.Tx) error {
+	sql := fmt.Sprintf("insert ignore into %s (uid,lastmodify) values (?,?) ", tbName)
+	_, err := tx.Exec(sql, uid, utils.GetTimestamp13())
 	return err
 }
 
@@ -1467,13 +1467,11 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 		return constants.RC_SYSTEM_ERR
 	}
 
-
-	err = initBalanceInfoByTbName(assetTableName,to,tx)
+	err = initBalanceInfoByTbName(assetTableName, to, tx)
 	if err != nil {
-		logger.Error("init user asset", assetTableName, " balance error RowsAffected ",to)
+		logger.Error("init user asset", assetTableName, " balance error RowsAffected ", to)
 		return constants.RC_SYSTEM_ERR
 	}
-
 
 	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
 	rsa, _ = info.RowsAffected()
@@ -1726,11 +1724,11 @@ func calculationFeeAndCheckQuotaForWithdraw(uid int64, withdrawAmount, currency,
 
 		dailyAmount, _ := decimal.NewFromString(utils.Float642Str(withdrawQuota.DailyAmountMax))
 		dailyAmountInt64 := dailyAmount.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
-		withdrawAmountBig, _ :=  decimal.NewFromString(withdrawAmount)
+		withdrawAmountBig, _ := decimal.NewFromString(withdrawAmount)
 		withdrawAmountInt64 := withdrawAmountBig.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
 
 		logger.Info("daily quota out limit, withdraw amount:", withdrawAmountInt64, ",that day withdraw total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
-		if dailyAmountInt64 < totalAmount + withdrawAmountInt64 {
+		if dailyAmountInt64 < totalAmount+withdrawAmountInt64 {
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}
@@ -1786,8 +1784,8 @@ func getWithdrawQuota(withdrawCurrency string) *WithdrawQuota {
 
 //status为成功
 func addFeeTradeInfo(txid int64, tradeNo string, originalTradeNo string, tradeType, subType int, from int64, to int64, amount int64, currency string, currencyDecimal int, ts int64) error {
-	fromName, _ :=rpc.GetUserField(from,microuser.UserField_NICKNAME)
-	toName, _ := rpc.GetUserField(to,microuser.UserField_NICKNAME)
+	fromName, _ := rpc.GetUserField(from, microuser.UserField_NICKNAME)
+	toName, _ := rpc.GetUserField(to, microuser.UserField_NICKNAME)
 	tradeInfo := TradeInfo{
 		TradeNo:         tradeNo,
 		OriginalTradeNo: originalTradeNo,
@@ -2777,7 +2775,6 @@ func QueryHashRateDetailByUid(uid int64) []map[string]string {
 	return rows
 }
 
-
 func checkAssetBalanceIsSufficient(uid, amount, fee int64, currency, feeCurrency string) bool {
 	assetTableName := ""
 	switch strings.ToUpper(currency) {
@@ -2796,7 +2793,7 @@ func checkAssetBalanceIsSufficient(uid, amount, fee int64, currency, feeCurrency
 		logger.Error("query asset error, uid:", uid, "error:", err)
 	}
 	if strings.EqualFold(currency, feeCurrency) {
-		return utils.Str2Int64(row["balance"]) - utils.Str2Int64(row["locked"]) - utils.Str2Int64(row["income"]) > (amount + fee)
+		return utils.Str2Int64(row["balance"])-utils.Str2Int64(row["locked"])-utils.Str2Int64(row["income"]) > (amount + fee)
 	} else {
 		switch strings.ToUpper(feeCurrency) {
 		case CURRENCY_BTC:
@@ -2813,8 +2810,8 @@ func checkAssetBalanceIsSufficient(uid, amount, fee int64, currency, feeCurrency
 		if err != nil {
 			logger.Error("query asset error, uid:", uid, "error:", err)
 		}
-		return (utils.Str2Int64(row["balance"]) - utils.Str2Int64(row["locked"]) - utils.Str2Int64(row["income"]) > amount) &&
-			(utils.Str2Int64(rowFee["balance"]) - utils.Str2Int64(rowFee["locked"]) - utils.Str2Int64(rowFee["income"]) > fee)
+		return (utils.Str2Int64(row["balance"])-utils.Str2Int64(row["locked"])-utils.Str2Int64(row["income"]) > amount) &&
+			(utils.Str2Int64(rowFee["balance"])-utils.Str2Int64(rowFee["locked"])-utils.Str2Int64(rowFee["income"]) > fee)
 	}
 }
 
@@ -2858,11 +2855,11 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount, currency, feeCurr
 
 		dailyAmount, _ := decimal.NewFromString(utils.Float642Str(transferQuota.DailyAmountMax))
 		dailyAmountInt64 := dailyAmount.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
-		amountBig, _ :=  decimal.NewFromString(amount)
+		amountBig, _ := decimal.NewFromString(amount)
 		amountInt64 := amountBig.Mul(decimal.NewFromFloat(float64(currencyDecimal))).IntPart()
 
 		logger.Info("daily quota out limit, transfer amount:", amountInt64, ",that day transfer total amount:", totalAmount, ",daily amount:", dailyAmountInt64)
-		if dailyAmountInt64 < amountInt64 + totalAmount {
+		if dailyAmountInt64 < amountInt64+totalAmount {
 			return float64(0), constants.RC_TRANS_AMOUNT_EXCEEDING_LIMIT
 		}
 	}

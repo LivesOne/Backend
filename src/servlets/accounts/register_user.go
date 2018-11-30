@@ -97,9 +97,8 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		}
 		resp, err := cli.RegisterUser(context.Background(), req)
 
-
 		if err != nil {
-			if dupFlag , _ := db_factory.CheckDuplicate(err);!dupFlag{
+			if dupFlag, _ := db_factory.CheckDuplicate(err); !dupFlag {
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 				return
 			}
@@ -118,7 +117,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		}
 		resp, err := cli.RegisterUser(context.Background(), req)
 		if err != nil {
-			if dupFlag , _ := db_factory.CheckDuplicate(err);!dupFlag{
+			if dupFlag, _ := db_factory.CheckDuplicate(err); !dupFlag {
 				response.SetResponseBase(constants.RC_SYSTEM_ERR)
 				return
 			}
