@@ -52,7 +52,7 @@ func DelReadMsg(ids []bson.ObjectId) error {
 		orlist := make([]bson.M, len(ids))
 		for i, v := range ids {
 			orlist[i] = bson.M{
-				"_id": v,
+				"_id": bson.ObjectIdHex(v),
 			}
 		}
 
