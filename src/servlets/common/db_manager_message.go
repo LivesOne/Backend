@@ -47,15 +47,14 @@ func DelReadMsg(ids []bson.ObjectId) error {
 	if len(ids) > 0 {
 		session := msgSession.Clone()
 		defer session.Close()
-		collection := session.DB(tradeConfig.DBDatabase).C(DT_MESSAGE)
+		collection := session.DB(msgConfig.DBDatabase).C(DT_MESSAGE)
 
 		orlist := make([]bson.M, len(ids))
 		for i, v := range ids {
 			orlist[i] = bson.M{
-				"_id": bson.ObjectIdHex(v),
+				"_id": v,
 			}
 		}
-
 		selector := bson.M{
 			"$or": orlist,
 		}
