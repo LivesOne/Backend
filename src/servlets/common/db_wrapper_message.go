@@ -8,15 +8,15 @@ const (
 
 type (
 	DtMessage struct {
-		Id         bson.ObjectId `bosn:"_id,omitempty" bosn:"_id,omitempty"`
-		To         int64         `bosn:"to,omitempty" bosn:"to,omitempty"`
-		Type       int           `bosn:"type,omitempty" bosn:"type,omitempty"`
-		Status     int           `bosn:"status,omitempty" bosn:"status,omitempty"`
-		Ts         int64         `bosn:"ts,omitempty" bosn:"ts,omitempty"`
-		NewContact *NewContact   `bosn:"new_contact,omitempty" bosn:"new_contact,omitempty"`
+		Id         bson.ObjectId `json:"_id,omitempty" bson:"_id,omitempty"`
+		To         int64         `json:"to,omitempty" bson:"to,omitempty"`
+		Type       int           `json:"type,omitempty" bson:"type,omitempty"`
+		Status     int           `json:"status,omitempty" bson:"status,omitempty"`
+		Ts         int64         `json:"ts,omitempty" bson:"ts,omitempty"`
+		NewContact *NewContact   `json:"new_contact,omitempty" bson:"new_contact,omitempty"`
 	}
 	NewContact struct {
-		Uid      int64  `bosn:"uid,omitempty" bosn:"uid,omitempty"`
-		Nickname string `bosn:"nickname,omitempty" bosn:"nickname,omitempty"`
+		Uid      int64  `json:"uid,omitempty" bson:"uid,omitempty"`
+		Nickname string `json:"nickname,omitempty" bson:"nickname,omitempty"`
 	}
 )
