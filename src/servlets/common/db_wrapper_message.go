@@ -9,9 +9,9 @@ const (
 type (
 	DtMessage struct {
 		Id         bson.ObjectId `json:"_id,omitempty" bson:"_id,omitempty"`
-		To         int64         `json:"to,omitempty" bson:"to,omitempty"`
+		To         int64         `json:"-" bson:"to,omitempty"`
 		Type       int           `json:"type,omitempty" bson:"type,omitempty"`
-		Status     int           `json:"status,omitempty" bson:"status,omitempty"`
+		Status     int           `json:"status" bson:"status,omitempty"`
 		Ts         int64         `json:"ts,omitempty" bson:"ts,omitempty"`
 		NewContact *NewContact   `json:"new_contact,omitempty" bson:"new_contact,omitempty"`
 	}
