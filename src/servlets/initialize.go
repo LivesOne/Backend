@@ -13,4 +13,5 @@ func Init() {
 	common.InitMinerRMongoDB()
 	common.InitTradeMongoDB()
 	common.InitContactsMongoDB()
+	common.InitMsgMongoDB()
 }
