@@ -79,6 +79,7 @@ func (handler *messageListHandler) Handle(request *http.Request, writer http.Res
 	}
 	uid := utils.Str2Int64(uidStr)
 	resData := new(messageListResData)
+
 	msgArray := common.GetMsgByUidAndType(uid, reqData.Param.Type)
 	if len(msgArray) > 0 {
 		delIds := make([]bson.ObjectId, len(msgArray))

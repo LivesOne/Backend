@@ -28,7 +28,7 @@ func AddMsg(msg *DtMessage) error {
 func GetMsgByUidAndType(uid int64, mtype int) []DtMessage {
 	session := msgSession.Clone()
 	defer session.Close()
-	collection := session.DB(tradeConfig.DBDatabase).C(DT_MESSAGE)
+	collection := session.DB(msgConfig.DBDatabase).C(DT_MESSAGE)
 	res := []DtMessage{}
 	query := bson.M{"to": uid}
 	if mtype > 0 {
