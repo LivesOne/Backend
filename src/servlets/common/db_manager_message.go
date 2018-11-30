@@ -32,13 +32,13 @@ func AddMsg(msg *DtMessage)error{
 func GetMsgByUidAndType(uid int64,mtype int)[]DtMessage{
 	session := msgSession.Clone()
 	defer session.Close()
-	logger.Debug("get msg by :",uid)
 	collection := session.DB(tradeConfig.DBDatabase).C(DT_MESSAGE)
 	res := []DtMessage{}
 	query := bson.M{"to":uid}
 	if mtype > 0 {
 		query["type"] = mtype
 	}
+	logger.Debug("get msg by ",utils.ToJSON(query))
 	err := collection.Find(query).Sort("-ts").All(&res)
 	if err != nil && err != mgo.ErrNotFound {
 		logger.Error("query mongo db error ", err.Error())
@@ -46,4 +46,28 @@ func GetMsgByUidAndType(uid int64,mtype int)[]DtMessage{
 	}
 	logger.Debug("query res ", utils.ToJSON(res))
 	return res
+}
+
+func DelReadMsg(ids []bson.ObjectId)error{
+	if len(ids) > 0 {
+		session := msgSession.Clone()
+		defer session.Close()
+		collection := session.DB(tradeConfig.DBDatabase).C(DT_MESSAGE)
+
+
+		orlist := make([]bson.M,len(ids))
+		for i,v := range ids {
+			orlist[i] = bson.M{
+				"_id":v,
+			}
+		}
+
+
+
+		selector := bson.M{
+			"$or":orlist,
+		}
+		return collection.Remove(selector)
+	}
+	return nil
 }

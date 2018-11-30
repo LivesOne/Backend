@@ -1,6 +1,7 @@
 package message
 
 import (
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
@@ -83,7 +84,15 @@ func (handler *messageListHandler) Handle(request *http.Request, writer http.Res
 	resData := new(messageListResData)
 	msgArray := common.GetMsgByUidAndType(uid,reqData.Param.Type)
 	if len(msgArray) > 0 {
+		delIds := make([]bson.ObjectId,len(msgArray))
+		for i,v := range msgArray {
+			delIds[i] = v.Id
+		}
+
 		resData.Message = msgArray
+		if err := common.DelReadMsg(delIds);err != nil {
+			logger.Error("del msg error",err.Error())
+		}
 	}
 	res.Data = resData
 }
