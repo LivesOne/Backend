@@ -53,7 +53,7 @@ func (handler *batchCurrencyPriceHandler) Handle(request *http.Request, writer h
 	}
 	var batchCurrency batchCurrencyPriceResData
 
-	if rows := common.BarchQueryCurrencyPrice(param.Currency);rows != nil {
+	if rows := common.BarchQueryCurrencyPrice(param.Currency);rows != nil && len(rows) > 0  {
 		for _, v := range rows {
 			data := currencyPriceResData{
 				Currency: v["currency"],
