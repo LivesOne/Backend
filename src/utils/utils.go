@@ -150,6 +150,7 @@ func LVTintToFloatStr(lvt int64) string {
 	return d2.StringFixed(8)
 }
 
+
 func EOSintToFloatStr(lvt int64) string {
 	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_EOS))
 	return d2.StringFixed(4)

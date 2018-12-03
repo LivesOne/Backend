@@ -192,7 +192,7 @@ func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
 
 func QueryCurrencyPrice(currency, currency2 string) (string, string, error) {
 	row, err := gDBConfig.QueryRow(
-		"select format(current,8) as cur,format(average,8) as avg from dt_currency_price where currency=? and currency2 = ?",
+		"select TRUNCATE(current,8) as cur,TRUNCATE(average,8) as avg from dt_currency_price where currency=? and currency2 = ?",
 		currency, currency2)
 	if err != nil {
 		logger.Warn("query currency price error:", err)
