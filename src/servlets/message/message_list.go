@@ -14,7 +14,7 @@ type (
 	messageListHandler struct {
 	}
 	messageListResData struct {
-		Message []common.DtMessage
+		Messages []common.DtMessage `json:"messages"`
 	}
 	messageListParam struct {
 		Type int `json:"type"`
@@ -86,8 +86,7 @@ func (handler *messageListHandler) Handle(request *http.Request, writer http.Res
 		for i, v := range msgArray {
 			delIds[i] = v.Id
 		}
-
-		resData.Message = msgArray
+		resData.Messages = msgArray
 		if err := common.DelReadMsg(delIds); err != nil {
 			logger.Error("del msg error", err.Error())
 		}
