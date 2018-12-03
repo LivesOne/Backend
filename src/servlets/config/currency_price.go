@@ -5,7 +5,6 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"strings"
-	"utils/logger"
 )
 
 type currencyPriceParam struct {
@@ -17,11 +16,7 @@ type currencyPriceRequest struct {
 	Param *currencyPriceParam `json:"param"`
 }
 
-type currencyPriceResData struct {
-	Currency string `json:"currency"`
-	Current  string `json:"current"`
-	Average  string `json:"average"`
-}
+
 
 type currencyPriceHandler struct {
 }
@@ -54,41 +49,12 @@ func (handler *currencyPriceHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
-	if data,err := QueryCurrencyPrice(param.Currency);err == constants.RC_OK {
+	currencyPair := strings.ToUpper(param.Currency)
+
+	if f,data := common.GetCurrencyPrice(currencyPair);f {
 		response.Data = data
 	}else{
-		response.SetResponseBase(err)
+		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 	}
 }
 
-
-func QueryCurrencyPrice(currencyPiar string)(*currencyPriceResData,constants.Error){
-	currencyPair := strings.Split(currencyPiar, ",")
-	if len(currencyPair) != 2 {
-		logger.Warn("currency must be in pair")
-		return nil,constants.RC_PARAM_ERR
-	}
-	currency := strings.ToUpper(strings.TrimSpace(currencyPair[0]))
-	currency2 := strings.ToUpper(strings.TrimSpace(currencyPair[1]))
-
-	currentPrice, averagePrice, err := common.QueryCurrencyPrice(currency, currency2)
-	if err != nil {
-		return nil,constants.RC_SYSTEM_ERR
-
-	}
-	if currentPrice == "" && averagePrice == "" {
-		logger.Info("currency piar ",currentPrice,averagePrice,"")
-		return nil,constants.RC_INVALID_CURRENCY
-	}
-	//if strings.Index(currentPrice, ",") >= 0 {
-	//	currentPrice = strings.Replace(currentPrice, ",", "", -1)
-	//}
-	//if strings.Index(averagePrice, ",") >= 0 {
-	//	averagePrice = strings.Replace(averagePrice, ",", "", -1)
-	//}
-	return &currencyPriceResData{
-		Currency: currencyPiar,
-		Current:  currentPrice,
-		Average:  averagePrice,
-	},constants.RC_OK
-}

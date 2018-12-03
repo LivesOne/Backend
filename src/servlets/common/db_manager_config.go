@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"strings"
 	"utils"
 	"utils/config"
@@ -191,44 +190,9 @@ func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
 	return &withdrawQuota
 }
 
-func QueryCurrencyPrice(currency, currency2 string) (string, string, error) {
-	row, err := gDBConfig.QueryRow(
-		"select TRUNCATE(current,8) as cur,TRUNCATE(average,8) as avg from dt_currency_price where currency=? and currency2 = ?",
-		currency, currency2)
-	if err != nil {
-		logger.Warn("query currency price error:", err)
-		return "", "", err
-	}
-	if row != nil {
-		return row["cur"], row["avg"], nil
-	}
-	logger.Info("currency price not found:", currency, ",", currency2)
-	return "", "", nil
+func QueryAllCaurrencyPrice()[]map[string]string{
+	return  gDBConfig.Query("select CONCAT(currency,',',currency2) as currency,TRUNCATE(current,8) as cur,TRUNCATE(average,8) as avg  from dt_currency_price")
 }
-
-
-func BarchQueryCurrencyPrice(currencyPiarlist []string)[]map[string]string{
-	baseSql := "select '%s' as currency,TRUNCATE(current,8) as cur,TRUNCATE(average,8) as avg  from dt_currency_price where currency=? and currency2 = ?"
-	sqls := make([]string,len(currencyPiarlist))
-	paramList := make([]interface{},0)
-	for i,v := range currencyPiarlist{
-		cp := strings.ToUpper(v)
-		currencyPair := strings.Split(cp, ",")
-		if len(currencyPair) != 2 {
-			logger.Warn("currency",cp," must be in pair")
-			continue
-		}
-		currency := strings.ToUpper(strings.TrimSpace(currencyPair[0]))
-		currency2 := strings.ToUpper(strings.TrimSpace(currencyPair[1]))
-		sqls[i] = fmt.Sprintf(baseSql,cp)
-		paramList = append(paramList,currency,currency2)
-	}
-	finalSql := strings.Join(sqls," union all ")
-	logger.Debug("batch query currency price final sql",finalSql)
-	return  gDBConfig.Query(finalSql,paramList...)
-}
-
-
 
 
 

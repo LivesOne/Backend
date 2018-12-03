@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
+	"strings"
 )
 
 type (
@@ -17,7 +18,7 @@ type (
 	}
 
 	batchCurrencyPriceResData struct {
-		Currency []currencyPriceResData `json:"currency"`
+		Currency []common.CurrencyPricCacheData `json:"currency"`
 	}
 
 	batchCurrencyPriceHandler struct {
@@ -52,17 +53,13 @@ func (handler *batchCurrencyPriceHandler) Handle(request *http.Request, writer h
 		return
 	}
 	var batchCurrency batchCurrencyPriceResData
-
-	if rows := common.BarchQueryCurrencyPrice(param.Currency);rows != nil && len(rows) > 0  {
-		for _, v := range rows {
-			data := currencyPriceResData{
-				Currency: v["currency"],
-				Current:  v["cur"],
-				Average:  v["avg"],
-			}
-			batchCurrency.Currency = append(batchCurrency.Currency, data)
-
+	for _, v := range param.Currency {
+		currencyPair := strings.ToUpper(v)
+		if f,data := common.GetCurrencyPrice(currencyPair);f {
+			batchCurrency.Currency = append(batchCurrency.Currency, *data)
 		}
+	}
+	if len(batchCurrency.Currency) > 0 {
 		response.Data = batchCurrency
 	} else {
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
