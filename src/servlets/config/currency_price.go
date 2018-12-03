@@ -5,7 +5,6 @@ import (
 	"servlets/common"
 	"servlets/constants"
 	"strings"
-	"utils"
 	"utils/logger"
 )
 
@@ -73,15 +72,15 @@ func (handler *currencyPriceHandler) Handle(request *http.Request, writer http.R
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 		return
 	}
-	if strings.Index(currentPrice, ",") >= 0 {
-		currentPrice = strings.Replace(currentPrice, ",", "", -1)
-	}
-	if strings.Index(averagePrice, ",") >= 0 {
-		averagePrice = strings.Replace(averagePrice, ",", "", -1)
-	}
+	//if strings.Index(currentPrice, ",") >= 0 {
+	//	currentPrice = strings.Replace(currentPrice, ",", "", -1)
+	//}
+	//if strings.Index(averagePrice, ",") >= 0 {
+	//	averagePrice = strings.Replace(averagePrice, ",", "", -1)
+	//}
 	response.Data = currencyPriceResData{
 		Currency: param.Currency,
-		Current:  utils.Scientific2Str(currentPrice),
-		Average:  utils.Scientific2Str(averagePrice),
+		Current:  currentPrice,
+		Average:  averagePrice,
 	}
 }
