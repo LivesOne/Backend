@@ -52,10 +52,19 @@ func (handler *batchCurrencyPriceHandler) Handle(request *http.Request, writer h
 		return
 	}
 	var batchCurrency batchCurrencyPriceResData
-	for _, cp := range param.Currency {
-		if data,err := QueryCurrencyPrice(cp);err == constants.RC_OK {
-			batchCurrency.Currency = append(batchCurrency.Currency, *data)
+
+	if rows := common.BarchQueryCurrencyPrice(param.Currency);rows != nil {
+		for _, v := range rows {
+			data := currencyPriceResData{
+				Currency: v["currency"],
+				Current:  v["cur"],
+				Average:  v["avg"],
+			}
+			batchCurrency.Currency = append(batchCurrency.Currency, data)
+
 		}
+		response.Data = batchCurrency
 	}
-	response.Data = batchCurrency
+
+
 }
