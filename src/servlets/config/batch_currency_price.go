@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
-	"strings"
-	"utils/logger"
 )
 
 type (
@@ -55,40 +53,9 @@ func (handler *batchCurrencyPriceHandler) Handle(request *http.Request, writer h
 	}
 	var batchCurrency batchCurrencyPriceResData
 	for _, cp := range param.Currency {
-		currencyPair := strings.Split(cp, ",")
-		if len(currencyPair) != 2 {
-			logger.Warn("currency must be in pair")
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
+		if data,err := QueryCurrencyPrice(cp);err == constants.RC_OK {
+			batchCurrency.Currency = append(batchCurrency.Currency, *data)
 		}
-		currency := strings.ToUpper(strings.Trim(currencyPair[0], " "))
-		currency2 := strings.ToUpper(strings.Trim(currencyPair[1], " "))
-		if len(currency) == 0 || len(currency2) == 0 {
-			response.SetResponseBase(constants.RC_PARAM_ERR)
-			return
-		}
-
-		currentPrice, averagePrice, err := common.QueryCurrencyPrice(currency, currency2)
-		if err != nil {
-			response.SetResponseBase(constants.RC_SYSTEM_ERR)
-			return
-		}
-		if currentPrice == "" && averagePrice == "" {
-			response.SetResponseBase(constants.RC_INVALID_CURRENCY)
-			return
-		}
-		//if strings.Index(currentPrice, ",") >= 0 {
-		//	currentPrice = strings.Replace(currentPrice, ",", "", -1)
-		//}
-		//if strings.Index(averagePrice, ",") >= 0 {
-		//	averagePrice = strings.Replace(averagePrice, ",", "", -1)
-		//}
-		resCurrency := currencyPriceResData{
-			Currency: cp,
-			Current:  currentPrice,
-			Average:  averagePrice,
-		}
-		batchCurrency.Currency = append(batchCurrency.Currency, resCurrency)
 	}
 	response.Data = batchCurrency
 }

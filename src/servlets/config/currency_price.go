@@ -54,23 +54,31 @@ func (handler *currencyPriceHandler) Handle(request *http.Request, writer http.R
 		return
 	}
 
-	currencyPair := strings.Split(param.Currency, ",")
+	if data,err := QueryCurrencyPrice(param.Currency);err == constants.RC_OK {
+		response.Data = data
+	}else{
+		response.SetResponseBase(err)
+	}
+}
+
+
+func QueryCurrencyPrice(currencyPiar string)(*currencyPriceResData,constants.Error){
+	currencyPair := strings.Split(currencyPiar, ",")
 	if len(currencyPair) != 2 {
 		logger.Warn("currency must be in pair")
-		response.SetResponseBase(constants.RC_PARAM_ERR)
-		return
+		return nil,constants.RC_PARAM_ERR
 	}
-	currency := strings.ToUpper(currencyPair[0])
-	currency2 := strings.ToUpper(currencyPair[1])
+	currency := strings.ToUpper(strings.TrimSpace(currencyPair[0]))
+	currency2 := strings.ToUpper(strings.TrimSpace(currencyPair[1]))
 
 	currentPrice, averagePrice, err := common.QueryCurrencyPrice(currency, currency2)
 	if err != nil {
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
+		return nil,constants.RC_SYSTEM_ERR
+
 	}
 	if currentPrice == "" && averagePrice == "" {
-		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
-		return
+		logger.Info("currency piar ",currentPrice,averagePrice,"")
+		return nil,constants.RC_INVALID_CURRENCY
 	}
 	//if strings.Index(currentPrice, ",") >= 0 {
 	//	currentPrice = strings.Replace(currentPrice, ",", "", -1)
@@ -78,9 +86,9 @@ func (handler *currencyPriceHandler) Handle(request *http.Request, writer http.R
 	//if strings.Index(averagePrice, ",") >= 0 {
 	//	averagePrice = strings.Replace(averagePrice, ",", "", -1)
 	//}
-	response.Data = currencyPriceResData{
-		Currency: param.Currency,
+	return &currencyPriceResData{
+		Currency: currencyPiar,
 		Current:  currentPrice,
 		Average:  averagePrice,
-	}
+	},constants.RC_OK
 }
