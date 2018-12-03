@@ -223,7 +223,7 @@ func BarchQueryCurrencyPrice(currencyPiarlist []string)[]map[string]string{
 		sqls[i] = fmt.Sprintf(baseSql,cp)
 		paramList = append(paramList,currency,currency2)
 	}
-	finalSql := strings.Join(sqls,"union all")
+	finalSql := strings.Join(sqls," union all ")
 	logger.Debug("batch query currency price final sql",finalSql)
 	return  gDBConfig.Query(finalSql,paramList...)
 }
