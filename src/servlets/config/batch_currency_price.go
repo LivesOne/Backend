@@ -64,6 +64,8 @@ func (handler *batchCurrencyPriceHandler) Handle(request *http.Request, writer h
 
 		}
 		response.Data = batchCurrency
+	} else {
+		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 	}
 
 
