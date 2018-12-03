@@ -57,7 +57,9 @@ func GetCurrencyPrice(currencyPiar string)(bool,*CurrencyPricCacheData){
 	initCurrencyPriceCache()
 	jsonStr,e := hget(CURRENCY_PRICE_RDS_KEY,currencyPiar)
 	if e != nil {
-		logger.Error("hget rds error",e.Error())
+		if e != redis.ErrNil {
+			logger.Error("hget rds error",e.Error())
+		}
 		return false,nil
 	}
 	res := new(CurrencyPricCacheData)
