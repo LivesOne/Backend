@@ -177,5 +177,6 @@
         {"Chain":"ETH", "coins":["ETH", "LVTC"]},
         {"Chain":"BTC", "coins":["BTC"]},
         {"Chain":"EOS", "coins":["EOS"]}
-    ]
+    ],
+    "QrCodeContentUrl": "https://qr.livesone.net"
 }

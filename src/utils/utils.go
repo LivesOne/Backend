@@ -150,7 +150,6 @@ func LVTintToFloatStr(lvt int64) string {
 	return d2.StringFixed(8)
 }
 
-
 func EOSintToFloatStr(lvt int64) string {
 	d2 := decimal.New(lvt, 0).Div(decimal.NewFromFloat(CONV_EOS))
 	return d2.StringFixed(4)
@@ -380,4 +379,27 @@ func Scientific2Str(srcStr string) string {
 
 func Float642Str(value float64) string {
 	return strconv.FormatFloat(value, 'f', -1, 64)
+}
+
+
+/*
+ * 验证提币目标地址
+ */
+func ValidateWithdrawalAddress(walletAddress, currency string) bool {
+	ret := false
+	switch strings.ToUpper(currency) {
+	case constants.TRADE_CURRENCY_LVT:
+		fallthrough
+	case constants.TRADE_CURRENCY_LVTC:
+		fallthrough
+	case constants.TRADE_CURRENCY_ETH:
+		reg := "^(0x)?[0-9a-fA-F]{40}$"
+		ret, _ = regexp.MatchString(reg, walletAddress)
+	case constants.TRADE_CURRENCY_BTC:
+		reg := "^[0-9a-zA-Z]+$"
+		ret, _ = regexp.MatchString(reg, walletAddress)
+	case constants.TRADE_CURRENCY_EOS:
+		ret = len(walletAddress) > 0
+	}
+	return ret
 }

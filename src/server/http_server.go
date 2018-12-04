@@ -69,7 +69,7 @@ func globalRecover(c *gin.Context) {
 
 func logUrl(c *gin.Context) {
 	req := c.Request
-	logger.Info("recive req method 【",req.Method,"】 url ---> ",req.URL)
+	logger.Info("recive req method 【", req.Method, "】 url ---> ", req.URL)
 	c.Next()
 }
 

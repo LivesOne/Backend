@@ -36,10 +36,10 @@ func GetMsgByUidAndType(uid int64, mtype int) []DtMessage {
 	}
 	err := collection.Find(query).Sort("-ts").All(&res)
 	if err != nil && err != mgo.ErrNotFound {
-		logger.Error("get msg by ", utils.ToJSON(query),"query mongo db error ", err.Error())
+		logger.Error("get msg by ", utils.ToJSON(query), "query mongo db error ", err.Error())
 		return nil
 	}
-	logger.Debug("get msg by ", utils.ToJSON(query)," res ", utils.ToJSON(res))
+	logger.Debug("get msg by ", utils.ToJSON(query), " res ", utils.ToJSON(res))
 	return res
 }
 

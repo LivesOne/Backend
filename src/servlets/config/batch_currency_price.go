@@ -55,7 +55,7 @@ func (handler *batchCurrencyPriceHandler) Handle(request *http.Request, writer h
 	var batchCurrency batchCurrencyPriceResData
 	for _, v := range param.Currency {
 		currencyPair := strings.ToUpper(v)
-		if f,data := common.GetCurrencyPrice(currencyPair);f {
+		if f, data := common.GetCurrencyPrice(currencyPair); f {
 			batchCurrency.Currency = append(batchCurrency.Currency, *data)
 		}
 	}
@@ -64,6 +64,5 @@ func (handler *batchCurrencyPriceHandler) Handle(request *http.Request, writer h
 	} else {
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 	}
-
 
 }

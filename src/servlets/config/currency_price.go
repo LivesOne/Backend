@@ -16,8 +16,6 @@ type currencyPriceRequest struct {
 	Param *currencyPriceParam `json:"param"`
 }
 
-
-
 type currencyPriceHandler struct {
 }
 
@@ -51,10 +49,9 @@ func (handler *currencyPriceHandler) Handle(request *http.Request, writer http.R
 
 	currencyPair := strings.ToUpper(param.Currency)
 
-	if f,data := common.GetCurrencyPrice(currencyPair);f {
+	if f, data := common.GetCurrencyPrice(currencyPair); f {
 		response.Data = data
-	}else{
+	} else {
 		response.SetResponseBase(constants.RC_INVALID_CURRENCY)
 	}
 }
-

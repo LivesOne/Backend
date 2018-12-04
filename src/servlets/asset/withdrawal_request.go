@@ -171,7 +171,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	if !validateWithdrawalAddress(secret.Address, secret.Currency) {
+	if !utils.ValidateWithdrawalAddress(secret.Address, secret.Currency) {
 		logger.Info("withdrawal address format error")
 		response.SetResponseBase(constants.RC_INVALID_WALLET_ADDRESS_FORMAT)
 		return
@@ -257,27 +257,7 @@ func validateWithdrawalValue(value string) bool {
 	return false
 }
 
-/*
- * 验证提币目标地址
- */
-func validateWithdrawalAddress(walletAddress, currency string) bool {
-	ret := false
-	switch strings.ToUpper(currency) {
-	case constants.TRADE_CURRENCY_LVT:
-		fallthrough
-	case constants.TRADE_CURRENCY_LVTC:
-		fallthrough
-	case constants.TRADE_CURRENCY_ETH:
-		reg := "^(0x)?[0-9a-fA-F]{40}$"
-		ret, _ = regexp.MatchString(reg, walletAddress)
-	case constants.TRADE_CURRENCY_BTC:
-		reg := "^[0-9a-zA-Z]+$"
-		ret, _ = regexp.MatchString(reg, walletAddress)
-	case constants.TRADE_CURRENCY_EOS:
-		ret = len(walletAddress) > 0
-	}
-	return ret
-}
+
 
 func validateEosAccount(account string) constants.Error {
 	reg := "^[0-9a-z]{1,12}$"

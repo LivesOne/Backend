@@ -190,11 +190,9 @@ func GetWithdrawQuotaByCurrency(currency string) *WithdrawQuota {
 	return &withdrawQuota
 }
 
-func QueryAllCaurrencyPrice()[]map[string]string{
-	return  gDBConfig.Query("select CONCAT(currency,',',currency2) as currency,TRUNCATE(current,8) as cur,TRUNCATE(average,8) as avg  from dt_currency_price")
+func QueryAllCaurrencyPrice() []map[string]string {
+	return gDBConfig.Query("select CONCAT(currency,',',currency2) as currency,TRUNCATE(current,8) as cur,TRUNCATE(average,8) as avg  from dt_currency_price")
 }
-
-
 
 func GeTransferQuotaByCurrency(currency, feeCurrency string) *TransferQuota {
 	sql := "select * from dt_transfer_amount where currency = ?"

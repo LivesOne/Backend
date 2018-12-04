@@ -101,6 +101,10 @@ const (
 
 	ACCOUNT_CONTACTS_ADD = "/user/v1/contact/add"
 
+
+
+	ACCOUNT_QRCODE_GENERATE = "/user/v1/qr_code/generate"
+
 	//Assets Management APIs
 
 	ASSET_REWARD = "/asset/v1/reward"

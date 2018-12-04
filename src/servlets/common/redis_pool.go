@@ -155,3 +155,7 @@ func hgetall(key string) (map[string]string, error) {
 func hget(key string, fieldName string) (string, error) {
 	return redis.String(rdsDo("HGET", key, fieldName))
 }
+
+func rdsExist(key string) (bool, error) {
+	return redis.Bool(rdsDo("EXISTS", key))
+}

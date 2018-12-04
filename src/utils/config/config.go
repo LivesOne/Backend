@@ -139,6 +139,7 @@ type Configuration struct {
 	ReChargeAddress               []ReChargeAddr
 	ChainHotWalletAddr            string
 	Chains                        []ChainConfig
+	QrCodeContentUrl              string
 }
 
 // configuration data
