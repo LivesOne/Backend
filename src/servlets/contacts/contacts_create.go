@@ -129,7 +129,7 @@ func convmap(s *contactCreateSecret) map[string]interface{} {
 
 func CreateContactAndBuildMsg(uid, tagUid int64, insertMap map[string]interface{}) error {
 	insertMap["uid"] = uid
-	insertMap["livesone_uid"] = tagUid
+	insertMap["livesone_uid"] = utils.Int642Str(tagUid)
 	if err := common.CreateContact(insertMap); err != nil {
 		return err
 	}
