@@ -2,7 +2,9 @@ package common
 
 import (
 	"github.com/thanhpk/randstr"
+	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
 	"net/url"
+	"servlets/rpc"
 	"strings"
 	"utils"
 	"utils/config"
@@ -17,6 +19,7 @@ const (
 	QR_CODE_EXPIRE                     = 180
 	QR_CODE_RDS_PRFIX                  = "cache:qrcode:"
 	QR_CODE_CACHE_FIELD_UID            = "uid"
+	QR_CODE_CACHE_FIELD_NICKNAME       = "nickname"
 	QR_CODE_CACHE_FIELD_TRANS_TYPE     = "type"
 	QR_CODE_CACHE_FIELD_TRANS_TO       = "to"
 	QR_CODE_CACHE_FIELD_TRANS_CURRENCY = "currency"
@@ -34,8 +37,10 @@ func BuildUserInfoQrCodeCache(uid string) (string, int) {
 	if t {
 		return BuildUserInfoQrCodeCache(uid)
 	}
+	nickname, _ := rpc.GetUserField(utils.Str2Int64(uid), microuser.UserField_NICKNAME)
 	cache := map[string]string{
-		QR_CODE_CACHE_FIELD_UID: uid,
+		QR_CODE_CACHE_FIELD_UID:      uid,
+		QR_CODE_CACHE_FIELD_NICKNAME: nickname,
 	}
 	hmset(key, cache)
 	rdsExpire(key, QR_CODE_EXPIRE)
