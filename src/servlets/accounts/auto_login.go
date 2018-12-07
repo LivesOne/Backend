@@ -103,6 +103,8 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 			Expire: expire,
 		}
 		rpc.ActiveUser(utils.Str2Int64(uid))
+	} else {
+		response.SetResponseBase(rpc.TokenErr2RcErr(code))
 	}
 
 }
