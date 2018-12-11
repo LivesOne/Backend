@@ -8,7 +8,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
-	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"gitlab.maxthon.net/cloud/livesone-user-micro/src/proto"
 	"servlets/constants"
 	"servlets/rpc"
 	"strings"

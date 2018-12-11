@@ -1,7 +1,7 @@
 package common
 
 import (
-	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"gitlab.maxthon.net/cloud/livesone-user-micro/src/proto"
 	"servlets/constants"
 	"servlets/rpc"
 	"strings"

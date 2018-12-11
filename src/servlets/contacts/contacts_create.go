@@ -1,7 +1,7 @@
 package contacts
 
 import (
-	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"gitlab.maxthon.net/cloud/livesone-user-micro/src/proto"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"

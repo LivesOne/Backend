@@ -1,7 +1,7 @@
 package asset
 
 import (
-	"gitlab.maxthon.net/cloud/livesone-micro-user/src/proto"
+	"gitlab.maxthon.net/cloud/livesone-user-micro/src/proto"
 	"net/http"
 	"servlets/accounts"
 	"servlets/common"
