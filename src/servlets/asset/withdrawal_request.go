@@ -199,7 +199,12 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		return
 	}
 
-	walletAddress := strings.ToLower(secret.Address)
+	walletAddress := secret.Address
+
+	if !strings.EqualFold(secret.Currency,constants.TRADE_CURRENCY_BTC) {
+		walletAddress = strings.ToLower(walletAddress)
+	}
+
 	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_LVTC) ||
 		strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_ETH) {
 		if !strings.HasPrefix(walletAddress, "0x") {
@@ -208,7 +213,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	var currencyDecimal, feeCurrencyDecimal int
-	if strings.EqualFold(secret.Currency, "eos") {
+	if strings.EqualFold(secret.Currency, constants.TRADE_CURRENCY_EOS) {
 		if len(requestData.Param.Remark) > config.GetConfig().EOSRemarkLengthLimit {
 			response.SetResponseBase(constants.RC_REMARK_TOO_LONG)
 			return
