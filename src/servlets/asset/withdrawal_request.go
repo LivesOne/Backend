@@ -304,9 +304,3 @@ func validateEosAccount(account string) constants.Error {
 		return constants.RC_SYSTEM_ERR
 	}
 }
-
-func validateWalletAddress(walletAddress string) bool {
-	reg := "^(0x)?[0-9a-f]{40}$"
-	ret, _ := regexp.MatchString(reg, strings.ToLower(walletAddress))
-	return ret
-}
