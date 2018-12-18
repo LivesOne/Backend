@@ -57,6 +57,18 @@ func (handler *bindWalletAddrHandler) Handle(
 	uid := utils.Str2Int64(uidStr)
 	addr := strings.ToLower(requestData.Param.Address)
 
+	if !strings.HasPrefix(addr, "0x") {
+		addr = "0x" + addr
+	}
+
+	if !utils.ValidateWithdrawalAddress(addr,constants.TRADE_CURRENCY_LVTC) {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+
+
+
+
 	cli := rpc.GetWalletClient()
 	if cli == nil {
 		response.SetResponseBase(constants.RC_SYSTEM_ERR)
