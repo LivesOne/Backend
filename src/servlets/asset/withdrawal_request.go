@@ -201,7 +201,12 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	walletAddress := secret.Address
 
-	if !strings.EqualFold(secret.Currency,constants.TRADE_CURRENCY_BTC) {
+	if strings.EqualFold(secret.Currency,constants.TRADE_CURRENCY_BTC) {
+		if err := validateBTCAddress(walletAddress); err.Rc != constants.RC_OK.Rc {
+			response.SetResponseBase(err)
+			return
+		}
+	} else {
 		walletAddress = strings.ToLower(walletAddress)
 	}
 
@@ -218,7 +223,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			response.SetResponseBase(constants.RC_REMARK_TOO_LONG)
 			return
 		}
-		if err := validateEosAccount(secret.Address); err.Rc != constants.RC_OK.Rc {
+		if err := validateEosAccount(walletAddress); err.Rc != constants.RC_OK.Rc {
 			response.SetResponseBase(err)
 			return
 		}
@@ -269,14 +274,14 @@ func validateEosAccount(account string) constants.Error {
 	if ret, _ := regexp.MatchString(reg, strings.ToLower(account)); !ret {
 		return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
 	}
-	urlStr := config.GetConfig().ChainApiAddress
-	if strings.HasSuffix(urlStr, "/") {
-		urlStr += "v2/eos/account/" + url.PathEscape(account)
-	} else {
-		urlStr += "/v2/eos/account/" + url.PathEscape(account)
-	}
-	logger.Info("check account url:", urlStr)
-	response, err := lvthttp.Get(urlStr, nil)
+
+
+	u ,_ := url.Parse(config.GetConfig().ChainApiAddress)
+	path := "/v2/eos/account/" + url.PathEscape(account)
+	u.RawPath = path
+
+	logger.Info("check eos account url:", u.String())
+	response, err := lvthttp.Get(u.String(), nil)
 	if err != nil {
 		logger.Error("send transcation to chain error ", err.Error())
 		return constants.RC_SYSTEM_ERR
@@ -303,4 +308,31 @@ func validateEosAccount(account string) constants.Error {
 	default:
 		return constants.RC_SYSTEM_ERR
 	}
+}
+
+
+func validateBTCAddress(addr string) constants.Error {
+
+	u ,_ := url.Parse(config.GetConfig().ChainHotWalletAddr)
+	path := "/v2/eos/account/" + url.PathEscape(addr)
+	u.RawPath = path
+	logger.Info("check btc address url:", u.String())
+
+	response, err := lvthttp.Get(u.String(), nil)
+	if err != nil {
+		logger.Error("send transcation to chain error ", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+	res := make(map[string]interface{})
+	if err := utils.FromJson(response, &res); err != nil {
+		logger.Error("json parse error", err.Error())
+		return constants.RC_SYSTEM_ERR
+	}
+
+	if code,ok := res["code"];ok {
+		if code.(int) == ERR_SUCCESS {
+			return constants.RC_OK
+		}
+	}
+	return constants.RC_PARAM_ERR
 }
