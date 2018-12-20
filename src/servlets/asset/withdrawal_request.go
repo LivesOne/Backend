@@ -314,7 +314,7 @@ func validateEosAccount(account string) constants.Error {
 func validateBTCAddress(addr string) constants.Error {
 
 	u ,_ := url.Parse(config.GetConfig().ChainHotWalletAddr)
-	path := "/v2/eos/account/" + url.PathEscape(addr)
+	path := "/hotwallet/validate/btc/" + url.PathEscape(addr)
 	u.RawPath = path
 	logger.Info("check btc address url:", u.String())
 
