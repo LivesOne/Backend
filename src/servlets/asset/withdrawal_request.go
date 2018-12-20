@@ -334,5 +334,5 @@ func validateBTCAddress(addr string) constants.Error {
 	if res.Code == ERR_SUCCESS {
 		return constants.RC_OK
 	}
-	return constants.RC_PARAM_ERR
+	return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
 }
