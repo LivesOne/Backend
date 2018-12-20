@@ -325,9 +325,9 @@ func validateBTCAddress(addr string) constants.Error {
 		logger.Error("json parse error", err.Error())
 		return constants.RC_SYSTEM_ERR
 	}
-
+	logger.Info("validate btc res",response)
 	if code,ok := res["code"];ok {
-		if code.(int) == ERR_SUCCESS {
+		if code.(float64) == ERR_SUCCESS {
 			return constants.RC_OK
 		}
 	}
