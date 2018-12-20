@@ -30,7 +30,11 @@ type EOSAccountResponse struct {
 	Result *EOSAccountInformationResult `json:"result"`
 }
 
-type EOSAccountInformationResult struct {
+type BTCAccountResponse struct {
+	Code   int `json:"code"`
+}
+
+	type EOSAccountInformationResult struct {
 	RamQuota  int64  `json:"ram_quota"`
 	RamUsage  int64  `json:"ram_usage"`
 	NetLimit  *Limit `json:"net_limit"`
@@ -320,16 +324,15 @@ func validateBTCAddress(addr string) constants.Error {
 		logger.Error("send transcation to chain error ", err.Error())
 		return constants.RC_SYSTEM_ERR
 	}
-	res := make(map[string]interface{})
+	res := BTCAccountResponse{
+		Code:-1,
+	}
 	if err := utils.FromJson(response, &res); err != nil {
 		logger.Error("json parse error", err.Error())
 		return constants.RC_SYSTEM_ERR
 	}
-	logger.Info("validate btc res",response)
-	if code,ok := res["code"];ok {
-		if code.(float64) == ERR_SUCCESS {
-			return constants.RC_OK
-		}
+	if res.Code == ERR_SUCCESS {
+		return constants.RC_OK
 	}
 	return constants.RC_PARAM_ERR
 }
