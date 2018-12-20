@@ -277,9 +277,7 @@ func validateEosAccount(account string) constants.Error {
 
 
 	u ,_ := url.Parse(config.GetConfig().ChainApiAddress)
-	path := "/v2/eos/account/" + url.PathEscape(account)
-	u.RawPath = path
-
+	u.Path = "/v2/eos/account/" + url.PathEscape(account)
 	logger.Info("check eos account url:", u.String())
 	response, err := lvthttp.Get(u.String(), nil)
 	if err != nil {
@@ -314,8 +312,7 @@ func validateEosAccount(account string) constants.Error {
 func validateBTCAddress(addr string) constants.Error {
 
 	u ,_ := url.Parse(config.GetConfig().ChainHotWalletAddr)
-	path := "/hotwallet/validate/btc/" + url.PathEscape(addr)
-	u.RawPath = path
+	u.Path = "/hotwallet/validate/btc/" + url.PathEscape(addr)
 	logger.Info("check btc address url:", u.String())
 
 	response, err := lvthttp.Get(u.String(), nil)
