@@ -82,7 +82,7 @@ func (handler *checkWithVcodeHandler) Handle(request *http.Request, writer http.
 			return
 		}
 		switch data.Param.Type {
-		case CHECK_TYPE_EMAIL:
+		case CHECK_TYPE_OF_EMAIL:
 			req := &microuser.CheckAccountByEmailReq{
 				Email: data.Param.EMail,
 			}
@@ -92,11 +92,11 @@ func (handler *checkWithVcodeHandler) Handle(request *http.Request, writer http.
 				return
 			}
 			if resp.Result == microuser.ResCode_OK {
-				resData.Exists = CHECK_ACCOUNT_EXISTS
+				resData.Exists = ACCOUNT_EXISTS
 				resData.Uid = utils.Int642Str(resp.Uid)
 				resData.Status = resp.Status
 			}
-		case CHECK_TYPE_PHONE:
+		case CHECK_TYPE_OF_PHONE:
 			req := &microuser.CheckAccountByPhoneReq{
 				Country: int64(data.Param.Country),
 				Phone:   data.Param.Phone,
@@ -107,7 +107,7 @@ func (handler *checkWithVcodeHandler) Handle(request *http.Request, writer http.
 				return
 			}
 			if resp.Result == microuser.ResCode_OK {
-				resData.Exists = CHECK_ACCOUNT_EXISTS
+				resData.Exists = ACCOUNT_EXISTS
 				resData.Uid = utils.Int642Str(resp.Uid)
 				resData.Status = resp.Status
 			}
