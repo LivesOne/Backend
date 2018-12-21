@@ -103,7 +103,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	uid, expire, code := autoLogin(header.TokenHash, tokenOriginal,loginData.Param.Key)
+	uid, expire, code := autoLogin(header.TokenHash, tokenOriginal,aesKey)
 	if code == microuser.ResCode_OK {
 		response.Data = &responseLogin{
 			UID:    uid,
