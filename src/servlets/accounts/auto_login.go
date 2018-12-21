@@ -96,7 +96,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	key := aesKey[constants.AES_ivLen:]
 	tokenOriginal, err := utils.AesDecrypt(loginData.Param.Token, string(key), string(iv))
 
-	uid, expire, code := autoLogin(header.TokenHash, tokenOriginal)
+	uid, expire, code := autoLogin(header.TokenHash, tokenOriginal,loginData.Param.Key)
 	if code == microuser.ResCode_OK {
 		response.Data = &responseLogin{
 			UID:    uid,
@@ -159,12 +159,13 @@ func (handler *autoLoginHandler) checkRequestParams(header *common.HeaderParams,
 //	return uid
 //}
 
-func autoLogin(tokenHash, token string) (string, int64, microuser.ResCode) {
+func autoLogin(tokenHash, token, key string) (string, int64, microuser.ResCode) {
 	cli := rpc.GetLoginClient()
 	if cli != nil {
 		req := &microuser.AutoLoginReq{
 			TokenHash: tokenHash,
 			Token:     token,
+			Key:       key,
 		}
 		resp, err := cli.AutoLogin(context.Background(), req)
 		if err != nil {

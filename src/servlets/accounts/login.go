@@ -109,10 +109,24 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
 
+	appid := ""
+	switch loginData.Base.App.AppID.(type) {
+	case int :
+		appid = utils.Int2Str(loginData.Base.App.AppID.(int))
+	case int64 :
+		appid = utils.Int642Str(loginData.Base.App.AppID.(int64))
+	case float64:
+		appid = utils.Float642Str(loginData.Base.App.AppID.(float64))
+	case string:
+		appid = loginData.Base.App.AppID.(string)
+	}
+
 	req := &microuser.LoginUserReq{
-		Account: loginData.Param.Account,
-		PwdHash: hashPwd,
-		Key:     aesKey,
+		Account:              loginData.Param.Account,
+		PwdHash:              hashPwd,
+		Key:                  aesKey,
+		App:                  appid,
+		Plat:                 utils.Int2Str(loginData.Base.App.Plat),
 	}
 
 	resp, err := cli.Login(context.Background(), req)
