@@ -53,6 +53,7 @@ func (handler *logoutHandler) Handle(request *http.Request, writer http.Response
 
 	iv := aesKey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
+	logger.Info("aeskey",aesKey,"token",logoutData.Param.Token)
 	tokenOriginal, err := utils.AesDecrypt(logoutData.Param.Token, string(key), string(iv))
 	// tokenTmp := utils.Base64Decode(tokenUpload)
 	// tokenDecrypt, err := utils.AesDecrypt(string(tokenTmp), string(key), string(iv))
