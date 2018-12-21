@@ -103,6 +103,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 	iv := aeskey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
+	logger.Info("login aeskey",aesKey)
 	hashPwd, err := utils.AesDecrypt(loginData.Param.PWD, string(key), string(iv))
 	if err != nil {
 		logger.Info("login: invalid password")

@@ -96,7 +96,7 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 	key := aesKey[constants.AES_ivLen:]
 
 	tokenOriginal, err := utils.AesDecrypt(loginData.Param.Token, string(key), string(iv))
-
+	logger.Info("auto login aeskey",aesKey)
 	if err != nil {
 		logger.Info("logout: parse token failed:", err.Error())
 		response.SetResponseBase(constants.RC_INVALID_TOKEN)
