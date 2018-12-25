@@ -121,7 +121,7 @@ func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 				logger.Error("query balance error", err.Error())
 				return nil
 			}
-			bd := buildSingleBalanceEOSDetail(balance, locked, income, lastmodify, status, v)
+			bd := buildSingleBalanceDetail(balance, locked, income, lastmodify, status, v)
 			bds = append(bds, bd)
 		case constants.TRADE_CURRENCY_BTC:
 			balance, locked, income, lastmodify, status, err := common.QueryBalanceBtc(uid)
@@ -139,25 +139,13 @@ func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 
 func buildSingleBalanceDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
 	b, bl := getBalanceAndBalanceLite(currency, balance)
+	l, i := getLockedAndIncome(currency, locked, income)
 	return balanceDetial{
 		Currency:    currency,
 		Balance:     b,
 		BalanceLite: bl,
-		Locked:      utils.LVTintToFloatStr(locked),
-		Income:      utils.LVTintToFloatStr(income),
-		Lastmodify:  lastmodify,
-		Status:      status,
-	}
-}
-
-func buildSingleBalanceEOSDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
-	b, bl := getBalanceAndBalanceLite(currency, balance)
-	return balanceDetial{
-		Currency:    currency,
-		Balance:     b,
-		BalanceLite: bl,
-		Locked:      utils.EOSintToFloatStr(locked),
-		Income:      utils.EOSintToFloatStr(income),
+		Locked:      l,
+		Income:      i,
 		Lastmodify:  lastmodify,
 		Status:      status,
 	}
@@ -170,7 +158,7 @@ func getBalanceAndBalanceLite(currency string, value int64) (string, string) {
 		if de.DBDecimal == de.ShowDecimal {
 			return balance, balance
 		} else {
-			showDec := getShowDecimal(de.DBDecimal , de.ShowDecimal,value)
+			showDec := getShowDecimal(de.DBDecimal, de.ShowDecimal, value)
 			balanceLite := utils.IntToFloatStrByDecimal(value, int32(de.DBDecimal), int32(showDec))
 			return balance, balanceLite
 		}
@@ -178,10 +166,20 @@ func getBalanceAndBalanceLite(currency string, value int64) (string, string) {
 	return "", ""
 }
 
+func getLockedAndIncome(currency string, locked, income int64) (string, string) {
+	de := config.GetConfig().GetDecimalsByCurrency(currency)
+	if de != nil {
+		dec := de.DBDecimal
+		l := utils.IntToFloatStrByDecimal(locked, int32(dec), int32(dec))
+		i := utils.IntToFloatStrByDecimal(income, int32(dec), int32(dec))
+		return l, i
+	}
+	return "", ""
+}
 
-func getShowDecimal(dbDec,showDec int,value int64)int{
-	if dbDec > showDec && int64( math.Pow10(dbDec - showDec)) > value {
-		return getShowDecimal(dbDec,showDec+1,value)
+func getShowDecimal(dbDec, showDec int, value int64) int {
+	if dbDec > showDec && int64(math.Pow10(dbDec-showDec)) > value {
+		return getShowDecimal(dbDec, showDec+1, value)
 	}
 	return showDec
 }

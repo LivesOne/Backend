@@ -80,10 +80,10 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 
 	t := re.Lastmodify
 	nt := utils.GetTimestamp13()
-
+	yes, tot := getYesterdayAndTotal(t, re.Yesterday, re.Total)
 	rData := &rewardDetailResData{
-		Total:     utils.LVTintToFloatStr(re.Total),
-		Yesterday: "0.00000000",
+		Total:     tot,
+		Yesterday: yes,
 		Ts:        t,
 		Days:      re.Days,
 	}

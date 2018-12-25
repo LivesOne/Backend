@@ -6,6 +6,7 @@ import (
 	"servlets/constants"
 	"servlets/rpc"
 	"utils"
+	"utils/config"
 )
 
 type rewardParam struct {
@@ -72,21 +73,29 @@ func (handler *rewardHandler) Handle(request *http.Request, writer http.Response
 		return
 	}
 
-	yesterday := "0.00000000"
 
 	t := re.Lastmodify
-	nt := utils.GetTimestamp13()
 
-	//如果时间戳不是昨天，返回0
-	if utils.IsToday(t, nt) {
-		yesterday = utils.LVTintToFloatStr(re.Yesterday)
-	}
+	yes,tot := getYesterdayAndTotal(t,re.Yesterday,re.Total)
 	rpc.ActiveUser(intUid)
 	response.Data = rewardResData{
-		Total:     utils.LVTintToFloatStr(re.Total),
-		Yesterday: yesterday,
+		Total:     tot,
+		Yesterday: yes,
 		Ts:        t,
 		Days:      re.Days,
 	}
 
+}
+
+
+func getYesterdayAndTotal(ts,yes,tot int64)(string,string){
+	nt := utils.GetTimestamp13()
+	de := int32(config.GetConfig().GetDecimalsByCurrency(constants.TRADE_CURRENCY_LVTC).DBDecimal)
+
+	total := utils.IntToFloatStrByDecimal(tot,de,de)
+
+	if utils.IsToday(ts, nt) {
+		return utils.IntToFloatStrByDecimal(yes,de,de),total
+	}
+	return utils.IntToFloatStrByDecimal(0,de,de),total
 }
