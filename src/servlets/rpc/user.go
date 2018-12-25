@@ -174,6 +174,8 @@ func TokenErr2RcErr(tokenErr microuser.ResCode) constants.Error {
 		return constants.RC_INVALID_TOKEN
 	case microuser.ResCode_ERR_INVALID_TOKEN:
 		return constants.RC_INVALID_TOKEN
+	case microuser.ResCode_ERR_FAILED:
+		return constants.RC_PARAM_ERR
 	default:
 		return constants.RC_SYSTEM_ERR
 	}

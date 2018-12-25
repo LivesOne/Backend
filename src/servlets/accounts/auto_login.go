@@ -19,8 +19,8 @@ type autologinParam struct {
 }
 
 type autologinRequest struct {
-	Base  common.BaseInfo `json:"base"`
-	Param autologinParam  `json:"param"`
+	Base  *common.BaseInfo `json:"base"`
+	Param *autologinParam  `json:"param"`
 }
 
 type responseAutoLoginSPK struct {
@@ -103,7 +103,13 @@ func (handler *autoLoginHandler) Handle(request *http.Request, writer http.Respo
 		return
 	}
 
-	uid, expire, code := autoLogin(header.TokenHash, tokenOriginal,aesKey)
+	base := loginData.Base
+	if base == nil || base.App == nil {
+		response.SetResponseBase(constants.RC_PARAM_ERR)
+		return
+	}
+	plat,app := utils.Int2Str(base.App.Plat),transBasAppInfo(base.App.AppID)
+	uid, expire, code := autoLogin(header.TokenHash, tokenOriginal,aesKey,plat,app)
 	if code == microuser.ResCode_OK {
 		response.Data = &responseLogin{
 			UID:    uid,
@@ -166,13 +172,15 @@ func (handler *autoLoginHandler) checkRequestParams(header *common.HeaderParams,
 //	return uid
 //}
 
-func autoLogin(tokenHash, token, key string) (string, int64, microuser.ResCode) {
+func autoLogin(tokenHash, token, key,plat,app string) (string, int64, microuser.ResCode) {
 	cli := rpc.GetLoginClient()
 	if cli != nil {
 		req := &microuser.AutoLoginReq{
-			TokenHash: tokenHash,
-			Token:     token,
-			Key:       key,
+			TokenHash:            tokenHash,
+			Token:                token,
+			Key:                  key,
+			Plat:                 plat,
+			App:                  app,
 		}
 		resp, err := cli.AutoLogin(context.Background(), req)
 		if err != nil {
