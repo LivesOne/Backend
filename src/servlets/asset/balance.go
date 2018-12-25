@@ -1,11 +1,13 @@
 package asset
 
 import (
+	"math"
 	"net/http"
 	"servlets/common"
 	"servlets/constants"
 	"servlets/rpc"
 	"utils"
+	"utils/config"
 	"utils/logger"
 )
 
@@ -19,12 +21,13 @@ type balanceRequest struct {
 }
 
 type balanceDetial struct {
-	Currency   string `json:"currency"`
-	Balance    string `json:"balance"`
-	Locked     string `json:"locked"`
-	Income     string `json:"income"`
-	Lastmodify int64  `json:"lastmodify"`
-	Status     int    `json:"status"`
+	Currency    string `json:"currency"`
+	Balance     string `json:"balance"`
+	BalanceLite string `json:"balance_lite"`
+	Locked      string `json:"locked"`
+	Income      string `json:"income"`
+	Lastmodify  int64  `json:"lastmodify"`
+	Status      int    `json:"status"`
 }
 
 // sendVCodeHandler
@@ -135,23 +138,50 @@ func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 }
 
 func buildSingleBalanceDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
+	b, bl := getBalanceAndBalanceLite(currency, balance)
 	return balanceDetial{
-		Currency:   currency,
-		Balance:    utils.LVTintToFloatStr(balance),
-		Locked:     utils.LVTintToFloatStr(locked),
-		Income:     utils.LVTintToFloatStr(income),
-		Lastmodify: lastmodify,
-		Status:     status,
+		Currency:    currency,
+		Balance:     b,
+		BalanceLite: bl,
+		Locked:      utils.LVTintToFloatStr(locked),
+		Income:      utils.LVTintToFloatStr(income),
+		Lastmodify:  lastmodify,
+		Status:      status,
 	}
 }
 
 func buildSingleBalanceEOSDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
+	b, bl := getBalanceAndBalanceLite(currency, balance)
 	return balanceDetial{
-		Currency:   currency,
-		Balance:    utils.EOSintToFloatStr(balance),
-		Locked:     utils.EOSintToFloatStr(locked),
-		Income:     utils.EOSintToFloatStr(income),
-		Lastmodify: lastmodify,
-		Status:     status,
+		Currency:    currency,
+		Balance:     b,
+		BalanceLite: bl,
+		Locked:      utils.EOSintToFloatStr(locked),
+		Income:      utils.EOSintToFloatStr(income),
+		Lastmodify:  lastmodify,
+		Status:      status,
 	}
+}
+
+func getBalanceAndBalanceLite(currency string, value int64) (string, string) {
+	de := config.GetConfig().GetDecimalsByCurrency(currency)
+	if de != nil {
+		balance := utils.IntToFloatStrByDecimal(value, int32(de.DBDecimal), int32(de.ShowDecimal))
+		if de.DBDecimal == de.ShowDecimal {
+			return balance, balance
+		} else {
+			showDec := getShowDecimal(de.DBDecimal , de.ShowDecimal,value)
+			balanceLite := utils.IntToFloatStrByDecimal(value, int32(de.DBDecimal), int32(showDec))
+			return balance, balanceLite
+		}
+	}
+	return "", ""
+}
+
+
+func getShowDecimal(dbDec,showDec int,value int64)int{
+	if int64( math.Pow10(dbDec - showDec)) > value {
+		return getShowDecimal(dbDec,showDec-1,value)
+	}
+	return showDec
 }

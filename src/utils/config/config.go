@@ -55,6 +55,12 @@ type LoginPwdErrCntLimit struct {
 	Min    int
 }
 
+type Decimals struct {
+	Currency    string
+	DBDecimal   int
+	ShowDecimal int
+}
+
 type WXAuth struct {
 	Url  string
 	Data struct {
@@ -140,6 +146,7 @@ type Configuration struct {
 	ChainHotWalletAddr            string
 	Chains                        []ChainConfig
 	QrCodeContentUrl              string
+	Decimals                      []Decimals
 }
 
 // configuration data
@@ -294,4 +301,15 @@ func (cfg *Configuration) CheckSupportedCoin(coin string) bool {
 		}
 	}
 	return flag
+}
+
+
+
+func (cfg *Configuration) GetDecimalsByCurrency(currency string) *Decimals {
+	for _,v := range cfg.Decimals {
+		if v.Currency == currency {
+			return &v
+		}
+	}
+	return nil
 }

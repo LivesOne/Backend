@@ -178,5 +178,11 @@
         {"Chain":"BTC", "coins":["BTC"]},
         {"Chain":"EOS", "coins":["EOS"]}
     ],
-    "QrCodeContentUrl": "https://qr.livesone.net"
+    "QrCodeContentUrl": "https://qr.livesone.net",
+    "Decimals" : [
+        {"Currency":"LVTC","DbDecimal":8,"ShowDecimal":4},
+        {"Currency":"ETH","DbDecimal":8,"ShowDecimal":4},
+        {"Currency":"EOS","DbDecimal":4,"ShowDecimal":4},
+        {"Currency":"BTC","DbDecimal":8,"ShowDecimal":8}
+    ]
 }
