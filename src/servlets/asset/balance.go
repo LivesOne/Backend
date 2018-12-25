@@ -180,8 +180,8 @@ func getBalanceAndBalanceLite(currency string, value int64) (string, string) {
 
 
 func getShowDecimal(dbDec,showDec int,value int64)int{
-	if int64( math.Pow10(dbDec - showDec)) > value {
-		return getShowDecimal(dbDec,showDec-1,value)
+	if dbDec > showDec && int64( math.Pow10(dbDec - showDec)) > value {
+		return getShowDecimal(dbDec,showDec+1,value)
 	}
 	return showDec
 }
