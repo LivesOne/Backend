@@ -139,6 +139,7 @@ func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 
 func buildSingleBalanceDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
 	b, bl,l, i := getFormatBalanceInfo(currency, balance, locked, income)
+	logger.Info("format balance currency",currency,"balance",b,"balance_lite",bl)
 	return balanceDetial{
 		Currency:    currency,
 		Balance:     b,
@@ -174,7 +175,7 @@ func getFormatBalanceInfo(currency string, value,locked,income int64) (string, s
 
 func getShowDecimal(dbDec, showDec int, value int64) int32 {
 	minValue := int64(math.Pow10(dbDec-showDec))
-	logger.Info("pow10(",dbDec-showDec,") min value",minValue,"value",value)
+	logger.Info("getShowDecimal pow10(",dbDec-showDec,") min value",minValue,"value",value)
 	if dbDec > showDec && minValue > value {
 		return getShowDecimal(dbDec, showDec+1, value)
 	}
