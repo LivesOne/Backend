@@ -166,7 +166,8 @@ func getFormatBalanceInfo(currency string, value,locked,income int64) (string, s
 			return balance, balanceLite,l,i
 		}
 	}
-	return "", "","", ""
+	zeroRes := utils.IntToFloatStrByDecimal(0, 8, 8)
+	return zeroRes,zeroRes,zeroRes,zeroRes
 }
 
 
