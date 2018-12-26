@@ -165,6 +165,7 @@ func getFormatBalanceInfo(currency string, value,locked,income int64) (string, s
 		} else {
 			showDec := getShowDecimal(de.DBDecimal, de.ShowDecimal, value)
 			balanceLite := utils.IntToFloatStrByDecimal(value, dbdec, showDec)
+			logger.Info("format balance currency",currency,"db decimal",dbdec,"show decimal",showDec)
 			return balance, balanceLite,l,i
 		}
 	}
