@@ -156,7 +156,7 @@ func EOSintToFloatStr(lvt int64) string {
 }
 
 func IntToFloatStrByDecimal(value int64,dec,sfix int32) string {
-	d2 := decimal.New(value, 0).Div(decimal.New(10,dec))
+	d2 := decimal.New(value, 0).Div(decimal.New(1,dec))
 	d2.Round(sfix)
 	return d2.String()
 }

@@ -138,8 +138,7 @@ func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 }
 
 func buildSingleBalanceDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
-	b, bl := getBalanceAndBalanceLite(currency, balance)
-	l, i := getLockedAndIncome(currency, locked, income)
+	b, bl,l, i := getFormatBalanceInfo(currency, balance, locked, income)
 	return balanceDetial{
 		Currency:    currency,
 		Balance:     b,
@@ -151,35 +150,30 @@ func buildSingleBalanceDetail(balance, locked, income, lastmodify int64, status 
 	}
 }
 
-func getBalanceAndBalanceLite(currency string, value int64) (string, string) {
+func getFormatBalanceInfo(currency string, value,locked,income int64) (string, string,string, string) {
 	de := config.GetConfig().GetDecimalsByCurrency(currency)
 	if de != nil {
-		balance := utils.IntToFloatStrByDecimal(value, int32(de.DBDecimal), int32(de.ShowDecimal))
+		dbdec := int32(de.DBDecimal)
+		l := utils.IntToFloatStrByDecimal(locked, dbdec, dbdec)
+		i := utils.IntToFloatStrByDecimal(income, dbdec, dbdec)
+		showDec := int32(de.ShowDecimal)
+		balance := utils.IntToFloatStrByDecimal(value, dbdec, showDec)
 		if de.DBDecimal == de.ShowDecimal {
-			return balance, balance
+			return balance, balance,l,i
 		} else {
-			showDec := getShowDecimal(de.DBDecimal, de.ShowDecimal, value)
-			balanceLite := utils.IntToFloatStrByDecimal(value, int32(de.DBDecimal), int32(showDec))
-			return balance, balanceLite
+			showDec = getShowDecimal(de.DBDecimal, de.ShowDecimal, value)
+			balanceLite := utils.IntToFloatStrByDecimal(value, dbdec, int32(showDec))
+			return balance, balanceLite,l,i
 		}
 	}
-	return "", ""
+	return "", "","", ""
 }
 
-func getLockedAndIncome(currency string, locked, income int64) (string, string) {
-	de := config.GetConfig().GetDecimalsByCurrency(currency)
-	if de != nil {
-		dec := de.DBDecimal
-		l := utils.IntToFloatStrByDecimal(locked, int32(dec), int32(dec))
-		i := utils.IntToFloatStrByDecimal(income, int32(dec), int32(dec))
-		return l, i
-	}
-	return "", ""
-}
 
-func getShowDecimal(dbDec, showDec int, value int64) int {
+
+func getShowDecimal(dbDec, showDec int, value int64) int32 {
 	if dbDec > showDec && int64(math.Pow10(dbDec-showDec)) > value {
 		return getShowDecimal(dbDec, showDec+1, value)
 	}
-	return showDec
+	return int32(showDec)
 }
