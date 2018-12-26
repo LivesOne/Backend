@@ -7,6 +7,7 @@ import (
 	"servlets/constants"
 	"servlets/rpc"
 	"utils"
+	"utils/config"
 )
 
 type rewardDetailParam struct {
@@ -90,7 +91,7 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 
 	//如果时间戳不是昨天，返回0
 	if utils.IsToday(t, nt) {
-		rData.Yesterday = utils.LVTintToFloatStr(re.Yesterday)
+		//rData.Yesterday = utils.LVTintToFloatStr(re.Yesterday)
 
 		q := bson.M{
 			"to":       intUid,
@@ -109,12 +110,13 @@ func (handler *rewardDetailHandler) Handle(request *http.Request, writer http.Re
 func buildMinerData(records []common.TradeInfo) []rewardMiner {
 	m := make([]rewardMiner, 0)
 	if records != nil && len(records) > 0 {
+		de := int32(config.GetConfig().GetDecimalsByCurrency(constants.TRADE_CURRENCY_LVTC).DBDecimal)
 		for _, v := range records {
 			if len(v.Miner) > 0 {
 				for _, item := range v.Miner {
 					m = append(m, rewardMiner{
 						Sid:   item.Sid,
-						Value: utils.LVTintToFloatStr(item.Value),
+						Value: utils.IntToFloatStrByDecimal(item.Value,de,de),
 					})
 				}
 			}
