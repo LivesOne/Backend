@@ -119,7 +119,7 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 		if resp.Result == microuser.ResCode_ERR_DUP_DATA {
-			response.SetResponseBase(constants.RC_DUP_EMAIL)
+			response.SetResponseBase(constants.RC_DUP_PHONE)
 			return
 		}
 		resData.UID = utils.Int642Str(resp.Uid)

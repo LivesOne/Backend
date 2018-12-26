@@ -155,16 +155,15 @@ func getFormatBalanceInfo(currency string, value,locked,income int64) (string, s
 	zeroRes := utils.IntToFloatStrByDecimal(0, 8, 8)
 	if de != nil {
 		dbdec := int32(de.DBDecimal)
-		showDec := int32(de.ShowDecimal)
-		zeroRes = utils.IntToFloatStrByDecimal(0, dbdec, showDec)
+		zeroRes = utils.IntToFloatStrByDecimal(0, dbdec, dbdec)
 		l := utils.IntToFloatStrByDecimal(locked, dbdec, dbdec)
 		i := utils.IntToFloatStrByDecimal(income, dbdec, dbdec)
-		balance := utils.IntToFloatStrByDecimal(value, dbdec, showDec)
+		balance := utils.IntToFloatStrByDecimal(value, dbdec, dbdec)
 		if de.DBDecimal == de.ShowDecimal {
 			return balance, balance,l,i
 		} else {
-			showDec = getShowDecimal(de.DBDecimal, de.ShowDecimal, value)
-			balanceLite := utils.IntToFloatStrByDecimal(value, dbdec, int32(showDec))
+			showDec := getShowDecimal(de.DBDecimal, de.ShowDecimal, value)
+			balanceLite := utils.IntToFloatStrByDecimal(value, dbdec, showDec)
 			return balance, balanceLite,l,i
 		}
 	}
