@@ -139,7 +139,6 @@ func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 
 func buildSingleBalanceDetail(balance, locked, income, lastmodify int64, status int, currency string) balanceDetial {
 	b, bl,l, i := getFormatBalanceInfo(currency, balance, locked, income)
-	logger.Info("format balance currency",currency,"balance",b,"balance_lite",bl)
 	return balanceDetial{
 		Currency:    currency,
 		Balance:     b,
@@ -156,7 +155,6 @@ func getFormatBalanceInfo(currency string, value,locked,income int64) (string, s
 	zeroRes := utils.IntToFloatStrByDecimal(0, 8, 8)
 	if de != nil {
 		dbdec := int32(de.DBDecimal)
-		zeroRes = utils.IntToFloatStrByDecimal(0, dbdec, dbdec)
 		l := utils.IntToFloatStrByDecimal(locked, dbdec, dbdec)
 		i := utils.IntToFloatStrByDecimal(income, dbdec, dbdec)
 		balance := utils.IntToFloatStrByDecimal(value, dbdec, dbdec)
@@ -164,9 +162,8 @@ func getFormatBalanceInfo(currency string, value,locked,income int64) (string, s
 			return balance, balance,l,i
 		} else {
 			showDec := getShowDecimal(de.DBDecimal, de.ShowDecimal, value)
-			balanceLite := utils.IntToFloatStrByDecimal(value, dbdec, showDec)
 			logger.Info("format balance currency",currency,"db decimal",dbdec,"show decimal",showDec)
-			return balance, balanceLite,l,i
+			return balance, utils.IntToFloatStrByDecimal(value, dbdec, showDec),l,i
 		}
 	}
 	return zeroRes,zeroRes,zeroRes,zeroRes
