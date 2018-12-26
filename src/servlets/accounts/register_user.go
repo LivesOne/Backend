@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"utils"
 	"utils/config"
-	"utils/db_factory"
 	"utils/logger"
 )
 
@@ -98,12 +97,10 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 		resp, err := cli.RegisterUser(context.Background(), req)
 
 		if err != nil {
-			if dupFlag, _ := db_factory.CheckDuplicate(err); !dupFlag {
-				response.SetResponseBase(constants.RC_SYSTEM_ERR)
-				return
-			}
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
 		}
-		if resp.Result != microuser.ResCode_OK {
+		if resp.Result == microuser.ResCode_ERR_DUP_DATA {
 			response.SetResponseBase(constants.RC_DUP_EMAIL)
 			return
 		}
@@ -116,14 +113,13 @@ func (handler *registerUserHandler) Handle(request *http.Request, writer http.Re
 			return
 		}
 		resp, err := cli.RegisterUser(context.Background(), req)
+
 		if err != nil {
-			if dupFlag, _ := db_factory.CheckDuplicate(err); !dupFlag {
-				response.SetResponseBase(constants.RC_SYSTEM_ERR)
-				return
-			}
+			response.SetResponseBase(constants.RC_SYSTEM_ERR)
+			return
 		}
-		if resp.Result != microuser.ResCode_OK {
-			response.SetResponseBase(constants.RC_DUP_PHONE)
+		if resp.Result == microuser.ResCode_ERR_DUP_DATA {
+			response.SetResponseBase(constants.RC_DUP_EMAIL)
 			return
 		}
 		resData.UID = utils.Int642Str(resp.Uid)
