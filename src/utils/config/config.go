@@ -307,7 +307,7 @@ func (cfg *Configuration) CheckSupportedCoin(coin string) bool {
 
 func (cfg *Configuration) GetDecimalsByCurrency(currency string) *Decimals {
 	for _,v := range cfg.Decimals {
-		if v.Currency == currency {
+		if strings.EqualFold(v.Currency , currency) {
 			return &v
 		}
 	}

@@ -173,7 +173,9 @@ func getFormatBalanceInfo(currency string, value,locked,income int64) (string, s
 
 
 func getShowDecimal(dbDec, showDec int, value int64) int32 {
-	if dbDec > showDec && int64(math.Pow10(dbDec-showDec)) > value {
+	minValue := int64(math.Pow10(dbDec-showDec))
+	logger.Info("pow10(",dbDec-showDec,") min value",minValue,"value",value)
+	if dbDec > showDec && minValue > value {
 		return getShowDecimal(dbDec, showDec+1, value)
 	}
 	return int32(showDec)
