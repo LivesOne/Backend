@@ -2890,6 +2890,7 @@ func getTransferQuota(currency, feeCurrency string) *TransferQuota {
 	quota := new(TransferQuota)
 	results, _ := redis.String(rdsDo("GET", key))
 	reload := false
+	logger.Info("getTransferQuota:: key",key,"rds res",results)
 	if len(results) > 0 {
 		if err := utils.FromJson(results, quota); err != nil {
 			logger.Error("get withdraw quota from redis error, error:", err.Error())
@@ -2901,7 +2902,10 @@ func getTransferQuota(currency, feeCurrency string) *TransferQuota {
 	if reload {
 		quota = GeTransferQuotaByCurrency(currency, feeCurrency)
 		tomorrow, _ := time.ParseInLocation("2006-01-02", time.Now().Format("2006-01-02")+" 23:59:59", time.Local)
-		rdsDo("SET", key, utils.ToJSON(quota), "EX", tomorrow.Unix()+1-utils.GetTimestamp10())
+		expire := tomorrow.Unix()+1-utils.GetTimestamp10()
+		jsonStr := utils.ToJSON(quota)
+		rdsDo("SET", key, jsonStr, "EX",expire )
+		logger.Info("getTransferQuota:: key",key,"reload into rds json",jsonStr,"expire",expire)
 	}
 	return quota
 }
