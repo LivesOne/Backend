@@ -301,7 +301,7 @@ func getCurrentDayTransferAmount(uid int64, session *mgo.Session) int64 {
 			"from": uid,
 			"type": constants.TX_TYPE_TRANS,
 			"ts": bson.M{
-				"$gt": utils.GetDayStart(utils.GetTimestamp13()).Nanosecond() / 1000000,
+				"$gt": utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())),
 			},
 		},
 	}
