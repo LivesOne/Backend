@@ -2905,7 +2905,7 @@ func getTransferQuota(currency, feeCurrency string) *TransferQuota {
 		expire := tomorrow.Unix()+1-utils.GetTimestamp10()
 		jsonStr := utils.ToJSON(quota)
 		rdsDo("SET", key, jsonStr, "EX",expire )
-		logger.Info("getTransferQuota:: key",key,"reload into rds json",jsonStr,"expire",expire)
+		logger.Info("getTransferQuota: key",key,"reload into rds json",jsonStr,"expire",expire)
 	}
 	return quota
 }
