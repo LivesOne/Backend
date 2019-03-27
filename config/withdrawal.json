@@ -2,5 +2,6 @@
   "WithdrawalAcceptAccount": 181875000,
   "FeeAcceptAccount": 181875000,
   "WithdrawalCardEthUnitPrice": 0.00001,
-  "WithdrawalCardEthAcceptAccount": 181875000
+  "WithdrawalCardEthAcceptAccount": 181875000,
+  "WithdrawalSwitch":true
 }

@@ -8,6 +8,7 @@ import (
 )
 
 type WithdrawalConfig struct {
+	WithdrawalSwitch               bool
 	WithdrawalAcceptAccount        int64
 	FeeAcceptAccount               int64
 	WithdrawalCardEthAcceptAccount int64

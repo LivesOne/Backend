@@ -34,7 +34,7 @@ type BTCAccountResponse struct {
 	Code   int `json:"code"`
 }
 
-	type EOSAccountInformationResult struct {
+type EOSAccountInformationResult struct {
 	RamQuota  int64  `json:"ram_quota"`
 	RamUsage  int64  `json:"ram_usage"`
 	NetLimit  *Limit `json:"net_limit"`
@@ -98,6 +98,12 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 
 	defer common.FlushJSONData2Client(response, writer)
 
+	//如果提币功能暂停，直接返回
+	if !config.GetWithdrawalConfig().WithdrawalSwitch {
+		response.SetResponseBase(constants.RC_WITHDRAWAL_MAINTAINING)
+		return
+	}
+
 	httpHeader := common.ParseHttpHeaderParams(request)
 
 	if !httpHeader.IsValidTokenhash() {
@@ -126,6 +132,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
 	}
+
+
 
 	if requestData.Param.VcodeType > 0 {
 		acc, err := rpc.GetUserInfo(utils.Str2Int64(uidString))
