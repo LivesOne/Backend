@@ -73,7 +73,7 @@ bind wx(86)
 func upOne(acc *microuser.GetUserAllInfoRes) (bool, int) {
 	// check miner days and bind wxid
 	lvtcScale := int64(config.GetConfig().LvtcHashrateScale)
-	if acc.ActiveDays >= 7 && acc.CreditScore >= DEF_SCORE && CheckBindWx(acc.Wx) && lvtcScale > 0 {
+	if acc.ActiveDays >= 7 && acc.CreditScore >= DEF_SCORE && CheckBindWx(acc.Wx,acc.Country) && lvtcScale > 0 {
 		//check asset lock month and value
 		lvtc := utils.CONV_LVT * int64(1000) / lvtcScale
 		if v := QuerySumLockAssetLvtc(acc.Uid, LOCK_ASSET_MONTH, CURRENCY_LVTC); v >= lvtc {
@@ -152,13 +152,22 @@ func getUserLimit(uid int64) *config.UserLevelLimit {
 	return limit
 }
 
-func CheckBindWx(wx string) bool {
-	ids := strings.Split(wx, ",")
-	if len(ids) != 2 {
-		return false
-	}
-	if len(ids[0]) == 0 || len(ids[1]) == 0 {
-		return false
+func CheckBindWx(wx string,area int64) bool {
+	switch(area){
+	case 86:
+		fallthrough
+	case 852:
+		fallthrough
+	case 853:
+		fallthrough
+	case 886:
+		ids := strings.Split(wx, ",")
+		if len(ids) != 2 {
+			return false
+		}
+		if len(ids[0]) == 0 || len(ids[1]) == 0 {
+			return false
+		}
 	}
 	return true
 }
