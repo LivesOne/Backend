@@ -1424,7 +1424,7 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 	_, err := tx.Exec(sql, from, to)
 	if err != nil {
 		logger.Error("lock ", currency, " asset error, error:", err.Error())
-		tx.Rollback()
+		//tx.Rollback()
 		return constants.RC_SYSTEM_ERR
 	}
 
@@ -1440,7 +1440,7 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 	}
 
 	if !checkAssetLimeted(assetTableName, from, tx) {
-		tx.Rollback()
+		//tx.Rollback()
 		return constants.RC_ACCOUNT_ACCESS_LIMITED
 	}
 
