@@ -4,6 +4,7 @@ import (
 	"strings"
 	"utils"
 	"utils/config"
+	"utils/logger"
 )
 
 
@@ -26,6 +27,7 @@ func GetCookieByTokenAndKey(token,key,uid string)(string,error){
 	at := utils.NewAesTool([]byte(cc),16)
 	b,e := at.Encrypt([]byte(str))
 	if e == nil {
+		logger.Error("aes ecb encrypt error",e.Error())
 		return string(b),nil
 	}
 	return "",e
