@@ -24,6 +24,7 @@ func GetCookieByTokenAndKey(token,key,uid string)(string,error){
 
 	cc := strings.Replace(getDefautKey(),"$key",uid,-1)
 	str := token + "_" + key
+	logger.Info("aes ecb src",str,"key",cc)
 	at := utils.NewAesTool([]byte(cc),16)
 	b,e := at.Encrypt([]byte(str))
 	if e == nil {
