@@ -1,37 +1,32 @@
 package common
 
 import (
-	"errors"
-	"servlets/constants"
+	"strings"
 	"utils"
 	"utils/config"
-	"utils/logger"
 )
 
 
 var (
-	baseKey string
-	baseIV string
+	cookieCert string
 )
 
 
-func getDefautKey()(string,string){
-	if len(baseKey) == 0 {
-		cookieCert := config.GetConfig().CookieCert
-		if len(cookieCert) ==  constants.AES_totalLen {
-			baseKey,baseIV = cookieCert[:constants.AES_ivLen],cookieCert[constants.AES_ivLen:]
-		} else {
-			logger.Error("can not load cooike cret",cookieCert)
-		}
+func getDefautKey()(string){
+	if len(cookieCert) == 0 {
+		cookieCert = config.GetConfig().CookieCert
 	}
-	return baseKey,baseIV
+	return cookieCert
 }
 
-func GetCookieByTokenAndKey(token,key string)(string,error){
-	if len(token) == 0 || len(key) !=  constants.AES_totalLen {
-		return "",errors.New("wrong token or key")
-	}
-	baseKey,baseIv := getDefautKey()
+func GetCookieByTokenAndKey(token,key,uid string)(string,error){
+
+	cc := strings.Replace(getDefautKey(),"$key",uid,-1)
 	str := token + "_" + key
-	return utils.AesEncrypt(str,baseKey,baseIv)
+	at := utils.NewAesTool([]byte(cc),16)
+	b,e := at.Encrypt([]byte(str))
+	if e == nil {
+		return string(b),nil
+	}
+	return "",e
 }
