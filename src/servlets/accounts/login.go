@@ -39,6 +39,7 @@ type responseLogin struct {
 	UID    string `json:"uid"`
 	Token  string `json:"token,omitempty"`
 	Expire int64  `json:"expire"`
+	Cookie string `json:"cookie"`
 	//SPK    *responseLoginSPK `json:"spk"`
 }
 
@@ -103,20 +104,19 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 	}
 	iv := aeskey[:constants.AES_ivLen]
 	key := aesKey[constants.AES_ivLen:]
-	logger.Info("login aeskey",aesKey)
+	logger.Info("login aeskey", aesKey)
 	hashPwd, err := utils.AesDecrypt(loginData.Param.PWD, string(key), string(iv))
 	if err != nil {
 		logger.Info("login: invalid password")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 	}
 
-
 	req := &microuser.LoginUserReq{
-		Account:              loginData.Param.Account,
-		PwdHash:              hashPwd,
-		Key:                  aesKey,
-		App:                  transBasAppInfo(loginData.Base.App.AppID),
-		Plat:                 utils.Int2Str(loginData.Base.App.Plat),
+		Account: loginData.Param.Account,
+		PwdHash: hashPwd,
+		Key:     aesKey,
+		App:     transBasAppInfo(loginData.Base.App.AppID),
+		Plat:    utils.Int2Str(loginData.Base.App.Plat),
 	}
 
 	resp, err := cli.Login(context.Background(), req)
@@ -148,10 +148,12 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		return
 	}
 	rpc.ActiveUser(utils.Str2Int64(resp.Uid))
+	cookie, _ := common.GetCookieByTokenAndKey(newtoken, aeskey)
 	response.Data = &responseLogin{
 		UID:    resp.Uid,
 		Token:  newtoken,
 		Expire: resp.Expire,
+		Cookie: cookie,
 	}
 }
 
@@ -207,13 +209,12 @@ func (handler *loginHandler) parseAESKey(originalKey string, spkv int) (string, 
 	return string(aeskey), nil
 }
 
-
-func transBasAppInfo(app interface{})string{
+func transBasAppInfo(app interface{}) string {
 	appid := ""
 	switch app.(type) {
-	case int :
+	case int:
 		appid = utils.Int2Str(app.(int))
-	case int64 :
+	case int64:
 		appid = utils.Int642Str(app.(int64))
 	case float64:
 		appid = utils.Float642Str(app.(float64))

@@ -147,6 +147,8 @@ type Configuration struct {
 	Chains                        []ChainConfig
 	QrCodeContentUrl              string
 	Decimals                      []Decimals
+	//cookie 加密秘钥
+	CookieCert string
 }
 
 // configuration data
@@ -303,11 +305,9 @@ func (cfg *Configuration) CheckSupportedCoin(coin string) bool {
 	return flag
 }
 
-
-
 func (cfg *Configuration) GetDecimalsByCurrency(currency string) *Decimals {
-	for _,v := range cfg.Decimals {
-		if strings.EqualFold(v.Currency , currency) {
+	for _, v := range cfg.Decimals {
+		if strings.EqualFold(v.Currency, currency) {
 			return &v
 		}
 	}

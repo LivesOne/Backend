@@ -184,5 +184,6 @@
         {"Currency":"ETH","DbDecimal":8,"ShowDecimal":4},
         {"Currency":"EOS","DbDecimal":4,"ShowDecimal":4},
         {"Currency":"BTC","DbDecimal":8,"ShowDecimal":8}
-    ]
+    ],
+    "CookieCert":"asdasdasdasdasdasdasd"
 }
