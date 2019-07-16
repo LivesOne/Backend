@@ -241,6 +241,7 @@ func (this *AesTool) Encrypt(src []byte) ([]byte, error) {
 	//key只能是 16 24 32长度
 	block, err := aes.NewCipher([]byte(this.Key))
 	if err != nil {
+		logger.Error("aes ecb encrypt error",err.Error())
 		return nil, err
 	}
 	//padding
