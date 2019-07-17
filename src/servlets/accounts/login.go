@@ -148,7 +148,7 @@ func (handler *loginHandler) Handle(request *http.Request, writer http.ResponseW
 		return
 	}
 	rpc.ActiveUser(utils.Str2Int64(resp.Uid))
-	cookie, _ := common.GetCookieByTokenAndKey(newtoken, aeskey,resp.Uid)
+	cookie := common.GetCookieByTokenAndKey(newtoken, aeskey,resp.Uid)
 	response.Data = &responseLogin{
 		UID:    resp.Uid,
 		Token:  newtoken,

@@ -206,73 +206,78 @@ func RsaSign(src string, privateKeyFilename string) (string, error) {
 
 
 //AES ECB模式的加密解密
-type AesTool struct {
-	//128 192  256位的其中一个 长度 对应分别是 16 24  32字节长度
-	Key       []byte
-	BlockSize int
+type ecb struct {
+	b         cipher.Block
+	blockSize int
 }
 
-func NewAesTool(key []byte, blockSize int) *AesTool {
-	return &AesTool{Key: key, BlockSize: blockSize}
-}
-
-func (this *AesTool) padding(src []byte) []byte {
-	//填充个数
-	paddingCount := aes.BlockSize - len(src)%aes.BlockSize
-	if paddingCount == 0 {
-		return src
-	} else {
-		//填充数据
-		return append(src, bytes.Repeat([]byte{byte(0)}, paddingCount)...)
+func newECB(key []byte) *ecb {
+	b,e := aes.NewCipher(key)
+	if e != nil {
+		logger.Error(e.Error())
+		return nil
+	}
+	return &ecb{
+		b:         b,
+		blockSize: b.BlockSize(),
 	}
 }
 
-//unpadding
-func (this *AesTool) unPadding(src []byte) []byte {
-	for i := len(src) - 1; ; i-- {
-		if src[i] != 0 {
-			return src[:i+1]
+type ecbEncrypter ecb
+
+// NewECBEncrypter returns a BlockMode which encrypts in electronic code book
+// mode, using the given Block.
+func New128ECBEncrypter(key string) *ecbEncrypter {
+	return (*ecbEncrypter)(newECB(paddingKey(key,128)))
+}
+
+func New256ECBEncrypter(key string) *ecbEncrypter {
+	return (*ecbEncrypter)(newECB(paddingKey(key)))
+}
+
+func (x *ecbEncrypter) BlockSize() int { return x.blockSize }
+
+func (x *ecbEncrypter) CryptBlocks(dst, src []byte) {
+	if len(src)%x.blockSize != 0 {
+		panic("crypto/cipher: input not full blocks")
+	}
+	if len(dst) < len(src) {
+		panic("crypto/cipher: output smaller than input")
+	}
+	for len(src) > 0 {
+		x.b.Encrypt(dst, src[:x.blockSize])
+		logger.Info(src,dst)
+		src = src[x.blockSize:]
+		dst = dst[x.blockSize:]
+	}
+}
+
+func  (x *ecbEncrypter) Crypt(src string)string{
+	sc := PKCS5Padding([]byte(src),x.BlockSize())
+	tg := make([]byte,len(sc))
+	x.CryptBlocks(tg,sc)
+	return Base64Encode(tg)
+}
+
+func paddingKey(key string,mode ...int)[]byte{
+	const (
+		t_128 = 16
+		t_256 = 32
+	)
+	t := t_256
+	if len(mode) > 0 {
+		switch mode[0] {
+		case 128:
+			t = t_128
+		case 256:
+			t = t_256
 		}
 	}
-	return nil
-}
 
-func (this *AesTool) Encrypt(src []byte) ([]byte, error) {
-	//key只能是 16 24 32长度
-	block, err := aes.NewCipher([]byte(this.Key))
-	if err != nil {
-		logger.Error("aes ecb encrypt error",err.Error())
-		return nil, err
+	sc := []byte(key)
+	if len(sc) >= t {
+		return sc[:t]
 	}
-	//padding
-	src = this.padding(src)
-	//返回加密结果
-	encryptData := make([]byte, len(src))
-	//存储每次加密的数据
-	tmpData := make([]byte, this.BlockSize)
-
-	//分组分块加密
-	for index := 0; index < len(src); index += this.BlockSize {
-		block.Encrypt(tmpData, src[index:index+this.BlockSize])
-		copy(encryptData, tmpData)
-	}
-	return encryptData, nil
-}
-func (this *AesTool) Decrypt(src []byte) ([]byte, error) {
-	//key只能是 16 24 32长度
-	block, err := aes.NewCipher([]byte(this.Key))
-	if err != nil {
-		return nil, err
-	}
-	//返回加密结果
-	decryptData := make([]byte, len(src))
-	//存储每次加密的数据
-	tmpData := make([]byte, this.BlockSize)
-
-	//分组分块加密
-	for index := 0; index < len(src); index += this.BlockSize {
-		block.Decrypt(tmpData, src[index:index+this.BlockSize])
-		copy(decryptData, tmpData)
-	}
-	return this.unPadding(decryptData), nil
+	padtext := bytes.Repeat([]byte{0x00}, t-len(sc))
+	return append(sc,padtext...)
 }

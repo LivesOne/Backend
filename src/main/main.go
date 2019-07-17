@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"server"
 	"servlets"
+	"servlets/common"
 	"servlets/log_cleaner"
 	"utils"
 	"utils/config"
@@ -22,6 +23,9 @@ func main() {
 	servlets.Init()
 	servlets.RegisterHandlers()
 	log_cleaner.StartJob()
+
+
+	logger.Info(common.GetCookieByTokenAndKey("TOKEN","key","123456789"))
 	server.Start(config.GetConfig().ServerAddr)
 
 }
