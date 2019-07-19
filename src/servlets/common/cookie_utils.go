@@ -1,6 +1,7 @@
 package common
 
 import (
+	"net/url"
 	"strings"
 	"utils"
 	"utils/config"
@@ -26,7 +27,7 @@ func GetCookieByTokenAndKey(token,key,uid string)(string){
 	str := token + "_" + key
 	logger.Info("aes ecb src",str,"key",cc)
 	at := utils.New256ECBEncrypter(cc)
-	return at.Crypt(str)
+	return url.QueryEscape(at.Crypt(str))
 }
 
 
