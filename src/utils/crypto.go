@@ -246,7 +246,6 @@ func (x *ecbEncrypter) CryptBlocks(dst, src []byte) {
 	}
 	for len(src) > 0 {
 		x.b.Encrypt(dst, src[:x.blockSize])
-		logger.Info(src,dst)
 		src = src[x.blockSize:]
 		dst = dst[x.blockSize:]
 	}
