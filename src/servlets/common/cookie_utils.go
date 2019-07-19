@@ -27,7 +27,7 @@ func GetCookieByTokenAndKey(token,key,uid string)(string){
 	str := token + "_" + key
 	logger.Info("aes ecb src",str,"key",cc)
 	at := utils.New256ECBEncrypter(cc)
-	return url.QueryEscape(at.Crypt(str))
+	return url.QueryEscape(url.QueryEscape(at.Crypt(str)))
 }
 
 
