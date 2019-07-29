@@ -57,6 +57,12 @@ func (handler *checkVCodeHandler) Handle(request *http.Request, writer http.Resp
 		if !f {
 			response.SetResponseBase(vcode.ConvSmsErr(code))
 		}
+	case UP_MESSAGE:
+		//validate up vcode
+		flag, resErr := vcode.ValidateSmsUpVCode(data.Param.Country, data.Param.Phone, data.Param.VCode)
+		if !flag {
+			response.SetResponseBase(resErr)
+		}
 	case EMAIL:
 		f, ec := vcode.ValidateMailVCode(data.Param.VCodeId, data.Param.VCode, data.Param.EMail)
 		if !f {

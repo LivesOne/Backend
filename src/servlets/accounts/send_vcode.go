@@ -16,6 +16,7 @@ const (
 	MESSAGE = 1
 	CALL    = 2
 	EMAIL   = 3
+	UP_MESSAGE = 4
 )
 
 type sendVCodeParam struct {
