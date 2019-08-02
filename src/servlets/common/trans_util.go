@@ -753,7 +753,7 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 	}
 
 	tradeNo := perPending.TradeNo
-	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_TRANSFER_FEE)
+	feeTradeNo := ""
 	timestamp := utils.GetTimestamp13()
 
 	tx, _ := gDBAsset.Begin()
@@ -765,9 +765,11 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 		return err
 	}
 
-	txIdFee := GenerateTxID()
+	txIdFee := int64(0)
 	//扣除手续费资产
 	if bizContent.Fee > 0 {
+		txIdFee = GenerateTxID()
+		feeTradeNo = GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_TRANSFER_FEE)
 		err = transfer(txIdFee, uid, config.GetConfig().TransFeeAccountUid, bizContent.Fee, timestamp, bizContent.FeeCurrency, feeTradeNo, constants.TX_SUB_TYPE_TRANSFER_FEE, tx)
 		if err.Rc != constants.RC_OK.Rc {
 			tx.Rollback()
@@ -812,25 +814,26 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 		var tradesArray []TradeInfo
 		fromName, _ := rpc.GetUserField(uid, microuser.UserField_NICKNAME)
 		toName, _ := rpc.GetUserField(config.GetConfig().TransFeeAccountUid, microuser.UserField_NICKNAME)
-		feeTradeInfo := TradeInfo{
-			TradeNo:         feeTradeNo,
-			OriginalTradeNo: tradeNo,
-			Type:            constants.TRADE_TYPE_FEE,
-			SubType:         constants.TX_SUB_TYPE_TRANSFER_FEE,
-			From:            uid,
-			FromName:        fromName,
-			To:              config.GetConfig().TransFeeAccountUid,
-			ToName:          toName,
-			Amount:          bizContent.Fee,
-			Decimal:         feeCurrencyDecimal,
-			Currency:        bizContent.FeeCurrency,
-			CreateTime:      ts,
-			FinishTime:      ts,
-			Status:          constants.TRADE_STATUS_SUCC,
-			Txid:            txIdFee,
+		if len(feeTradeNo) > 0 {
+			feeTradeInfo := TradeInfo{
+				TradeNo:         feeTradeNo,
+				OriginalTradeNo: tradeNo,
+				Type:            constants.TRADE_TYPE_FEE,
+				SubType:         constants.TX_SUB_TYPE_TRANSFER_FEE,
+				From:            uid,
+				FromName:        fromName,
+				To:              config.GetConfig().TransFeeAccountUid,
+				ToName:          toName,
+				Amount:          bizContent.Fee,
+				Decimal:         feeCurrencyDecimal,
+				Currency:        bizContent.FeeCurrency,
+				CreateTime:      ts,
+				FinishTime:      ts,
+				Status:          constants.TRADE_STATUS_SUCC,
+				Txid:            txIdFee,
+			}
+			tradesArray = append(tradesArray, feeTradeInfo)
 		}
-		tradesArray = append(tradesArray, feeTradeInfo)
-
 		toName, _ = rpc.GetUserField(to, microuser.UserField_NICKNAME)
 		tradeInfo := TradeInfo{
 			TradeNo:    tradeNo,
