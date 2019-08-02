@@ -767,11 +767,14 @@ func TransferCommit(uid, txId int64, currency string) constants.Error {
 
 	txIdFee := GenerateTxID()
 	//扣除手续费资产
-	err = transfer(txIdFee, uid, config.GetConfig().TransFeeAccountUid, bizContent.Fee, timestamp, bizContent.FeeCurrency, feeTradeNo, constants.TX_SUB_TYPE_TRANSFER_FEE, tx)
-	if err.Rc != constants.RC_OK.Rc {
-		tx.Rollback()
-		return err
+	if bizContent.Fee > 0 {
+		err = transfer(txIdFee, uid, config.GetConfig().TransFeeAccountUid, bizContent.Fee, timestamp, bizContent.FeeCurrency, feeTradeNo, constants.TX_SUB_TYPE_TRANSFER_FEE, tx)
+		if err.Rc != constants.RC_OK.Rc {
+			tx.Rollback()
+			return err
+		}
 	}
+
 	if strings.EqualFold(currency, CURRENCY_LVTC) || strings.EqualFold(currency, CURRENCY_LVT) {
 		var eror error
 		if strings.EqualFold(currency, CURRENCY_LVTC) {

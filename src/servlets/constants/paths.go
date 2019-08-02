@@ -105,6 +105,10 @@ const (
 
 	ACCOUNT_QRCODE_GENERATE = "/user/v1/qr_code/generate"
 
+
+	ACCOUNT_CHECK_PWD = "/user/v1/account/check_pwd"
+
+
 	//Assets Management APIs
 
 	ASSET_REWARD = "/asset/v1/reward"

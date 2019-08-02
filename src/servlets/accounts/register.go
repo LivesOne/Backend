@@ -13,7 +13,7 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_LOGOUT, &logoutHandler{})
 	server.RegisterHandler(constants.ACCOUNT_GET_IMG_VCODE, &getImgVCodeHandler{})
 	server.RegisterHandler(constants.ACCOUNT_SEND_VCODE, &sendVCodeHandler{})
-	//server.RegisterHandler(constants.ACCOUNT_CHECK_VCODE, &checkVCodeHandler{})
+	server.RegisterHandler(constants.ACCOUNT_CHECK_VCODE, &checkVCodeHandler{})
 	server.RegisterHandler(constants.ACCOUNT_MODIFY_PWD, &modifyPwdHandler{})
 	server.RegisterHandler(constants.ACCOUNT_RESET_PWD, &resetPwdHandler{})
 	server.RegisterHandler(constants.ACCOUNT_RESET_TX_PWD, &setTxPwdHandler{})
@@ -33,4 +33,5 @@ func RegisterHandlers() {
 	server.RegisterHandler(constants.ACCOUNT_WALLET_ADDRESS_LIST, &walletAddrHandler{})
 	server.RegisterHandler(constants.ACCOUNT_RECHARGE_MEMO, &rechargeMemoHandler{})
 	server.RegisterHandler(constants.ACCOUNT_QRCODE_GENERATE, &qrCodeGenerateHandler{})
+	server.RegisterHandler(constants.ACCOUNT_CHECK_PWD, &checkPwdHandler{})
 }
