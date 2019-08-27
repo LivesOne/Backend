@@ -66,7 +66,7 @@ func (handler *checkPwdHandler) Handle(request *http.Request, writer http.Respon
 	requestData := new(checkPWDRequest)
 	common.ParseHttpBodyParams(request, requestData)
 
-	if requestData.Param == nil || len(requestData.Param.Secret) > 0 {
+	if requestData.Param == nil || len(requestData.Param.Secret) == 0 {
 		log.Error("wrong check type")
 		response.SetResponseBase(constants.RC_PARAM_ERR)
 		return
