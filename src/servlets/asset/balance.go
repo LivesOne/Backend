@@ -1,7 +1,6 @@
 package asset
 
 import (
-	"fmt"
 	"math"
 	"net/http"
 	"servlets/common"
@@ -89,7 +88,6 @@ func (handler *balanceHandler) Handle(request *http.Request, writer http.Respons
 }
 
 func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
-	fmt.Println(currencyList)
 	bds := make([]balanceDetial, 0)
 	for _, v := range currencyList {
 		switch v {
@@ -142,7 +140,6 @@ func buildAllBalanceDetail(currencyList []string, uid int64) []balanceDetial {
 			bd := buildSingleBalanceDetail(balance, locked, income, lastmodify, status, v)
 			bds = append(bds, bd)}
 	}
-	fmt.Println(bds)
 	return bds
 }
 
