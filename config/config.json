@@ -14,12 +14,12 @@
     "Redis" :
     {
         "MaxConn" : 10,
-        "RedisAddr" : "10.100.15.96:6379",
-        "RedisAuth" : "lvt_serv",
-        "DBIndex":1
+        "RedisAddr" : "10.100.15.201:6379",
+        "RedisAuth" : "",
+        "DBIndex":0
     },
 
-    "Asset" : 
+    "Asset" :
     {
         "MaxConn" : 10,
         "DBHost" : "10.100.14.243:3306",
@@ -47,14 +47,14 @@
     "Miner" :
     {
         "MaxConn" : 10,
-        "DBHost" : "10.0.5.248:40000",
+        "DBHost" : "10.100.15.201:27017",
         "DBUser" : "",
         "DBUserPwd" : "",
         "DBDatabase" : "miner"
     },
     "Trade":{
         "MaxConn" : 10,
-        "DBHost" : "10.100.13.6:20000",
+        "DBHost" : "10.100.15.201:27017",
         "DBUser" : "",
         "DBUserPwd" : "",
         "DBDatabase" : "db_livesone_trade"
@@ -67,15 +67,15 @@
         "DBDatabase" : "db_livesone_config"
     },
     "Contacts" : {
-      "MaxConn" : 10,
-      "DBHost" : "10.100.13.6:20000",
-      "DBUser" : "",
-      "DBUserPwd" : "",
-      "DBDatabase" : "db_livesone_profile"
+        "MaxConn" : 10,
+        "DBHost" : "10.100.15.201:27017",
+        "DBUser" : "",
+        "DBUserPwd" : "",
+        "DBDatabase" : "db_livesone_profile"
     },
     "Msg" : {
         "MaxConn" : 10,
-        "DBHost" : "10.100.13.6:20000",
+        "DBHost" : "10.100.15.201:27017",
         "DBUser" : "",
         "DBUserPwd" : "",
         "DBDatabase" : "db_livesone_message"
@@ -143,8 +143,8 @@
         181270929
     ],
     "LoginPwdErrCntLimit": [
-      {"Number":3, "Min":10},
-      {"Number":5, "Min":60}
+        {"Number":3, "Min":10},
+        {"Number":5, "Min":60}
     ],
     "PenaltyMoneyAccountUid":181270929,
     "WXAuth":{
@@ -165,6 +165,9 @@
     "LvtcHashrateScale": 8,
     "Lvt2LvtcSystemAccountUid":181875000,
     "Lvt2LvtcDelaySystemAccountUid":181875000,
+    "Lvtc2BsvSystemAccountUid":181875000,
+    "Lvtc2BsvDelaySystemAccountUid":181875000,
+
     "TransFeeAccountUid":181875000,
     "EOSRemarkLengthLimit":64,
     "ReChargeAddress": [
@@ -183,7 +186,8 @@
         {"Currency":"LVTC","DbDecimal":8,"ShowDecimal":4},
         {"Currency":"ETH","DbDecimal":8,"ShowDecimal":4},
         {"Currency":"EOS","DbDecimal":4,"ShowDecimal":4},
-        {"Currency":"BTC","DbDecimal":8,"ShowDecimal":8}
+        {"Currency":"BTC","DbDecimal":8,"ShowDecimal":8},
+        {"Currency":"BSV","DbDecimal":8,"ShowDecimal":8}
     ],
     "CookieCert":"223Xd(8*@$key9SWeh2"
 }

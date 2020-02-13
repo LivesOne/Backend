@@ -139,7 +139,9 @@ type Configuration struct {
 	WithdrawalConfig              string
 	LvtcHashrateScale             int
 	Lvt2LvtcSystemAccountUid      int64
+	Lvtc2BsvSystemAccountUid      int64
 	Lvt2LvtcDelaySystemAccountUid int64
+	Lvtc2BsvDelaySystemAccountUid int64
 	TransFeeAccountUid            int64
 	EOSRemarkLengthLimit          int
 	ReChargeAddress               []ReChargeAddr

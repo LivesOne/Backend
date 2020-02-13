@@ -173,6 +173,8 @@ const (
 
 	ASSET_LVT2LVTC = "/asset/v1/misc/lvt2lvtc"
 
+	ASSET_LVTC2BSV = "/asset/v1/misc/lvtc2bsv"
+
 	ASSET_LVT2LVTC_DELAY = "/asset/v1/misc/lvt2lvtc_delay"
 
 	ASSET_LVT2LVTC_COUNT = "/asset/v1/misc/lvt2lvtc_count"

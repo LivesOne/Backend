@@ -308,6 +308,61 @@ func TransAccountLvtcByTx(txid, from, to, value int64, tx *sql.Tx) (bool, int) {
 	return true, constants.TRANS_ERR_SUCC
 }
 
+func ConvAccountLvtcBsvByTx(txid, systemUid, to, lvtc, bsv int64, tx *sql.Tx) (bool, int) {
+	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", systemUid, to)
+
+	ts := utils.GetTimestamp13()
+	//扣除转出方balance
+	info0, err0 := tx.Exec("update user_asset_lvtc set balance = balance - ?," +
+		"lastmodify = ? where uid = ?", lvtc, ts, to)
+	if err0 != nil {
+		logger.Error("sql error ", err0.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info0.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user lvtc balance error RowsAffected ", rsa, " can not find user  ",
+			to, "")
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_lvtc set balance = balance + ?,lastmodify = ? where uid = ?", lvtc, ts, systemUid)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user lvtc balance error RowsAffected ", rsa, " can not find user  ",
+			systemUid, "")
+		return false, constants.TRANS_ERR_SYS
+	}
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_bsv set balance = balance + ?," +
+		"lastmodify = ? where uid = ?", bsv, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user bsv balance error RowsAffected ", rsa, " can not find user  ", to,
+			"")
+		return false, constants.TRANS_ERR_SYS
+	}
+	//txid 写入数据库
+	_, e := InsertTXID(txid, tx)
+	if e != nil {
+		logger.Error("sql error ", e.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	return true, constants.TRANS_ERR_SUCC
+}
+
 func ConvAccountLvtcByTx(txid, systemUid, to, lvt, lvtc int64, tx *sql.Tx) (bool, int) {
 	tx.Exec("select * from user_asset_lvtc where uid in (?,?) for update", systemUid, to)
 
@@ -2392,6 +2447,41 @@ func convUserWithdrawCard(row map[string]string) *UserWithdrawCard {
 	}
 
 	return uwc
+}
+
+func lvtc2BsvInMysql(uid int64, tx *sql.Tx) (int64, error) {
+
+	_, err := tx.Exec("update user_asset_lvtc set `locked` = 0 where uid = ?  ", uid)
+
+	if err != nil {
+		logger.Error("modify user_asset_lvtc error", err.Error())
+		return 0, err
+	}
+
+	_, err = tx.Exec("delete from user_asset_lock where uid = ? and currency = ?  ", uid,CURRENCY_LVTC)
+
+	if err != nil {
+		logger.Error("delete user_asset_lock lvtc error", err.Error())
+		return 0, err
+	}
+
+	_, err = tx.Exec("delete from user_hashrate where uid = ? and type = 1  ", uid)
+
+	if err != nil {
+		logger.Error("delete user_hashrate lvtc error", err.Error())
+		return 0, err
+	}
+
+	balance := int64(0)
+	row := tx.QueryRow("select balance from user_asset_lvtc where uid = ?", uid)
+	err = row.Scan(&balance)
+	if err != nil {
+		logger.Error("query lvtc balance error", err.Error())
+		return 0, err
+	}
+
+	return balance,  nil
+
 }
 
 func lvt2LvtcInMysql(uid int64, tx *sql.Tx) (int64, int64, error) {
