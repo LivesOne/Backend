@@ -427,13 +427,19 @@ func CheckAndInitAsset(uid int64) (bool, int) {
 
 	_, err = InsertAssetEos(uid)
 	if err != nil {
-		logger.Error("init asset eth error ", err.Error())
+		logger.Error("init asset eos error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
 
 	_, err = InsertAssetBtc(uid)
 	if err != nil {
-		logger.Error("init asset eth error ", err.Error())
+		logger.Error("init asset btc error ", err.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+
+	_, err = InsertAssetBsv(uid)
+	if err != nil {
+		logger.Error("init bsv eth error ", err.Error())
 		return false, constants.TRANS_ERR_SYS
 	}
 
@@ -491,6 +497,11 @@ func InsertAssetEos(uid int64) (sql.Result, error) {
 
 func InsertAssetBtc(uid int64) (sql.Result, error) {
 	sql := "insert ignore into user_asset_btc (uid,balance,lastmodify) values (?,?,?) "
+	return gDBAsset.Exec(sql, uid, 0, 0)
+}
+
+func InsertAssetBsv(uid int64) (sql.Result, error) {
+	sql := "insert ignore into user_asset_bsv (uid,balance,lastmodify) values (?,?,?) "
 	return gDBAsset.Exec(sql, uid, 0, 0)
 }
 
