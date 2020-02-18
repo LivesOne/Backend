@@ -354,6 +354,20 @@ func ConvAccountLvtcBsvByTx(txid, systemUid, to, lvtc, bsv int64, tx *sql.Tx) (b
 			"")
 		return false, constants.TRANS_ERR_SYS
 	}
+	//增加目标的balance
+	info3, err3 := tx.Exec("update user_asset_bsv set balance = balance + ?," +
+		"lastmodify = ? where uid = ?", bsv, ts, systemUid)
+	if err3 != nil {
+		logger.Error("update systemUid sql error ", err3.Error())
+		return false, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info3.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user bsv balance error RowsAffected ", rsa, " can not find user  ", to,
+			"")
+		return false, constants.TRANS_ERR_SYS
+	}
 	//txid 写入数据库
 	_, e := InsertTXID(txid, tx)
 	if e != nil {
