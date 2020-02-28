@@ -90,7 +90,7 @@ func buildLvtcBsvTxHistory(uid, systemUid, lvtc int64, tx *sql.Tx) (int64, const
 		Ts:     utils.TXIDToTimeStamp13(txid),
 		Code:   constants.TX_CODE_SUCC,
 	}
-	err := InsertCommited(txh)
+	err := InsertLVTCCommited(txh)
 	if !CheckDup(err) {
 		logger.Error("insert mongo error", err.Error())
 		return -1, constants.RC_SYSTEM_ERR
@@ -118,7 +118,7 @@ func buildBsvLvtcTxHistory(uid, systemUid, lvtc, bsv int64, tx *sql.Tx) (int64, 
 			Ts:     utils.TXIDToTimeStamp13(txid),
 			Code:   constants.TX_CODE_SUCC,
 		}
-		err := InsertLVTCCommited(txh)
+		err := InsertBSVCommited(txh)
 		if !CheckDup(err) {
 			logger.Error("insert mongo error", err.Error())
 			return -1, constants.RC_SYSTEM_ERR

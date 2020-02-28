@@ -2271,6 +2271,14 @@ func InsertWithdrawalCardUseByTx(wcu *UserWithdrawalCardUse, tx *sql.Tx) error {
 	return err
 }
 
+
+func InsertBSVCommited(wcu *DTTXHistory) error {
+	tradeSql := "insert into tx_history_bsv (`txid`,`type`,`trade_no`,`from`,`to`,value," +
+		"ts ) values (?,?,?,?,?,?,?)"
+	_, err := gDBAsset.Exec(tradeSql,wcu.Id,wcu.Type,wcu.TradeNo,wcu.From,wcu.To,wcu.Value,wcu.Ts)
+	return err
+}
+
 func CheckEthPending(tradeNo string) bool {
 	row, err := gDBAsset.QueryRow("select count(1) as c from trade_pending where trade_no = ?", tradeNo)
 	if err != nil {
