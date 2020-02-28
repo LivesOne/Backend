@@ -62,7 +62,7 @@ func commonConvTransBsv(uid, systemUid, lvtc, bsv int64, tx *sql.Tx) (bool, cons
 		bsvTradeNo := GenerateTradeNo(constants.TRADE_TYPE_CONVERSION,
 			constants.TX_SUB_TYPE_ASSET_CONV)
 		addTradeInfoOfLVTCS(lvtcTradeNo, bsvTradeNo, uid, systemUid, lvtc, txid)
-		txidLvtc, e := buildBsvLvtcTxHistory(uid, systemUid, lvtc, bsv, tx)
+		txidLvtc, e := buildBsvLvtcTxHistory(uid, systemUid, lvtc, bsv, bsvTradeNo,tx)
 		if txidLvtc < 0 {
 			logger.Error("build bsv tx history failed ,rollback the tx")
 			DeleteCommited(txid)
@@ -97,7 +97,8 @@ func buildLvtcBsvTxHistory(uid, systemUid, lvtc int64, tx *sql.Tx) (int64, const
 	}
 	return txid, constants.RC_OK
 }
-func buildBsvLvtcTxHistory(uid, systemUid, lvtc, bsv int64, tx *sql.Tx) (int64, constants.Error) {
+func buildBsvLvtcTxHistory(uid, systemUid, lvtc, bsv int64,bsvTradeNo string, tx *sql.Tx) (int64,
+	constants.Error) {
 	txid := GenerateTxID()
 
 	if txid == -1 {
@@ -116,7 +117,7 @@ func buildBsvLvtcTxHistory(uid, systemUid, lvtc, bsv int64, tx *sql.Tx) (int64, 
 			To:     uid,
 			Value:  bsv,
 			Ts:     utils.TXIDToTimeStamp13(txid),
-			Code:   constants.TX_CODE_SUCC,
+			TradeNo:bsvTradeNo,
 		}
 		err := InsertBSVCommited(txh)
 		if !CheckDup(err) {
