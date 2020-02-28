@@ -12,6 +12,7 @@ const (
 	CURRENCY_LVTC        = "LVTC"
 	CURRENCY_BTC         = "BTC"
 	CURRENCY_EOS         = "EOS"
+	CURRENCY_BSV         = "BSV"
 	ASSET_INCOME_MINING  = 1
 )
 

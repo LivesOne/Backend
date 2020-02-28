@@ -1508,6 +1508,9 @@ func transfer(txId, from, to, amount, timestamp int64, currency, tradeNo string,
 	case CURRENCY_LVTC:
 		assetTableName = "user_asset_lvtc"
 		historyTableName = "tx_history_lvt_tmp"
+	case CURRENCY_BSV:
+		assetTableName = "user_asset_bsv"
+		historyTableName = "tx_history_bsv"
 	default:
 		logger.Error("currency not supported, currency:", currency)
 		return constants.RC_PARAM_ERR
