@@ -2074,6 +2074,76 @@ func BtcTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, 
 	return txid, constants.TRANS_ERR_SUCC
 }
 
+func BsvTransCommit(txid, from, to, value int64, tradeNo string, tradeType int,
+	tx *sql.Tx) (int64, int) {
+	if tx == nil {
+		tx, _ = gDBAsset.Begin()
+		defer tx.Commit()
+	}
+
+	tx.Exec("select * from user_asset_bsv where uid in (?,?) for update", from, to)
+
+	ts := utils.GetTimestamp13()
+
+	//查询转出账户余额是否满足需要 使用新的校验方法，考虑到锁仓的问题
+	if !ckeckBtcBalance(from, value, tx) {
+		return 0, constants.TRANS_ERR_INSUFFICIENT_BALANCE
+	}
+	if !checkAssetLimeted("user_asset_bsv", from, tx) {
+		return 0, constants.TRANS_ERR_ASSET_LIMITED
+	}
+
+	//扣除转出方balance
+	info1, err1 := tx.Exec("update user_asset_bsv set balance = balance - ?," +
+		"lastmodify = ? where uid = ?", value, ts, from)
+	if err1 != nil {
+		logger.Error("sql error ", err1.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ := info1.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", from, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	//增加目标的balance
+	info2, err2 := tx.Exec("update user_asset_bsv set balance = balance + ?," +
+		"lastmodify = ? where uid = ?", value, ts, to)
+	if err2 != nil {
+		logger.Error("sql error ", err2.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	//update 以后校验修改记录条数，如果为0 说明初始化部分出现问题，返回错误
+	rsa, _ = info2.RowsAffected()
+	if rsa == 0 {
+		logger.Error("update user balance error RowsAffected ", rsa, " can not find user  ", to, "")
+		return 0, constants.TRANS_ERR_SYS
+	}
+
+	if txid < 0 {
+		txid = GenerateTxID()
+		if txid < 0 {
+			logger.Error("can not get txid")
+			return 0, constants.TRANS_ERR_SYS
+		}
+	}
+	info3, err3 := tx.Exec("insert into tx_history_bsv (txid,type,trade_no,`from`,`to`,`value`," +
+		"ts) values (?,?,?,?,?,?,?)",
+		txid, tradeType, tradeNo, from, to, value, ts,
+	)
+	if err3 != nil {
+		logger.Error("sql error ", err3.Error())
+		return 0, constants.TRANS_ERR_SYS
+	}
+	rsa, _ = info3.RowsAffected()
+	if rsa == 0 {
+		logger.Error("insert bsv tx history failed")
+		return 0, constants.TRANS_ERR_SYS
+	}
+	return txid, constants.TRANS_ERR_SUCC
+}
+
 func EosTransCommit(txid, from, to, value int64, tradeNo string, tradeType int, tx *sql.Tx) (int64, int) {
 	if tx == nil {
 		tx, _ = gDBAsset.Begin()

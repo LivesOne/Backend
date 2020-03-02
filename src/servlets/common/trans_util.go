@@ -508,6 +508,9 @@ func TransFeeCommit(tx *sql.Tx, from, fee int64, currency string) (int64, string
 	case constants.TRADE_CURRENCY_BTC:
 		_, intErr = BtcTransCommit(feeTxid, from, transFeeAcc,
 			fee, feeTradeNo, feeSubType, tx)
+	case constants.TRADE_CURRENCY_BSV:
+		_, intErr = BsvTransCommit(feeTxid, from, transFeeAcc,
+			fee, feeTradeNo, feeSubType, tx)
 	case constants.TRADE_CURRENCY_ETH:
 		_, intErr = EthTransCommit(feeTxid, from, transFeeAcc,
 			fee, feeTradeNo, feeSubType, tx)
