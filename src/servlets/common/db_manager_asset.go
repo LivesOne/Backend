@@ -574,7 +574,7 @@ func CheckAssetLimetedOfLvtc(uid int64, tx *sql.Tx) bool {
 }
 
 func GetUserAssetTranslevelByUid(uid int64) int {
-	res, err := gDBAsset.QueryRow("select trader_level from user_restrict where uid = ?", uid)
+	res, err := gDBAsset.QueryRow("select trader_level from user_restrict where uid = ? ", uid)
 	if err != nil {
 		logger.Error("cannot get trans level ", err.Error())
 		return 0
@@ -2973,7 +2973,8 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount, currency, feeCurr
 		if strings.EqualFold(currency, CURRENCY_LVTC) {
 			totalAmount = GetCurrentDayLVTCTransferAmount(uid)
 		}
-		if strings.EqualFold(currency, CURRENCY_ETH) || strings.EqualFold(currency, CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) {
+		if strings.EqualFold(currency, CURRENCY_ETH) || strings.EqualFold(currency,
+			CURRENCY_EOS) || strings.EqualFold(currency, CURRENCY_BTC) || strings.EqualFold(currency, CURRENCY_BSV){
 			historyTableName := ""
 			switch strings.ToUpper(currency) {
 			case CURRENCY_BTC:
@@ -2982,6 +2983,8 @@ func calculationFeeAndCheckQuotaForTransfer(uid int64, amount, currency, feeCurr
 				historyTableName = "tx_history_eth"
 			case CURRENCY_EOS:
 				historyTableName = "tx_history_eos"
+			case CURRENCY_BSV:
+				historyTableName = "tx_history_bsv"
 			}
 			sql := fmt.Sprintf("select sum(value) total_value from %s where `from` = ? and ts >= ?", historyTableName)
 			row, err := gDBAsset.QueryRow(sql, uid, utils.GetTimestamp13ByTime(utils.GetDayStart(utils.GetTimestamp13())))
