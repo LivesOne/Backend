@@ -877,6 +877,8 @@ func getPending(txId, uid int64, currency string) (*DTTXHistory, constants.Error
 		fallthrough
 	case CURRENCY_BTC:
 		fallthrough
+	case CURRENCY_BSV:
+		fallthrough
 	case CURRENCY_ETH:
 		tp, err := GetTradePendingByTxid(utils.Int642Str(txId), uid)
 		if err != nil {

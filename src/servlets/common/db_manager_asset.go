@@ -2944,6 +2944,8 @@ func checkAssetBalanceIsSufficient(uid, amount, fee int64, currency, feeCurrency
 			assetTableName = "user_asset_eos"
 		case CURRENCY_LVTC:
 			assetTableName = "user_asset_lvtc"
+		case CURRENCY_BSV:
+			assetTableName = "user_asset_bsv"
 		}
 		sql = fmt.Sprintf("select balance, locked, income from %s where uid = ?", assetTableName)
 		rowFee, err := gDBAsset.QueryRow(sql, uid)
