@@ -218,6 +218,8 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			response.SetResponseBase(err)
 			return
 		}
+	} else if strings.EqualFold(secret.Currency,constants.TRADE_CURRENCY_BSV){
+		walletAddress = secret.Address
 	} else {
 		walletAddress = strings.ToLower(walletAddress)
 	}
