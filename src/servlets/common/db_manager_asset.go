@@ -1370,11 +1370,13 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	feeTradeNo := GenerateTradeNo(constants.TRADE_TYPE_FEE, constants.TX_SUB_TYPE_WITHDRAW_FEE)
 	timestamp := utils.GetTimestamp13()
 	fee, error := calculationFeeAndCheckQuotaForWithdraw(uid, amount, currency, feeCurrency, currencyDecimal)
+	logger.Info("withdrawal fee =",fee)
 	if error.Rc != constants.RC_OK.Rc {
 		return "", error
 	}
 
 	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
+	logger.Info("changed withdrawal fee =",fee)
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 
 	tx, _ := gDBAsset.Begin()
