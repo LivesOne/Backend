@@ -1377,7 +1377,8 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	}
 
 	//feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
-	feeInt := int64( fee * math.Pow10(feeCurrencyDecimal))
+	feefloat:=fee * float64(feeCurrencyDecimal)
+	feeInt := int64( feefloat * math.Pow10(0))
 	logger.Info("changed withdrawal fee =",feeInt)
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 
