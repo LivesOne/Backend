@@ -1376,7 +1376,7 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 	}
 
 	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
-	logger.Info("changed withdrawal fee =",fee)
+	logger.Info("changed withdrawal fee =",feeInt)
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 
 	tx, _ := gDBAsset.Begin()
