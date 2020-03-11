@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/shopspring/decimal"
 	"gitlab.maxthon.net/cloud/livesone-user-micro/src/proto"
+	"math"
 	"servlets/constants"
 	"servlets/rpc"
 	"strings"
@@ -1375,7 +1376,8 @@ func Withdraw(uid int64, amount, address, currency, feeCurrency, remark string, 
 		return "", error
 	}
 
-	feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
+	//feeInt := decimal.NewFromFloat(fee).Mul(decimal.NewFromFloat(float64(feeCurrencyDecimal))).IntPart()
+	feeInt := int64( fee * math.Pow10(feeCurrencyDecimal))
 	logger.Info("changed withdrawal fee =",feeInt)
 	amountInt := utils.FloatStr2CoinsInt(amount, int64(currencyDecimal))
 
