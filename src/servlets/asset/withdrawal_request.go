@@ -3,6 +3,7 @@ package asset
 import (
 	"database/sql"
 	"gitlab.maxthon.net/cloud/livesone-user-micro/src/proto"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -11,7 +12,9 @@ import (
 	"servlets/rpc"
 	"servlets/vcode"
 	"strings"
+	"time"
 	"utils"
+	"bytes"
 	"utils/config"
 	"utils/logger"
 	"utils/lvthttp"
@@ -219,7 +222,10 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 			return
 		}
 	} else if strings.EqualFold(secret.Currency,constants.TRADE_CURRENCY_BSV){
-		walletAddress = secret.Address
+		if err := validateBSVAddress(walletAddress); err.Rc != constants.RC_OK.Rc {
+			response.SetResponseBase(err)
+			return
+		}
 	} else {
 		walletAddress = strings.ToLower(walletAddress)
 	}
@@ -345,4 +351,38 @@ func validateBTCAddress(addr string) constants.Error {
 		return constants.RC_OK
 	}
 	return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
+}
+
+func validateBSVAddress(adress string)constants.Error{
+	urls:=config.GetConfig().BSV.ChainHost+"/v1/address?address="+adress
+	balans:=HttpGet(urls)
+	if balans=="null"{
+		return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
+	}else{
+		return constants.RC_OK
+	}
+}
+
+
+func HttpGet(url string) string {
+
+	// 超时时间：30秒
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	var buffer [512]byte
+	result := bytes.NewBuffer(nil)
+	for {
+		n, err := resp.Body.Read(buffer[0:])
+		result.Write(buffer[0:n])
+		if err != nil && err == io.EOF {
+			break
+		} else if err != nil {
+			panic(err)
+		}
+	}
+	return result.String()
 }

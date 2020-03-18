@@ -81,6 +81,10 @@ type ChainConfig struct {
 	Chain string
 	Coins []string
 }
+type BsvCfg struct {
+	ChainHost               string
+	HotWalletAddress        string
+}
 
 // Configuration holds all config data
 type Configuration struct {
@@ -100,6 +104,8 @@ type Configuration struct {
 	Config       MongoConfig
 	Contacts     MongoConfig
 	Msg          MongoConfig
+	//bsv参数
+	BSV 		 BsvCfg
 	// redis的参数
 	Redis RedisConfig
 	//密码错误登陆限制
