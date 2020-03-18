@@ -87,6 +87,10 @@
     "RegistryAddr":"10.0.5.248:8500",
     "RpcConnTimeOutSec":20,
     "SmsUpValidateSvrAddr":"http://sms-callback.lives.one",
+    "BSV": {
+        "ChainHost": "",
+        "HotWalletAddress":""
+    },
     "TransferLimit" : {
         "0":{
             "SingleAmountMin": 10,
@@ -179,6 +183,7 @@
     "Chains":[
         {"Chain":"ETH", "coins":["ETH", "LVTC"]},
         {"Chain":"BTC", "coins":["BTC"]},
+        {"Chain":"BSV", "coins":["BSV"]},
         {"Chain":"EOS", "coins":["EOS"]}
     ],
     "QrCodeContentUrl": "https://qr.livesone.net",
