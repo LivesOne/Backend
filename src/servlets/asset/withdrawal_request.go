@@ -2,6 +2,7 @@ package asset
 
 import (
 	"database/sql"
+	"encoding/json"
 	"gitlab.maxthon.net/cloud/livesone-user-micro/src/proto"
 	"io"
 	"net/http"
@@ -31,6 +32,10 @@ const (
 type EOSAccountResponse struct {
 	Code   int                          `json:"code"`
 	Result *EOSAccountInformationResult `json:"result"`
+}
+
+type GetBalance struct {
+	Balance		int64 `json:"balance"`
 }
 
 type BTCAccountResponse struct {
@@ -260,7 +265,7 @@ func (handler *withdrawRequestHandler) Handle(request *http.Request, writer http
 	}
 
 	tradeNo, err := common.Withdraw(uid, secret.Value, walletAddress, strings.ToUpper(secret.Currency), feeCurrency, requestData.Param.Remark, currencyDecimal, feeCurrencyDecimal)
-	//tradeNo, err := common.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
+	//tradeNo, err := untils.Withdraw(uid, secret.Value, address, strings.ToUpper(secret.Currency))
 	if err.Rc == constants.RC_OK.Rc {
 		response.Data = withdrawRequestResponseData{
 			TradeNo: tradeNo,
@@ -359,7 +364,13 @@ func validateBSVAddress(adress string)constants.Error{
 	if balans=="null"{
 		return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
 	}else{
-		return constants.RC_OK
+		var bala GetBalance
+		err:=json.Unmarshal([]byte(balans), &bala)
+		if err !=nil{
+			return constants.RC_INVALID_WALLET_ADDRESS_FORMAT
+		}else{
+			return constants.RC_OK
+		}
 	}
 }
 
