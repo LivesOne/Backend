@@ -95,8 +95,6 @@ func (handler *checkPwdHandler) Handle(request *http.Request, writer http.Respon
 	flag,err := rpc.CheckPwd(uid,secret.Pwd,checkType)
 	if err != nil {
 		log.Error("rpc error",err.Error())
-		response.SetResponseBase(constants.RC_SYSTEM_ERR)
-		return
 	}
 
 	if !flag {
